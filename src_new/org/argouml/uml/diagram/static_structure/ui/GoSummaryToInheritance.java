@@ -47,6 +47,7 @@ public class GoSummaryToInheritance extends AbstractGoRule {
     return Argo.localize ("Tree", "misc.class.attribute");
   }
 
+
   public Collection getChildren(Object parent) {
       if ( parent instanceof InheritanceNode) {
           
@@ -87,5 +88,13 @@ public class GoSummaryToInheritance extends AbstractGoRule {
       }
       return null;
   }
+
+
+
+  public boolean isLeaf(Object node) {
+    return ( getChildCount(node) == 0);
+  }
+
+
 
 }

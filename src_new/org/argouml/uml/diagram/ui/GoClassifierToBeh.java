@@ -44,4 +44,9 @@ public class GoClassifierToBeh extends AbstractGoRule {
       return null;
   }
 
+  public boolean isLeaf(Object node) {
+    return !(node instanceof MClassifier && getChildCount(node) > 0);
+  }
+
+
 }

@@ -46,14 +46,23 @@ public class GoMachineToState extends AbstractGoRule {
      * @see org.argouml.ui.AbstractGoRule#getChildren(Object)
      */
     public Collection getChildren(Object parent) {
-        
         if (parent instanceof MStateMachine) {
+            Vector children = new Vector();
             if ( ((MStateMachine)parent).getTop()!=null) { 
-                return ((MCompositeState)((MStateMachine)parent).getTop())
-                                .getSubvertices();
+                children.addAll(((MCompositeState)
+                                 ((MStateMachine) parent).getTop())
+                                .getSubvertices());
             }
+            return children;
         }
         return null;
+    }
+
+    /**
+     * @see javax.swing.tree.TreeModel#isLeaf(Object)
+     */
+    public boolean isLeaf(Object arg0) {
+        return !(arg0 instanceof MStateMachine && getChildCount(arg0) > 0);
     }
 
 }

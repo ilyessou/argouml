@@ -42,4 +42,8 @@ public class GoStateToDownstream extends AbstractGoRule {
       return null;
   }
 
+  public boolean isLeaf(Object node) {
+    return !(node instanceof MStateVertex && getChildCount(node) > 0);
+  }
+
 } /* end class GoStateToDownstream */

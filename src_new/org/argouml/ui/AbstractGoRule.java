@@ -2,7 +2,6 @@ package org.argouml.ui;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.Vector;
 import javax.swing.event.TreeModelListener;
 import javax.swing.tree.TreeModel;
@@ -27,26 +26,28 @@ public abstract class AbstractGoRule implements TreeModel {
     
     private static Category cat = Category.getInstance(org.argouml.ui.AbstractGoRule.class);
     
-    // ----------- TreeModel helpers -----------
+    // ----------- TreeModel implementation -----------
+    
+    /**
+     * returns null.
+     *
+     * @see javax.swing.tree.TreeModel#getRoot()
+     */
+    public Object getRoot() {
+        return null;
+    }
     
     /**
      * @see javax.swing.tree.TreeModel#getChild(Object, int)
      */
     public Object getChild(Object parent, int index) {
-
-        int count = 0;
-        Collection col = getChildren(parent);
-        if(col != null){
-            Iterator it = col.iterator();
-            while(it.hasNext()){
-            
-            Object candidate = it.next();
-            if(count == index)
-                return candidate;
-            count++;
+        Vector children = toVector(getChildren(parent));
+        if (children != null) {
+            return children.elementAt(index);
+        } else {
+            cat.fatal("getChild should never get here");
+            return null;
         }
-        }
-        return null;
     }
     
     /**
@@ -64,37 +65,44 @@ public abstract class AbstractGoRule implements TreeModel {
     /**
      * @see javax.swing.tree.TreeModel#isLeaf(Object)
      */
-    public final boolean isLeaf(Object node){
-        
-        return ( getChildCount(node) < 1);
+    public abstract boolean isLeaf(Object node);
+    
+    /**
+     * @see javax.swing.tree.TreeModel#valueForPathChanged(TreePath, Object)
+     */
+    public void valueForPathChanged(TreePath path, Object newValue) {
     }
     
     /**
      * @see javax.swing.tree.TreeModel#getIndexOfChild(Object, Object)
      */
     public int getIndexOfChild(Object parent, Object child) {
-        
-        int index = 0;
-        Collection col = getChildren(parent);
-        if(col != null){
-            Iterator it = col.iterator();
-            while(it.hasNext()){
-                
-                Object candidate = it.next();
-                if(candidate == child)
-                    return index;
-                index++;
-            }
-        }
+        // the next line does not take into account multiple levels of the Tree
+        // to change that we must change ALL implementations of getChildren(Object)
+        // to return ALL elements of the tree instead of only the first level.
+        // since this is going to be quite complicated and a violation of the
+        // design with GoRules (GoRules do only take into account one node) we have
+        // to invent a way around it.
+        Vector children = toVector(getChildren(parent));
+        if (children != null && children.contains(child))
+            return children.indexOf(child);
         return -1;
     }
-
+    
+    /**
+     * @see javax.swing.tree.TreeModel#addTreeModelListener(TreeModelListener)
+     */
+    public void addTreeModelListener(TreeModelListener l) {
+    }
+    
+    /**
+     * @see javax.swing.tree.TreeModel#removeTreeModelListener(TreeModelListener)
+     */
+    public void removeTreeModelListener(TreeModelListener l) {
+    }
     
     // -------------- other helper methods --------------------
     
-    /**
-     * this is the method that should be overridden by GoRules
-     */
     public abstract Collection getChildren(Object parent);
     
     /** return the name of the rule as it is displayed in
@@ -108,21 +116,14 @@ public abstract class AbstractGoRule implements TreeModel {
      */
     public String toString() { return getRuleName(); }
     
-    // ------------- not used TreeModel methods -------------
     
-    public void addTreeModelListener(javax.swing.event.TreeModelListener treeModelListener) {
+    private Vector toVector(Collection col) {
+        Vector ret = new Vector();
+        if (col != null && !col.isEmpty()) {
+            ret.addAll(col);
+        }
+        return ret;
     }
-    
-    public Object getRoot() {
-        return null;
-    }
-    
-    public void removeTreeModelListener(javax.swing.event.TreeModelListener treeModelListener) {
-    }
-    
-    public void valueForPathChanged(javax.swing.tree.TreePath treePath, Object obj) {
-    }
-
 }
 
 

@@ -18,6 +18,16 @@ public class GoInteractionMessage extends AbstractGoRule {
     return Argo.localize ("Tree", "misc.interaction.messages");
   }
 
+	
+	/**
+	 * @see javax.swing.tree.TreeModel#isLeaf(Object)
+	 */
+	public boolean isLeaf(Object node) {
+		return !(node instanceof MInteraction && getChildCount(node)>0);
+	}
+
+	
+
 	/**
 	 * @see org.argouml.ui.AbstractGoRule#getChildren(Object)
 	 */

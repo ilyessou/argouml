@@ -69,4 +69,12 @@ public class GoSummaryToAssociation extends AbstractGoRule {
       return null;
   }
 
+
+
+  public boolean isLeaf(Object node) {
+    return ( getChildCount(node) == 0);
+  }
+
+
+
 }

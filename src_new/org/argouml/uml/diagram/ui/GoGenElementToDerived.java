@@ -43,6 +43,10 @@ public class GoGenElementToDerived extends AbstractGoRule {
       }
       return null;
   }
+  
+  public boolean isLeaf(Object node) {
+    return !(node instanceof MGeneralizableElement && getChildCount(node) > 0);
+  }
 
 } /* end class GoGenElementToDerived */
 

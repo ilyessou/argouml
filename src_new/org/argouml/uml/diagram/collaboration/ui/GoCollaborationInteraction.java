@@ -36,7 +36,15 @@ public class GoCollaborationInteraction extends AbstractGoRule {
 
   public Collection getChildren(Object parent) {
     if (!(parent instanceof MCollaboration)) return null;
-    return ((MCollaboration)parent).getInteractions();
+    Vector res = new Vector();
+    res.addAll(((MCollaboration)parent).getInteractions());
+    return res;
   }
+
+  public boolean isLeaf(Object node) {
+    return !(node instanceof MCollaboration && getChildCount(node) > 0);
+  }
+
+ 
 
 }

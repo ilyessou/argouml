@@ -40,13 +40,11 @@ public class GoMachineDiagram extends AbstractGoRule {
     }
 
     public Collection getChildren(Object parent) {
-        
-        if (!(parent instanceof MStateMachine))
-            return null;
         Project p = ProjectManager.getManager().getCurrentProject();
         if (p == null)
             return null;
-
+        if (!(parent instanceof MStateMachine))
+            return null;
         Vector res = new Vector();
         Vector diagrams = p.getDiagrams();
         if (diagrams == null)
@@ -62,4 +60,9 @@ public class GoMachineDiagram extends AbstractGoRule {
         return res;
     }
 
+    public boolean isLeaf(Object node) {
+        return !(node instanceof MStateMachine && getChildCount(node) > 0);
+    }
+
+    
 }

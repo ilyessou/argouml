@@ -42,4 +42,9 @@ public class GoDiagramToEdge extends AbstractGoRule {
       return null;
   }
 
+ 
+
+  public boolean isLeaf(Object node) {
+    return !(node instanceof Diagram && getChildCount(node) > 0);
+  }
 }

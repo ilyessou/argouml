@@ -44,4 +44,8 @@ public class GoTransitionToSource extends AbstractGoRule {
       return null;
   }
 
+  public boolean isLeaf(Object node) {
+    return !(node instanceof MTransition);
+  }
+
 }

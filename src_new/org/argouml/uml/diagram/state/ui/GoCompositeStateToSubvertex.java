@@ -32,6 +32,10 @@ public class GoCompositeStateToSubvertex extends AbstractGoRule {
 
   public String getRuleName() { return "State->Substates"; }
 
+  public boolean isLeaf(Object node) {
+    return !(ModelFacade.isACompositeState(node) && getChildCount(node) > 0);
+  }
+
   public Collection getChildren(Object parent) {
       if (ModelFacade.isACompositeState(parent)) {
           return ModelFacade.getSubvertices(parent);

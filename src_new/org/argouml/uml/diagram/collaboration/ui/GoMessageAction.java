@@ -2,7 +2,6 @@ package org.argouml.uml.diagram.collaboration.ui;
 
 import java.util.Collection;
 import java.util.Vector;
-import java.util.ArrayList;
 
 import org.argouml.ui.AbstractGoRule;
 import ru.novosoft.uml.behavior.collaborations.MMessage;
@@ -17,15 +16,23 @@ public class GoMessageAction extends AbstractGoRule {
     public String getRuleName() { return "Message->Action";}
 
 	/**
+	 * @see javax.swing.tree.TreeModel#isLeaf(Object)
+	 */
+	public boolean isLeaf(Object node) {
+		return !(node instanceof MMessage && getChildCount(node)>0);
+	}
+
+	/**
 	 * @see org.argouml.ui.AbstractGoRule#getChildren(Object)
 	 */
 	public Collection getChildren(Object parent) {
 		if (parent instanceof MMessage) {
-			MAction action = ((MMessage)parent).getAction();
+			MMessage mes = (MMessage)parent;
+			MAction action = mes.getAction();
 			if (action != null) {
-                                ArrayList children = new ArrayList();
-                                children.add(action);
-				return children;
+				Vector vec = new Vector();	
+				vec.add(((MMessage)parent).getAction());
+				return vec;
 			}
 		}
 		return null;

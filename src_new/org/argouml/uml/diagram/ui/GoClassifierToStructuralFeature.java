@@ -35,11 +35,20 @@ public class GoClassifierToStructuralFeature extends AbstractGoRule {
     return Argo.localize ("Tree", "misc.class.attribute");
   }
 
+
   public Collection getChildren(Object parent) {
       if (ModelFacade.isAClassifier(parent)) {
           return ModelFacade.getStructuralFeatures(parent);
       }
       return null;
   }
+
+
+
+  public boolean isLeaf(Object node) {
+    return !(ModelFacade.isAClassifier(node) && getChildCount(node) > 0);
+  }
+
+
 
 }

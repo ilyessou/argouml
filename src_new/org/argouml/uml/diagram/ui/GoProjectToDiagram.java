@@ -41,5 +41,10 @@ public class GoProjectToDiagram extends AbstractGoRule {
       }
       return null;
   }
+    
+  public boolean isLeaf(Object node) {
+    // only for now
+    return !(node instanceof Project && getChildCount(node) > 0);
+  }
 
 }

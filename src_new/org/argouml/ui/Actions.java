@@ -237,7 +237,7 @@ class ActionNavConfig extends UMLAction {
   public void actionPerformed(ActionEvent ae) {
     ProjectBrowser pb = ProjectBrowser.TheInstance;
     NavigatorPane nav = pb.getNavigatorPane();
-    NavigatorConfigDialog ncd = new NavigatorConfigDialog(pb,nav);
+    NavigatorConfigDialog ncd = new NavigatorConfigDialog(pb);
     ncd.setVisible(true);
   }
 } /* end class ActionNavConfig */

@@ -47,5 +47,9 @@ public class GoProjectToStateMachine extends AbstractGoRule {
       }
       return col;
   }
+     
+  public boolean isLeaf(Object node) {
+    return !(node instanceof Project && getChildCount(node) > 0);
+  }
 
 }

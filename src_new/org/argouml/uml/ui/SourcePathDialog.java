@@ -32,7 +32,6 @@ import javax.swing.table.*;
 
 //import org.argouml.kernel.Project;
 //import org.argouml.kernel.ProjectManager;
-import org.argouml.application.api.Argo;
 import org.argouml.model.uml.modelmanagement.ModelManagementHelper;
 import org.argouml.ui.ProjectBrowser;
 import org.argouml.uml.generator.Generator;
@@ -55,7 +54,7 @@ public class SourcePathDialog extends JDialog implements ActionListener {
   // constructors
 
   public SourcePathDialog() {
-    super(ProjectBrowser.TheInstance, Argo.localize("CoreMenu", "action.generate-code-for-project"));
+    super(ProjectBrowser.TheInstance, "Generate Code for Project");
 
     GridBagConstraints gridBagConstraints;
 

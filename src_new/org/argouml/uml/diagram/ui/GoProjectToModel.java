@@ -43,5 +43,10 @@ public class GoProjectToModel extends AbstractGoRule {
       }
       return null;
   }
+  
+  public boolean isLeaf(Object node) {
+    return !(node instanceof Project && getChildCount(node) > 0);
+  }
+
 
 }

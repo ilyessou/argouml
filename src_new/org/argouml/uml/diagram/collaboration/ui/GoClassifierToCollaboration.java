@@ -40,6 +40,13 @@ public class GoClassifierToCollaboration extends AbstractGoRule {
     public String getRuleName() { return "Classifier->Collaboration";}
 
     /**
+     * @see javax.swing.tree.TreeModel#isLeaf(java.lang.Object)
+     */
+    public boolean isLeaf(Object node) {
+         return !(node instanceof MClassifier && getChildCount(node)>0);
+    }
+
+    /**
      * @see org.argouml.ui.AbstractGoRule#getChildren(java.lang.Object)
      */
     public Collection getChildren(Object parent) {

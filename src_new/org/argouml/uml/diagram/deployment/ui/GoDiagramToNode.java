@@ -37,6 +37,13 @@ public class GoDiagramToNode extends AbstractGoRule {
           return ((Diagram)parent).getNodes();
       }
       return null;
+  }  
+
+ 
+  public boolean isLeaf(Object node) {
+    return !(node instanceof Diagram && getChildCount(node) > 0);
   }
+
+ 
 
 }

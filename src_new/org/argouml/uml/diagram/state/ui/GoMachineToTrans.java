@@ -41,4 +41,9 @@ public class GoMachineToTrans extends AbstractGoRule {
       return null;
   }
 
+  
+  public boolean isLeaf(Object node) {
+    return !(node instanceof MStateMachine && getChildCount(node) > 0);
+  }
+
 }
