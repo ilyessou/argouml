@@ -38,7 +38,7 @@ import org.tigris.gef.util.Localizer;
 public class GoInteractionMessages implements TreeModelPrereqs {
 
   public String toString() {
-    return Localizer.localize ("Tree", "misc.interaction.messages");
+    return Localizer.localize ("Tree", "Interaction->Messages");
   }
 
   public Object getRoot() {

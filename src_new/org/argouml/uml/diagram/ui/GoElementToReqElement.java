@@ -38,7 +38,7 @@ import org.tigris.gef.util.Localizer;
 public class GoElementToReqElement implements TreeModelPrereqs {
 
   public String toString() {
-    return Localizer.localize ("Tree", "misc.element.required-element");
+    return Localizer.localize ("Tree", "Element->Required Element");
   }
 
   public Object getRoot() {

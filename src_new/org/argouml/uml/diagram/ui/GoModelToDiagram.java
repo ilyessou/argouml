@@ -39,7 +39,7 @@ import org.argouml.uml.diagram.ui.UMLDiagram;
 public class GoModelToDiagram implements TreeModelPrereqs {
 
   public String toString() {
-    return Localizer.localize ("Tree", "misc.package.diagram");
+    return Localizer.localize ("Tree", "Package->Diagram");
   }
 
   public Object getRoot() {
