@@ -454,23 +454,6 @@ implements PropertyChangeListener {
 	return NotationNameImpl.getAvailableNotations();
     }
 
-    /** List of available notations that are languages that can be generated.
-     * In this implementation all except Uml 1.3 (the default notation)
-     * are real languages.
-     *
-     * Needs-more-work: The obvious solutions would be that the 
-     * languages (generators) know wether or not they are real languages
-     * or not.
-     */
-    public static ArrayList getLanguageNotations() {
-	ArrayList l = (ArrayList)getAvailableNotations().clone();
-
-	int foundIndex = l.indexOf(NOTATION_ARGO);
-	if (foundIndex != -1)
-	    l.remove(foundIndex);
-	return l;
-    }
-
   /** Create an unversioned notation name.
    */
   public static NotationName makeNotation(String k1) {

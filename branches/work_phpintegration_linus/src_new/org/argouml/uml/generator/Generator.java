@@ -119,14 +119,6 @@ implements NotationProvider {
     return o.toString();
   }
 
-    /** Generates a file for this classifier.
-     * Needs-more-work:
-     * This will only work for languages that have each node
-     * in a separate files (one or more).
-     * @returns filename
-     */
-    public abstract String GenerateFile(MClassifier node, String path);
-
   public abstract String generateOperation(MOperation op, boolean documented);
   public abstract String generateAttribute(MAttribute attr, boolean documented);
   public abstract String generateParameter(MParameter param);

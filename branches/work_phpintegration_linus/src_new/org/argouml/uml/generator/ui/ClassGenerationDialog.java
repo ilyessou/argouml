@@ -1,4 +1,4 @@
-// Copyright (c) 1996-99 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -41,6 +41,7 @@ import org.argouml.kernel.*;
 import org.argouml.ui.*;
 import org.argouml.language.java.generator.*;
 import org.argouml.application.api.*;
+import org.argouml.application.notation.*;
 import org.argouml.uml.generator.*;
 
 public class ClassGenerationDialog extends JFrame implements ActionListener {
@@ -85,7 +86,16 @@ public class ClassGenerationDialog extends JFrame implements ActionListener {
     JLabel promptLabel = new JLabel("Generate Classes:");
     JLabel dirLabel = new JLabel("Output Directory:");
 
-    _languages = Notation.getLanguageNotations();
+    ArrayList ll = Notation.getAvailableNotations(); 
+    _languages = new ArrayList();
+    for (int l = 0; l < ll.size(); l++) {
+	if (NotationProviderFactory.getInstance()
+	    .getProvider((NotationName)ll.get(l)) instanceof FileGenerator) {
+	    _languages.add(ll.get(l));
+	}
+    }
+    ll = null;
+
     _tableModel.setTarget(nodes, _languages);
     _table.setModel(_tableModel);
 
@@ -211,7 +221,8 @@ public class ClassGenerationDialog extends JFrame implements ActionListener {
 	  fileNames[i] = new Vector();
 	  NotationName language = (NotationName)_languages.get(i);
 
-	  Generator generator = Generator.getGenerator(language);
+	  FileGenerator generator = 
+	      (FileGenerator)Generator.getGenerator(language);
 	  Set nodes = _tableModel.getChecked(language);
 	  for (Iterator iter = nodes.iterator();
 	       iter.hasNext();

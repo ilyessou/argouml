@@ -49,7 +49,8 @@ import org.argouml.uml.generator.*;
 
 // needs-more-work: always check for null!!!
 
-public class GeneratorJava extends Generator implements PluggableNotation {
+public class GeneratorJava extends Generator 
+implements PluggableNotation, FileGenerator {
 
   private static GeneratorJava SINGLETON = new GeneratorJava();
 

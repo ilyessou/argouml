@@ -509,13 +509,6 @@ implements PluggableNotation {
       return "";
   }
 
-    /** Should never be called.
-     */
-    // Needs-more-work: See Generator.
-    public String GenerateFile(MClassifier node, String path) {
-	Argo.log.error("GenerateFile called in " + getModuleDescription());
-	return null;
-    }
   // public NotationName getNotation() {
       // return Notation.NOTATION_ARGO;
   // }

@@ -51,7 +51,7 @@ import org.argouml.uml.generator.*;
 // needs-more-work: always check for null!!!
 
 public class GeneratorPHP extends Generator
-implements PluggableNotation {
+implements PluggableNotation, FileGenerator {
   public static boolean VERBOSE = false;
     
   private static Section sect;
