@@ -23,6 +23,7 @@
 
 package org.argouml.i18n;
 
+import java.io.File;
 import java.io.InputStream;
 import java.io.IOException;
 
@@ -39,8 +40,7 @@ import org.tigris.gef.util.Localizer;
  *
  */
 public class Translator {
-    /** logger */
-    private static Category cat = 
+    protected static Category cat = 
         Category.getInstance(Translator.class);
 
     /** Key for menu resource bundle. */
@@ -57,12 +57,8 @@ public class Translator {
      */
     public static void init () {
 
-        Locale.setDefault(new Locale(System.getProperty("user.language", "en"),
-            System.getProperty("user.country", "CA")));
-
-        org.workingfrog.i18n.util.Translator.setDefaultLocale(
-            new Locale("en", ""));
-        org.workingfrog.i18n.util.Translator.loadBundles("org.argouml.i18n");
+        Locale.setDefault(new Locale(System.getProperty("user.language","en"),
+            System.getProperty("user.country","CA")));
   
         Localizer.addResource("GefBase",
         "org.tigris.gef.base.BaseResourceBundle");
@@ -81,26 +77,6 @@ public class Translator {
         Localizer.addResource("Tree", "org.argouml.i18n.TreeResourceBundle");
         Localizer.addResource("Actions",
         "org.argouml.i18n.ActionResourceBundle");
-
-        org.workingfrog.i18n.util.Translator.check(
-            org.workingfrog.i18n.util.Translator.ALL);
-    }
-
-    /**
-     * For Locale selection.
-     * @return Locales used in ArgoUML
-     */
-    public static Locale[] getLocales () {
-        return org.workingfrog.i18n.util.Translator.getLocales(
-            new Translator());
-    }
-
-    /**
-     * Change the current Locale.
-     * @param locale the new Locale
-     */
-    public static void setLocale (Locale locale) {
-        org.workingfrog.i18n.util.Translator.setLocale(locale);
     }
 
     /**   

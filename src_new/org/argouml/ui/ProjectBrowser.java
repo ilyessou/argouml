@@ -71,12 +71,10 @@ import org.tigris.gef.util.VectorSet;
 import ru.novosoft.uml.foundation.core.MModelElement;
 import ru.novosoft.uml.foundation.core.MNamespace;
 
-import org.workingfrog.i18n.swing.I18NJFrame;
-
 /** The main window of the ArgoUML application. */
 
 public class ProjectBrowser
-extends I18NJFrame
+    extends JFrame
     implements IStatusBar, NavigationListener, PropertyChangeListener {
 
     protected static Category cat = Category.getInstance(ProjectBrowser.class);

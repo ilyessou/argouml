@@ -23,6 +23,7 @@
 
 package org.argouml.i18n;
 import java.util.*;
+import org.argouml.util.*;
 import javax.swing.*;
 import java.awt.event.*;
 
@@ -72,14 +73,14 @@ public class MenuResourceBundle extends ListResourceBundle {
         {"action.as-metrics", "As Metrics"},
         {"action.as-table", "As Table"},
         {"action.save-graphics", "Save Graphics..." },
-        {"action.save-configuration", "Save Configuration"},
+	{"action.save-configuration", "Save Configuration"},
         {"action.exit", "Exit" },
         {"action.undo", "Undo" },
         {"action.redo", "Redo" },
         {"action.cut", "Cut" },
         {"action.copy", "Copy" },
         {"action.paste", "Paste" },
-        {"action.settings", "Settings..."},
+	{"action.settings", "Settings..."},
         {"action.set-source-path", "Set Source Path..." },
         {"action.remove-from-diagram", "Remove From Diagram" },
         {"action.delete-from-model", "Delete From Model" },
