@@ -211,7 +211,7 @@ public class ClassGenerationDialog extends JFrame implements ActionListener {
 	  fileNames[i] = new Vector();
 	  NotationName language = (NotationName)_languages.get(i);
 
-	  Generator generator = (Generator)Notation.getProvider(language);
+	  Generator generator = Generator.getGenerator(language);
 	  Set nodes = _tableModel.getChecked(language);
 	  for (Iterator iter = nodes.iterator();
 	       iter.hasNext();

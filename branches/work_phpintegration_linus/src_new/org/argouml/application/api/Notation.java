@@ -62,7 +62,7 @@ implements PropertyChangeListener {
   /** The name of the default Argo notation.  This notation is
    *  part of Argo core distribution.
    */
-    // private static NotationName NOTATION_ARGO = null;
+    private static NotationName NOTATION_ARGO = null;
     // org.argouml.uml.generator.GeneratorDisplay.getInstance().getNotation();
 
   /** The name of the Argo java-like notation.  This notation is
@@ -107,7 +107,7 @@ implements PropertyChangeListener {
       Configuration.removeListener(KEY_UML_NOTATION_ONLY, this);
   }
 
-  public static NotationProvider getProvider(NotationName notation) {
+  private NotationProvider getProvider(NotationName notation) {
       NotationProvider np = null;
       np = NotationProviderFactory.getInstance().getProvider(notation);
       cat.debug ("getProvider(" + notation + ") returns " + np);
@@ -124,21 +124,14 @@ implements PropertyChangeListener {
   }
 
   public static NotationName getDefaultNotation() {
-      NotationName defaultnn = 
-	  NotationProviderFactory.getInstance()
-	  .getDefaultProvider().getNotation();
-      NotationName n;
-      n = NotationNameImpl
-	  .findNotation(Configuration.
-			getString(KEY_DEFAULT_NOTATION,
-				  defaultnn.getConfigurationValue()));
+      NotationName n = NotationNameImpl.findNotation(Configuration.getString(KEY_DEFAULT_NOTATION, NOTATION_ARGO.getConfigurationValue()));
       // Needs-more-work:
       // This is needed for the case when the default notation is 
       // not loaded at this point.
       // We need then to refetch the default notation from the configuration
-      // at a later stage. That refreshment seems to be done somewhere else.
+      // at a later stage.
       if (n == null)
-	  n = defaultnn;
+	  n = NotationNameImpl.findNotation("Uml.1.3");
       cat.debug ("default notation is " + n.getConfigurationValue());
       return n;
   }
@@ -351,10 +344,8 @@ implements PropertyChangeListener {
 	// an override on the notation.
 
 	// UML is the default language
-	// NotationProviderFactory keeps track of this.
 	if (Configuration.getBoolean(Notation.KEY_UML_NOTATION_ONLY, false)) {
-            return NotationProviderFactory.getInstance()
-		.getDefaultProvider().getNotation();
+            return NOTATION_ARGO;
 	}
 	return context.getContextNotation();
     }
@@ -474,9 +465,7 @@ implements PropertyChangeListener {
     public static ArrayList getLanguageNotations() {
 	ArrayList l = (ArrayList)getAvailableNotations().clone();
 
-	int foundIndex = 
-	    l.indexOf(NotationProviderFactory.getInstance()
-		      .getDefaultProvider().getNotation());
+	int foundIndex = l.indexOf(NOTATION_ARGO);
 	if (foundIndex != -1)
 	    l.remove(foundIndex);
 	return l;
@@ -503,7 +492,12 @@ implements PropertyChangeListener {
   /** Create a versioned notation name with an icon.
    */
   public static NotationName makeNotation(String k1, String k2, Icon icon) {
-      return NotationNameImpl.makeNotation(k1, k2, icon);
+      NotationName nn = NotationNameImpl.makeNotation(k1, k2, icon);
+      // Making the first created notation the default.
+      if (NOTATION_ARGO == null) {
+	  NOTATION_ARGO = nn;
+      }
+      return nn;
   }
 
   public static boolean getUseGuillemots() {
