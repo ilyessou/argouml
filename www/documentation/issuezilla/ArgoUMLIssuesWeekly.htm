@@ -16,7 +16,7 @@ xmlns="http://www.w3.org/TR/REC-html40">
   <o:Author>Linus Tolke </o:Author>
   <o:LastAuthor>Linus Tolke </o:LastAuthor>
   <o:Created>2002-03-17T14:36:07Z</o:Created>
-  <o:LastSaved>2002-09-16T20:45:26Z</o:LastSaved>
+  <o:LastSaved>2002-08-10T12:43:53Z</o:LastSaved>
   <o:Company>Enea Epact AB</o:Company>
   <o:Version>9.2720</o:Version>
  </o:DocumentProperties>
@@ -27,7 +27,6 @@ xmlns="http://www.w3.org/TR/REC-html40">
 </xml><![endif]--><![if !supportTabStrip]>
 <link id="shLink" href="./ArgoUMLIssuesWeekly_files/chart001.htm">
 <link id="shLink" href="./ArgoUMLIssuesWeekly_files/chart002.htm">
-<link id="shLink" href="./ArgoUMLIssuesWeekly_files/chart003.htm">
 <link id="shLink" href="./ArgoUMLIssuesWeekly_files/sheet001.htm">
 <link id="shLink" href="./ArgoUMLIssuesWeekly_files/sheet002.htm">
 
@@ -35,14 +34,13 @@ xmlns="http://www.w3.org/TR/REC-html40">
 
 <script language="JavaScript">
 <!--
- var c_lTabs=5;
+ var c_lTabs=4;
 
  var c_rgszSh=new Array(c_lTabs);
  c_rgszSh[0] = "Defects";
  c_rgszSh[1] = "Issues";
- c_rgszSh[2] = "Trends";
- c_rgszSh[3] = "Data";
- c_rgszSh[4] = "Data_0.9";
+ c_rgszSh[2] = "Data";
+ c_rgszSh[3] = "Data_0.9";
 
 
 
@@ -72,7 +70,7 @@ function fnGetIEVer()
 function fnBuildFrameset()
 {
  var szHTML="<frameset rows=\"*,18\" border=0 width=0 frameborder=no framespacing=0>"+
-  "<frame src=\""+document.all.item("shLink")[3].href+"\" name=\"frSheet\" noresize>"+
+  "<frame src=\""+document.all.item("shLink")[0].href+"\" name=\"frSheet\" noresize>"+
   "<frameset cols=\"54,*\" border=0 width=0 frameborder=no framespacing=0>"+
   "<frame src=\"\" name=\"frScroll\" marginwidth=0 marginheight=0 scrolling=no>"+
   "<frame src=\"\" name=\"frTabs\" marginwidth=0 marginheight=0 scrolling=no>"+
@@ -330,11 +328,6 @@ function fnSetActiveSheet(iSh)
     <x:WorksheetType>Chart</x:WorksheetType>
    </x:ExcelWorksheet>
    <x:ExcelWorksheet>
-    <x:Name>Trends</x:Name>
-    <x:WorksheetSource HRef="./ArgoUMLIssuesWeekly_files/chart003.htm"/>
-    <x:WorksheetType>Chart</x:WorksheetType>
-   </x:ExcelWorksheet>
-   <x:ExcelWorksheet>
     <x:Name>Data</x:Name>
     <x:WorksheetSource HRef="./ArgoUMLIssuesWeekly_files/sheet001.htm"/>
    </x:ExcelWorksheet>
@@ -348,15 +341,16 @@ function fnSetActiveSheet(iSh)
   <x:WindowWidth>10380</x:WindowWidth>
   <x:WindowTopX>240</x:WindowTopX>
   <x:WindowTopY>135</x:WindowTopY>
-  <x:ActiveSheet>3</x:ActiveSheet>
   <x:ProtectStructure>False</x:ProtectStructure>
   <x:ProtectWindows>False</x:ProtectWindows>
  </x:ExcelWorkbook>
+</xml><![endif]--><!--[if gte mso 9]><xml>
+ <o:shapedefaults v:ext="edit" spidmax="9220"/>
 </xml><![endif]-->
 </head>
 
 <frameset rows="*,39" border=0 width=0 frameborder=no framespacing=0>
- <frame src="./ArgoUMLIssuesWeekly_files/sheet001.htm" name="frSheet">
+ <frame src="./ArgoUMLIssuesWeekly_files/chart001.htm" name="frSheet">
  <frame src="./ArgoUMLIssuesWeekly_files/tabstrip.htm" name="frTabs" marginwidth=0 marginheight=0>
  <noframes>
   <body>
