@@ -68,7 +68,7 @@ implements PluggableNotation {
   public static GeneratorDisplay getInstance() { return SINGLETON; }
 
 
-  public GeneratorDisplay() {
+  private GeneratorDisplay() {
      super(Notation.makeNotation("Uml", "1.3",
                 Argo.lookupIconResource("UmlNotation")));
   }
@@ -509,6 +509,13 @@ implements PluggableNotation {
       return "";
   }
 
+    /** Should never be called.
+     */
+    // Needs-more-work: See Generator.
+    public String GenerateFile(MClassifier node, String path) {
+	Argo.log.error("GenerateFile called in " + getModuleDescription());
+	return null;
+    }
   // public NotationName getNotation() {
       // return Notation.NOTATION_ARGO;
   // }

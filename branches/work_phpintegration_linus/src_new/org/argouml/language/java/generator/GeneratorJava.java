@@ -55,7 +55,7 @@ public class GeneratorJava extends Generator implements PluggableNotation {
 
   public static GeneratorJava getInstance() { return SINGLETON; }
 
-  public GeneratorJava() {
+  private GeneratorJava() {
     super (Notation.makeNotation ("Java",
                                   null,
                                   Argo.lookupIconResource ("JavaNotation")));
@@ -65,10 +65,13 @@ public class GeneratorJava extends Generator implements PluggableNotation {
     return SINGLETON.generate (o);
   }
 
-  public static String GenerateFile (MClassifier cls,
-                                     String path) {
-    // GenerateFile now returns the full path name of the
-    // the generated file.
+    /** Generates a file for the classifier.
+     * This method could have been static if it where not for the need to
+     * call it through the Generatorinterface.
+     * @returns the full path name of the the generated file.
+     */
+  public String GenerateFile (MClassifier cls,
+			      String path) {
     String name = cls.getName();
     if (name == null || name.length() == 0) return null;
     String filename = name + ".java";
