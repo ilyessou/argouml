@@ -168,6 +168,11 @@ public class FigClass extends FigNodeModelElement {
      *   change it to 19 pixels, 1 more than ({@link #STEREOHEIGHT} here. The
      *   attribute and operations boxes are created at 19 pixels, 2 more than
      *   {@link #ROWHEIGHT}.</p>
+     *
+     * <p>CAUTION: This constructor (with no arguments) is the only one
+     *   that does enableSizeChecking(false), all others must set it true.
+     *   This is because this constructor is the only one called when loading
+     *   a project. In this case, the parsed size must be maintained.</p>
      */
 
     public FigClass() {
@@ -246,6 +251,7 @@ public class FigClass extends FigNodeModelElement {
         // Put all the bits together, suppressing bounds calculations until
         // we're all done for efficiency.
 
+        enableSizeChecking(false);
         suppressCalcBounds = true;
 
         addFig(_bigPort);
@@ -281,6 +287,7 @@ public class FigClass extends FigNodeModelElement {
     public FigClass(GraphModel gm, Object node) {
 
         this();
+        enableSizeChecking(true);
         setOwner(node);
 
         if ((node instanceof MClassifier) &&
@@ -990,12 +997,19 @@ public class FigClass extends FigNodeModelElement {
         // displayed.
 
         currentY += height-1;  // -1 for 1 pixel overlap
-   	aSize     = getUpdatedSize(_attrVec, x, currentY, newW,
-                                   ROWHEIGHT *
-                                   Math.max(1, _attrVec.getFigs().size() - 1) +
-                                   2 + extra_each);
 
-   	if (_attrVec.isDisplayed()) {
+        int na = (_attrVec.isDisplayed()) ? Math.max(1,_attrVec.getFigs().size()-1) : 0;
+        int no = (_operVec.isDisplayed()) ? Math.max(1,_operVec.getFigs().size()-1) : 0;
+        if (checkSize) {
+            height = ROWHEIGHT * na + 2 + extra_each;
+		} else if (newH > currentY-y && na+no > 0) {
+            height = (newH+y-currentY) * na / (na+no) + 1;
+		} else {
+            height = 1;
+		}
+        aSize = getUpdatedSize(_attrVec, x, currentY, newW, height);
+
+        if (_attrVec.isDisplayed()) {
             currentY += aSize.height - 1;  // -1 for 1 pixel overlap
         }
 
