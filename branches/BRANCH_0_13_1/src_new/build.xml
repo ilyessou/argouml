@@ -666,6 +666,12 @@ ${Name} Build file
   <!-- Creates the whole distribution with adjusted version number         -->
   <!-- =================================================================== -->
   <target name="dist-release">
+
+	<!-- Things that are needed to get this through. -->
+	<property name="argo.root.dir" value=".."/>
+	<property name="Name" value="ArgoUML"/>
+	<property name="name" value="argouml"/>
+
         <!-- ====================================================== -->
         <!-- Load all default information here so that no overrides -->
         <!-- can be done either intentionally or accidentally.      -->
