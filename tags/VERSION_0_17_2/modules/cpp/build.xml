@@ -1,0 +1,325 @@
+<?xml version="1.0"?>
+
+<!-- ===========================================================================
+
+                     * ================================ *
+                     |  How to build ArgoUML C++ module |
+                     * ================================ *
+
+           Adaption from the FOP build.xml written by Stefano Mazzocchi
+                by Giacomo Pati with some addition by Fotis Jannidis
+           Adapted by Andreas Rueckert, Alejandro Ramirez and Andrew Smith
+           Yet even more adaptations by Luis Sergio Oliveira 
+                       [There's no end to this story!...]
+
+
+Introduction
+============
+
+ArgoUML is a free UML tool. It is written entirely in Java.
+The homepage of Argo is http://argouml.tigris.org
+
+ArgoUML has modules to provide specific functionalities, which may be 
+kept apart from the core. Such is this module, which intent is to provide C++ 
+round-trip engineering. The modules depend on ArgoUML, so, you'll find most 
+convenient to start by looking at the ArgoUML Cookbook for help in giving the 
+first steps.
+
+Installing the build tools
+==========================
+
+No specific requirements besides those of ArgoUML. So, go to Argo's cookbook for 
+help.
+
+Building instructions 
+=====================
+
+First you must be capable of building ArgoUML. Look in the cookbook for 
+instructions. Them, its just more of the same, now with this Ant script and its 
+specific targets.
+
+Property Settings
+=================
+
+These are set in the init target, starting by loading the properties in the 
+./module.properties file. Due to the way Ant sets properties you may override 
+all settings within init in that file. If you're just interested in building 
+the module you'll find that no settings needs to be made.
+
+Build targets
+=============
+
+run build with the option -projecthelp
+
+====================================== FAQ =====================================
+
+1) Why some of the classes present in the original jar are not built any more?
+
+The ArgoUML build system is very flexible: if a module requires a package that
+is not present in the classpath at build time, the module is skipped but
+the build process is not stopped.
+
+2) I see a lot of warnings starting like this: "Warning: file modified in the future:"
+Sometimes ant gives out this warnings, but the build is finished without any problems
+
+3) "ant run" doesn't work, XML classes are not found, what's wrong?
+Maybe you have hard-coded your ANT_HOME variable in the ant start-script. This way it
+doesn't find it's own XML-libs. You need to set ANT_HOME in your shell.
+
+
+============================================================================ -->
+
+<project name="argouml-cpp-module" default="install" basedir=".">
+
+<description>
+****************************** ArgoUML C++ module ******************************
+The ArgoUML C++ module provides C++ language support for ArgoUML. It enables 
+the generation of C++ source code and C++ notation (in the source properties tab 
+within ArgoUML).
+This module will in the future provide more C++ features, like reverse 
+engineering of C++ code, support for built-in types and standard libraries, and 
+round-trip engineering for C++ projects.
+</description>
+
+  <!-- =================================================================== -->
+  <!-- Initialization target                                               -->
+  <!-- =================================================================== -->
+
+ <target name="init" 
+         description="initializes the Ant script environment for the other targets">
+
+    <tstamp/>
+
+    <property file="module.properties"/>
+
+    <property name="Name" value="ArgoModule-${argo.module.name}"/>
+    <property name="name" value="argomodule-${argo.module.name}"/>
+
+    <property name="argo.root" value="../.."/>
+
+    <property name="module.root" value="${argo.root}/modules/${argo.module.name}"/>
+    <property name="argo.src.dir" value="${argo.root}/src_new"/>
+    <property name="module.src.dir" value="${module.root}/src"/>
+    <property name="module.tests.src" value="${module.root}/tests"/>
+
+    <property name="argo.build.dir" value="${argo.root}/build"/>
+    <property name="argo.build.src" value="${argo.root}/src_new"/>
+
+    <property name="module.lib.dir" value="${module.root}/lib"/>
+
+    <property name="manifest" value="manifest.mf"/>
+    <property name="manifest.src" value="${module.src.dir}/org/${manifest}"/>
+
+    <property name="module.build.dir" value="${module.root}/build"/>
+    <property name="module.build.dest" value="${module.build.dir}/classes"/>
+    <property name="module.tests.build" value="${module.build.dir}/tests"/>
+    <property name="module.tests.classes" value="${module.tests.build}/classes"/>
+    <property name="module.tests.reports" value="${module.tests.build}/reports"/>
+    <property name="argo.build.dest" value="${argo.build.dir}/classes"/>
+
+    <property name="argo.jarfile"
+              value="${argo.build.dir}/argouml.jar"/>
+    <property name="module.jarfile.name"
+              value="${argo.module.jarfile}.jar"/>
+    <property name="module.jarfile"
+              value="${module.build.dir}/${module.jarfile.name}"/>
+
+    <property file="${user.home}/.argo.ant.properties"/>
+    <property file="${user.home}/.ant.properties"/>
+
+    <property name="debug" value="off"/>
+    <property name="optimize" value="on"/>
+    <property name="deprecation" value="on"/>
+    <property name="developer.lib.dir" value="${argo.build.dir}"/>
+
+    <!-- Load ArgoUML properties, including the version -->
+    <property name="argo.root.dir" value="${argo.root}"/>
+    <property file="${argo.src.dir}/default.properties"/>
+    <property name="module.version" value="${argo.core.version}-${DSTAMP}-${TSTAMP}"/>
+
+    <path id="module.compile.classpath">
+      <fileset dir="${argo.build.dir}">
+          <include name="argouml.jar" />
+          <include name="nsuml.jar" />
+          <include name="ocl-argo.jar" />
+          <include name="antlrall.jar" />
+          <include name="log4j.jar" />
+          <include name="gef.jar" />
+      </fileset>
+    </path>
+    
+    <path id="ant.optional.classpath">
+      <pathelement location="${ant.home}/optional.jar"/>
+      <pathelement location="${junit.jar.path}"/>
+    </path>
+
+    <taskdef classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask" name="junit">
+      <classpath>
+	 <path refid="ant.optional.classpath"/>
+      </classpath>
+    </taskdef>
+
+    <taskdef classname="org.apache.tools.ant.taskdefs.optional.junit.XMLResultAggregator" name="junitreport">
+      <classpath>
+	 <path refid="ant.optional.classpath"/>
+      </classpath>
+    </taskdef>
+
+    <echo message="------------------- ${Name} ${module.version} ----------------"/>
+  </target>
+
+  <!-- Note this file can only make Ant display values set in the file correctly, -->
+  <!-- but external values in the environment or properties file will be operational.  -->
+
+  <!-- =================================================================== -->
+  <!-- Prepares the build directory                                        -->
+  <!-- =================================================================== -->
+  <target name="prepare" depends="init">
+    <!-- create directories -->
+    <echo message="Preparing the build directories"/>
+    <mkdir dir="${module.build.dest}"/>
+    <mkdir dir="${module.tests.classes}"/>
+    <mkdir dir="${module.tests.reports}"/>
+  </target>
+
+  <!-- =================================================================== -->
+  <!-- Compiles the source directory                                       -->
+  <!-- =================================================================== -->
+  <target name="compile" depends="init, prepare" 
+          description="compiles the module source code"> 
+
+    <echo message="Compiling the sources"/>
+
+    <javac srcdir="${module.src.dir}"
+           destdir="${module.build.dest}"
+           excludes="*.txt,*.bat,*.xml,*.sh"
+           debug="${debug}"
+           deprecation="${deprecation}"
+           optimize="${optimize}">
+        <classpath>
+            <path refid="module.compile.classpath"/>
+        </classpath>
+     </javac>
+  </target>
+
+
+  <!-- =================================================================== -->
+  <!-- Creates the class package                                           -->
+  <!-- =================================================================== -->
+  <target name="package" depends="init, compile" 
+          description="create the module jar">
+    <filter token="version" value="${module.version}"/>
+    <copy file="${manifest.src}" tofile="${module.build.dest}/${manifest}" filtering="on" overwrite="on" />
+    <jar jarfile="${module.jarfile}"
+         basedir="${module.build.dest}"
+         includes="org/argouml/**"
+         excludes="*.txt,*.bat,*.xml,*.sh,${manifest}"
+         manifest="${module.build.dest}/${manifest}"/>
+  </target>
+
+  <!-- =================================================================== -->
+  <!-- Run ArgoUML from compiled sources                                   -->
+  <!-- =================================================================== -->
+  <target name="run" depends="init, package" 
+          description="run ArgoUML using the built module jar">
+    <echo message="--- Executing ${Name} ---"/>
+    <java classname="org.argouml.application.Main"
+          fork="yes">
+      <classpath>
+        <fileset dir="${module.build.dir}">
+            <include name="${module.jarfile.name}" />
+        </fileset>
+        <path refid="module.compile.classpath"/>
+        <!-- maybe this will be used in the future, but, for now it makes 
+             this build target fail -->
+        <!--
+        <fileset dir="${module.lib.dir}">
+            <include name="*.jar" />
+        </fileset>
+        -->
+      </classpath>
+
+    </java>
+  </target>
+
+  <!-- =================================================================== -->
+  <!-- Clean targets                                                       -->
+  <!-- =================================================================== -->
+  <target name="clean" depends="init" 
+          description="cleanup all files and directories created by this build script">
+    <delete file="${developer.lib.dir}/ext/${module.jarfile.name}"/>
+    <delete file="${argo.build.dir}/ext/${module.jarfile.name}"/>
+    <delete dir="${module.build.dir}"/>
+  </target>
+
+  <!-- =================================================================== -->
+  <!-- Move the jar file into the extension directory.                     -->
+  <!-- =================================================================== -->
+  <target name="install" depends="init, package" 
+          description="install the module in the developer build of ArgoUML">
+    <copy todir="${developer.lib.dir}/ext">
+      <fileset dir="${module.build.dir}" includes="${module.jarfile.name}"/>
+    </copy>
+  </target>
+
+  <!-- =================================================================== -->
+  <!-- Compiles the tests directory                                        -->
+  <!-- =================================================================== -->
+  <target name="compile-tests" depends="compile"> 
+
+    <echo message="Compiling the unit tests"/>
+
+    <javac srcdir="${module.tests.src}"
+           destdir="${module.tests.classes}"
+           debug="true"
+           deprecation="false"
+           optimize="false">
+      <classpath>
+        <pathelement location="${module.build.dest}"/>
+        <!-- reuse the ArgoUML properties -->
+        <path refid="module.compile.classpath"/>
+        <pathelement location="${junit.jar.path}"/>
+      </classpath>
+     </javac>
+  </target>
+
+  <!-- =================================================================== -->
+  <!-- Run the module unit tests                                           -->
+  <!-- =================================================================== -->
+  <target name="tests" depends="init, compile-tests" 
+          description="run the module unit tests"> 
+
+    <echo message="running the unit tests"/>
+    
+    <junit errorproperty="junit.failure" fork="yes" haltonfailure="false" 
+           maxmemory="48M" printsummary="true">
+          <!-- use different log4j configuration for testing -->
+      <sysproperty key="log4j.configuration" value="org/argouml/resource/full_console.lcf"/>
+      <classpath>
+        <path refid="module.compile.classpath"/>
+        <pathelement location="${module.build.dest}"/>
+        <pathelement location="${junit.jar.path}"/>
+        <pathelement location="${module.tests.classes}"/>
+      </classpath>
+      <formatter type="xml"/>
+      <batchtest todir="${module.tests.reports}">
+        <fileset dir="${module.tests.src}">
+          <include name="org/argouml/**/Test*.java"/>
+        </fileset>
+      </batchtest>
+    </junit>
+    <antcall target="create-tests-report"/>
+  </target>
+  
+  <target name="create-tests-report">
+    <echo message="Creating unit tests report to ${module.tests.reports}/html/index.html"/>
+    
+    <junitreport todir="${module.tests.reports}">
+      <fileset dir="${module.tests.reports}">
+        <include name="TEST-*.xml"/>
+      </fileset>
+      <report format="frames" todir="${module.tests.reports}/html"/>
+    </junitreport>
+  </target>
+
+</project>
