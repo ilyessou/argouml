@@ -26,7 +26,6 @@ package org.argouml.uml.diagram.static_structure.ui;
 
 import javax.swing.Action;
 
-import org.apache.log4j.Logger;
 import org.argouml.kernel.ProjectManager;
 import org.argouml.model.ModelFacade;
 import org.argouml.ui.CmdCreateNode;
@@ -35,6 +34,7 @@ import org.argouml.uml.diagram.static_structure.ClassDiagramGraphModel;
 import org.argouml.uml.diagram.ui.ActionAddAssociation;
 import org.argouml.uml.diagram.ui.RadioAction;
 import org.argouml.uml.diagram.ui.UMLDiagram;
+import org.argouml.uml.diagram.ui.ActionAddNote;
 import org.argouml.uml.diagram.ui.ActionAddAttribute;
 import org.argouml.uml.diagram.ui.ActionAddOperation;
 import org.tigris.gef.base.LayerPerspective;
@@ -45,8 +45,6 @@ import org.tigris.gef.base.ModeCreatePolyEdge;
  * @author jrobbins@ics.uci.edy
  */
 public class UMLClassDiagram extends UMLDiagram {
-
-    private static final Logger LOG = Logger.getLogger(UMLClassDiagram.class);
 
     ////////////////
     // actions for toolbar
@@ -115,36 +113,23 @@ public class UMLClassDiagram extends UMLDiagram {
 
     ////////////////////////////////////////////////////////////////
     // contructors
-    private static int classDiagramSerial = 1;
+    protected static int _ClassDiagramSerial = 1;
 
-    /**
-     * constructor
-     */
     public UMLClassDiagram() {
         super();
     }
 
-    /**
-     * @param name the name for the new diagram 
-     * @param m the namespace for the new diagram
-     */
     public UMLClassDiagram(String name, Object m) {
         super(name, /*(MNamespace)*/ m);
     }
 
-    /**
-     * @param m the namespace
-     */
     public UMLClassDiagram(Object m) {
         this(getNewDiagramName(), m);
     }
 
-    /**
-     * @see org.argouml.uml.diagram.ui.UMLDiagram#setNamespace(java.lang.Object)
-     */
     public void setNamespace(Object handle) {
         if (!ModelFacade.isANamespace(handle)) {
-	    LOG.error("Illegal argument. "
+	    cat.error("Illegal argument. "
 		      + "Object " + handle + " is not a namespace");
 	    throw new IllegalArgumentException("Illegal argument. "
 					       + "Object " + handle
@@ -165,8 +150,6 @@ public class UMLClassDiagram extends UMLDiagram {
     /**
      * Get the actions from which to create a toolbar or equivilent
      * graphic trigger.
-     *
-     * @see org.argouml.uml.diagram.ui.UMLDiagram#getUmlActions()
      */
     protected Object[] getUmlActions() {
         Object actions[] = {
@@ -179,10 +162,9 @@ public class UMLClassDiagram extends UMLDiagram {
             _actionGeneralize, null,
             _actionInterface,
             _actionRealize, null,
-            ActionAddAttribute.getSingleton(),
-            ActionAddOperation.getSingleton(), null,
-            _actionComment,
-            _actionCommentLink
+            ActionAddAttribute.SINGLETON,
+            ActionAddOperation.SINGLETON, null,
+            ActionAddNote.SINGLETON
         };
 
         return actions;
@@ -226,8 +208,8 @@ public class UMLClassDiagram extends UMLDiagram {
      */
     protected static String getNewDiagramName() {
         String name = null;
-        name = "Class Diagram " + classDiagramSerial;
-        classDiagramSerial++;
+        name = "Class Diagram " + _ClassDiagramSerial;
+        _ClassDiagramSerial++;
         if (!ProjectManager.getManager().getCurrentProject()
 	        .isValidDiagramName(name)) {
             name = getNewDiagramName();

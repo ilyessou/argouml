@@ -48,34 +48,25 @@ public class ActionEdgesDisplay extends UMLAction {
     // static variables
 
     // compartments
-    private static UMLAction showEdges
+    public static UMLAction ShowEdges
         = new ActionEdgesDisplay(true, "Show All Edges");
-    private static UMLAction hideEdges
+    public static UMLAction HideEdges
         = new ActionEdgesDisplay(false, "Hide All Edges");
 
-    private boolean show;
+    private boolean _show;
 
     ////////////////////////////////////////////////////////////////
     // constructors
 
-    /**
-     * The constructor.
-     * 
-     * @param showEdge to show or not to show
-     * @param desc the name
-     */
-    protected ActionEdgesDisplay(boolean showEdge, String desc) {
+    protected ActionEdgesDisplay(boolean show, String desc) {
         super(desc, NO_ICON);
-        show = showEdge;
+        _show = show;
     }
 
 
     ////////////////////////////////////////////////////////////////
     // main methods
 
-    /**
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-     */
     public void actionPerformed(ActionEvent ae) {
         ArgoDiagram d = ProjectManager.getManager()
                 .getCurrentProject().getActiveDiagram();
@@ -88,7 +79,7 @@ public class ActionEdgesDisplay extends UMLAction {
             Selection sel = (Selection) e.nextElement();
             Object owner = sel.getContent().getOwner();
 
-            if (show) { // add
+            if (_show) { // add
                 mgm.addNodeRelatedEdges(owner);
             }
             else { // remove
@@ -105,27 +96,8 @@ public class ActionEdgesDisplay extends UMLAction {
         }
     }
 
-    /**
-     * @see org.argouml.uml.ui.UMLAction#shouldBeEnabled()
-     */
     public boolean shouldBeEnabled() { 
         return true; 
-    }
-
-
-    /**
-     * @return Returns the showEdges.
-     */
-    public static UMLAction getShowEdges() {
-        return showEdges;
-    }
-
-
-    /**
-     * @return Returns the hideEdges.
-     */
-    public static UMLAction getHideEdges() {
-        return hideEdges;
     }
 
 } /* end class ActionEdgesDisplay */

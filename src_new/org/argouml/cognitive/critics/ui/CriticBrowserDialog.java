@@ -81,7 +81,10 @@ public class CriticBrowserDialog extends ArgoDialog
 	       ItemListener, 
 	       DocumentListener 
 {
-    private static final Logger LOG =
+    /**
+     * @deprecated by Linus Tolke as of 0.16. Will be private.
+     */
+    protected static Logger cat =
 	Logger.getLogger(CriticBrowserDialog.class);
     
     public static int _numCriticBrowser = 0;
@@ -348,7 +351,7 @@ public class CriticBrowserDialog extends ArgoDialog
     }
 
     public void setTargetUseClarifiers() {
-	LOG.debug("setting clarifier usage rule");
+	cat.debug("setting clarifier usage rule");
     }
 
     ////////////////////////////////////////////////////////////////
@@ -358,38 +361,38 @@ public class CriticBrowserDialog extends ArgoDialog
     public void actionPerformed(ActionEvent e) {
 	super.actionPerformed(e);
 	if (e.getSource() == _goButton) {
-	    LOG.debug("TODO: go!");
+	    cat.debug("TODO: go!");
 	    return;
 	}
 	if (e.getSource() == _networkButton) {
-	    LOG.debug("TODO: network!");
+	    cat.debug("TODO: network!");
 	    return;
 	}
 	if (e.getSource() == _configButton) {
-	    LOG.debug("TODO: config!");
+	    cat.debug("TODO: config!");
 	    return;
 	}
 	if (e.getSource() == _wakeButton) {
 	    _target.unsnooze();
 	    return;
 	}
-	LOG.debug("unknown src in CriticBrowserDialog: " + e.getSource());
+	cat.debug("unknown src in CriticBrowserDialog: " + e.getSource());
     }
 
     public void valueChanged(ListSelectionEvent lse) {
 	if (lse.getValueIsAdjusting()) return;
 	Object src = lse.getSource();
 	if (src != _table.getSelectionModel()) {
-	    LOG.debug("src = " + src);
+	    cat.debug("src = " + src);
 	    return;
 	}
-	LOG.debug("got valueChanged from " + src);
+	cat.debug("got valueChanged from " + src);
 	int row = _table.getSelectedRow();
 	setTarget(_critics.get(row));
     }
 
     public void insertUpdate(DocumentEvent e) {
-	LOG.debug(getClass().getName() + " insert");
+	cat.debug(getClass().getName() + " insert");
 	Document hDoc = _headline.getDocument();
 	Document miDoc = _moreInfo.getDocument();
 	Document dDoc = _desc.getDocument();
@@ -401,7 +404,7 @@ public class CriticBrowserDialog extends ArgoDialog
     public void removeUpdate(DocumentEvent e) { insertUpdate(e); }
 
     public void changedUpdate(DocumentEvent e) {
-	LOG.debug(getClass().getName() + " changed");
+	cat.debug(getClass().getName() + " changed");
 	// Apparently, this method is never called.
     }
 
@@ -413,7 +416,7 @@ public class CriticBrowserDialog extends ArgoDialog
 	else if (src == _useClar) {
 	    setTargetUseClarifiers();
 	}
-	else LOG.debug("unknown itemStateChanged src: " + src);
+	else cat.debug("unknown itemStateChanged src: " + src);
     }
 
 } /* end class CriticBrowserDialog */
@@ -424,9 +427,11 @@ public class CriticBrowserDialog extends ArgoDialog
 class TableModelCritics extends AbstractTableModel
     implements VetoableChangeListener, DelayedVChangeListener 
 {
-    private static final Logger LOG =
+    /**
+     * @deprecated by Linus Tolke as of 0.16. Will be private.
+     */
+    protected static Logger cat =
 	Logger.getLogger(TableModelCritics.class);
-
     ////////////////
     // instance varables
     List _target;
@@ -478,7 +483,7 @@ class TableModelCritics extends AbstractTableModel
     }
 
     public void setValueAt(Object aValue, int rowIndex, int columnIndex)  {
-	LOG.debug("setting table value " + rowIndex + ", " + columnIndex);
+	cat.debug("setting table value " + rowIndex + ", " + columnIndex);
 	if (columnIndex != 0) return;
 	if (!(aValue instanceof Boolean)) return;
 	Boolean enable = (Boolean) aValue;

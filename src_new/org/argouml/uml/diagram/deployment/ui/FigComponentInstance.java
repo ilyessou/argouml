@@ -34,11 +34,11 @@ import java.awt.Dimension;
 import java.awt.Rectangle;
 import java.awt.event.MouseEvent;
 import java.beans.PropertyVetoException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Vector;
 
+import org.apache.log4j.Logger;
 import org.argouml.application.api.Notation;
 import org.argouml.model.ModelFacade;
 import org.argouml.uml.diagram.ui.FigEdgeModelElement;
@@ -56,40 +56,41 @@ import org.tigris.gef.presentation.FigText;
  * Class to display graphics for a UML ComponentInstance in a diagram.
  */
 public class FigComponentInstance extends FigNodeModelElement {
-    private static final int OVERLAP = 4;
+    /**
+     * @deprecated by Linus Tolke as of 0.15.4. Use your own logger in your
+     * class. This will be removed.
+     */
+    protected static Logger cat =
+        Logger.getLogger(FigComponentInstance.class);
+    ////////////////////////////////////////////////////////////////
+    // instance variables
 
-    private FigRect cover;
-    private FigRect upperRect;
-    private FigRect lowerRect;
+    public static int OVERLAP = 4;
+
+    protected FigRect _cover;
+    protected FigRect _upperRect;
+    protected FigRect _lowerRect;
 
     ////////////////////////////////////////////////////////////////
     // constructors
 
-    /**
-     * Constructor.
-     */
     public FigComponentInstance() {
-        cover = new FigRect(10, 10, 120, 80, Color.black, Color.white);
-        upperRect = new FigRect(0, 20, 20, 10, Color.black, Color.white);
-        lowerRect = new FigRect(0, 40, 20, 10, Color.black, Color.white);
+        _cover = new FigRect(10, 10, 120, 80, Color.black, Color.white);
+        _upperRect = new FigRect(0, 20, 20, 10, Color.black, Color.white);
+        _lowerRect = new FigRect(0, 40, 20, 10, Color.black, Color.white);
 
         getNameFig().setLineWidth(0);
         getNameFig().setFilled(false);
         getNameFig().setUnderline(true);
 
-        addFig(getBigPort());
-        addFig(cover);
+        addFig(_bigPort);
+        addFig(_cover);
         addFig(getStereotypeFig());
         addFig(getNameFig());
-        addFig(upperRect);
-        addFig(lowerRect);
+        addFig(_upperRect);
+        addFig(_lowerRect);
     }
 
-    /**
-     * Constructor that hooks the Fig into an existing UML element
-     * @param gm ignored
-     * @param node the UML element
-     */
     public FigComponentInstance(GraphModel gm, Object node) {
         this();
         setOwner(node);
@@ -100,25 +101,19 @@ public class FigComponentInstance extends FigNodeModelElement {
         updateBounds();
     }
 
-    /**
-     * @see org.argouml.uml.diagram.ui.FigNodeModelElement#placeString()
-     */
     public String placeString() {
         return "new ComponentInstance";
     }
 
-    /**
-     * @see java.lang.Object#clone()
-     */
     public Object clone() {
         FigComponentInstance figClone = (FigComponentInstance) super.clone();
         Iterator it = figClone.getFigs(null).iterator();
-        figClone.setBigPort((FigRect) it.next());
-        figClone.cover = (FigRect) it.next();
+        figClone._bigPort = (FigRect) it.next();
+        figClone._cover = (FigRect) it.next();
         figClone.setStereotypeFig((FigText) it.next());
         figClone.setNameFig((FigText) it.next());
-        figClone.upperRect = (FigRect) it.next();
-        figClone.lowerRect = (FigRect) it.next();
+        figClone._upperRect = (FigRect) it.next();
+        figClone._lowerRect = (FigRect) it.next();
 
         return figClone;
     }
@@ -126,30 +121,21 @@ public class FigComponentInstance extends FigNodeModelElement {
     ////////////////////////////////////////////////////////////////
     // acessors
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#setLineColor(java.awt.Color)
-     */
     public void setLineColor(Color c) {
         //     super.setLineColor(c);
-        cover.setLineColor(c);
+        _cover.setLineColor(c);
         getStereotypeFig().setFilled(false);
         getStereotypeFig().setLineWidth(0);
         getNameFig().setFilled(false);
         getNameFig().setLineWidth(0);
-        upperRect.setLineColor(c);
-        lowerRect.setLineColor(c);
+        _upperRect.setLineColor(c);
+        _lowerRect.setLineColor(c);
     }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#makeSelection()
-     */
     public Selection makeSelection() {
         return new SelectionComponentInstance(this);
     }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#getMinimumSize()
-     */
     public Dimension getMinimumSize() {
         Dimension stereoDim = getStereotypeFig().getMinimumSize();
         Dimension nameDim = getNameFig().getMinimumSize();
@@ -159,27 +145,24 @@ public class FigComponentInstance extends FigNodeModelElement {
         return new Dimension(w, h);
     }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#setBounds(int, int, int, int)
-     */
     public void setBounds(int x, int y, int w, int h) {
         if (getNameFig() == null) {
             return;
 	}
 
         Rectangle oldBounds = getBounds();
-        getBigPort().setBounds(x, y, w, h);
-        cover.setBounds(x, y, w, h);
+        _bigPort.setBounds(x, y, w, h);
+        _cover.setBounds(x, y, w, h);
 
         Dimension stereoDim = getStereotypeFig().getMinimumSize();
         Dimension nameDim = getNameFig().getMinimumSize();
 
         if (h < 50) {
-            upperRect.setBounds(x - 10, y + h / 6, 20, 10);
-            lowerRect.setBounds(x - 10, y + 3 * h / 6, 20, 10);
+            _upperRect.setBounds(x - 10, y + h / 6, 20, 10);
+            _lowerRect.setBounds(x - 10, y + 3 * h / 6, 20, 10);
         } else {
-            upperRect.setBounds(x - 10, y + 13, 20, 10);
-            lowerRect.setBounds(x - 10, y + 39, 20, 10);
+            _upperRect.setBounds(x - 10, y + 13, 20, 10);
+            _lowerRect.setBounds(x - 10, y + 39, 20, 10);
         }
 
         getStereotypeFig().setBounds(x + 1, y + 1, w - 2, stereoDim.height);
@@ -198,17 +181,11 @@ public class FigComponentInstance extends FigNodeModelElement {
     ////////////////////////////////////////////////////////////////
     // user interaction methods
 
-    /**
-     * @see java.awt.event.MouseListener#mouseClicked(java.awt.event.MouseEvent)
-     */
     public void mouseClicked(MouseEvent me) {
         super.mouseClicked(me);
         setLineColor(Color.black);
     }
 
-    /**
-     * @see java.awt.event.MouseListener#mousePressed(java.awt.event.MouseEvent)
-     */
     public void mousePressed(MouseEvent me) {
         super.mousePressed(me);
         Editor ce = Globals.curEditor();
@@ -217,9 +194,6 @@ public class FigComponentInstance extends FigNodeModelElement {
 	    ((SelectionComponentInstance) sel).hideButtons();
     }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#setEnclosingFig(org.tigris.gef.presentation.Fig)
-     */
     public void setEnclosingFig(Fig encloser) {
 
         if (encloser != null
@@ -233,24 +207,18 @@ public class FigComponentInstance extends FigNodeModelElement {
             }
             super.setEnclosingFig(encloser);
 
-            // Vector figures = getEnclosedFigs();
+            Vector figures = getEnclosedFigs();
+
             if (getLayer() != null) {
                 // elementOrdering(figures);
                 Collection contents = getLayer().getContents(null);
-                Collection bringToFrontList = new ArrayList();
                 Iterator it = contents.iterator();
                 while (it.hasNext()) {
                     Object o = it.next();
                     if (o instanceof FigEdgeModelElement) {
-                        bringToFrontList.add(o);
-                        
+                        FigEdgeModelElement figedge = (FigEdgeModelElement) o;
+                        figedge.getLayer().bringToFront(figedge);
                     }
-                }
-                Iterator bringToFrontIter = bringToFrontList.iterator();
-                while (bringToFrontIter.hasNext()) {
-                    FigEdgeModelElement figEdge = 
-                        (FigEdgeModelElement) bringToFrontIter.next();
-                    figEdge.getLayer().bringToFront(figEdge);
                 }
             }
         } else if (encloser == null && getEnclosingFig() != null) {
@@ -259,7 +227,7 @@ public class FigComponentInstance extends FigNodeModelElement {
                     .getEnclosedFigs()
                     .removeElement(
 				   this);
-            setEncloser(null);
+            _encloser = null;
         }
         /*
 	  super.setEnclosingFig(encloser);
@@ -312,10 +280,6 @@ public class FigComponentInstance extends FigNodeModelElement {
         */
     }
 
-    /**
-     * TODO: This is not used anywhere. Can we remove it?
-     * @param figures ?
-     */
     public void setNode(Vector figures) {
         int size = figures.size();
         if (figures != null && (size > 0)) {
@@ -329,9 +293,6 @@ public class FigComponentInstance extends FigNodeModelElement {
         }
     }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#getUseTrapRect()
-     */
     public boolean getUseTrapRect() {
         return true;
     }
@@ -339,9 +300,6 @@ public class FigComponentInstance extends FigNodeModelElement {
     ////////////////////////////////////////////////////////////////
     // internal methods
 
-    /**
-     * @see org.argouml.uml.diagram.ui.FigNodeModelElement#textEdited(org.tigris.gef.presentation.FigText)
-     */
     protected void textEdited(FigText ft) throws PropertyVetoException {
         //super.textEdited(ft);
         Object coi = /*(MComponentInstance)*/ getOwner();
@@ -355,9 +313,6 @@ public class FigComponentInstance extends FigNodeModelElement {
         }
     }
 
-    /**
-     * @see org.argouml.uml.diagram.ui.FigNodeModelElement#updateStereotypeText()
-     */
     protected void updateStereotypeText() {
         Object me = /*(MModelElement)*/ getOwner();
         if (me == null)
@@ -403,12 +358,13 @@ public class FigComponentInstance extends FigNodeModelElement {
                 baseStr += ", " + ModelFacade.getName(it.next());
             }
         }
-        if (isReadyToEdit()) {
+        if (_readyToEdit) {
             if (nameStr == "" && baseStr == "")
                 getNameFig().setText("");
             else
                 getNameFig().setText(nameStr.trim() + " : " + baseStr);
         }
+        Dimension nameMin = getNameFig().getMinimumSize();
         Rectangle r = getBounds();
         setBounds(r.x, r.y, r.width, r.height);
     }

@@ -55,15 +55,13 @@ public class CollaborationsFactory extends AbstractUmlModelFactory {
 
     /** Singleton instance.
      */
-    private static CollaborationsFactory singleton =
+    private static CollaborationsFactory SINGLETON =
         new CollaborationsFactory();
 
     /** Singleton instance access method.
-     *
-     * @return the singleton
      */
     public static CollaborationsFactory getFactory() {
-        return singleton;
+        return SINGLETON;
     }
 
     /** Don't allow instantiation
@@ -138,7 +136,7 @@ public class CollaborationsFactory extends AbstractUmlModelFactory {
 
     /**
      * Creates a classifierrole and adds it to the given collaboration
-     * @param collaboration the given collaboration
+     * @param collaboration
      * @return the created classifier role
      */
     public Object buildClassifierRole(Object collaboration) {
@@ -149,13 +147,10 @@ public class CollaborationsFactory extends AbstractUmlModelFactory {
         }
         throw new IllegalArgumentException("Argument is not a collaboration");
     }
-
     /**
      * Builds a default collaboration not attached to a classifier
-     *
-     * @param handle the namespace for the collaboration
-     * @return the created collaboration
      */
+
     public MCollaboration buildCollaboration(Object handle) {
         if (ModelFacade.isANamespace(handle)) {
             MNamespace namespace = (MNamespace) handle;
@@ -170,14 +165,15 @@ public class CollaborationsFactory extends AbstractUmlModelFactory {
 
         }
         throw new IllegalArgumentException("Argument is not a namespace");
+
     }
 
     /**
      * Builds a collaboration that is owned by a certain namespace and
      * represents the given represented element.
      *
-     * @param namespace the namespace for the collaboration
-     * @param representedElement the represented element
+     * @param namespace
+     * @param representedElement
      * @return the created collaboration
      */
     public Object buildCollaboration(
@@ -207,11 +203,8 @@ public class CollaborationsFactory extends AbstractUmlModelFactory {
 
     /**
      * Builds an interaction belonging to some collaboration
-     *
-     * @param handle the collaboration that will be the context 
-     * for the new interaction
-     * @return the newly build interaction
      */
+
     public MInteraction buildInteraction(Object handle) {
         if (ModelFacade.isACollaboration(handle)) {
             MCollaboration collab = (MCollaboration) handle;
@@ -226,9 +219,6 @@ public class CollaborationsFactory extends AbstractUmlModelFactory {
 
     /**
      * Builds an associationendrole based on some classifierrole
-     *
-     * @param atype the classifierrole
-     * @return the associationendrole
      */
     public MAssociationEndRole buildAssociationEndRole(Object atype) {
         MClassifierRole type = (MClassifierRole) atype;
@@ -239,10 +229,6 @@ public class CollaborationsFactory extends AbstractUmlModelFactory {
 
     /**
      * Builds a binary associationrole on basis of two classifierroles
-     *
-     * @param from the first classifierrole
-     * @param to the second classifierrole
-     * @return the newly build associationrole
      */
     public MAssociationRole buildAssociationRole(Object /*MClassifierRole*/
     from, Object
@@ -266,13 +252,6 @@ public class CollaborationsFactory extends AbstractUmlModelFactory {
     /**
      * Builds a binary associationrole on basis of two classifierroles,
      * navigation and aggregation
-     *
-     * @param from   the first classifierrole
-     * @param agg1   the first aggregationkind
-     * @param to     the second classifierrole
-     * @param agg2   the second aggregationkind
-     * @param unidirectional true if unidirectional
-     * @return the newly build assoc. role
      */
     public MAssociationRole buildAssociationRole(
         MClassifierRole from,
@@ -315,7 +294,7 @@ public class CollaborationsFactory extends AbstractUmlModelFactory {
      * the same collaboration as owner. This collaboration will be the
      * new owner of the associationrole.
      *
-     * @param link a UML Link
+     * @param link
      * @return the newly created association role (an Object)
      */
     public Object buildAssociationRole(Object link) {
@@ -363,8 +342,7 @@ public class CollaborationsFactory extends AbstractUmlModelFactory {
         message.setCommunicationConnection(role);
 
         if (role.getConnections().size() == 2) {
-            message.setSender(
-                    (MClassifierRole) role.getConnection(0).getType());
+            message.setSender((MClassifierRole) role.getConnection(0).getType());
             message.setReceiver(
                 (MClassifierRole) role.getConnection(1).getType());
 
@@ -425,10 +403,6 @@ public class CollaborationsFactory extends AbstractUmlModelFactory {
 
     /**
      * Builds a message within some collaboration or interaction.
-     *
-     * @param acollab a collaboration or interaction
-     * @param arole an associationrole
-     * @return the newly build message
      */
     public Object buildMessage(Object acollab, Object arole) {
 	if (ModelFacade.isACollaboration(acollab)) {
@@ -455,10 +429,6 @@ public class CollaborationsFactory extends AbstractUmlModelFactory {
 
     /**
      * Builds an activator for some message
-     *
-     * @param owner the owner
-     * @param interaction the interaction
-     * @return the newly build message
      */
     public MMessage buildActivator(MMessage owner, MInteraction interaction) {
         if (owner == null)
@@ -474,15 +444,9 @@ public class CollaborationsFactory extends AbstractUmlModelFactory {
         return activator;
     }
 
-    /**
-     * @param elem the associationendrole
-     */
     public void deleteAssociationEndRole(MAssociationEndRole elem) {
     }
 
-    /**
-     * @param elem the associationrole
-     */
     public void deleteAssociationRole(MAssociationRole elem) {
         Iterator it = elem.getMessages().iterator();
         while (it.hasNext()) {
@@ -490,27 +454,15 @@ public class CollaborationsFactory extends AbstractUmlModelFactory {
         }
     }
 
-    /**
-     * @param elem the UML element to be deleted
-     */
     public void deleteClassifierRole(MClassifierRole elem) {
     }
 
-    /**
-     * @param elem the UML element to be delete
-     */
     public void deleteCollaboration(MCollaboration elem) {
     }
 
-    /**
-     * @param elem the UML element to be delete
-     */
     public void deleteInteraction(MInteraction elem) {
     }
 
-    /**
-     * @param elem the UML element to be delete
-     */
     public void deleteMessage(MMessage elem) {
     }
 

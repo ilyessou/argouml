@@ -31,6 +31,7 @@ package org.argouml.uml.ui.behavior.state_machines;
 
 import org.argouml.i18n.Translator;
 import org.argouml.model.ModelFacade;
+import org.argouml.uml.ui.UMLComboBoxNavigator;
 import org.argouml.util.ConfigLoader;
 import org.tigris.gef.presentation.Fig;
 
@@ -47,10 +48,9 @@ public class PropPanelPseudostate extends PropPanelStateVertex {
 
         addField(Translator.localize("UMLMenu", "label.name"),
                 getNameTextField());
-//        addField(Translator.localize("UMLMenu", "label.stereotype"),
-//                new UMLComboBoxNavigator(this, Translator.localize("UMLMenu",
-//                        "tooltip.nav-stereo"), getStereotypeBox()));
-        addField(Translator.localize("UMLMenu", "label.stereotype"), getStereotypeBox());
+        addField(Translator.localize("UMLMenu", "label.stereotype"),
+                new UMLComboBoxNavigator(this, Translator.localize("UMLMenu",
+                        "tooltip.nav-stereo"), getStereotypeBox()));
         addField(Translator.localize("UMLMenu", "label.container"),
                 containerScroll);
 
@@ -87,7 +87,9 @@ public class PropPanelPseudostate extends PropPanelStateVertex {
                     getTitleLabel().setText("Join State");
             if (ModelFacade.equalsPseudostateKind(kind,
                     ModelFacade.BRANCH_PSEUDOSTATEKIND))
-                    getTitleLabel().setText("Choice State");
+                    /* TODO: This shall be changed into "Choice State" 
+                     * for the 0.17.1 release */
+                    getTitleLabel().setText("Branch State");
             if (ModelFacade.equalsPseudostateKind(kind,
                     ModelFacade.DEEPHISTORY_PSEUDOSTATEKIND))
                     getTitleLabel().setText("Deep History State");

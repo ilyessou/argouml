@@ -65,7 +65,7 @@ public final class ResourceLoaderWrapper {
     private static ImageIcon joinIcon =
 	ResourceLoader.lookupIconResource("Join");
     private static ImageIcon branchIcon =
-	ResourceLoader.lookupIconResource("Choice");
+	ResourceLoader.lookupIconResource("Branch");
     private static ImageIcon junctionIcon =
         ResourceLoader.lookupIconResource("Junction"); 
     private static ImageIcon finalStateIcon =
@@ -76,14 +76,6 @@ public final class ResourceLoaderWrapper {
 	ResourceLoader.lookupIconResource("SignalSending");
     private static ImageIcon commentIcon =
 	ResourceLoader.lookupIconResource("Note");
-    private static ImageIcon callStateIcon =
-        ResourceLoader.lookupIconResource("CallState");
-    private static ImageIcon objectFlowStateIcon =
-        ResourceLoader.lookupIconResource("ObjectFlowState");
-    private static ImageIcon subactivityStateIcon =
-        ResourceLoader.lookupIconResource("SubactivityState");
-
-
 
     private Hashtable iconCache = new Hashtable();
 
@@ -106,8 +98,12 @@ public final class ResourceLoaderWrapper {
 
     /**
      * Constructor for ResourceLoaderWrapper.
+     * 
+     * @deprecated by Linus Tolke as of 0.15.5. Will be private. Use
+     *             {@link #getResourceLoaderWrapper()}to get hold of the
+     *             singleton.
      */
-    private ResourceLoaderWrapper() {
+    public ResourceLoaderWrapper() {
 	super();
 	initResourceLoader();
     }
@@ -268,10 +264,10 @@ public final class ResourceLoaderWrapper {
 		if (helper.equalsINITIALKind(kind)) {
 		    icon = initialStateIcon;
 		}
-		if (helper.equalsDeepHistoryKind(kind)) {
+		if (helper.equalsDEEP_HISTORYKind(kind)) {
 		    icon = deepIcon;
 		}
-		if (helper.equalsShallowHistoryKind(kind)) {
+		if (helper.equalsSHALLOW_HISTORYKind(kind)) {
 		    icon = shallowIcon;
 		}
 		if (helper.equalsFORKKind(kind)) {
@@ -327,7 +323,7 @@ public final class ResourceLoaderWrapper {
 		    if (cName.endsWith("Impl")) {
 			cName = cName.substring(0, cName.length() - 4);
 		    }
-		    icon = lookupIconResource(cName);
+		    icon = getResourceLoaderWrapper().lookupIconResource(cName);
 		    if (icon != null) {
 			iconCache.put(value.getClass(), icon);
 		    }

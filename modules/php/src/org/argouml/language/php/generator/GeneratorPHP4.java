@@ -80,7 +80,7 @@ import ru.novosoft.uml.model_management.MPackage;
 /**
  * Generator class for PHP 4.x source code
  *
- * @author Kai Schr&ouml;der
+ * @author Kai Schröder
  * @since  ArgoUML 0.15.5
  */
 public class GeneratorPHP4
@@ -904,7 +904,7 @@ public class GeneratorPHP4
      * @return name of author(s) of this module
      */
     public final String getModuleAuthor() {
-        return "Kai Schr\u00F6der";
+        return "Kai Schröder";
     }
 
     /**
@@ -1846,12 +1846,5 @@ public class GeneratorPHP4
         }
 
         return null;
-    }
-    
-    /**
-     * @see org.argouml.application.api.NotationProvider2#generateActionState(java.lang.Object)
-     */
-    public String generateActionState(Object actionState) {       
-        return generateState(actionState);
     }
 }

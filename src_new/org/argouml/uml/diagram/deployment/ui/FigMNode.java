@@ -33,7 +33,6 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Rectangle;
 import java.awt.event.MouseEvent;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Vector;
@@ -56,36 +55,28 @@ public class FigMNode extends FigNodeModelElement {
     ////////////////////////////////////////////////////////////////
     // instance variables
 
-    private FigCube cover;
-    private FigRect test;
+    protected FigCube _cover;
+    protected FigRect _test;
 
     ////////////////////////////////////////////////////////////////
     // constructors
 
-    /**
-     * Main constructor - used for file loading.
-     */
     public FigMNode() {
-	setBigPort(new FigRect(10, 10, 200, 180));
-	cover = new FigCube(10, 10, 200, 180, Color.black, Color.white);
-	test = new FigRect(10, 10, 1, 1, Color.black, Color.white);
+	_bigPort = new FigRect(10, 10, 200, 180);
+	_cover = new FigCube(10, 10, 200, 180, Color.black, Color.white);
+	_test = new FigRect(10, 10, 1, 1, Color.black, Color.white);
 
 	getNameFig().setLineWidth(0);
 	getNameFig().setFilled(false);
 	getNameFig().setJustification(0);
 
-	addFig(getBigPort());
-	addFig(cover);
+	addFig(_bigPort);
+	addFig(_cover);
 	addFig(getStereotypeFig());
 	addFig(getNameFig());
-	addFig(test);
+	addFig(_test);
     }
 
-    /**
-     * Constructor which hooks the new Fig into an existing UML element
-     * @param gm ignored
-     * @param node the UML element
-     */
     public FigMNode(GraphModel gm, Object node) {
 	this();
 	setOwner(node);
@@ -95,51 +86,36 @@ public class FigMNode extends FigNodeModelElement {
 	}
     }
 
-    /**
-     * @see org.argouml.uml.diagram.ui.FigNodeModelElement#placeString()
-     */
     public String placeString() { return "new Node"; }
 
-    /**
-     * @see java.lang.Object#clone()
-     */
     public Object clone() {
 	FigMNode figClone = (FigMNode) super.clone();
 	Iterator it = figClone.getFigs(null).iterator();
-	figClone.setBigPort((FigRect) it.next());
-	figClone.cover = (FigCube) it.next();
+	figClone._bigPort = (FigRect) it.next();
+	figClone._cover = (FigCube) it.next();
 	figClone.setStereotypeFig((FigText) it.next());
 	figClone.setNameFig((FigText) it.next());
-	figClone.test = (FigRect) it.next();
+	figClone._test = (FigRect) it.next();
 	return figClone;
     }
 
     ////////////////////////////////////////////////////////////////
     // acessors
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#setLineColor(java.awt.Color)
-     */
     public void setLineColor(Color c) {
 	//     super.setLineColor(c);
-	cover.setLineColor(c);
+	_cover.setLineColor(c);
 	getStereotypeFig().setFilled(false);
 	getStereotypeFig().setLineWidth(0);
 	getNameFig().setFilled(false);
 	getNameFig().setLineWidth(0);
-	test.setLineColor(c);
+	_test.setLineColor(c);
     }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#makeSelection()
-     */
     public Selection makeSelection() {
 	return new SelectionNode(this);
     }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#getMinimumSize()
-     */
     public Dimension getMinimumSize() {
 	Dimension stereoDim = getStereotypeFig().getMinimumSize();
 	Dimension nameDim = getNameFig().getMinimumSize();
@@ -149,17 +125,14 @@ public class FigMNode extends FigNodeModelElement {
 	return new Dimension(w, h);
     }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#setBounds(int, int, int, int)
-     */
     public void setBounds(int x, int y, int w, int h) {
 	if (getNameFig() == null) {
 	    return;
 	}
 
 	Rectangle oldBounds = getBounds();
-	getBigPort().setBounds(x , y, w , h);
-	cover.setBounds(x , y, w, h);
+	_bigPort.setBounds(x , y, w , h);
+	_cover.setBounds(x , y, w, h);
 
 	Dimension stereoDim = getStereotypeFig().getMinimumSize();
 	Dimension nameDim = getNameFig().getMinimumSize();
@@ -174,47 +147,32 @@ public class FigMNode extends FigNodeModelElement {
     ////////////////////////////////////////////////////////////////
     // user interaction methods
 
-    /**
-     * @see java.awt.event.MouseListener#mouseClicked(java.awt.event.MouseEvent)
-     */
     public void mouseClicked(MouseEvent me) {
 	super.mouseClicked(me);
 	setLineColor(Color.black);
     }
 
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#setEnclosingFig(org.tigris.gef.presentation.Fig)
-     */
     public void setEnclosingFig(Fig encloser) {
 	super.setEnclosingFig(encloser);
 
 	Vector figures = getEnclosedFigs();
 
 	if (getLayer() != null) {
-            // elementOrdering(figures);
-            Collection contents = getLayer().getContents(null);
-            Collection bringToFrontList = new ArrayList();
-            Iterator it = contents.iterator();
-            while (it.hasNext()) {
-                Object o = it.next();
-                if (o instanceof FigEdgeModelElement) {
-                    bringToFrontList.add(o);
-                    
-                }
-            }
-            Iterator bringToFrontIter = bringToFrontList.iterator();
-            while (bringToFrontIter.hasNext()) {
-                FigEdgeModelElement figEdge = 
-                    (FigEdgeModelElement) bringToFrontIter.next();
-                figEdge.getLayer().bringToFront(figEdge);
-            }
-        }
+	    // elementOrdering(figures);
+	    Collection contents = getLayer().getContents(null);
+	    Iterator it = contents.iterator();
+	    while (it.hasNext()) {
+		Object o = it.next();
+		if (o instanceof FigEdgeModelElement) {
+		    FigEdgeModelElement figedge = (FigEdgeModelElement) o;
+		    figedge.getLayer().bringToFront(figedge);
+		}
+	    }
+	}
+
     }
 
-    /**
-     * @see org.argouml.uml.diagram.ui.FigNodeModelElement#updateStereotypeText()
-     */
     protected void updateStereotypeText() {
 	Object me = /*(MModelElement)*/ getOwner();
 	if (me == null) return;
@@ -235,9 +193,6 @@ public class FigMNode extends FigNodeModelElement {
 	}
     }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#getUseTrapRect()
-     */
     public boolean getUseTrapRect() { return true; }
 
     static final long serialVersionUID = 8822005566372687713L;

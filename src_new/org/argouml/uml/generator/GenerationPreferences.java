@@ -29,43 +29,25 @@ package org.argouml.uml.generator;
 public class GenerationPreferences implements java.io.Serializable {
     ////////////////////////////////////////////////////////////////
     // instance variables
-    private String headerComment =
+    protected String _headerComment =
 	"Your copyright and other header comments";
-    private String outputDir = "/home/jrobbins/vtmp/";
+    protected String _outputDir = "/home/jrobbins/vtmp/";
 
-    /**
-     *  Constructor
-     */
     public GenerationPreferences() {
 	if (System.getProperty("file.separator").equals("/") )
-	    outputDir = "/tmp";
+	    _outputDir = "/tmp";
 	else
-	    //This does not even exist on many systems:
-	    //_outputDir = "c:\\temp"; 
-            outputDir = System.getProperty("java.io.tmpdir");
+	    //_outputDir = "c:\\temp"; //This does not even exist on many systems!
+            _outputDir = System.getProperty("java.io.tmpdir");
     }
 
     ////////////////////////////////////////////////////////////////
     // accessors
-    /**
-     * @return the output directory name
-     */
-    public String getOutputDir() { return outputDir; }
-    
-    /**
-     * @param od the output directory name
-     */
-    public void setOutputDir(String od) { outputDir = od; }
+    public String getOutputDir() { return _outputDir; }
+    public void setOutputDir(String od) { _outputDir = od; }
 
-    /**
-     * @return the header comment string
-     */
-    public String getHeaderComment() { return headerComment; }
-    
-    /**
-     * @param c the header comment string
-     */
-    public void setHeaderComment(String c) { headerComment = c; }
+    public String getHeaderComment() { return _headerComment; }
+    public void setHeaderComment(String c) { _headerComment = c; }
 
 } /* end class GenerationPreferences */
 

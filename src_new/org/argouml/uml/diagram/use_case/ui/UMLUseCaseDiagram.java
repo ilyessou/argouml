@@ -36,6 +36,7 @@ import org.argouml.ui.CmdSetMode;
 import org.argouml.uml.diagram.ui.ActionAddAssociation;
 import org.argouml.uml.diagram.ui.UMLDiagram;
 import org.argouml.uml.diagram.use_case.UseCaseDiagramGraphModel;
+import org.argouml.uml.diagram.ui.ActionAddNote;
 import org.argouml.uml.diagram.ui.ActionAddExtensionPoint;
 import org.argouml.uml.diagram.ui.RadioAction;
 import org.tigris.gef.base.LayerPerspective;
@@ -50,22 +51,25 @@ import org.tigris.gef.base.ModeCreatePolyEdge;
  * namespace.<p>
  */
 public class UMLUseCaseDiagram extends UMLDiagram {
-    
-    private static final Logger LOG = Logger.getLogger(UMLUseCaseDiagram.class);
-    
+    /**
+     * @deprecated by Linus Tolke as of 0.15.4. Use your own logger in your
+     * class. This will be removed.
+     */
+    protected static Logger cat = Logger.getLogger(UMLUseCaseDiagram.class);
+
     // Actions specific to the use case diagram toolbar
 
     /**
      * Tool to add an actor node.<p>
      */
     protected static Action _actionActor =
-	    new RadioAction(new CmdCreateNode(ModelFacade.ACTOR, "Actor"));
+	new RadioAction(new CmdCreateNode(ModelFacade.ACTOR, "Actor"));
     
     /**
      * Tool to add a use case node.<p>
      */
     protected static Action _actionUseCase =
-        new RadioAction(new CmdCreateNode(ModelFacade.USE_CASE, "UseCase"));
+	new RadioAction(new CmdCreateNode(ModelFacade.USE_CASE, "UseCase"));
 
     /**
      * Tool to create an association between UML artifacts using a
@@ -153,7 +157,7 @@ public class UMLUseCaseDiagram extends UMLDiagram {
      * A static counter of the use case index (used in constructing a
      * unique name for each new diagram.<p>
      */
-    private static int useCaseDiagramSerial = 1;
+    protected static int _UseCaseDiagramSerial = 1;
 
     // constructors
 
@@ -166,7 +170,7 @@ public class UMLUseCaseDiagram extends UMLDiagram {
      * public.<p>
      *
      * A unique name is constructed by using the serial index
-     * {@link #useCaseDiagramSerial}. We allow for the possibility
+     * {@link #_UseCaseDiagramSerial}. We allow for the possibility
      * that setting this may fail, in which case no name is set.<p>
      */
     public UMLUseCaseDiagram() {
@@ -196,11 +200,6 @@ public class UMLUseCaseDiagram extends UMLDiagram {
         setNamespace(m);
     }
 
-    /**
-     * Constructor 
-     * @param name the name for the diagram
-     * @param namespace the namespace for the diagram
-     */
     public UMLUseCaseDiagram(String name, Object namespace) {
         this(namespace);
 
@@ -237,7 +236,7 @@ public class UMLUseCaseDiagram extends UMLDiagram {
      */
     public void setNamespace(Object handle) {
         if (!ModelFacade.isANamespace(handle)) {
-            LOG.error(
+            cat.error(
                 "Illegal argument. Object " + handle + " is not a namespace");
             throw new IllegalArgumentException(
                 "Illegal argument. Object " + handle + " is not a namespace");
@@ -261,8 +260,6 @@ public class UMLUseCaseDiagram extends UMLDiagram {
     /**
      * Get the actions from which to create a toolbar or equivilent
      * graphic triggers.
-     *
-     * @see org.argouml.uml.diagram.ui.UMLDiagram#getUmlActions()
      */
     protected Object[] getUmlActions() {
         Object actions[] =
@@ -278,8 +275,7 @@ public class UMLUseCaseDiagram extends UMLDiagram {
 	    null,
 	    ActionAddExtensionPoint.singleton(),
 	    null,
-	    _actionComment,
-	    _actionCommentLink
+	    ActionAddNote.SINGLETON,
 	};
         return actions;
     }
@@ -294,13 +290,10 @@ public class UMLUseCaseDiagram extends UMLDiagram {
         return actions;
     }
 
-    /**
-     * @return a new unique name for the diagram
-     */
     protected static String getNewDiagramName() {
         String name = null;
-        name = "Use Case Diagram " + useCaseDiagramSerial;
-        useCaseDiagramSerial++;
+        name = "Use Case Diagram " + _UseCaseDiagramSerial;
+        _UseCaseDiagramSerial++;
         if (!(ProjectManager.getManager().getCurrentProject()
 	          .isValidDiagramName(name))) {
             name = getNewDiagramName();

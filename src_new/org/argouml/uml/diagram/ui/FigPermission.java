@@ -29,8 +29,14 @@
 package org.argouml.uml.diagram.ui;
 
 import org.tigris.gef.base.Layer;
+import org.tigris.gef.presentation.ArrowHeadGreater;
 
 public class FigPermission extends FigDependency {
+
+    ////////////////////////////////////////////////////////////////
+    // constructors
+    protected ArrowHeadGreater endArrow;
+
     public FigPermission() {
         super();
     }

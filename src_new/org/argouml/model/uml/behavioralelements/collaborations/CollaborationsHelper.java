@@ -69,26 +69,22 @@ public class CollaborationsHelper {
     
     /** Singleton instance.
      */
-    private static CollaborationsHelper singleton =
+    private static CollaborationsHelper SINGLETON =
 	new CollaborationsHelper();
 
     
     /**
      * Singleton instance access method.
-     *
-     * @return the singleton
      */
     public static CollaborationsHelper getHelper() {
-        return singleton;
+        return SINGLETON;
     }
     
     /**
      * Returns all classifierroles found in the projectbrowser model
-     * 
-     * TODO: The ProjectManager shall not be reference from the model.
-     * 
      * @return Collection
      */
+    // TODO: The ProjectManager shall not be reference from the model.
     public Collection getAllClassifierRoles() {
 	MNamespace model =
 	    (MModel) ProjectManager.getManager().getCurrentProject().getModel();
@@ -98,8 +94,7 @@ public class CollaborationsHelper {
     /**
      * Returns all classifierroles found in this namespace and in its children.
      *
-     * @return Collection collection of all classifierroles
-     * @param ns the namespace
+     * @return Collection
      */
     public Collection getAllClassifierRoles(MNamespace ns) {
 	Iterator it = ns.getOwnedElements().iterator();
@@ -122,9 +117,8 @@ public class CollaborationsHelper {
      * thereby forming the set of associationroles the classifierrole
      * can use. UML Spec 1.3 section 2.10.3.3.
      *
-     * @param role the classifierrole
-     * @return Collection the set of associationroles the classifierrole
-     * can use
+     * @param role
+     * @return Collection
      */
     public Collection getAllPossibleAssociationRoles(MClassifierRole role) {
 	if (role == null || role.getBases().isEmpty()) return new ArrayList();
@@ -141,9 +135,8 @@ public class CollaborationsHelper {
      * Returns all classifierroles associated via associationroles to some 
      * classifierrole role.
      *
-     * @param role the classifierrole
-     * @return Collection all classifierroles associated via associationroles 
-     * to the given classifierrole role
+     * @param role
+     * @return Collection
      */
     public Collection getClassifierRoles(MClassifierRole role) {
 	if (role == null) return new ArrayList();
@@ -172,9 +165,9 @@ public class CollaborationsHelper {
      * Returns the first found associationrole between two
      * classifierroles.<p>
      *
-     * @param afrom the first classifierrole
-     * @param ato the second classifierrole
-     * @return MAssociationRole the association between them, or null if none
+     * @param afrom
+     * @param ato
+     * @return MAssociationRole
      */
     public Object/*MAssociationRole*/ getAssocationRole(Object afrom,
 							Object ato) {
@@ -206,8 +199,8 @@ public class CollaborationsHelper {
      * the given message that are not part of the predecessors of the
      * message and that are not equal to the given message.<p>
      *
-     * @param ames the message
-     * @return Collection all possible activators for the given message
+     * @param ames
+     * @return Collection
      */
     public Collection getAllPossibleActivators(Object ames) {
         MMessage mes = (MMessage) ames;
@@ -239,10 +232,9 @@ public class CollaborationsHelper {
      * activator is part of the predecessors of the activator of the
      * given message (recursive too).
      * 
-     * @param message the given message
-     * @param activator the given activator
-     * @return boolean true if the given message has the message activator
-     * somewhere as it's activator
+     * @param message
+     * @param activator
+     * @return boolean
      */
     public boolean hasAsActivator(MMessage message, MMessage activator) {
 	if (message.getActivator() == null) return false;
@@ -263,8 +255,8 @@ public class CollaborationsHelper {
      * messages (defined by the predecessor) has a different
      * activator.<p>
      *
-     * @param ames the given message
-     * @param anactivator the given activator
+     * @param ames
+     * @param anactivator
      */
     public void setActivator(Object ames, Object anactivator) {
         MMessage mes = (MMessage) ames;
@@ -315,8 +307,8 @@ public class CollaborationsHelper {
      * Returns all possible predecessors for some message, taking into account
      * the wellformednessrules as defined in section 2.10 of the UML spec.<p>
      *
-     * @param amessage the given message
-     * @return Collection  all possible predecessors
+     * @param amessage
+     * @return Collection
      */
     public Collection getAllPossiblePredecessors(Object amessage) {
         MMessage message = (MMessage) amessage;
@@ -344,8 +336,8 @@ public class CollaborationsHelper {
      * according to the wellformednessrules of section 2.10.3 of the UML 1.3 
      * spec.
      *
-     * @param arole the given classifierrole
-     * @param abase the base to be added
+     * @param arole
+     * @param abase
      */
     public void addBase(Object/*MClassifierRole*/ arole,
 			Object/*MClassifier*/ abase) {
@@ -400,8 +392,8 @@ public class CollaborationsHelper {
      * Sets the bases of the given classifierrole to the given
      * collection bases.<p>
      *
-     * @param role the given classifierrole
-     * @param bases the given collection of bases
+     * @param role
+     * @param bases
      */
     public void setBases(Object/*MClassifierRole*/ role, Collection bases) {
         if (role == null || bases == null)
@@ -424,8 +416,8 @@ public class CollaborationsHelper {
      * the standard getAvailableFeatures method on ClassifierRole
      * since this is derived information.<p>
      *
-     * @param arole the given classifierrole
-     * @return Collection all available features
+     * @param arole
+     * @return Collection
      */
     public Collection allAvailableFeatures(Object arole) {
         MClassifierRole role = (MClassifierRole) arole;
@@ -452,8 +444,8 @@ public class CollaborationsHelper {
      * the standard getAvailableContents method on ClassifierRole
      * since this is derived information.
      *
-     * @param arole the given classifierrole
-     * @return Collection all available contents
+     * @param arole
+     * @return Collection
      */
     public Collection allAvailableContents(Object/*MClassifierRole*/ arole) {
         MClassifierRole role = (MClassifierRole) arole;
@@ -474,10 +466,6 @@ public class CollaborationsHelper {
         return returnList;
     }
     
-    /**
-     * @param role the given classifierrole or associationrole
-     * @return all available bases
-     */
     public Collection getAllPossibleBases(Object role) {
         if (role instanceof MClassifierRole) {
             return getAllPossibleBases((MClassifierRole) role);
@@ -493,8 +481,8 @@ public class CollaborationsHelper {
      * account the wellformednessrules as defined in section 2.10.3 of
      * the UML 1.3 spec.<p>
      *
-     * @param role the given associationrole
-     * @return Collection all possible bases
+     * @param role
+     * @return Collection
      */
     public Collection getAllPossibleBases(MAssociationRole role) {
         Set ret = new HashSet();
@@ -560,8 +548,8 @@ public class CollaborationsHelper {
      * account the wellformednessrules as defined in section 2.10.3 of
      * the UML 1.3 spec.<p>
      *
-     * @param role the given classifierrole
-     * @return Collection all possible bases
+     * @param role
+     * @return Collection
      */
     public Collection getAllPossibleBases(MClassifierRole role) {
         if (role == null || ModelFacade.getNamespace(role) == null)
@@ -601,8 +589,8 @@ public class CollaborationsHelper {
      * Sets the base of some associationrole, including the attached
      * assocationendroles.  Checks for wellformedness first.
      *
-     * @param arole  the given associationrole
-     * @param abase all possible bases
+     * @param arole
+     * @param abase
      */
     public void setBase(Object arole, Object abase) {
         MAssociationRole role = (MAssociationRole) arole;
@@ -646,8 +634,8 @@ public class CollaborationsHelper {
      * decouple ArgoUML as much as possible from the NSUML model, the parameter
      * of the method is of type Object.<p>
      *
-     * @param context the given context
-     * @return boolean true if a collaboration may be added
+     * @param context
+     * @return boolean
      */
     public boolean isAddingCollaborationAllowed(Object context) {
 	return (context instanceof MCollaboration

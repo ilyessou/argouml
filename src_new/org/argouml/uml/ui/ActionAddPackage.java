@@ -43,9 +43,6 @@ public class ActionAddPackage  extends UMLAction {
     ////////////////////////////////////////////////////////////////
     // static variables
     
-    /**
-     * The singleton.
-     */
     public static ActionAddPackage SINGLETON = new ActionAddPackage();
     
     ////////////////////////////////////////////////////////////////
@@ -59,8 +56,6 @@ public class ActionAddPackage  extends UMLAction {
     
     /**
      * adds a package to the selected object in the nav pane.
-     *
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
      */
     public void actionPerformed(ActionEvent e) {
         Object namespace =

@@ -48,37 +48,25 @@ import org.tigris.gef.presentation.Fig;
 import org.tigris.gef.presentation.FigPoly;
 import org.tigris.gef.presentation.FigText;
 
-/** Class to display graphics for a UML message in a diagram. 
- * 
- */
+/** Class to display graphics for a UML collaboration in a diagram. */
+
 public class FigMessage extends FigNodeModelElement {
 
     ////////////////////////////////////////////////////////////////
     // constants
-    private static final int PADDING = 5;
-    private static Vector arrowDirections = new Vector();
+    public int PADDING = 5;
+    public static Vector ARROW_DIRECTIONS = new Vector();
 
     ////////////////////////////////////////////////////////////////
     // instance variables
 
-    private FigPoly figPoly;
-    
-    /**
-     * The <code>arrowDirection</code> values are:
-     * 1: South
-     * 2: East
-     * 3: West
-     * 4: North
-     */
-    private int arrowDirection = 0;
-
+    protected FigPoly _figPoly;
+    protected int _arrowDirection = 0;
+    //protected Polygon _polygon;
 
     ////////////////////////////////////////////////////////////////
     // constructors
 
-    /**
-     * The main constructor
-     */
     public FigMessage() {
 	getNameFig().setLineWidth(0);
 	getNameFig().setMultiLine(true);
@@ -86,51 +74,39 @@ public class FigMessage extends FigNodeModelElement {
 	Dimension nameMin = getNameFig().getMinimumSize();
 	getNameFig().setBounds(10, 10, 90, nameMin.height);
 
-	figPoly = new FigPoly(Color.black, Color.black);
+	_figPoly = new FigPoly(Color.black, Color.black);
 	int[] xpoints = {75, 75, 77, 75, 73, 75};
 	int[] ypoints = {33, 24, 24, 15, 24, 24};
 	Polygon polygon = new Polygon(xpoints, ypoints, 6);
-	figPoly.setPolygon(polygon);
-	figPoly.setBounds(100, 10, 5, 18);
+	_figPoly.setPolygon(polygon);
+	_figPoly.setBounds(100, 10, 5, 18);
 
-	arrowDirections.addElement("North");
-	arrowDirections.addElement("South");
-	arrowDirections.addElement("East");
-	arrowDirections.addElement("West");
+	ARROW_DIRECTIONS.addElement("North");
+	ARROW_DIRECTIONS.addElement("South");
+	ARROW_DIRECTIONS.addElement("East");
+	ARROW_DIRECTIONS.addElement("West");
 
 	// add Figs to the FigNode in back-to-front order
 	addFig(getNameFig());
-	addFig(figPoly);
+	addFig(_figPoly);
 
 	Rectangle r = getBounds();
 	setBounds(r.x, r.y, r.width, r.height);
     }
 
-    /**
-     * The constructor that hooks the Fig into an existing UML element
-     * @param gm ignored
-     * @param lay the layer
-     * @param node the UML element
-     */
     public FigMessage(GraphModel gm, Layer lay, Object node) {
 	this();
 	setLayer(lay);
 	setOwner(node);
     }
 
-    /**
-     * @see org.argouml.uml.diagram.ui.FigNodeModelElement#placeString()
-     */
     public String placeString() { return "new Message"; }
 
-    /**
-     * @see java.lang.Object#clone()
-     */
     public Object clone() {
 	FigMessage figClone = (FigMessage) super.clone();
 	Iterator it = figClone.getFigs(null).iterator();
 	figClone.setNameFig((FigText) it.next());
-	figClone.figPoly = (FigPoly) it.next();
+	figClone._figPoly = (FigPoly) it.next();
 	//figClone._polygon = (Polygon) _polygon.clone();
 	return figClone;
     }
@@ -140,69 +116,35 @@ public class FigMessage extends FigNodeModelElement {
     ////////////////////////////////////////////////////////////////
     // Fig accessors
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#setLineColor(java.awt.Color)
-     */
     public void setLineColor(Color col) {
-	figPoly.setLineColor(col);
+	_figPoly.setLineColor(col);
 	getNameFig().setLineColor(col);
     }
-    
-    /**
-     * @see org.tigris.gef.presentation.Fig#getLineColor()
-     */
-    public Color getLineColor() { return figPoly.getLineColor(); }
+    public Color getLineColor() { return _figPoly.getLineColor(); }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#setFillColor(java.awt.Color)
-     */
     public void setFillColor(Color col) {
-	figPoly.setFillColor(col);
+	_figPoly.setFillColor(col);
 	getNameFig().setFillColor(col);
     }
-    /**
-     * @see org.tigris.gef.presentation.Fig#getFillColor()
-     */
-    public Color getFillColor() { return figPoly.getFillColor(); }
+    public Color getFillColor() { return _figPoly.getFillColor(); }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#setFilled(boolean)
-     */
     public void setFilled(boolean f) {  }
-
-    /**
-     * @see org.tigris.gef.presentation.Fig#getFilled()
-     */
     public boolean getFilled() { return true; }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#setLineWidth(int)
-     */
-    public void setLineWidth(int w) { figPoly.setLineWidth(w); }
-    
-    /**
-     * @see org.tigris.gef.presentation.Fig#getLineWidth()
-     */
-    public int getLineWidth() { return figPoly.getLineWidth(); }
+    public void setLineWidth(int w) { _figPoly.setLineWidth(w); }
+    public int getLineWidth() { return _figPoly.getLineWidth(); }
 
-    /**
-     * @param direction for the arrow 
-     * 1: South
-     * 2: East
-     * 3: West
-     * 4: North
-     */
     public void setArrow(int direction) {
 	Rectangle bbox = getBounds();
     
-	arrowDirection = direction;
+	_arrowDirection = direction;
 	switch (direction) {
 	    // south
 	case 1: {
 	    int[] xpoints = {75, 75, 77, 75, 73, 75};
 	    int[] ypoints = {15, 24, 24, 33, 24, 24};
 	    Polygon polygon = new Polygon(xpoints, ypoints, 6);
-	    figPoly.setPolygon(polygon);
+	    _figPoly.setPolygon(polygon);
 	    break;
 	}
 	    // east
@@ -210,7 +152,7 @@ public class FigMessage extends FigNodeModelElement {
 	    int[] xpoints = {66, 75, 75, 84, 75, 75};
 	    int[] ypoints = {24, 24, 26, 24, 22, 24};
 	    Polygon polygon = new Polygon(xpoints, ypoints, 6);
-	    figPoly.setPolygon(polygon);
+	    _figPoly.setPolygon(polygon);
 	    break;
 	}
 	    // west
@@ -218,7 +160,7 @@ public class FigMessage extends FigNodeModelElement {
 	    int[] xpoints = {84, 75, 75, 66, 75, 75};
 	    int[] ypoints = {24, 24, 26, 24, 22, 24};
 	    Polygon polygon = new Polygon(xpoints, ypoints, 6);
-	    figPoly.setPolygon(polygon);
+	    _figPoly.setPolygon(polygon);
 	    break;
 	}
 	    // north
@@ -226,32 +168,23 @@ public class FigMessage extends FigNodeModelElement {
 	    int[] xpoints = {75, 75, 77, 75, 73, 75};
 	    int[] ypoints = {33, 24, 24, 15, 24, 24};
 	    Polygon polygon = new Polygon(xpoints, ypoints, 6);
-	    figPoly.setPolygon(polygon);
+	    _figPoly.setPolygon(polygon);
 	}
 	}
 	setBounds(bbox);
     }
-    
-    /**
-     * @return the arrow direction
-     */
-    public int getArrow() { return arrowDirection; }
+    public int getArrow() { return _arrowDirection; }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#getMinimumSize()
-     */
     public Dimension getMinimumSize() {
 	Dimension nameMin = getNameFig().getMinimumSize();
-	Dimension figPolyMin = figPoly.getSize();
+	Dimension figPolyMin = _figPoly.getSize();
 
 	int h = Math.max(figPolyMin.height, nameMin.height);
 	int w = figPolyMin.width + nameMin.width;
 	return new Dimension(w, h);
     }
 
-    /** Override setBounds to keep shapes looking right 
-     * @see org.tigris.gef.presentation.Fig#setBounds(int, int, int, int)
-     */
+    /* Override setBounds to keep shapes looking right */
     public void setBounds(int x, int y, int w, int h) {
 	if (getNameFig() == null) {
 	    return;
@@ -263,21 +196,18 @@ public class FigMessage extends FigNodeModelElement {
 
 	int ht = 0;
 
-	if (nameMin.height > figPoly.getHeight()) 
-	    ht = (nameMin.height - figPoly.getHeight()) / 2;
+	if (nameMin.height > _figPoly.getHeight()) 
+	    ht = (nameMin.height - _figPoly.getHeight()) / 2;
 
-	getNameFig().setBounds(x, y, w - figPoly.getWidth(), nameMin.height);
-	figPoly.setBounds(x + getNameFig().getWidth(), y + ht,
-			   figPoly.getWidth(), figPoly.getHeight());
+	getNameFig().setBounds(x, y, w - _figPoly.getWidth(), nameMin.height);
+	_figPoly.setBounds(x + getNameFig().getWidth(), y + ht,
+			   _figPoly.getWidth(), _figPoly.getHeight());
 
 	firePropChange("bounds", oldBounds, getBounds());
 	calcBounds(); //_x = x; _y = y; _w = w; _h = h;
 	updateEdges();
     }
 
-    /**
-     * @see org.argouml.uml.diagram.ui.FigNodeModelElement#textEdited(org.tigris.gef.presentation.FigText)
-     */
     protected void textEdited(FigText ft) throws PropertyVetoException {
 	Object message = getOwner();
 	if (message != null && ft == getNameFig()) {
@@ -324,7 +254,6 @@ public class FigMessage extends FigNodeModelElement {
 
     /**
      * Add the FigMessage to the Path Items of its FigAssociationRole.
-     * @param lay the Layer
      */
     public void addPathItemToFigAssociationRole(Layer lay) {
 
@@ -373,10 +302,4 @@ public class FigMessage extends FigNodeModelElement {
         updateArrow();
     }
 
-    /**
-     * @return Returns the arrowDirections.
-     */
-    public static Vector getArrowDirections() {
-        return arrowDirections;
-    }
 } /* end class FigMessage */

@@ -36,7 +36,9 @@ import javax.swing.JList;
 import javax.swing.JScrollPane;
 
 import org.argouml.i18n.Translator;
+
 import org.argouml.swingext.Orientation;
+import org.argouml.uml.ui.UMLComboBoxNavigator;
 import org.argouml.util.ConfigLoader;
 
 public class PropPanelCompositeState extends PropPanelState {
@@ -59,8 +61,7 @@ public class PropPanelCompositeState extends PropPanelState {
         initialize();
 
         addField(Translator.localize("UMLMenu", "label.name"), getNameTextField());
-        // addField(Translator.localize("UMLMenu", "label.stereotype"), new UMLComboBoxNavigator(this, Translator.localize("UMLMenu", "tooltip.nav-stereo"), getStereotypeBox()));
-        addField(Translator.localize("UMLMenu", "label.stereotype"), getStereotypeBox());
+        addField(Translator.localize("UMLMenu", "label.stereotype"), new UMLComboBoxNavigator(this, Translator.localize("UMLMenu", "tooltip.nav-stereo"), getStereotypeBox()));
         addField(Translator.localize("UMLMenu", "label.container"), containerScroll);
         addField(Translator.localize("UMLMenu", "label.modifiers"), new UMLCompositeStateConcurentCheckBox());
         addField(Translator.localize("UMLMenu", "label.entry"), entryScroll);

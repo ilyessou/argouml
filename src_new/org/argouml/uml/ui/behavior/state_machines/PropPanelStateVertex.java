@@ -3,14 +3,14 @@
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
-// and this paragraph appear in all copies. This software program and
+// and this paragraph appear in all copies.  This software program and
 // documentation are copyrighted by The Regents of the University of
 // California. The software program and documentation are supplied "AS
 // IS", without any accompanying services from The Regents. The Regents
 // does not warrant that the operation of the program will be
 // uninterrupted or error-free. The end-user understands that the program
 // was developed for research purposes and is advised not to rely
-// exclusively on the program for any reason. IN NO EVENT SHALL THE
+// exclusively on the program for any reason.  IN NO EVENT SHALL THE
 // UNIVERSITY OF CALIFORNIA BE LIABLE TO ANY PARTY FOR DIRECT, INDIRECT,
 // SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, INCLUDING LOST PROFITS,
 // ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN IF
@@ -21,6 +21,8 @@
 // PROVIDED HEREUNDER IS ON AN "AS IS" BASIS, AND THE UNIVERSITY OF
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+
+
 
 // File: PropPanelStateVertex.java
 // Classes: PropPanelStateVertex
@@ -34,101 +36,60 @@ import javax.swing.JList;
 import javax.swing.JScrollPane;
 
 import org.argouml.application.helpers.ResourceLoaderWrapper;
+import org.argouml.i18n.Translator;
 import org.argouml.swingext.Orientation;
-import org.argouml.uml.ui.ActionNavigateNamespace;
-import org.argouml.uml.ui.ActionRemoveFromModel;
-import org.argouml.uml.ui.PropPanelButton2;
+import org.argouml.uml.ui.PropPanelButton;
 import org.argouml.uml.ui.UMLLinkedList;
 import org.argouml.uml.ui.foundation.core.PropPanelModelElement;
 
-/**
- * The properties tab panel for StateVertex and family.
- *
- */
 public abstract class PropPanelStateVertex extends PropPanelModelElement {
 
     ////////////////////////////////////////////////////////////////
     // constants
-    protected static ImageIcon _stateIcon = ResourceLoaderWrapper
-            .lookupIconResource("State");
-
-    protected static ImageIcon _actionStateIcon = ResourceLoaderWrapper
-            .lookupIconResource("ActionState");
-
-    protected static ImageIcon _compositeStateIcon = ResourceLoaderWrapper
-            .lookupIconResource("CompositeState");
-
-    protected static ImageIcon _submachineStateIcon = ResourceLoaderWrapper
-        .lookupIconResource("SubmachineState");
-
-    protected static ImageIcon _simpleStateIcon = ResourceLoaderWrapper
-            .lookupIconResource("SimpleState");
-
-    protected static ImageIcon _shallowHistoryIcon = ResourceLoaderWrapper
-            .lookupIconResource("ShallowHistory");
-
-    protected static ImageIcon _deepHistoryIcon = ResourceLoaderWrapper
-            .lookupIconResource("DeepHistory");
-
-    protected static ImageIcon _finalStateIcon = ResourceLoaderWrapper
-            .lookupIconResource("FinalState");
-
-    protected static ImageIcon _initialIcon = ResourceLoaderWrapper
-            .lookupIconResource("Initial");
-
-    protected static ImageIcon _forkIcon = ResourceLoaderWrapper
-            .lookupIconResource("Fork");
-
-    protected static ImageIcon _joinIcon = ResourceLoaderWrapper
-            .lookupIconResource("Join");
-    
-    protected static ImageIcon _callStateIcon = ResourceLoaderWrapper
-            .lookupIconResource("CallState");
-    
-    protected static ImageIcon objectFlowStateIcon = ResourceLoaderWrapper
-            .lookupIconResource("ObjectFlowState");
-    
-    protected static ImageIcon _subactivityStateIcon = ResourceLoaderWrapper
-            .lookupIconResource("SubactivityState");
-
-    protected static ImageIcon _transitionIcon = ResourceLoaderWrapper
-            .lookupIconResource("Transition");
+    protected static ImageIcon _stateIcon = ResourceLoaderWrapper.getResourceLoaderWrapper().lookupIconResource("State");
+    protected static ImageIcon _actionStateIcon = ResourceLoaderWrapper.getResourceLoaderWrapper().lookupIconResource("ActionState");
+    protected static ImageIcon _compositeStateIcon = ResourceLoaderWrapper.getResourceLoaderWrapper().lookupIconResource("CompositeState");
+    protected static ImageIcon _simpleStateIcon = ResourceLoaderWrapper.getResourceLoaderWrapper().lookupIconResource("SimpleState");
+    protected static ImageIcon _shallowHistoryIcon = ResourceLoaderWrapper.getResourceLoaderWrapper().lookupIconResource("ShallowHistory");
+    protected static ImageIcon _deepHistoryIcon = ResourceLoaderWrapper.getResourceLoaderWrapper().lookupIconResource("DeepHistory");
+    protected static ImageIcon _finalStateIcon = ResourceLoaderWrapper.getResourceLoaderWrapper().lookupIconResource("FinalState");
+    protected static ImageIcon _initialIcon = ResourceLoaderWrapper.getResourceLoaderWrapper().lookupIconResource("Initial");
+    protected static ImageIcon _forkIcon = ResourceLoaderWrapper.getResourceLoaderWrapper().lookupIconResource("Fork");
+    protected static ImageIcon _joinIcon = ResourceLoaderWrapper.getResourceLoaderWrapper().lookupIconResource("Join");
+    protected static ImageIcon _transitionIcon = ResourceLoaderWrapper.getResourceLoaderWrapper().lookupIconResource("Transition");
 
     ////////////////////////////////////////////////////////////////
 
     protected JScrollPane incomingScroll;
-
     protected JScrollPane outgoingScroll;
-
     protected JScrollPane containerScroll;
 
     /**
      * Constructor for PropPanelStateVertex.
-     * 
-     * @param name the name of the tabpanel shown at the top
-     * @param icon the icon of the tabpanel shown at the top
-     * @param orientation the orientation
+     * @param name
+     * @param icon
+     * @param orientation
      */
-    public PropPanelStateVertex(String name, ImageIcon icon,
-            Orientation orientation) {
+    public PropPanelStateVertex(
+        String name,
+        ImageIcon icon,
+        Orientation orientation) {
         super(name, icon, orientation);
-        JList incomingList = new UMLLinkedList(
-                new UMLStateVertexIncomingListModel());
+        JList incomingList = new UMLLinkedList(new UMLStateVertexIncomingListModel());
         incomingScroll = new JScrollPane(incomingList);
-        JList outgoingList = new UMLLinkedList(
-                new UMLStateVertexOutgoingListModel());
+        JList outgoingList = new UMLLinkedList(new UMLStateVertexOutgoingListModel());
         outgoingScroll = new JScrollPane(outgoingList);
-
-        JList compositeList = new UMLLinkedList(
-                new UMLStateVertexContainerListModel());
+        
+        JList compositeList = new UMLLinkedList(new UMLStateVertexContainerListModel());
         compositeList.setVisibleRowCount(1);
         containerScroll = new JScrollPane(compositeList);
-
-        buttonPanel.add(new PropPanelButton2(this,
-                new ActionNavigateNamespace()));
-        buttonPanel
-                .add(new PropPanelButton2(this, new ActionRemoveFromModel()));
+        
+        new PropPanelButton(this, buttonPanel, _navUpIcon, Translator.localize("UMLMenu", "button.go-up"), "navigateUp", null);      
+        new PropPanelButton(this, buttonPanel, _deleteIcon, localize("Delete"), "removeElement", null);
+        
     }
+
+    
 
 } /* end class PropPanelStateVertex */
 

@@ -34,7 +34,7 @@ import org.argouml.model.uml.behavioralelements.statemachines.StateMachinesFacto
  */
 public class ActionNewCallEvent extends ActionNewEvent {
 
-    private static ActionNewCallEvent singleton = new ActionNewCallEvent();
+    public static ActionNewCallEvent SINGLETON = new ActionNewCallEvent();
 
     /**
      * Constructor for ActionNewCallEvent.
@@ -49,13 +49,6 @@ public class ActionNewCallEvent extends ActionNewEvent {
      */
     protected Object createEvent() {
         return StateMachinesFactory.getFactory().buildCallEvent();
-    }
-
-    /**
-     * @return Returns the singleton.
-     */
-    public static ActionNewCallEvent getSingleton() {
-        return singleton;
     }
 
 }

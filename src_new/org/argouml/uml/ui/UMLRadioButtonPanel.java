@@ -39,7 +39,6 @@ import javax.swing.border.TitledBorder;
 import org.argouml.model.ModelFacade;
 
 import org.argouml.model.uml.UmlModelEventPump;
-import org.argouml.ui.LookAndFeelMgr;
 import org.argouml.ui.targetmanager.TargetEvent;
 import org.argouml.ui.targetmanager.TargetListener;
 import org.tigris.gef.presentation.Fig;
@@ -129,12 +128,12 @@ public abstract class UMLRadioButtonPanel
 
     /**
      * Initially constructs the buttons.
-     *
-     * @param labeltextsActioncommands A map of keys containing the
-     * texts for the buttons and values containing the actioncommand
-     * that permits the setAction to logically recognize the button.
-     * @param setAction the action that should be registred with the
-     * buttons and that's executed when one of the buttons is pressed
+     * @param labeltextsActioncommands A map of keys containing the texts for
+     * the buttons and values containing the actioncommand that permits the
+     * setAction to logically recognize the button.
+     * @param setAction the action that should be registred with the buttons and
+     * that's executed when one of the buttons is pressed
+     * @param horizontal when true the buttons should be layed out horizontaly.
      */
     private void setButtons(Map labeltextsActioncommands, Action setAction) {
         Enumeration en = _buttonGroup.getElements();
@@ -151,7 +150,7 @@ public abstract class UMLRadioButtonPanel
 	    String actionCommand =
 		(String) labeltextsActioncommands.get(keyAndLabel);
             button.setActionCommand(actionCommand);
-            button.setFont(LookAndFeelMgr.getInstance().getSmallFont());
+
             _buttonGroup.add(button);
             add(button);
         }
@@ -268,21 +267,21 @@ public abstract class UMLRadioButtonPanel
      * @see org.argouml.ui.targetmanager.TargetListener#targetAdded(org.argouml.ui.targetmanager.TargetEvent)
      */
     public void targetAdded(TargetEvent e) {
-        setTarget(e.getNewTarget());
+	setTarget(e.getNewTarget());
     }
 
     /**
      * @see org.argouml.ui.targetmanager.TargetListener#targetRemoved(org.argouml.ui.targetmanager.TargetEvent)
      */
     public void targetRemoved(TargetEvent e) {
-        setTarget(e.getNewTarget());
+	setTarget(e.getNewTarget());
     }
 
     /**
      * @see org.argouml.ui.targetmanager.TargetListener#targetSet(org.argouml.ui.targetmanager.TargetEvent)
      */
     public void targetSet(TargetEvent e) {
-        setTarget(e.getNewTarget());
+	setTarget(e.getNewTarget());
     }
 
 }

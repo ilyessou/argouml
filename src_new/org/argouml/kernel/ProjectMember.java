@@ -33,14 +33,15 @@ public abstract class ProjectMember {
     ////////////////////////////////////////////////////////////////
     // instance varables
 
-    private String name;
-    private Project project = null;
+    //protected String _name;
+    private String _name;
+    protected Project _project = null;
 
     ////////////////////////////////////////////////////////////////
     // constructors
 
-    public ProjectMember(String name, Project theProject) {
-	project = theProject;
+    public ProjectMember(String name, Project project) {
+	_project = project;
 	setName(name);
     }
 
@@ -55,11 +56,9 @@ public abstract class ProjectMember {
      * {@link Project#findMemberByName} goes by.
      *
      * @author Steffen Zschaler
-     *
-     * @return the member's name without the prepended name of the project
      */
     public String getPlainName() {
-	String s = name;
+	String s = _name;
     
 	if (s != null) {
 	    if (!s.endsWith (getFileExtension())) {
@@ -74,17 +73,15 @@ public abstract class ProjectMember {
      * In contrast to {@link #getPlainName} returns the member's name
      * including the project's base name. The project's base name is
      * prepended followed by an underscore '_'.
-     *
-     * @return the member's name including the project's base name
      */
     public String getName() {
-	if (name == null)
+	if (_name == null)
 	    return null;
 
-	String s = project.getBaseName();
+	String s = _project.getBaseName();
 
-	if (name.length() > 0)
-	    s += "_" + name;
+	if (_name.length() > 0)
+	    s += "_" + _name;
     
 	if (!s.endsWith(getFileExtension()))
 	    s += getFileExtension();
@@ -93,28 +90,28 @@ public abstract class ProjectMember {
     }
   
     public void setName(String s) { 
-	name = s;
+	_name = s;
 
-	if (name == null)
+	if (_name == null)
 	    return;
 
-	if (name.startsWith (project.getBaseName())) {
-	    name = name.substring (project.getBaseName().length());
+	if (_name.startsWith (_project.getBaseName())) {
+	    _name = _name.substring (_project.getBaseName().length());
 	    int i = 0;
-	    for (; i < name.length(); i++)
-		if (name.charAt(i) != '_')
+	    for (; i < _name.length(); i++)
+		if (_name.charAt(i) != '_')
 		    break;
 	    if (i > 0)
-		name = name.substring(i);
+		_name = _name.substring(i);
 	}
 
-	if (name.endsWith(getFileExtension()))
-	    name =
-		name.substring(0,
-				name.length() - getFileExtension().length());
+	if (_name.endsWith(getFileExtension()))
+	    _name =
+		_name.substring(0,
+				_name.length() - getFileExtension().length());
     }
 
-    public Project getProject() { return project; }
+    public Project getProject() { return _project; }
 
     public abstract String getType();
     public abstract String getFileExtension();
@@ -129,15 +126,33 @@ public abstract class ProjectMember {
     public abstract void load() throws IOException, org.xml.sax.SAXException;
 
     /**
-     * Save the projectmember to the given writer.
+     * @deprecated As of 7 June 2003 (ArgoUml version 0.13.6).
+     *             Will be removed in future.
+     *             TODO: What is this method replaced by?
+     *		   TODO: This is still in use in 0.15.2.
+     *
+     * @param path
+     * @param overwrite
      * @param writer
      * @throws Exception
      */
-    public abstract void save(Writer writer) throws Exception;
+    public abstract void save(String path, boolean overwrite, Writer writer)
+	throws Exception;
+  
+    /**
+     * Save the projectmember to the given writer. Not abstract since
+     * this would break the public API prematuraly.
+     * @param writer
+     * @throws Exception
+     */
+    public void save(Writer writer) throws Exception {
+      
+    }
 
     public void remove() {
-        name = null;
-        project = null;
+        
+        _name = null;
+        _project = null;
     }
 } /* end class ProjectMember */
 

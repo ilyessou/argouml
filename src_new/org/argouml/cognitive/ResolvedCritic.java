@@ -213,12 +213,12 @@ public class ResolvedCritic
     protected void importOffenders(VectorSet set, boolean canCreate)
 	throws UnresolvableException
     {
-	Enumeration elems = set.elements();
+	Enumeration enum = set.elements();
 	String fail = null;
 
-	while (elems.hasMoreElements())
+	while (enum.hasMoreElements())
 	{
-	    Object obj = elems.nextElement();
+	    Object obj = enum.nextElement();
 	    String id = ItemUID.getIDOfObject(obj, canCreate);
 	    if (id == null)
 	    {

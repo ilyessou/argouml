@@ -42,9 +42,6 @@ import org.argouml.model.uml.UmlModelEventPump;
 import org.argouml.model.uml.foundation.datatypes.DataTypesHelper;
 import org.argouml.model.uml.foundation.extensionmechanisms.ExtensionMechanismsFactory;
 import org.argouml.model.uml.modelmanagement.ModelManagementHelper;
-import org.argouml.ui.ArgoDiagram;
-import org.argouml.uml.diagram.UMLMutableGraphSupport;
-import org.argouml.uml.diagram.static_structure.ui.CommentEdge;
 
 import ru.novosoft.uml.MElementListener;
 import ru.novosoft.uml.MFactory;
@@ -112,12 +109,10 @@ public class CoreFactory extends AbstractUmlModelFactory {
 
     /** Singleton instance.
      */
-    private static final CoreFactory SINGLETON = new CoreFactory();
+    private static CoreFactory SINGLETON = new CoreFactory();
 
     /**
      * Singleton instance access method.
-     *
-     * @return the singleton
      */
     public static CoreFactory getFactory() {
 	return SINGLETON;
@@ -143,7 +138,7 @@ public class CoreFactory extends AbstractUmlModelFactory {
      * Build an empty but initialized instance of a UML Abstraction
      * with a given name.
      *
-     * @param name The name.
+     * @param name
      * @return an initialized UML Abstraction instance.
      */
     public Object buildAbstraction(String name) {
@@ -487,13 +482,6 @@ public class CoreFactory extends AbstractUmlModelFactory {
     /**
      * Builds a binary associationrole on basis of two classifierroles,
      * navigation and aggregation.
-     *
-     * @param from   the first given classifier
-     * @param agg1   the first aggregationkind
-     * @param to     the second given classifier
-     * @param agg2   the second aggregationkind
-     * @param unidirectional true if unidirectional
-     * @return the newly build binary associationrole
      */
     public MAssociation buildAssociation(
 					 MClassifier from,
@@ -603,7 +591,7 @@ public class CoreFactory extends AbstractUmlModelFactory {
      * @param nav1 The navigability of the Associaton end
      * @param c2 The second classifier to connect to
      * @param nav2 The navigability of the second Associaton end
-     * @param name the given name
+     * @param name
      * @return association
      */
     public Object buildAssociation(Object c1, boolean nav1,
@@ -638,8 +626,8 @@ public class CoreFactory extends AbstractUmlModelFactory {
      * Builds an associationClass between classifier end1 and end2 with a
      * default class.<p>
      *
-     * @param end1 the first given classifier
-     * @param end2 the second given classifier
+     * @param end1
+     * @param end2
      * @return MAssociationClass
      */
     public MAssociationClass buildAssociationClass(
@@ -669,10 +657,10 @@ public class CoreFactory extends AbstractUmlModelFactory {
      * @param navigable The navigability. True if this association end
      *                  can be 'passed' from the other classifier.
      * @param order Ordering of the association
-     * @param aggregation the aggregationkind
-     * @param scope the scope kind
-     * @param changeable the changeablekind
-     * @param visibility the visibilitykind
+     * @param aggregation
+     * @param scope
+     * @param changeable
+     * @param visibility
      * @return MAssociationEnd
      */
     public MAssociationEnd buildAssociationEnd(
@@ -762,11 +750,6 @@ public class CoreFactory extends AbstractUmlModelFactory {
         return end;
     }
 
-    /**
-     * @param type the given classifier
-     * @param assoc the given association
-     * @return the newly build associationend
-     */
     public MAssociationEnd buildAssociationEnd(
 					       MClassifier type,
 					       MAssociation assoc) {
@@ -791,9 +774,9 @@ public class CoreFactory extends AbstractUmlModelFactory {
      * that should be associated. Both ends of the associationclass
      * are navigable.<p>
      *
-     * @param cl the class
-     * @param end1 the first classifier
-     * @param end2 the second classifier
+     * @param cl
+     * @param end1
+     * @param end2
      * @return MAssociationClass
      */
     public MAssociationClass buildAssociatonClass(MClass cl,
@@ -905,8 +888,8 @@ public class CoreFactory extends AbstractUmlModelFactory {
     /**
      * Builds a default attribute with a given name.
      *
-     * @param name the given name
-     * @return attribute the newly build attribute
+     * @param name
+     * @return attribute
      */
     public Object buildAttribute(String name) {
         MAttribute attr = buildAttribute();
@@ -920,8 +903,8 @@ public class CoreFactory extends AbstractUmlModelFactory {
      * if this is legal for an interface (purely UML speaking). In
      * this method it is.<p>
      *
-     * @param handle the given classifier
-     * @return MAttribute the newly build attribute
+     * @param handle
+     * @return MAttribute
      */
     public MAttribute buildAttribute(Object handle) {
 	if (!ModelFacade.isAClassifier(handle))
@@ -946,7 +929,7 @@ public class CoreFactory extends AbstractUmlModelFactory {
      * Builds a binding between a client modelelement and a supplier
      * modelelement.<p>
      *
-     * @param client 
+     * @param client
      * @param supplier
      * @return MBinding
      */
@@ -1453,7 +1436,7 @@ public class CoreFactory extends AbstractUmlModelFactory {
 	if (o instanceof MEvent) {
 	    MEvent event = (MEvent) o;
 	    MParameter res = buildParameter();
-	    res.setKind(MParameterDirectionKind.IN);
+	    res.setKind(MParameterDirectionKind.INOUT);
 	    //    removing this next line solves issue 2209
 	    //res.setNamespace(event.getNamespace()); 
             event.addParameter(res);
@@ -1550,54 +1533,6 @@ public class CoreFactory extends AbstractUmlModelFactory {
 				 .getCurrentProject().getModel());
 
 	return comment;
-    }
-    
-    /**
-     * Builds a comment owned by the namespace of the active diagram or by the model if the active diagram
-     * does not have a namespace.
-     * @return The comment build
-     */
-    public MComment buildComment() {
-        MComment comment = createComment();
-        Object ns = null;
-        ArgoDiagram diagram = 
-            ProjectManager.getManager().getCurrentProject().getActiveDiagram();
-        ns = ((UMLMutableGraphSupport) diagram.getGraphModel()).getNamespace();
-        if (ns == null || !ModelFacade.isANamespace(ns)) {
-            ns = ProjectManager.getManager().getCurrentProject().getModel();
-        }
-        ModelFacade.setNamespace(comment, ns);
-        return comment;
-    }
-    
-    /**
-     * Builds the model behind a connection between a comment and 
-     * the annotated modelelement.
-     *
-     * @param from The comment or annotated element.
-     * @param to The comment or annotated element.
-     * @return A commentEdge representing the model behind the connection 
-     *         between a comment and an annotated modelelement.
-     */
-    public CommentEdge buildCommentConnection(Object from, Object to) {
-        if (from == null || to == null) {
-            throw new IllegalArgumentException("Either fromNode == null "
-                    			       + "or toNode == null");
-        }
-        Object comment = null;
-        Object annotatedElement = null;
-        if (ModelFacade.isAComment(from)) {
-            comment = from;
-            annotatedElement = to;
-        } else {
-            comment = to;
-            annotatedElement = from;
-        }
-        
-        CommentEdge connection = new CommentEdge(from, to);
-        ModelFacade.addAnnotatedElement(comment, annotatedElement);
-        return connection;
-        
     }
 
     /**
@@ -1889,8 +1824,11 @@ public class CoreFactory extends AbstractUmlModelFactory {
 
     /**
      * Used by the copy functions. Do not call this function directly.
+     * TODO: Shouldn't this be private then? Linus thinks so.
+     * @deprecated by Linus Tolke as of 0.15.4. Will be made private.
      */
-    private void doCopyElement(MElement source, MElement target) {
+    public void doCopyElement(MElement source, MElement target) {
+	UmlFactory.getFactory().doCopyBase(source, target);
 	// Nothing more to do.
     }
 

@@ -34,11 +34,10 @@ package org.argouml.uml.ui.foundation.core;
 import org.argouml.i18n.Translator;
 import org.argouml.model.ModelFacade;
 import org.argouml.model.uml.foundation.core.CoreFactory;
+
 import org.argouml.ui.targetmanager.TargetManager;
-import org.argouml.uml.ui.ActionNavigateNamespace;
-import org.argouml.uml.ui.ActionRemoveFromModel;
 import org.argouml.uml.ui.PropPanelButton;
-import org.argouml.uml.ui.PropPanelButton2;
+import org.argouml.uml.ui.UMLComboBoxNavigator;
 import org.argouml.util.ConfigLoader;
 
 public class PropPanelInterface extends PropPanelClassifier {
@@ -51,8 +50,7 @@ public class PropPanelInterface extends PropPanelClassifier {
 	Class mclass = (Class)ModelFacade.INTERFACE;
 
 	addField(Translator.localize("UMLMenu", "label.name"), getNameTextField());
-	// addField(Translator.localize("UMLMenu", "label.stereotype"), new UMLComboBoxNavigator(this, Translator.localize("UMLMenu", "tooltip.nav-stereo"), getStereotypeBox()));
-	addField(Translator.localize("UMLMenu", "label.stereotype"), getStereotypeBox());
+	addField(Translator.localize("UMLMenu", "label.stereotype"), new UMLComboBoxNavigator(this, Translator.localize("UMLMenu", "tooltip.nav-stereo"), getStereotypeBox()));
 	addField(Translator.localize("UMLMenu", "label.namespace"), getNamespaceComboBox());
 	/*
 	  JPanel modifiersPanel = new JPanel(new GridLayout(0,2));
@@ -61,8 +59,8 @@ public class PropPanelInterface extends PropPanelClassifier {
 	  modifiersPanel.add(new UMLCheckBox(Translator.localize("UMLMenu", "checkbox.final-uc"),this,new UMLReflectionBooleanProperty("isLeaf",mclass,"isLeaf","setLeaf")));
 	  modifiersPanel.add(new UMLCheckBox(Translator.localize("UMLMenu", "checkbox.root-uc"),this,new UMLReflectionBooleanProperty("isRoot",mclass,"isRoot","setRoot")));
 	*/
-	add( _modifiersPanel);
-	add(getNamespaceVisibilityPanel());
+	addField(Translator.localize("UMLMenu", "label.modifiers"), _modifiersPanel);
+	addField(Translator.localize("UMLMenu", "label.namespace-visibility"), getNamespaceVisibilityPanel());
 
 	addSeperator();
 
@@ -74,13 +72,13 @@ public class PropPanelInterface extends PropPanelClassifier {
 	addField(Translator.localize("UMLMenu", "label.association-ends"), getAssociationEndScroll());
 	addField(Translator.localize("UMLMenu", "label.operations"), getFeatureScroll());
 
-	buttonPanel.add(new PropPanelButton2(this, new ActionNavigateNamespace()));
+	new PropPanelButton(this, buttonPanel, _navUpIcon, Translator.localize("UMLMenu", "button.go-up"), "navigateNamespace", null);
 	new PropPanelButton(this, buttonPanel, _addOpIcon, Translator.localize("UMLMenu", "button.new-operation"), "addOperation", null);
 	//new PropPanelButton(this,buttonPanel,_generalizationIcon, Translator.localize("UMLMenu", "button.new-generalization"),"addGeneralization",null);
 	//new PropPanelButton(this,buttonPanel,_realizationIcon, Translator.localize("UMLMenu", "button.new-realization"),"addRealization",null);
-	new PropPanelButton(this, buttonPanel, _receptionIcon, Translator.localize("UMLMenu", "button.new-reception"), getActionNewReception());
-	buttonPanel
-        .add(new PropPanelButton2(this, new ActionRemoveFromModel()));
+	new PropPanelButton(this, buttonPanel, _deleteIcon, Translator.localize("UMLMenu", "button.delete-interface"), "removeElement", null);
+	//does this make sense?? new PropPanelButton(this,buttonPanel,_interfaceIcon, Translator.localize("UMLMenu", "button.new-interface"),"newInterface",null);
+
     }
 
     public void newInterface() {

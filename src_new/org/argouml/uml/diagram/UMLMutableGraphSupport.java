@@ -24,13 +24,12 @@
 
 package org.argouml.uml.diagram;
 
-import org.argouml.model.ModelFacade;
 import org.argouml.model.uml.UmlFactory;
 import org.argouml.model.uml.UmlException;
-import org.argouml.model.uml.UmlHelper;
 
 import java.util.Hashtable;
 import java.util.Vector;
+
 import org.apache.log4j.Logger;
 
 import org.tigris.gef.base.Editor;
@@ -50,13 +49,16 @@ import org.tigris.gef.graph.MutableGraphSupport;
  */
 public abstract class UMLMutableGraphSupport extends MutableGraphSupport {
     
-    private static final Logger LOG =
+    /**
+     * @deprecated by Linus Tolke as of 0.16. Will be private.
+     */
+    protected static Logger cat =
 	Logger.getLogger(UMLMutableGraphSupport.class);
     
     /** contains all the nodes in the graphmodel/diagram. */    
-    private Vector nodes = new Vector();
+    protected Vector _nodes = new Vector();
     /** constains all the edges in the graphmodel/diagram. */    
-    private Vector edges = new Vector();
+    protected Vector _edges = new Vector();
     
     
     /** constructor.
@@ -70,27 +72,20 @@ public abstract class UMLMutableGraphSupport extends MutableGraphSupport {
      * @see org.tigris.gef.graph.MutableGraphSupport#getNodes()
      * @return Vector of nodes in the graphmodel/diagram
      */    
-    public Vector getNodes() { return nodes; }
+    public Vector getNodes() { return _nodes; }
     
     /** get all the edges from the graphmodel/diagram
      * @return Vector of edges in the graphmodel/diagram
      */    
-    public Vector getEdges() { return edges; }
+    public Vector getEdges() { return _edges; }
     
     
-    /**
-     * @see org.tigris.gef.graph.MutableGraphModel#containsNode(java.lang.Object)
-     */
     public boolean containsNode(Object node) {
-	return nodes.contains(node);
+	return _nodes.contains(node);
     }
     
-    /**
-     * @param edge the candidate edge
-     * @return true if it is contained
-     */
     public boolean constainsEdge(Object edge) {
-	return edges.contains(edge);
+	return _edges.contains(edge);
     }
     
     /** remove a node from the diagram and notify GEF
@@ -98,7 +93,7 @@ public abstract class UMLMutableGraphSupport extends MutableGraphSupport {
      */    
     public void removeNode(Object node) {
 	if (!containsNode(node)) return;
-	nodes.removeElement(node);
+	_nodes.removeElement(node);
 	fireNodeRemoved(node);
     }
     
@@ -107,16 +102,13 @@ public abstract class UMLMutableGraphSupport extends MutableGraphSupport {
      */    
     public void removeEdge(Object edge) {
 	if (!containsEdge(edge)) return;
-	edges.removeElement(edge);
+	_edges.removeElement(edge);
 	fireEdgeRemoved(edge);
     }
     
     /**
      * Assume that anything can be connected to anything unless overridden
      * in a subclass.
-     *
-     * @see org.tigris.gef.graph.MutableGraphModel#canConnect(java.lang.Object, 
-     * java.lang.Object)
      */
     public boolean canConnect(Object fromP, Object toP) {
         return true;
@@ -125,19 +117,11 @@ public abstract class UMLMutableGraphSupport extends MutableGraphSupport {
 
     /** The connect method without specifying a connection
      * type is unavailable by default
-     *
-     * @see org.tigris.gef.graph.MutableGraphModel#connect(java.lang.Object, 
-     * java.lang.Object)
      */
-    public Object connect(Object fromPort, Object toPort) {        
+    public Object connect(Object fromPort, Object toPort) {
         throw new UnsupportedOperationException("The connect method is "
 						+ "not supported");
     }
-    
-    /**
-     * @return the namespace of the diagram
-     */
-    public abstract Object getNamespace();
 
     /** Contruct and add a new edge of the given kind and connect
      * the given ports.
@@ -180,39 +164,16 @@ public abstract class UMLMutableGraphSupport extends MutableGraphSupport {
         }
         
         if (connection == null) {
-            LOG.debug("Cannot make a " + edgeClass.getName()
+            cat.debug("Cannot make a " + edgeClass.getName()
 		      + " between a " + fromPort.getClass().getName()
 		      + " and a " + toPort.getClass().getName());
             return null;
         }
         
         addEdge(connection);
-        LOG.debug("Connection type" + edgeClass.getName()
+        cat.debug("Connection type" + edgeClass.getName()
 		  + " made between a " + fromPort.getClass().getName()
 		  + " and a " + toPort.getClass().getName());
         return connection;
-    }
-    
-    
-    /**
-     * @see org.tigris.gef.graph.MutableGraphModel#canAddNode(java.lang.Object)
-     */
-    public boolean canAddNode(Object node) {
-        if (node == null) return false;
-        if (ModelFacade.isAComment(node)) return true;
-        return false;
-    }
-    
-    
-    /**
-     * @see org.tigris.gef.graph.MutableGraphModel#canAddEdge(java.lang.Object)
-     */
-    public boolean canAddEdge(Object edge) {   
-        if (edge == null) {
-            return false;
-        }
-       return (UmlFactory.getFactory().isConnectionValid(edge.getClass(), 
-               UmlHelper.getHelper().getSource(edge), 
-               UmlHelper.getHelper().getDestination(edge)));
     }
 }

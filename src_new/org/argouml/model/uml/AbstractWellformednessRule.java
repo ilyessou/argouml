@@ -43,27 +43,19 @@ public abstract class AbstractWellformednessRule {
     /**
      * the message key to be looked up to show the message to the user
      */
-    private String key; 
+    private String _key; 
 	
     /**
      * Checks if the combination of the element and the newValue give
      * a wellformed result
-     *
-     * @param element a UML element
-     * @param newValue the new value to be tested
-     * @return true if wellformed
      */
-    public abstract boolean isWellformed(
-            Object/*MBase*/ element, 
-            Object newValue);
+    public abstract boolean isWellformed(Object/*MBase*/ element, Object newValue);
 	
     /**
      * Returns the localized user message
-     *
-     * @return the localized user message
      */
     public String getUserMessage() {
-	return Translator.localize("UMLMenu", "wellformednessrule." + key);
+	return Translator.localize("UMLMenu", "wellformednessrule." + _key);
     }
 	
     /**
@@ -78,24 +70,15 @@ public abstract class AbstractWellformednessRule {
      * Keys are looked up in UMLResourceBundle for the time
      * being. Keys start with wellformednessrule. over there. This is
      * added to the key entered here.
-     *
-     * @param k the key
      */
-    public void setUserMessageKey(String k) {
-	key = k;
+    public void setUserMessageKey(String key) {
+	_key = key;
     }
 	
-    /**
-     * Constructor 
-     * @param k the key
-     */
-    public AbstractWellformednessRule(String k) {
-	key = k;
+    public AbstractWellformednessRule(String key) {
+	_key = key;
     }
 	
-    /**
-     * Constructor
-     */
     public AbstractWellformednessRule() { }
 
 }

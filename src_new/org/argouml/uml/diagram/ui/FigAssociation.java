@@ -29,6 +29,7 @@ import java.awt.Graphics;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.MouseEvent;
+import java.beans.PropertyVetoException;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Vector;
@@ -52,43 +53,38 @@ import org.tigris.gef.presentation.FigText;
 
 import ru.novosoft.uml.MElementEvent;
 
-
-/**
- * This class represents an association Fig on a diagram
- *
- */
 public class FigAssociation extends FigEdgeModelElement {
+    
    
+
     // TODO: should be part of some preferences object
-    private static final boolean SUPPRESS_BIDIRECTIONAL_ARROWS = true;
+    public static boolean SUPPRESS_BIDIRECTIONAL_ARROWS = true;
 
     /**
      * Group for the FigTexts concerning the source association end
      */
-    private FigTextGroup srcGroup = new FigTextGroup();
+    protected FigTextGroup _srcGroup = new FigTextGroup();
 
     /**
      * Group for the FigTexts concerning the dest association end
      */
-    private FigTextGroup destGroup = new FigTextGroup();
+    protected FigTextGroup _destGroup = new FigTextGroup();
 
     /**
      * Group for the FigTexts concerning the name and stereotype of the 
      * association itself.
      */
-    private FigTextGroup middleGroup = new FigTextGroup();
+    protected FigTextGroup _middleGroup = new FigTextGroup();
     
-    private FigText srcMult, srcRole;
-    private FigText destMult, destRole;
-    private FigText srcOrdering, destOrdering;
+    protected FigText _srcMult, _srcRole;
+    protected FigText _destMult, _destRole;
+    protected FigText _srcOrdering, _destOrdering;
 
-    private ArrowHead sourceArrowHead, destArrowHead;
+    protected ArrowHead sourceArrowHead, destArrowHead;
 
 
 
     /**
-     * Main constructor
-     * 
      * Don't call this constructor directly. It is public since this
      * is necessary for loading. Use the FigAssociation(Object, Layer)
      * constructor instead!
@@ -98,74 +94,74 @@ public class FigAssociation extends FigEdgeModelElement {
     
         // lets use groups to construct the different text sections at
         // the association
-        middleGroup.addFig(getNameFig());
-        middleGroup.addFig(getStereotypeFig());
-        addPathItem(middleGroup, new PathConvPercent(this, 50, 25));
+        _middleGroup.addFig(_name);
+        _middleGroup.addFig(_stereo);
+        addPathItem(_middleGroup, new PathConvPercent(this, 50, 25));
     
-        srcMult = new FigText(10, 10, 90, 20);
-        srcMult.setFont(getLabelFont());
-        srcMult.setTextColor(Color.black);
-        srcMult.setTextFilled(false);
-        srcMult.setFilled(false);
-        srcMult.setLineWidth(0);
-        srcMult.setMultiLine(false);
-        srcMult.setJustification(FigText.JUSTIFY_CENTER);
+        _srcMult = new FigText(10, 10, 90, 20);
+        _srcMult.setFont(LABEL_FONT);
+        _srcMult.setTextColor(Color.black);
+        _srcMult.setTextFilled(false);
+        _srcMult.setFilled(false);
+        _srcMult.setLineWidth(0);
+        _srcMult.setMultiLine(false);
+        _srcMult.setJustification(FigText.JUSTIFY_CENTER);
 
-        srcRole = new FigText(10, 10, 90, 20);
-        srcRole.setFont(getLabelFont());
-        srcRole.setTextColor(Color.black);
-        srcRole.setTextFilled(false);
-        srcRole.setFilled(false);
-        srcRole.setLineWidth(0);
-        srcRole.setMultiLine(false);
-        srcRole.setJustification(FigText.JUSTIFY_CENTER);
+        _srcRole = new FigText(10, 10, 90, 20);
+        _srcRole.setFont(LABEL_FONT);
+        _srcRole.setTextColor(Color.black);
+        _srcRole.setTextFilled(false);
+        _srcRole.setFilled(false);
+        _srcRole.setLineWidth(0);
+        _srcRole.setMultiLine(false);
+        _srcRole.setJustification(FigText.JUSTIFY_CENTER);
 
-        srcOrdering = new FigText(10, 10, 90, 20);
-        srcOrdering.setFont(getLabelFont());
-        srcOrdering.setTextColor(Color.black);
-        srcOrdering.setTextFilled(false);
-        srcOrdering.setFilled(false);
-        srcOrdering.setLineWidth(0);
-        srcOrdering.setMultiLine(false);
-        srcOrdering.setJustification(FigText.JUSTIFY_CENTER);
+        _srcOrdering = new FigText(10, 10, 90, 20);
+        _srcOrdering.setFont(LABEL_FONT);
+        _srcOrdering.setTextColor(Color.black);
+        _srcOrdering.setTextFilled(false);
+        _srcOrdering.setFilled(false);
+        _srcOrdering.setLineWidth(0);
+        _srcOrdering.setMultiLine(false);
+        _srcOrdering.setJustification(FigText.JUSTIFY_CENTER);
 
-        srcGroup.addFig(srcRole);
-        srcGroup.addFig(srcOrdering);
-        addPathItem(srcMult, new PathConvPercentPlusConst(this, 0, 15, 15));
-        addPathItem(srcGroup, new PathConvPercentPlusConst(this, 0, 35, -15));
+        _srcGroup.addFig(_srcRole);
+        _srcGroup.addFig(_srcOrdering);
+        addPathItem(_srcMult, new PathConvPercentPlusConst(this, 0, 15, 15));
+        addPathItem(_srcGroup, new PathConvPercentPlusConst(this, 0, 35, -15));
    
-        destMult = new FigText(10, 10, 90, 20);
-        destMult.setFont(getLabelFont());
-        destMult.setTextColor(Color.black);
-        destMult.setTextFilled(false);
-        destMult.setFilled(false);
-        destMult.setLineWidth(0);
-        destMult.setMultiLine(false);
-        destMult.setJustification(FigText.JUSTIFY_CENTER);
+        _destMult = new FigText(10, 10, 90, 20);
+        _destMult.setFont(LABEL_FONT);
+        _destMult.setTextColor(Color.black);
+        _destMult.setTextFilled(false);
+        _destMult.setFilled(false);
+        _destMult.setLineWidth(0);
+        _destMult.setMultiLine(false);
+        _destMult.setJustification(FigText.JUSTIFY_CENTER);
 
-        destRole = new FigText(0, 0, 90, 20);
-        destRole.setFont(getLabelFont());
-        destRole.setTextColor(Color.black);
-        destRole.setTextFilled(false);
-        destRole.setFilled(false);
-        destRole.setLineWidth(0);
-        destRole.setMultiLine(false);
-        destRole.setJustification(FigText.JUSTIFY_CENTER);
+        _destRole = new FigText(0, 0, 90, 20);
+        _destRole.setFont(LABEL_FONT);
+        _destRole.setTextColor(Color.black);
+        _destRole.setTextFilled(false);
+        _destRole.setFilled(false);
+        _destRole.setLineWidth(0);
+        _destRole.setMultiLine(false);
+        _destRole.setJustification(FigText.JUSTIFY_CENTER);
 
-        destOrdering = new FigText(0, 0, 90, 20);
-        destOrdering.setFont(getLabelFont());
-        destOrdering.setTextColor(Color.black);
-        destOrdering.setTextFilled(false);
-        destOrdering.setFilled(false);
-        destOrdering.setLineWidth(0);
-        destOrdering.setMultiLine(false);
-        destOrdering.setJustification(FigText.JUSTIFY_CENTER);
+        _destOrdering = new FigText(0, 0, 90, 20);
+        _destOrdering.setFont(LABEL_FONT);
+        _destOrdering.setTextColor(Color.black);
+        _destOrdering.setTextFilled(false);
+        _destOrdering.setFilled(false);
+        _destOrdering.setLineWidth(0);
+        _destOrdering.setMultiLine(false);
+        _destOrdering.setJustification(FigText.JUSTIFY_CENTER);
 
-        destGroup.addFig(destRole);
-        destGroup.addFig(destOrdering);
-        addPathItem(destMult,
+        _destGroup.addFig(_destRole);
+        _destGroup.addFig(_destOrdering);
+        addPathItem(_destMult,
 		    new PathConvPercentPlusConst(this, 100, -15, 15));
-        addPathItem(destGroup,
+        addPathItem(_destGroup,
 		    new PathConvPercentPlusConst(this, 100, -35, -15));
     
         setBetweenNearestPoints(true);
@@ -174,21 +170,14 @@ public class FigAssociation extends FigEdgeModelElement {
 		 .getActiveDiagram().getLayer());
     }
 
-    /**
-     * Constructor that hooks the Fig to an existing UML element
-     * @param edge the UMl element
-     * @param lay the layer
-     */
     public FigAssociation(Object edge, Layer lay) {
 	this();
 	setLayer(lay);
 	setOwner(edge);
     }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#setOwner(java.lang.Object)
-     */
     public void setOwner(Object association) {
+	Object oldOwner = getOwner();
 	super.setOwner(association);
 
 	if (org.argouml.model.ModelFacade.isAAssociation(association)) {
@@ -205,6 +194,7 @@ public class FigAssociation extends FigEdgeModelElement {
 	    UmlModelEventPump.getPump()
 		.addModelEventListener(this, association);
 	    Object assEnd1 = (connections.toArray())[0];
+	    Object assEnd2 = (connections.toArray())[1];
 	    FigNode destNode =
 		(FigNode) getLayer()
 		    .presentationFor(ModelFacade.getType(assEnd1));
@@ -227,10 +217,7 @@ public class FigAssociation extends FigEdgeModelElement {
     ////////////////////////////////////////////////////////////////
     // event handlers
 
-    /**
-     * @see org.argouml.uml.diagram.ui.FigEdgeModelElement#textEdited(org.tigris.gef.presentation.FigText)
-     */
-    protected void textEdited(FigText ft) {
+    protected void textEdited(FigText ft) throws PropertyVetoException {
 	
         if (getOwner() == null) return;
 	super.textEdited(ft);
@@ -238,21 +225,21 @@ public class FigAssociation extends FigEdgeModelElement {
 	Collection conn = ModelFacade.getConnections(getOwner());
 	if (conn == null || conn.size() == 0) return;
 
-	if (ft == srcRole) {
+	if (ft == _srcRole) {
 	    Object srcAE = (conn.toArray())[0];
-	    ModelFacade.setName(srcAE, srcRole.getText());
-	} else if (ft == destRole) {
+	    ModelFacade.setName(srcAE, _srcRole.getText());
+	} else if (ft == _destRole) {
 	    Object destAE = (conn.toArray())[1];
-	    ModelFacade.setName(destAE, destRole.getText());
-	} else if (ft == srcMult) {
+	    ModelFacade.setName(destAE, _destRole.getText());
+	} else if (ft == _srcMult) {
 	    Object srcAE = (conn.toArray())[0];
 	    Object multi = UmlFactory.getFactory().getDataTypes()
-			   .createMultiplicity(srcMult.getText());
+			   .createMultiplicity(_srcMult.getText());
 	    ModelFacade.setMultiplicity(srcAE, multi);
-	} else if (ft == destMult) {
+	} else if (ft == _destMult) {
 	    Object destAE = (conn.toArray())[1];
 	    Object multi = UmlFactory.getFactory().getDataTypes()
-			   .createMultiplicity(destMult.getText());
+			   .createMultiplicity(_destMult.getText());
 	    ModelFacade.setMultiplicity(destAE, multi);
 	}
     }
@@ -289,9 +276,6 @@ public class FigAssociation extends FigEdgeModelElement {
 	    roleToUpdate.setText(visi + Notation.generate(this, name));
     }
 
-    /**
-     * @see org.argouml.uml.diagram.ui.FigEdgeModelElement#modelChanged(ru.novosoft.uml.MElementEvent)
-     */
     protected void modelChanged(MElementEvent e) {
 	super.modelChanged(e);
 	Object associationEnd = getOwner(); //MAssociation
@@ -308,8 +292,8 @@ public class FigAssociation extends FigEdgeModelElement {
 	//MAssociationEnd
 	Object ae1 =
 	    ((ModelFacade.getConnections(associationEnd)).toArray())[1];
-	updateEnd(srcMult, srcRole, srcOrdering, ae0);
-	updateEnd(destMult, destRole, destOrdering, ae1);
+	updateEnd(_srcMult, _srcRole, _srcOrdering, ae0);
+	updateEnd(_destMult, _destRole, _destOrdering, ae1);
     
 	boolean srcNav = ModelFacade.isNavigable(ae0);
 	boolean destNav = ModelFacade.isNavigable(ae1);
@@ -323,26 +307,21 @@ public class FigAssociation extends FigEdgeModelElement {
 	    chooseArrowHead(ModelFacade.getAggregation(ae1), destNav);
 	setSourceArrowHead(sourceArrowHead);
 	setDestArrowHead(destArrowHead);
-	srcGroup.calcBounds();
-	destGroup.calcBounds();
-	middleGroup.calcBounds();
+	_srcGroup.calcBounds();
+	_destGroup.calcBounds();
+	_middleGroup.calcBounds();
 	this.computeRoute();
     }
 
-    private static final ArrowHead NAV_AGGREGATE =
+    static ArrowHead _NAV_AGGREGATE =
 	new ArrowHeadComposite(ArrowHeadDiamond.WhiteDiamond,
 			       new ArrowHeadGreater());
 
-    private static final ArrowHead NAV_COMP =
+    static ArrowHead _NAV_COMP =
 	new ArrowHeadComposite(ArrowHeadDiamond.BlackDiamond,
 			       new ArrowHeadGreater());
 
-    /**
-     * @param ak Object of type AggregationKind
-     * @param nav the result of a ModelFacade.isNavigable(AssociationEnd)
-     * @return the ArrowHead chosen
-     */
-    private ArrowHead chooseArrowHead(Object ak, boolean nav) {
+    protected ArrowHead chooseArrowHead(Object ak, boolean nav) {
         
 	ArrowHead arrow = ArrowHeadNone.TheInstance;
 
@@ -350,9 +329,9 @@ public class FigAssociation extends FigEdgeModelElement {
 	    if (ModelFacade.NONE_AGGREGATIONKIND.equals(ak) || (ak == null)) {
 		arrow = new ArrowHeadGreater();
             } else if (ModelFacade.AGGREGATE_AGGREGATIONKIND.equals(ak)) {
-		arrow = NAV_AGGREGATE;
+		arrow = _NAV_AGGREGATE;
             } else if (ModelFacade.COMPOSITE_AGGREGATIONKIND.equals(ak)) {
-		arrow = NAV_COMP;
+		arrow = _NAV_COMP;
             }
 	} else {
 	    if (ModelFacade.NONE_AGGREGATIONKIND.equals(ak) || (ak == null)) {
@@ -366,9 +345,6 @@ public class FigAssociation extends FigEdgeModelElement {
 	return arrow;
     }
 
-    /**
-     * @see org.tigris.gef.ui.PopupGenerator#getPopUpActions(java.awt.event.MouseEvent)
-     */
     public Vector getPopUpActions(MouseEvent me) {
 	Vector popUpActions = super.getPopUpActions(me);
 	// x^2 + y^2 = r^2  (equation of a circle)
@@ -396,18 +372,18 @@ public class FigAssociation extends FigEdgeModelElement {
             ArgoJMenu multMenu =
 		new ArgoJMenu(BUNDLE, "menu.popup.multiplicity");
 
-            multMenu.add(ActionMultiplicity.getSrcMultOne());
-            multMenu.add(ActionMultiplicity.getSrcMultZeroToOne());
-            multMenu.add(ActionMultiplicity.getSrcMultOneToMany());
-            multMenu.add(ActionMultiplicity.getSrcMultZeroToMany());
+            multMenu.add(ActionMultiplicity.SrcMultOne);
+            multMenu.add(ActionMultiplicity.SrcMultZeroToOne);
+            multMenu.add(ActionMultiplicity.SrcMultOneToMany);
+            multMenu.add(ActionMultiplicity.SrcMultZeroToMany);
             popUpActions.insertElementAt(multMenu, 
                 popUpActions.size() - POPUP_ADD_OFFSET);
 
             ArgoJMenu aggMenu = new ArgoJMenu(BUNDLE, "menu.popup.aggregation");
         
-	    aggMenu.add(ActionAggregation.getSrcAggNone());
-	    aggMenu.add(ActionAggregation.getSrcAgg());
-	    aggMenu.add(ActionAggregation.getSrcAggComposite());
+	    aggMenu.add(ActionAggregation.SrcAggNone);
+	    aggMenu.add(ActionAggregation.SrcAgg);
+	    aggMenu.add(ActionAggregation.SrcAggComposite);
 	    popUpActions.insertElementAt(aggMenu, 
 					 (popUpActions.size()
 					  - POPUP_ADD_OFFSET));
@@ -415,18 +391,18 @@ public class FigAssociation extends FigEdgeModelElement {
 	else if (destDeterminingFactor < rSquared) {
             ArgoJMenu multMenu =
 		new ArgoJMenu(BUNDLE, "menu.popup.multiplicity");
-	    multMenu.add(ActionMultiplicity.getDestMultOne());
-	    multMenu.add(ActionMultiplicity.getDestMultZeroToOne());
-	    multMenu.add(ActionMultiplicity.getDestMultOneToMany());
-	    multMenu.add(ActionMultiplicity.getDestMultZeroToMany());
+	    multMenu.add(ActionMultiplicity.DestMultOne);
+	    multMenu.add(ActionMultiplicity.DestMultZeroToOne);
+	    multMenu.add(ActionMultiplicity.DestMultOneToMany);
+	    multMenu.add(ActionMultiplicity.DestMultZeroToMany);
 	    popUpActions.insertElementAt(multMenu, 
 					 (popUpActions.size()
 					  - POPUP_ADD_OFFSET));
 
             ArgoJMenu aggMenu = new ArgoJMenu(BUNDLE, "menu.popup.aggregation");
-	    aggMenu.add(ActionAggregation.getDestAggNone());
-	    aggMenu.add(ActionAggregation.getDestAgg());
-	    aggMenu.add(ActionAggregation.getDestAggComposite());
+	    aggMenu.add(ActionAggregation.DestAggNone);
+	    aggMenu.add(ActionAggregation.DestAgg);
+	    aggMenu.add(ActionAggregation.DestAggComposite);
 	    popUpActions.insertElementAt(aggMenu, 
 					 (popUpActions.size()
 					  - POPUP_ADD_OFFSET));
@@ -492,18 +468,15 @@ public class FigAssociation extends FigEdgeModelElement {
             return;
         Object assoc =  getOwner();
         if (ModelFacade.isAbstract(assoc))
-            getNameFig().setFont(getItalicLabelFont());
+            _name.setFont(ITALIC_LABEL_FONT);
         else
-            getNameFig().setFont(getLabelFont());
+            _name.setFont(LABEL_FONT);
         super.updateNameText();
         setBounds(rect.x, rect.y, rect.width, rect.height);
     }
     
     static final long serialVersionUID = 9100125695919853919L;
   
-    /**
-     * @see org.tigris.gef.presentation.Fig#paint(java.awt.Graphics)
-     */
     public void paint(Graphics g) {
         if (sourceArrowHead == null || destArrowHead == null) {
 	    modelChanged(null);

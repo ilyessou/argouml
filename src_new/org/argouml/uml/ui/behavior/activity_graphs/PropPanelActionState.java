@@ -29,47 +29,44 @@
 
 package org.argouml.uml.ui.behavior.activity_graphs;
 
-import javax.swing.ImageIcon;
-
 import org.argouml.i18n.Translator;
-import org.argouml.swingext.Orientation;
+
+import org.argouml.uml.ui.UMLComboBoxNavigator;
 import org.argouml.uml.ui.behavior.state_machines.PropPanelState;
 import org.argouml.util.ConfigLoader;
 
-/**
- * User interface panel shown at the bottom of the screen that allows the user
- * to edit the properties of the selected UML model element.
- */
+/** User interface panel shown at the bottom of the screen that allows
+ *  the user to edit the properties of the selected UML model
+ *  element. */
 
 public class PropPanelActionState extends PropPanelState {
 
+    ////////////////////////////////////////////////////////////////
+    // contructors
     public PropPanelActionState() {
-        this("Action State", _actionStateIcon, ConfigLoader
-                .getTabPropsOrientation());
-    }
 
-    public PropPanelActionState(String name, ImageIcon icon,
-            Orientation orientation) {
+        super("Action State", _actionStateIcon,
+	      ConfigLoader.getTabPropsOrientation());
 
-        super(name, _actionStateIcon, orientation);
-
-        addField(Translator.localize("UMLMenu", "label.name"),
-                getNameTextField());
-        //        addField(Translator.localize("UMLMenu", "label.stereotype"),
-        //		 new UMLComboBoxNavigator(this,
-        //					  Translator.localize("UMLMenu",
-        //							"tooltip.nav-stereo"),
-        //					  getStereotypeBox()));
+        addField(Translator.localize("UMLMenu", "label.name"), getNameTextField());
         addField(Translator.localize("UMLMenu", "label.stereotype"),
-                getStereotypeBox());
+		 new UMLComboBoxNavigator(this,
+					  Translator.localize("UMLMenu",
+							"tooltip.nav-stereo"),
+					  getStereotypeBox()));
+        addField(Translator.localize("UMLMenu", "label.namespace"),
+		 getNamespaceScroll());
 
         addField(Translator.localize("UMLMenu", "label.entry"), entryScroll);
+        addField(Translator.localize("UMLMenu", "label.exit"), exitScroll);
+        addField(Translator.localize("UMLMenu", "label.do-activity"), doScroll);
+
         addSeperator();
 
-        addField(Translator.localize("UMLMenu", "label.incoming"),
-                incomingScroll);
-        addField(Translator.localize("UMLMenu", "label.outgoing"),
-                outgoingScroll);
+        addField(Translator.localize("UMLMenu", "label.incoming"), incomingScroll);
+        addField(Translator.localize("UMLMenu", "label.outgoing"), outgoingScroll);
+        addField(Translator.localize("UMLMenu", "label.internal-transitions"),
+		 internalTransitionsScroll);
 
     }
 

@@ -49,8 +49,7 @@ public abstract class ActionAddDiagram extends UMLChangeAction {
 
     /**
      * Constructor for ActionAddDiagram.
-     * 
-     * @param s the name for this action
+     * @param s
      */
     public ActionAddDiagram(String s) {
         super(s);
@@ -77,9 +76,6 @@ public abstract class ActionAddDiagram extends UMLChangeAction {
                     ns = owner;
                 }
             }
-        }
-        if (ns == null) {
-            ns = p.getRoot();
         }
         if (ns != null && isValidNamespace(ns)) {
             UMLDiagram diagram = createDiagram(ns);

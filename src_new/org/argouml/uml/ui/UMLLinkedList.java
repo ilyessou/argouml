@@ -25,11 +25,14 @@
 // $header$
 package org.argouml.uml.ui;
 
-import java.awt.Color;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 
 import javax.swing.ListSelectionModel;
+import javax.swing.SwingUtilities;
 import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
+
+import org.argouml.ui.targetmanager.TargetManager;
 
 /**
  * An UMLList that implements 'jump' behaviour. As soon as the user
@@ -39,9 +42,7 @@ import javax.swing.event.ListSelectionListener;
  * @since Oct 2, 2002
  * @author jaap.branderhorst@xs4all.nl
  */
-public class UMLLinkedList extends UMLList2 implements ListSelectionListener {
-    
-    private UMLLinkMouseListener _mouseListener;
+public class UMLLinkedList extends UMLList2 implements MouseListener {
 
     /**
      * Constructor for UMLLinkedList.
@@ -52,15 +53,11 @@ public class UMLLinkedList extends UMLList2 implements ListSelectionListener {
         UMLModelElementListModel2 dataModel, boolean showIcon) {
         super(dataModel, new UMLLinkedListCellRenderer(showIcon));
         setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        setForeground(Color.blue);
-        setSelectionForeground(Color.blue.darker());
-        _mouseListener = new UMLLinkMouseListener(this);
-        addMouseListener(_mouseListener);
-        addListSelectionListener(this);
+        addMouseListener(this);
     }
     
     public UMLLinkedList(UMLModelElementListModel2 dataModel) {
-        this(dataModel, true);
+        this(dataModel, false);
     }
 
     /**
@@ -69,12 +66,49 @@ public class UMLLinkedList extends UMLList2 implements ListSelectionListener {
      */
     protected void doIt(ListSelectionEvent e) {
     }
-    
+
     /**
-     * @see javax.swing.event.ListSelectionListener#valueChanged(javax.swing.event.ListSelectionEvent)
+     * @see java.awt.event.MouseListener#mouseClicked(
+     *          java.awt.event.MouseEvent)
      */
-    public void valueChanged(ListSelectionEvent e) {       
-        super.valueChanged(e);
-        _mouseListener.setSelectedValue(getSelectedValue());
+    public void mouseClicked(MouseEvent e) {
+        if (e.getSource() == this) {
+            if (e.getClickCount() >= 2
+		&& SwingUtilities.isLeftMouseButton(e)) {
+		
+                Object o = getSelectedValue();
+                if (org.argouml.model.ModelFacade.isAModelElement(o)) {
+                    TargetManager.getInstance().setTarget(o);
+                }
+
+            }
+            e.consume();
+        }
     }
+
+    /**
+     * @see java.awt.event.MouseListener#mouseEntered(java.awt.event.MouseEvent)
+     */
+    public void mouseEntered(MouseEvent e) {
+    }
+
+    /**
+     * @see java.awt.event.MouseListener#mouseExited(java.awt.event.MouseEvent)
+     */
+    public void mouseExited(MouseEvent e) {
+    }
+
+    /**
+     * @see java.awt.event.MouseListener#mousePressed(java.awt.event.MouseEvent)
+     */
+    public void mousePressed(MouseEvent e) {
+    }
+
+    /**
+     * @see java.awt.event.MouseListener#mouseReleased(
+     *          java.awt.event.MouseEvent)
+     */
+    public void mouseReleased(MouseEvent e) {
+    }
+
 }

@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2004 The Regents of the University of California. All
+// Copyright (c) 1996-2003 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -208,9 +208,9 @@ public class CrReservedName extends CrUML {
 	if (isBuiltin(nameStr))
 	    return NO_PROBLEM;
 
-        Enumeration names = _umlReserved.elements();
-        while (names.hasMoreElements()) {
-            String word = (String) names.nextElement();
+        Enumeration enum = _umlReserved.elements();
+        while (enum.hasMoreElements()) {
+            String word = (String) enum.nextElement();
             if (word.equalsIgnoreCase(nameStr)) return PROBLEM_FOUND;
         }
 
@@ -220,7 +220,7 @@ public class CrReservedName extends CrUML {
     /** Dont critique the built-in java types, they are supposed to
      * have those "reserved" names.
      *
-     * @param name The name of the type to test.
+     * @param the name of the type to test.
      * @return true if it is a builtin.
      */
     private boolean isBuiltin(String name) {

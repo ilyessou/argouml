@@ -39,15 +39,14 @@ import org.argouml.uml.ui.AbstractActionNewModelElement;
  */
 public class ActionNewPseudoState extends AbstractActionNewModelElement {
 
-    private static ActionNewPseudoState singleton = new ActionNewPseudoState();
+    public static ActionNewPseudoState SINGLETON = new ActionNewPseudoState();
     
     /**
      * Constructor for ActionNewPseudoState.
      */
     protected ActionNewPseudoState() {
         super();
-        putValue(Action.NAME, Translator.localize("UMLMenu", 
-                                                  "button.new-pseudostate"));
+        putValue(Action.NAME, Translator.localize("UMLMenu", "button.new-pseudostate"));
     }
 
     /**
@@ -56,13 +55,6 @@ public class ActionNewPseudoState extends AbstractActionNewModelElement {
     public void actionPerformed(ActionEvent e) {
         super.actionPerformed(e);
         StateMachinesFactory.getFactory().buildPseudoState(getTarget());
-    }
-
-    /**
-     * @return Returns the singleton.
-     */
-    public static ActionNewPseudoState getSingleton() {
-        return singleton;
     }
     
 

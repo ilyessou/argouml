@@ -39,9 +39,6 @@ public class ArgoEventPump {
 
     static final ArgoEventPump SINGLETON = new ArgoEventPump();
 
-    /**
-     * @return the singleton
-     */
     public static ArgoEventPump getInstance() {
         return SINGLETON;
     }
@@ -49,40 +46,22 @@ public class ArgoEventPump {
     private ArgoEventPump() {
     }
 
-    /**
-     * @param listener the listener to be added
-     */
     public static void addListener(ArgoEventListener listener) {
         SINGLETON.doAddListener(ArgoEvent.ANY_EVENT, listener);
     }
 
-    /**
-     * @param event the event to what the listener will listen (?)
-     * @param listener the listener to be added
-     */
     public static void addListener(int event, ArgoEventListener listener) {
         SINGLETON.doAddListener(event, listener);
     }
 
-    /**
-     * @param listener the listener to be removed
-     */
     public static void removeListener(ArgoEventListener listener) {
         SINGLETON.doRemoveListener(ArgoEvent.ANY_EVENT, listener);
     }
 
-    /**
-     * @param event the event to which the listener will not listen any more
-     * @param listener the listener to be removed
-     */
     public static void removeListener(int event, ArgoEventListener listener) {
         SINGLETON.doRemoveListener(event, listener);
     }
 
-    /**
-     * @param event the event to what the listener will listen (?)
-     * @param listener the listener to be added
-     */
     protected void doAddListener(int event, ArgoEventListener listener) {
         if (listeners == null)
             listeners = new ArrayList();
@@ -95,8 +74,8 @@ public class ArgoEventPump {
      * TODO: replace the listener implementation with a EventListenerList 
      * for better performance
      * 
-     * @param event the event to which the listener will not listen any more
-     * @param listener the listener to be removed
+     * @param event
+     * @param listener
      */
     protected void doRemoveListener(int event, ArgoEventListener listener) {
         if (listeners == null)
@@ -201,22 +180,16 @@ public class ArgoEventPump {
                 && event.getEventType() < ArgoEvent.ANY_NOTATION_EVENT + 100) {
                 if (listener instanceof ArgoNotationEventListener) {
                     handleFireNotationEvent((ArgoNotationEvent) event,
-					(ArgoNotationEventListener) listener);
+					    (ArgoNotationEventListener) listener);
                 }
             }
         }
     }
 
-    /**
-     * @param event the event to be fired
-     */
     public static void fireEvent(ArgoEvent event) {
         SINGLETON.doFireEvent(event);
     }
 
-    /**
-     * @param event the event to be fired
-     */
     protected void doFireEvent(ArgoEvent event) {
 
         if (listeners == null) {
@@ -238,8 +211,8 @@ public class ArgoEventPump {
     }
 
     class Pair {
-        private int eventType;
-        private ArgoEventListener listener;
+        int eventType;
+        ArgoEventListener listener;
         Pair(int myEventType, ArgoEventListener myListener) {
             eventType = myEventType;
             listener = myListener;
@@ -256,9 +229,6 @@ public class ArgoEventPump {
             return "{Pair(" + eventType + "," + listener + ")}";
         }
 
-        /**
-         * @see java.lang.Object#equals(java.lang.Object)
-         */
         public boolean equals(Object o) {
             if (o instanceof Pair) {
                 Pair p = (Pair) o;

@@ -120,8 +120,7 @@ public abstract class UMLComboBoxModel2
     /**
      * @see ru.novosoft.uml.MElementListener#listRoleItemSet(MElementEvent)
      */
-    public void listRoleItemSet(MElementEvent e) { 
-        }
+    public void listRoleItemSet(MElementEvent e) { }
 
     /**
      * If the property that this comboboxmodel depicts is changed by the NSUML
@@ -144,8 +143,7 @@ public abstract class UMLComboBoxModel2
     /**
      * @see ru.novosoft.uml.MElementListener#recovered(MElementEvent)
      */
-    public void recovered(MElementEvent e) { 
-        }
+    public void recovered(MElementEvent e) { }
 
     /**
      * @see ru.novosoft.uml.MElementListener#removed(MElementEvent)
@@ -318,14 +316,19 @@ public abstract class UMLComboBoxModel2
      * @param target
      */
     protected void setTarget(Object target) {
-        target = target instanceof Fig ? ((Fig) target).getOwner() : target;
-        if (ModelFacade.isABase(target) || ModelFacade.isADiagram(target)) {
-            UmlModelEventPump eventPump = UmlModelEventPump.getPump();
-            if (ModelFacade.isABase(_target)) {
-                eventPump.removeModelEventListener(this, _target,
-						   _propertySetName);
-            }
+	UmlModelEventPump eventPump = UmlModelEventPump.getPump();
 
+	if (ModelFacade.isABase(_target)) {
+	    eventPump.removeModelEventListener(this, _target,
+					       _propertySetName);
+	    _target = null;
+	    _fireListEvents = false;
+	    removeAllElements();
+	    _fireListEvents = true;
+	}
+
+	target = target instanceof Fig ? ((Fig) target).getOwner() : target;
+        if (ModelFacade.isABase(target) || ModelFacade.isADiagram(target)) {
             if (ModelFacade.isABase(target)) {
                 _target = target;
                 // UmlModelEventPump.getPump()
@@ -343,11 +346,10 @@ public abstract class UMLComboBoxModel2
                 _buildingModel = true;
                 buildModelList();
                 _buildingModel = false;
-                setSelectedItem(getSelectedModelElement());
                 if (getSize() > 0) {
                     fireIntervalAdded(this, 0, getSize() - 1);
                 }
-               
+                setSelectedItem(getSelectedModelElement());
             }
             if (getSelectedItem() != null && _clearable) {
                 addElement(""); // makes sure we can select 'none'
@@ -520,34 +522,21 @@ public abstract class UMLComboBoxModel2
      * @see TargetListener#targetAdded(TargetEvent)
      */
     public void targetAdded(TargetEvent e) {
-        setTarget(e.getNewTarget());
+	setTarget(e.getNewTarget());
     }
 
     /**
      * @see TargetListener#targetRemoved(TargetEvent)
      */
     public void targetRemoved(TargetEvent e) {
-        Object currentTarget = _target;
-        Object oldTarget = e.getOldTargets().length > 0 ? e.getOldTargets()[0] : null;
-        if (oldTarget instanceof Fig) {
-            oldTarget = ((Fig)oldTarget).getOwner();
-        }
-        if (oldTarget == currentTarget) {
-            if (ModelFacade.isABase(currentTarget)) {
-                UmlModelEventPump.getPump().removeModelEventListener(this,
-                        currentTarget, _propertySetName);
-            }
-            _target = e.getNewTarget();
-        }                
-        // setTarget(e.getNewTarget());
+	setTarget(e.getNewTarget());
     }
 
     /**
      * @see TargetListener#targetSet(TargetEvent)
      */
     public void targetSet(TargetEvent e) {
-        setTarget(e.getNewTarget());
-
+	setTarget(e.getNewTarget());
     }
 
 }

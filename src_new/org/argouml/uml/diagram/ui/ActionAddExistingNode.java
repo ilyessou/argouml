@@ -51,35 +51,22 @@ public class ActionAddExistingNode extends UMLAction
 
     ////////////////////////////////////////////////////////////////
     // instance variables
-    private String tabName;
-    private Object object;
+    protected String _tabName;
+    protected Object _object;
 
     ////////////////////////////////////////////////////////////////
     // constructor
-    /**
-     * The Constructor.
-     * @param myTabName the tab
-     */
-    public ActionAddExistingNode(String myTabName) {
-        super(myTabName, NO_ICON);
-        tabName = myTabName;
+    public ActionAddExistingNode(String tabName) {
+        super(tabName, NO_ICON);
+        _tabName = tabName;
     }
 
-    /**
-     * The Constructor.
-     *  
-     * @param myTabName the name of the tab
-     * @param o the node object to be added
-     */
-    public ActionAddExistingNode(String myTabName, Object o) {
-        super(myTabName, NO_ICON);
-        tabName = myTabName;
-        object = o;
+    public ActionAddExistingNode(String tabName, Object o) {
+        super(tabName, NO_ICON);
+        _tabName = tabName;
+        _object = o;
     }
 
-    /**
-     * @see org.argouml.uml.ui.UMLAction#shouldBeEnabled()
-     */
     public boolean shouldBeEnabled() {	
         Object target = TargetManager.getInstance().getTarget();
         ArgoDiagram dia = ProjectManager.getManager().
@@ -89,20 +76,15 @@ public class ActionAddExistingNode extends UMLAction
         return gm.canAddNode(target);
     }
 
-    /**
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-     */
     public void actionPerformed(ActionEvent ae) {
         Editor ce = Globals.curEditor();
         GraphModel gm = ce.getGraphModel();
         if (!(gm instanceof MutableGraphModel)) return;
 
         String instructions = null;
-        if (object != null) {
+        if (_object != null) {
             instructions =
-		Translator.localize ("Tree", 
-                    "misc.message.click-on-diagram-to-add") 
-                    + object.toString();
+		Translator.localize ("Tree", "misc.message.click-on-diagram-to-add") + _object.toString();
             Globals.showStatus(instructions);
         }
         ModePlace placeMode = new ModePlace(this, instructions);
@@ -119,21 +101,11 @@ public class ActionAddExistingNode extends UMLAction
     ////////////////////////////////////////////////////////////////
     // GraphFactory implementation
 
-    /**
-     * @see org.tigris.gef.graph.GraphFactory#makeGraphModel()
-     */
     public GraphModel makeGraphModel() { return null; }
-    
-    /**
-     * @see org.tigris.gef.graph.GraphFactory#makeEdge()
-     */
     public Object makeEdge() { return null; }
 
-    /**
-     * @see org.tigris.gef.graph.GraphFactory#makeNode()
-     */
     public Object makeNode() {
-        return object;
+        return _object;
     }
 
 } /* end class ActionAddExistingNode */

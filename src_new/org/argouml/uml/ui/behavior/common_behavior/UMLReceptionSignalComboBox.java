@@ -54,7 +54,7 @@ public class UMLReceptionSignalComboBox extends UMLComboBox2 {
         Object o = getModel().getElementAt(getSelectedIndex());
         Object signal = /*(MSignal)*/ o;
         Object reception = /*(MReception)*/ getTarget();
-        if (signal != ModelFacade.getSignal(reception)) {
+        if (signal != ModelFacade.getSignal(signal)) {
             ModelFacade.setSignal(reception, signal);
         }
     }

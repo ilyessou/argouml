@@ -32,15 +32,12 @@
 package org.argouml.uml.ui.behavior.common_behavior;
 
 
-import javax.swing.JList;
-import javax.swing.JScrollPane;
-
 import org.argouml.i18n.Translator;
 import org.argouml.model.ModelFacade;
-import org.argouml.uml.ui.ActionNavigateNamespace;
-import org.argouml.uml.ui.ActionRemoveFromModel;
-import org.argouml.uml.ui.PropPanelButton2;
-import org.argouml.uml.ui.UMLLinkedList;
+import org.argouml.model.uml.UmlFactory;
+
+import org.argouml.ui.targetmanager.TargetManager;
+import org.argouml.uml.ui.PropPanelButton;
 import org.argouml.uml.ui.foundation.core.PropPanelModelElement;
 import org.argouml.util.ConfigLoader;
 
@@ -50,21 +47,33 @@ public class PropPanelLink extends PropPanelModelElement {
     ////////////////////////////////////////////////////////////////
     // contructors
     public PropPanelLink() {
-        super("Link", _linkIcon, ConfigLoader.getTabPropsOrientation());
+        super("Link Properties", _linkIcon, ConfigLoader.getTabPropsOrientation());
 
         Class mclass = (Class)ModelFacade.LINK;
         addField(Translator.localize("UMLMenu", "label.name"), getNameTextField());
         addField(Translator.localize("UMLMenu", "label.stereotype"), getStereotypeBox());
-        addField(Translator.localize("UMLMenu", "label.namespace"), getNamespaceComboBox());
-        addSeperator();
-        
-        JList connectionList = new UMLLinkedList(new UMLLinkConnectionListModel());
-        JScrollPane connectionScroll = new JScrollPane(connectionList);
-        addField(Translator.localize("UMLMenu", "label.connections"), connectionScroll);
+        addLinkField(Translator.localize("UMLMenu", "label.namespace"), getNamespaceComboBox());
 
-        buttonPanel.add(new PropPanelButton2(this, new ActionNavigateNamespace()));
-        buttonPanel.add(new PropPanelButton2(this, new ActionRemoveFromModel()));
-	
+        new PropPanelButton(this, buttonPanel, _navUpIcon, Translator.localize("UMLMenu", "button.go-up"), "navigateNamespace", null);
+        new PropPanelButton(this, buttonPanel, _deleteIcon, localize("Delete object"), "removeElement", null);
     }
 
+    public void navigateNamespace() {
+        Object target = getTarget();
+        if (org.argouml.model.ModelFacade.isAModelElement(target)) {
+            Object elem = /*(MModelElement)*/ target;
+            Object ns = ModelFacade.getNamespace(elem);
+            if (ns != null) {
+                TargetManager.getInstance().setTarget(ns);
+            }
+        }
+    }
+
+    public void removeElement() {
+	Object target = /*(MLink)*/ getTarget();
+	Object newTarget = /*(MModelElement)*/ ModelFacade.getNamespace(target);
+
+        UmlFactory.getFactory().delete(target);
+	if (newTarget != null) TargetManager.getInstance().setTarget(newTarget);
+    }
 } /* end class PropPanelLink */

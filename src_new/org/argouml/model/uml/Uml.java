@@ -46,8 +46,6 @@ public final class Uml {
 
     /** Get a map containing entries for all the name/identifier pairs
      * identified by Argo
-     * TODO: MVW: This function is not used withing ArgoUML, 
-     * except in the junit tests. So, what is it doing here?
      * 
      * @return a collection of all recognized Uml class types
      */

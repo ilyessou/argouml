@@ -40,11 +40,10 @@ package org.argouml.uml.ui.behavior.use_cases;
 
 import org.argouml.i18n.Translator;
 import org.argouml.model.uml.behavioralelements.usecases.UseCasesFactory;
+
 import org.argouml.ui.targetmanager.TargetManager;
-import org.argouml.uml.ui.ActionNavigateContainerElement;
-import org.argouml.uml.ui.ActionRemoveFromModel;
 import org.argouml.uml.ui.PropPanelButton;
-import org.argouml.uml.ui.PropPanelButton2;
+import org.argouml.uml.ui.UMLComboBoxNavigator;
 import org.argouml.uml.ui.foundation.core.PropPanelClassifier;
 import org.argouml.util.ConfigLoader;
 
@@ -75,10 +74,10 @@ public class PropPanelActor extends PropPanelClassifier {
 
 
     	addField(Translator.localize("UMLMenu", "label.name"), getNameTextField());
-    	// addField(Translator.localize("UMLMenu", "label.stereotype"), new UMLComboBoxNavigator(this, Translator.localize("UMLMenu", "tooltip.nav-stereo"), getStereotypeBox()));
-    	addField(Translator.localize("UMLMenu", "label.stereotype"), getStereotypeBox());
+    	addField(Translator.localize("UMLMenu", "label.stereotype"), new UMLComboBoxNavigator(this, Translator.localize("UMLMenu", "tooltip.nav-stereo"), getStereotypeBox()));
 
-        add(_modifiersPanel);
+        addField(Translator.localize("UMLMenu", "label.modifiers"),
+                 _modifiersPanel);
 
     	addField(Translator.localize("UMLMenu", "label.namespace"), getNamespaceComboBox());
 
@@ -93,13 +92,15 @@ public class PropPanelActor extends PropPanelClassifier {
             getAssociationEndScroll());
         // The toolbar buttons that go at the top.
 
-        buttonPanel.add(new PropPanelButton2(this, new ActionNavigateContainerElement()));
+        new PropPanelButton(this, buttonPanel, _navUpIcon,
+                Translator.localize("UMLMenu", "button.go-up"), "navigateUp",
+                            null);
         new PropPanelButton(this, buttonPanel, _actorIcon,
                 Translator.localize("UMLMenu", "button.new-actor"), "newActor",
                             null);
-        new PropPanelButton(this, buttonPanel, _receptionIcon, Translator.localize("UMLMenu", "button.new-reception"), getActionNewReception());
-        buttonPanel
-        .add(new PropPanelButton2(this, new ActionRemoveFromModel()));
+        new PropPanelButton(this, buttonPanel, _deleteIcon,
+                            localize("Delete"), "removeElement",
+                            null);
     }
 
 

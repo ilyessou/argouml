@@ -37,13 +37,8 @@ import org.apache.log4j.Logger;
 import org.argouml.application.api.Argo;
 import org.argouml.application.api.Configuration;
 import org.argouml.i18n.Translator;
-import org.argouml.kernel.AbstractFilePersister;
-import org.argouml.kernel.ArgoFilePersister;
 import org.argouml.kernel.Project;
-import org.argouml.kernel.ProjectFilePersister;
 import org.argouml.kernel.ProjectManager;
-import org.argouml.kernel.XmiFilePersister;
-import org.argouml.kernel.ZargoFilePersister;
 import org.argouml.ui.ProjectBrowser;
 import org.argouml.ui.menubar.GenericArgoMenuBar;
 
@@ -55,104 +50,69 @@ import org.argouml.ui.menubar.GenericArgoMenuBar;
  */
 public class ActionSaveProject extends UMLAction {
     /** logger */
-    private static final Logger LOG = Logger.getLogger(ActionSaveProject.class);
+    private static Logger cat = Logger.getLogger(ActionSaveProject.class);
   
     ////////////////////////////////////////////////////////////////
     // static variables
 
-    /**
-     * The singleton.
-     */
     public static ActionSaveProject SINGLETON = new ActionSaveProject(); 
 
-    /**
-     * To persist to and from zargo (zipped file) storage.
-     */
-    protected AbstractFilePersister zargoPersister = new ZargoFilePersister();
-    
-    /**
-     * To persist to and from argo (xml file) storage.
-     */
-    protected AbstractFilePersister argoPersister  = new ArgoFilePersister();
-    
-    /**
-     * To persist to and from XMI file storage.
-     */
-    protected AbstractFilePersister xmiPersister  = new XmiFilePersister();
-    
     ////////////////////////////////////////////////////////////////
     // constructors
 
-    /**
-     * The constructor.
-     */
-    protected ActionSaveProject() {
-        super("action.save-project");
+    public ActionSaveProject() {
+	super("action.save-project");
     }
 
-    /**
-     * The constructor.
-     * @param title the title for this action
-     * @param icon the icon for this action
-     */
-    protected ActionSaveProject(String title, boolean icon) {
-        super(title, icon);
+    public ActionSaveProject(String title, boolean icon) {
+	super(title, icon);
     }
 
 
     ////////////////////////////////////////////////////////////////
     // main methods
 
-    /**
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-     */
     public void actionPerformed(ActionEvent e) {
-        URL url =
-            ProjectManager.getManager().getCurrentProject() != null
-            ? ProjectManager.getManager().getCurrentProject().getURL() : null;
-        if (url == null) { 
-            ActionSaveProjectAs.SINGLETON.actionPerformed(e);
-        } else {
-            trySave(true);
-        }
+	URL url =
+	    ProjectManager.getManager().getCurrentProject() != null
+	    ? ProjectManager.getManager().getCurrentProject().getURL() : null;
+	if (url == null) { 
+	    ActionSaveProjectAs.SINGLETON.actionPerformed(e);
+	} else {
+	    trySave(true);
+	}
     }
 
-    /**
-     * Try to save the project.
-     * @param overwrite if true, then we overwrite without asking
-     * @return true if successful
-     */
     public boolean trySave (boolean overwrite) {
-        URL url = ProjectManager.getManager().getCurrentProject().getURL();
-        return url != null && trySave(overwrite, new File(url.getFile()));
+	URL url = ProjectManager.getManager().getCurrentProject().getURL();
+	return url == null
+	    ? false
+	    : trySave(overwrite, new File(url.getFile()));
     }
 
-    /**
-     * Try to save the project.
-     * @param overwrite if true, then we overwrite without asking
-     * @param file the File to save to
-     * @return true if successful
-     */
     public boolean trySave(boolean overwrite, File file) {
 	ProjectBrowser pb = ProjectBrowser.getInstance();
-	Project project = ProjectManager.getManager().getCurrentProject();
+	Project p = ProjectManager.getManager().getCurrentProject();
 
 	try {
+
 	    if (file.exists() && !overwrite) {
-	        String sConfirm = 
-	            MessageFormat.format(Translator.localize("Actions",
-	                "optionpane.save-project-confirm-overwrite"),
-	                new Object[] {file} );
-	        int nResult = 
-	            JOptionPane.showConfirmDialog(pb, sConfirm,
-                        Translator.localize("Actions", 
-            		    "optionpane.save-project-confirm-overwrite-title"),
-            				  JOptionPane.YES_NO_OPTION,
-            				  JOptionPane.QUESTION_MESSAGE);
-            
-	        if (nResult != JOptionPane.YES_OPTION) {
-	            return false;
-	        }
+		//cat.info ("Are you sure you want to overwrite "
+		//+ fullpath + "?");
+		String sConfirm = 
+		    MessageFormat.format(Translator.localize("Actions",
+			    "optionpane.save-project-confirm-overwrite"),
+					 new Object[] {file} );
+		int nResult = 
+		    JOptionPane.showConfirmDialog(pb, sConfirm,
+		            Translator.localize("Actions", 
+				    "optionpane.save-project-confirm-overwrite-title"),
+						  JOptionPane.YES_NO_OPTION,
+						  JOptionPane.QUESTION_MESSAGE);
+        
+		if (nResult != JOptionPane.YES_OPTION) {
+		    return false;
+		}
 	    }
       
 	    String sStatus =
@@ -161,34 +121,23 @@ public class ActionSaveProject extends UMLAction {
 				     new Object[] {file} );
 	    pb.showStatus (sStatus);
 		
-	    ProjectFilePersister persister = null;
-	    String name = file.getName();
-	    if (name.endsWith("." + zargoPersister.getExtension())) {
-	        persister = zargoPersister;
-	    } else if (name.endsWith("." + argoPersister.getExtension())) {
-	        persister = argoPersister;
-	    } else {
-	        throw new IllegalStateException("Filename " + project.getName() 
-	        + " is not of a known file type");
-	    }
-	    
-	    project.preSave();
-	    persister.save(project, file);
-	    project.postSave();
+	  
+	    p.save(overwrite, file);
+      	
 
 	    sStatus =
 		MessageFormat.format(Translator.localize("Actions", 
 			"label.save-project-status-wrote"),
-				     new Object[] {project.getURL()} );
+				     new Object[] {p.getURL()} );
 	    pb.showStatus(sStatus);
-	    LOG.debug ("setting most recent project file to "
+	    cat.debug ("setting most recent project file to "
 		       + file.getCanonicalPath());
             
-        /* 
-         * notification of menu bar
-         */
-	    GenericArgoMenuBar menuBar = (GenericArgoMenuBar) pb.getJMenuBar();
-	    menuBar.addFileSaved( file.getCanonicalPath());
+            /* 
+             * notification of menu bar
+             */
+            GenericArgoMenuBar menuBar = (GenericArgoMenuBar) pb.getJMenuBar();
+            menuBar.addFileSaved( file.getCanonicalPath());
             
 	    Configuration.setString(Argo.KEY_MOST_RECENT_PROJECT_FILE,
 				    file.getCanonicalPath());
@@ -206,7 +155,7 @@ public class ActionSaveProject extends UMLAction {
 			    "optionpane.save-project-file-not-found-title"),
 					  JOptionPane.ERROR_MESSAGE);
       
-	    LOG.error(sMessage, fnfe);
+	    cat.error(sMessage, fnfe);
 	}
 	catch (IOException ioe) {
 	    String sMessage = 
@@ -219,7 +168,7 @@ public class ActionSaveProject extends UMLAction {
 			    "optionpane.save-project-io-exception-title"),
 					  JOptionPane.ERROR_MESSAGE);
       
-	    LOG.error(sMessage, ioe);
+	    cat.error(sMessage, ioe);
 	}
 	catch (Exception ex) {
 	    String sMessage = 
@@ -232,15 +181,12 @@ public class ActionSaveProject extends UMLAction {
 			    "optionpane.save-project-general-exception-title"),
 					  JOptionPane.ERROR_MESSAGE);
       
-	    LOG.error(sMessage, ex);
+	    cat.error(sMessage, ex);
 	}
     
 	return false;
     }
 
-    /**
-     * @see org.argouml.uml.ui.UMLAction#shouldBeEnabled()
-     */
     public boolean shouldBeEnabled() {
         super.shouldBeEnabled();
         Project p = ProjectManager.getManager().getCurrentProject();

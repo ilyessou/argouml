@@ -46,6 +46,9 @@ import org.argouml.model.ModelFacade;
  * pattern</a> in "Design Patterns", and the <a href=
  * "http://www.ccs.neu.edu/research/demeter/">Demeter project</a>.<p>
  *
+ * This is created from the {@link Generator} class and has the exact same
+ * functions.
+ *
  * @since 0.15.6
  */
 public abstract class Generator2
@@ -93,13 +96,10 @@ public abstract class Generator2
      * @param o the element to be generated
      * @return String the generated code
      */
-    public String generate(Object o) {        
+    public String generate(Object o) {
         if (o == null) {
             return "";
 	}
-        if (ModelFacade.isAActionState(o)) {
-            return generateActionState(o);
-        }
         if (ModelFacade.isAExtensionPoint(o)) {
             return generateExtensionPoint(o);
 	}
@@ -241,7 +241,7 @@ public abstract class Generator2
     /**
      * @see NotationProvider2#generateAction(Object)
      */
-    public abstract String generateAction(Object m);     
+    public abstract String generateAction(Object m);
 
     /**
      * @see NotationProvider2#generateGuard(Object)

@@ -27,7 +27,6 @@ package org.argouml.model.uml.behavioralelements.statemachines;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.List;
 
 import org.argouml.model.ModelFacade;
 import org.argouml.model.uml.modelmanagement.ModelManagementHelper;
@@ -60,15 +59,13 @@ public class StateMachinesHelper {
     /**
      * Singleton instance.
      */
-    private static StateMachinesHelper singleton = new StateMachinesHelper();
+    private static StateMachinesHelper SINGLETON = new StateMachinesHelper();
 
     /** 
      * Singleton instance access method.
-     *
-     * @return the singleton
      */
     public static StateMachinesHelper getHelper() {
-        return singleton;
+        return SINGLETON;
     }
 
     /**
@@ -76,8 +73,8 @@ public class StateMachinesHelper {
      * give a full implementation of all getSource and getDestination methods
      * on the uml helpers.
      *
-     * @param trans the given transition
-     * @return MStateVertex the source statevertex
+     * @param trans
+     * @return MStateVertex
      */
     public Object getSource(Object trans) {
         return ((MTransition) trans).getSource();
@@ -88,8 +85,8 @@ public class StateMachinesHelper {
      * to give a full implementation of all getSource and getDestination methods
      * on the uml helpers.<p>
      *
-     * @param trans the given transition
-     * @return MStateVertex the destination statevertex
+     * @param trans
+     * @return MStateVertex
      */
     public Object getDestination(Object trans) {
         return ((MTransition) trans).getTarget();
@@ -136,8 +133,8 @@ public class StateMachinesHelper {
      * event. To decouple ArgoUML as much as possible from the NSUML
      * model, the parameters of the method are of type Object.<p>
      *
-     * @param transition the given transition
-     * @param event the given event
+     * @param transition
+     * @param event
      */
     public void setEventAsTrigger(Object transition, Object event) {
         if (transition == null || !(transition instanceof MTransition)) {
@@ -156,8 +153,8 @@ public class StateMachinesHelper {
      * context. To decouple ArgoUML as much as possible from the NSUML
      * model, the parameter of the method is of type Object.<p>
      *
-     * @param context the given context
-     * @return boolean true if a statemachine may be added
+     * @param context
+     * @return boolean
      */
     public boolean isAddingStatemachineAllowed(Object context) {
         if (context instanceof MBehavioralFeature
@@ -225,8 +222,8 @@ public class StateMachinesHelper {
      * TODO: (MVW) Since this function is also present in the ModelFacade, 
      * why is it here?
      * 
-     * @param sm the given statemachine
-     * @return the top composite state
+     * @param sm
+     * @return
      */
     public Object getTop(Object sm) {
         if (!(sm instanceof MStateMachine))
@@ -241,8 +238,8 @@ public class StateMachinesHelper {
      * Gets all statevertices that are a target to transitions
      * outgoing from the given statevertex.<p>
      *
-     * @param ostatevertex  the given statevertex
-     * @return Collection   all statevertices that are a target
+     * @param ostatevertex
+     * @return Collection
      */
     public Collection getOutgoingStates(Object ostatevertex) {
         if (ModelFacade.isAStateVertex(ostatevertex)) {
@@ -264,7 +261,7 @@ public class StateMachinesHelper {
      * 
      * @author MVW
      * @param trans Object of type MTransition
-     * @param opname the name of the operation sought
+     * @param opname 
      * @return Object The operation with the given name, or null. 
      */
     public Object findOperationByName(Object trans, String opname) {
@@ -283,28 +280,6 @@ public class StateMachinesHelper {
             }
         }
         return null;
-    }
-    
-    /**
-     * Returns all substates some composite state contains.
-     * @param compState the given compositestate
-     * @return all substates
-     */
-    public Collection getAllSubStates(Object compState) {
-        if (ModelFacade.isACompositeState(compState)) {
-            List retList = new ArrayList();
-            Iterator it = ModelFacade.getSubvertices(compState).iterator();
-            while (it.hasNext()) {
-                Object subState = it.next();
-                if (ModelFacade.isACompositeState(subState)) {
-                    retList.addAll(getAllSubStates(subState));
-                }
-                retList.add(subState);
-            }
-            return retList;
-        } else
-            throw new IllegalArgumentException(
-                    "Argument is not a composite state");
     }
 
 }

@@ -43,6 +43,7 @@ import javax.swing.JFrame;
 import javax.swing.JMenuBar;
 import javax.swing.JPanel;
 
+import org.apache.log4j.Logger;
 import org.argouml.application.api.Argo;
 import org.argouml.application.api.Configuration;
 import org.argouml.application.events.ArgoModuleEvent;
@@ -76,6 +77,14 @@ public class ProjectBrowser
     extends JFrame
     implements IStatusBar, PropertyChangeListener, TargetListener {
 
+    /**
+     * @deprecated by Linus Tolke as of 0.16. Will be private.
+     */
+    protected static Logger cat = Logger.getLogger(ProjectBrowser.class);
+
+    ////////////////////////////////////////////////////////////////
+    // constants
+
     private static final String BUNDLE = "statusmsg";
 	
     public static final int DEFAULT_COMPONENTWIDTH = 220;
@@ -87,8 +96,9 @@ public class ProjectBrowser
     /**
      * Member attribute to contain the singleton.
      */
-    private static ProjectBrowser theInstance;
+    private static ProjectBrowser TheInstance;
 
+    private static String _Title = "ArgoUML";
     private static boolean _Splash = false;
 
     // ----- diagrams
@@ -114,7 +124,7 @@ public class ProjectBrowser
 
     private Map detailsPanesByCompassPoint = new HashMap();
 
-    private GenericArgoMenuBar menuBar;
+    private GenericArgoMenuBar _menuBar;
 
     /** partially implemented. needs work to display
      * import of source and saving of zargo
@@ -144,6 +154,14 @@ public class ProjectBrowser
     private ToDoPane _todoPane;
 
     /**
+     * The target the user has selected     
+     */
+    private Object _target;
+
+    ////////////////////////////////////////////////////////////////
+    // constructors
+
+    /**
      * For testing purposes. In tests this constructor can be called so
      * TheInstance is filled.
      */
@@ -153,7 +171,7 @@ public class ProjectBrowser
 
     private ProjectBrowser(String appName, boolean doSplash) {
         super(appName);
-        theInstance = this;
+        TheInstance = this;
         SplashScreen.setDoSplash(doSplash);
         if (doSplash) {
             _splash = SplashScreen.getInstance();
@@ -164,12 +182,12 @@ public class ProjectBrowser
             _splash.setVisible(true);
         }
 
-        menuBar = new GenericArgoMenuBar();
+        _menuBar = new GenericArgoMenuBar();
 
         _editorPane = new MultiEditorPane();
         getContentPane().setFont(defaultFont);
         getContentPane().setLayout(new BorderLayout());
-        this.setJMenuBar(menuBar);
+        this.setJMenuBar(_menuBar);
         //getContentPane().add(_menuBar, BorderLayout.NORTH);
         getContentPane().add(createPanels(doSplash), BorderLayout.CENTER);
         getContentPane().add(_statusBar, BorderLayout.SOUTH);
@@ -180,7 +198,8 @@ public class ProjectBrowser
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
         addWindowListener(new WindowCloser());
         ImageIcon argoImage =
-            ResourceLoaderWrapper.lookupIconResource("ArgoIcon");
+            ResourceLoaderWrapper.getResourceLoaderWrapper()
+	        .lookupIconResource("ArgoIcon");
         this.setIconImage(argoImage.getImage());
         // 
 
@@ -193,9 +212,6 @@ public class ProjectBrowser
         TargetManager.getInstance().addTargetListener(this);
     }
 
-    /**
-     * @see java.awt.Component#getLocale()
-     */
     public Locale getLocale() {
         return Locale.getDefault();
     }
@@ -298,8 +314,7 @@ public class ProjectBrowser
         }
         _workarea.add(_navPane, BorderSplitPane.WEST);
         
-        getTab(TabToDo.class); // TODO: If this doesn't have side effects, 
-                               //       it can be removed alltogether.
+        TabToDo todo = (TabToDo) getTab(TabToDo.class);
         //todo.setTree(_todoPane);
         _workarea.add(_todoPane, BorderSplitPane.SOUTHWEST);
         _workarea.add(_editorPane);
@@ -309,10 +324,10 @@ public class ProjectBrowser
         JPanel toolbarBoundry = new JPanel();
         toolbarBoundry.setLayout(new DockBorderLayout());
         // TODO: - should save and restore the last positions of the toolbars
-        toolbarBoundry.add(menuBar.getFileToolbar(), BorderLayout.NORTH);
-        toolbarBoundry.add(menuBar.getEditToolbar(), BorderLayout.NORTH);
-        toolbarBoundry.add(menuBar.getViewToolbar(), BorderLayout.NORTH);
-        toolbarBoundry.add(menuBar.getCreateDiagramToolbar(),
+        toolbarBoundry.add(_menuBar.getFileToolbar(), BorderLayout.NORTH);
+        toolbarBoundry.add(_menuBar.getEditToolbar(), BorderLayout.NORTH);
+        toolbarBoundry.add(_menuBar.getViewToolbar(), BorderLayout.NORTH);
+        toolbarBoundry.add(_menuBar.getCreateDiagramToolbar(),
 			   BorderLayout.NORTH);
         toolbarBoundry.add(_workarea, BorderLayout.CENTER);
 
@@ -383,13 +398,9 @@ public class ProjectBrowser
 	//            ));
 	//        }
     }
-
     ////////////////////////////////////////////////////////////////
     // accessors
 
-    /**
-     * @see java.awt.Frame#setTitle(java.lang.String)
-     */
     public void setTitle(String title) {
         if (title == null || "".equals(title)) {
             setTitle(getAppName());
@@ -456,6 +467,29 @@ public class ProjectBrowser
     }
 
     /**
+     * Set the diagram on which the user is currently working. 
+     * When importing sources this should call the name of the folder from
+     * which the classes were imported.
+     * It should also default the model name as well.
+     *{@link #setTarget}.
+     * @deprecated As of ArgoUml version 0.13.5,replaced by {@link
+     * org.argouml.kernel.Project#setActiveDiagram(ArgoDiagram)}
+     */
+    public void setActiveDiagram(ArgoDiagram ad) {
+        ProjectManager.getManager().getCurrentProject().setActiveDiagram(ad);
+    }
+
+    /**
+     * Return the diagram, the user is currently working on.
+     * @deprecated As of ArgoUml version 0.13.5,replaced by
+     *             {@link org.argouml.kernel.Project#getActiveDiagram()}
+     */
+    public ArgoDiagram getActiveDiagram() {
+        return ProjectManager.getManager().getCurrentProject()
+            .getActiveDiagram();
+    }
+
+    /**
      * Select the tab page containing the todo item
      *
      * TODO: should introduce an instance variable to go straight to
@@ -468,6 +502,24 @@ public class ProjectBrowser
             if (detailsPane.setToDoItem(o))
                 return;
         }
+    }
+
+    /**
+     * Gets the target of the detailspane. This is exactly the same as
+     * the target of the TargetManager.
+     *
+     * @deprecated As of ArgoUml version 0.13.5,replaced by {@link
+     * org.argouml.ui.targetmanager.TargetManager#getTarget()
+     * TargetManager.getInstance().getTarget()}
+     * @return the target
+     */
+    public Object getDetailsTarget() {
+        Iterator it = detailsPanesByCompassPoint.values().iterator();
+        if (it.hasNext()) {
+            DetailsPane detailsPane = (DetailsPane) it.next();
+            return TargetManager.getInstance().getTarget();
+        }
+        throw new IllegalStateException("No detailspane present");
     }
 
     /**
@@ -513,11 +565,8 @@ public class ProjectBrowser
         return _statusBar;
     }
 
-    /**
-     * @see javax.swing.JFrame#getJMenuBar()
-     */
     public JMenuBar getJMenuBar() {
-        return menuBar;
+        return _menuBar;
     }
 
     public MultiEditorPane getEditorPane() {
@@ -621,9 +670,6 @@ public class ProjectBrowser
     ////////////////////////////////////////////////////////////////
     // window operations
 
-    /**
-     * @see java.awt.Component#setVisible(boolean)
-     */
     public void setVisible(boolean b) {
         super.setVisible(b);
         if (b)
@@ -632,9 +678,6 @@ public class ProjectBrowser
 
     ////////////////////////////////////////////////////////////////
     // IStatusBar
-    /**
-     * @see org.tigris.gef.ui.IStatusBar#showStatus(java.lang.String)
-     */
     public void showStatus(String s) {
         _statusBar.showStatus(s);
     }
@@ -737,7 +780,7 @@ public class ProjectBrowser
             if (p != null) {
                 setTitle(p.getName());             
                 //Designer.TheDesigner.getToDoList().removeAllElements();
-                Designer.setCritiquingRoot(p);
+                Designer.TheDesigner.setCritiquingRoot(p);
                 // update all panes
                 TargetManager.getInstance().setTarget(p.getInitialTarget());
             }
@@ -755,38 +798,19 @@ public class ProjectBrowser
     // TargetListener methods implemented so notified when selected
     // diagram changes. Uses this to update the window title.
     
-    /**
-     * @see org.argouml.ui.targetmanager.TargetListener#targetAdded(org.argouml.ui.targetmanager.TargetEvent)
-     */
     public void targetAdded(TargetEvent e) {
-        Object target = e.getNewTarget();
-        if (target instanceof ArgoDiagram) {
-	    // ProjectManager.getManager().getCurrentProject().
-	    // setActiveDiagram((ArgoDiagram) target);
-            updateTitle();
-        }
+	targetSet(e);
     }
 
-    /**
-     * @see org.argouml.ui.targetmanager.TargetListener#targetRemoved(org.argouml.ui.targetmanager.TargetEvent)
-     */
     public void targetRemoved(TargetEvent e) {
-        Object target = e.getNewTarget();
-        if (target instanceof ArgoDiagram) {
-	    // ProjectManager.getManager().getCurrentProject().
-	    // setActiveDiagram((ArgoDiagram) target);
-            updateTitle();
-        }
+	targetSet(e);
     }
 
-    /**
-     * @see org.argouml.ui.targetmanager.TargetListener#targetSet(org.argouml.ui.targetmanager.TargetEvent)
-     */
     public void targetSet(TargetEvent e) {
         Object target = e.getNewTarget();
         if (target instanceof ArgoDiagram) {
-	    // ProjectManager.getManager().getCurrentProject().
-	    // setActiveDiagram((ArgoDiagram) target);
+	    ProjectManager.getManager().getCurrentProject().
+		setActiveDiagram((ArgoDiagram) target);
             updateTitle();
         }
     }    
@@ -798,6 +822,24 @@ public class ProjectBrowser
      */
     public ToDoPane getTodoPane() {
         return _todoPane;
+    }
+
+    /**
+     * Returns the navigatorpane. 
+     * @return NavigatorPane The navigatorpane
+     * @deprecated 0.15.3 use NavigatorPane.getInstance() instead
+     */
+    public NavigatorPane getNavigatorPane() {
+        return _navPane;
+    }
+
+    /**
+     * Returns the splashscreen shown at startup. 
+     * @return SplashScreen
+     * @deprecated 0.15 use SplashScreen.getInstance() instead
+     */
+    public SplashScreen getSplashScreen() {
+        return _splash;
     }
 
     /**
@@ -817,10 +859,10 @@ public class ProjectBrowser
      * @return the singleton instance of the projectbrowser
      */
     public static synchronized ProjectBrowser getInstance() {
-        if (theInstance == null) {
-            theInstance = new ProjectBrowser("ArgoUML", _Splash);
+        if (TheInstance == null) {
+            TheInstance = new ProjectBrowser("ArgoUML", _Splash);
         }
-        return theInstance;
+        return TheInstance;
     }
 
     public static synchronized void setSplash(boolean splash) {

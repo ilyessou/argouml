@@ -37,10 +37,11 @@ import org.argouml.kernel.ProjectManager;
 import org.argouml.model.ModelFacade;
 import org.argouml.ui.CmdCreateNode;
 import org.argouml.ui.CmdSetMode;
-import org.argouml.uml.diagram.activity.ActivityDiagramGraphModel;
+import org.argouml.uml.diagram.state.StateDiagramGraphModel;
 import org.argouml.uml.diagram.state.ui.ActionCreatePseudostate;
-import org.argouml.uml.diagram.ui.RadioAction;
+import org.argouml.uml.diagram.state.ui.StateDiagramRenderer;
 import org.argouml.uml.diagram.ui.UMLDiagram;
+import org.argouml.uml.diagram.ui.ActionAddNote;
 
 import org.tigris.gef.base.LayerPerspective;
 import org.tigris.gef.base.LayerPerspectiveMutable;
@@ -54,94 +55,70 @@ import org.tigris.gef.base.ModeCreatePolyEdge;
  * valuable as well.<p>
  */
 public class UMLActivityDiagram extends UMLDiagram {
-
-    private static final Logger LOG = Logger.
-                                    getLogger(UMLActivityDiagram.class);
+    /**
+     * @deprecated by Linus Tolke as of 0.15.4. Use your own logger in your
+     * class. This will be removed.
+     */
+    protected static Logger cat = Logger.getLogger(UMLActivityDiagram.class);
 
     ////////////////
     // actions for toolbar
 
-    private static Action actionState;
-    private static Action actionStartPseudoState;
-    private static Action actionFinalPseudoState;
-    private static Action actionJunctionPseudoState;
-    private static Action actionBranchPseudoState;
-    private static Action actionForkPseudoState;
-    private static Action actionJoinPseudoState;
-    private static Action actionTransition;
-    // private static Action actionNewSwimlane;
-    private static Action actionCallState;
-    private static Action actionObjectFlowState;
-    private static Action actionSubactivityState;
+    protected static Action _actionState =
+        new CmdCreateNode(ModelFacade.ACTION_STATE, "ActionState");
+
+    protected static Action _actionStartPseudoState;
+    protected static Action _actionFinalPseudoState;
+    protected static Action _actionJunctionPseudoState;
+    protected static Action _actionBranchPseudoState;
+    protected static Action _actionForkPseudoState;
+    protected static Action _actionJoinPseudoState;
+
+    protected static Action _actionTransition =
+        new CmdSetMode(
+            ModeCreatePolyEdge.class,
+            "edgeClass",
+            ModelFacade.TRANSITION,
+            "Transition");
 
     ////////////////////////////////////////////////////////////////
     // contructors
 
-    /**
-     * The serial number for new activity diagrams. 
-     * Used to create an unique number for the name of the diagram. 
-     */
-    private static int activityDiagramSerial = 1;
+    protected static int _ActivityDiagramSerial = 1;
 
-    /**
-     * Constructor
-     */
     public UMLActivityDiagram() {
 
         try {
             setName(getNewDiagramName());
         } catch (PropertyVetoException pve) { }
 
-        actionState = new RadioAction(
-                new CmdCreateNode(ModelFacade.ACTION_STATE, "ActionState"));
-        
 	// start state, end state, forks, joins, etc.
-	actionStartPseudoState =  new RadioAction(
+	_actionStartPseudoState =
 	    new ActionCreatePseudostate(ModelFacade.INITIAL_PSEUDOSTATEKIND, 
-					"Initial"));
+					"Initial");
 
-	actionFinalPseudoState = new RadioAction(
-            new CmdCreateNode(ModelFacade.FINALSTATE, 
-                                        "FinalState"));
+	_actionFinalPseudoState =
+            new CmdCreateNode(ModelFacade.FINALSTATE, "FinalState");
 
-	actionJunctionPseudoState = new RadioAction(
+	/* TODO: Uncomment this for V0.17.1, and remove the Branch part below.*/
+/*	_actionJunctionPseudoState =
 	    new ActionCreatePseudostate(ModelFacade.JUNCTION_PSEUDOSTATEKIND,
-					"Junction"));
+					"Junction");
+*/
+	_actionBranchPseudoState =
+	    new ActionCreatePseudostate(ModelFacade.BRANCH_PSEUDOSTATEKIND,
+	                                "Junction");
 
-	actionForkPseudoState = new RadioAction(
+	_actionForkPseudoState =
 	    new ActionCreatePseudostate(ModelFacade.FORK_PSEUDOSTATEKIND, 
-					"Fork"));
+					"Fork");
 
-	actionJoinPseudoState = new RadioAction(
+	_actionJoinPseudoState =
 	    new ActionCreatePseudostate(ModelFacade.JOIN_PSEUDOSTATEKIND,
-					"Join"));
-
-	actionTransition = new RadioAction(
-            new CmdSetMode(
-                    ModeCreatePolyEdge.class,
-                    "edgeClass",
-                    ModelFacade.TRANSITION,
-                    "Transition"));
-
-
-	//_actionNewSwimlane = new CmdCreateNode(ModelFacade.PARTITION, 
-	// "Create a new swimlane");
-
-        actionCallState = new RadioAction(
-            new CmdCreateNode(ModelFacade.CALLSTATE, "CallState"));
-
-        actionObjectFlowState = new RadioAction(
-            new CmdCreateNode(ModelFacade.OBJECTFLOWSTATE, "ObjectFlowState"));
-
-        actionSubactivityState = new RadioAction(
-            new CmdCreateNode(ModelFacade.SUBACTIVITYSTATE, 
-                                        "SubactivityState"));
+					"Join");
 
     }
 
-    /**
-     * @param m the namespace for the diagram
-     */
     public UMLActivityDiagram(Object m) {
         this();
         setNamespace(m);
@@ -157,11 +134,6 @@ public class UMLActivityDiagram extends UMLDiagram {
         }
     }
 
-    /** 
-     * Constructor
-     * @param namespace the namespace for the diagram
-     * @param agraph the ActivityGraph for the diagram
-     */
     public UMLActivityDiagram(Object namespace, Object agraph) {
 
         this();
@@ -185,9 +157,6 @@ public class UMLActivityDiagram extends UMLDiagram {
             throw new NullPointerException("Namespace may not be null");
     }
 
-    /**
-     * @see org.tigris.gef.base.Diagram#initialize(java.lang.Object)
-     */
     public void initialize(Object o) {
         if (!(org.argouml.model.ModelFacade.isAActivityGraph(o)))
             return;
@@ -196,7 +165,7 @@ public class UMLActivityDiagram extends UMLDiagram {
             && org.argouml.model.ModelFacade.isANamespace(context))
             setup(context, o);
         else
-            LOG.debug("ActivityGraph without context not yet possible :-(");
+            cat.debug("ActivityGraph without context not yet possible :-(");
     }
 
     /**
@@ -223,14 +192,14 @@ public class UMLActivityDiagram extends UMLDiagram {
             throw new IllegalArgumentException();
 
         super.setNamespace(m);
-        ActivityDiagramGraphModel gm = new ActivityDiagramGraphModel();
+        StateDiagramGraphModel gm = new StateDiagramGraphModel();
         gm.setNamespace(m);
         if (agraph != null) {
             gm.setMachine(agraph);
         }
         LayerPerspective lay =
             new LayerPerspectiveMutable(ModelFacade.getName(m), gm);
-        ActivityDiagramRenderer rend = new ActivityDiagramRenderer();  
+        StateDiagramRenderer rend = new StateDiagramRenderer(); // singleton
         lay.setGraphNodeRenderer(rend);
         lay.setGraphEdgeRenderer(rend);
 
@@ -238,77 +207,49 @@ public class UMLActivityDiagram extends UMLDiagram {
 
     }
 
-    /**
-     * @see org.argouml.uml.diagram.ui.UMLDiagram#getOwner()
-     */
     public Object getOwner() {
-        ActivityDiagramGraphModel gm = (ActivityDiagramGraphModel) 
-                                    getGraphModel();
+        StateDiagramGraphModel gm = (StateDiagramGraphModel) getGraphModel();
         Object sm = gm.getMachine();
         if (sm != null)
             return sm;
         return gm.getNamespace();
     }
 
-    /**
-     * @return the statemachine
-     */
     public Object getStateMachine() {
-        return ((ActivityDiagramGraphModel) getGraphModel()).getMachine();
+        return ((StateDiagramGraphModel) getGraphModel()).getMachine();
     }
 
-    /**
-     * @param sm set the statemachine for this diagram
-     */
     public void setStateMachine(Object sm) {
 
         if (!ModelFacade.isAStateMachine(sm))
             throw new IllegalArgumentException();
 
-        ((ActivityDiagramGraphModel) getGraphModel()).setMachine(sm);
+        ((StateDiagramGraphModel) getGraphModel()).setMachine(sm);
     }
 
     /**
      * Get the actions from which to create a toolbar or equivalent
      * graphic triggers.
-     *
-     * @see org.argouml.uml.diagram.ui.UMLDiagram#getUmlActions()
      */
     protected Object[] getUmlActions() {
         Object actions[] =
         {
-	    actionState,
-	    actionTransition,
+	    _actionState,
+	    _actionTransition,
 	    null,
-	    actionStartPseudoState,
-	    actionFinalPseudoState,
-	    actionJunctionPseudoState,
-	    actionForkPseudoState,
-	    actionJoinPseudoState,
-	    //_actionNewSwimlane,
+	    _actionStartPseudoState,
+	    _actionFinalPseudoState,
+	    /* TODO: Replace the Branch with Junction. */
+	    /*_actionJunctionPseudoState,*/
+	    _actionBranchPseudoState,
+	    _actionForkPseudoState,
+	    _actionJoinPseudoState,
 	    null,
-	    /*actionCallState, // uncomment these ...
-            actionObjectFlowState,
-            actionSubactivityState,*/
-	    /*getExtendedActions(),
-            null, */
-	    _actionComment,
-            _actionCommentLink
+	    ActionAddNote.SINGLETON,
 	};
         return actions;
     }
 
-    private Object[] getExtendedActions() {
-        Object actions[] =
-        {
-            actionCallState, 
-            actionObjectFlowState,
-            actionSubactivityState };
-        return actions;
-
-    }
-
-    
     /**
      * Creates a new diagram name.<p>
      *
@@ -316,8 +257,8 @@ public class UMLActivityDiagram extends UMLDiagram {
      */
     protected static String getNewDiagramName() {
         String name = null;
-        name = "Activity Diagram " + activityDiagramSerial;
-        activityDiagramSerial++;
+        name = "Activity Diagram " + _ActivityDiagramSerial;
+        _ActivityDiagramSerial++;
         if (!ProjectManager.getManager().getCurrentProject()
                  .isValidDiagramName(name)) {
             name = getNewDiagramName();

@@ -38,31 +38,23 @@ import org.tigris.gef.presentation.FigPoly;
 
 public class FigModel extends FigPackage {
 
-    private FigPoly figPoly = new FigPoly(Color.black, Color.black);
+    protected FigPoly _figPoly = new FigPoly(Color.black, Color.black);
 
-    /**
-     * Constructor
-     */
     public FigModel() {
         super();
 
-        int[] xpoints = {125, 130, 135, 125};
-        int[] ypoints = {45, 40, 45, 45};
+        int[] xpoints = { 125, 130, 135, 125};
+        int[] ypoints = { 45, 40, 45, 45};
         Polygon polygon = new Polygon(xpoints, ypoints, 4);
-        figPoly.setPolygon(polygon);
-        figPoly.setFilled(false);
-        addFig(figPoly);
+        _figPoly.setPolygon(polygon);
+        _figPoly.setFilled(false);
+        addFig(_figPoly);
         Rectangle r = getBounds();
         setBounds(r.x, r.y, r.width, r.height);
         updateEdges();
 
     }
 
-    /** 
-     * The constructor that hooks the Fig into the UML modelelement
-     * @param gm ignored
-     * @param node the UMl element
-     */
     public FigModel(GraphModel gm, Object node) {
         this();
         setOwner(node);
@@ -78,20 +70,17 @@ public class FigModel extends FigPackage {
      */
     public void setBounds(int x, int y, int w, int h) {
 
-        if (figPoly != null) {
+        if (_figPoly != null) {
             Rectangle oldBounds = getBounds();
-            Rectangle polyBounds = figPoly.getBounds();
+            Rectangle polyBounds = _figPoly.getBounds();
 ;
-            figPoly.translate((x - oldBounds.x) + (w - oldBounds.width), y
+            _figPoly.translate((x - oldBounds.x) + (w - oldBounds.width), y
                     - oldBounds.y);
 
         }
         super.setBounds(x, y, w, h);
     }
 
-    /**
-     * @see org.argouml.uml.diagram.ui.FigNodeModelElement#placeString()
-     */
     public String placeString() {
         return "new Model";
     }

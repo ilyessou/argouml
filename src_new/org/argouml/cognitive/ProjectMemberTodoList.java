@@ -49,132 +49,135 @@ import org.tigris.gef.ocl.TemplateReader;
  *
  * @author	Michael Stockman
  */
-public class ProjectMemberTodoList extends ProjectMember {
-    
-    private static final Logger LOG =
-        Logger.getLogger(ProjectMemberTodoList.class);
+public class ProjectMemberTodoList extends ProjectMember
+{
+    protected static Logger cat =
+	Logger.getLogger(ProjectMemberTodoList.class);
 
-    private static final String TO_DO_TEE = "/org/argouml/xml/dtd/todo.tee";
-    private static final String TO_DO_EXT = ".todo";
+    public static final String TODO_TEE = "/org/argouml/xml/dtd/todo.tee";
+    public static final String TODO_EXT = ".todo";
 
-    private OCLExpander expander = null;
+    protected OCLExpander expander = null;
 
-    /**
-     * The constructor. 
-     * 
-     * @param name the name
-     * @param p the project
-     */
-    public ProjectMemberTodoList(String name, Project p) {
-    	super(name, p);
+    public ProjectMemberTodoList(String name, Project p)
+    {
+	super(name, p);
+    }
+
+    public String getType()
+    {
+	return "todo";
+    }
+
+    public String getFileExtension()
+    {
+	return TODO_EXT;
+    }
+
+    public Vector getToDoList()
+    {
+	Vector in, out;
+	ToDoItem tdi;
+	Designer dsgr;
+	int i;
+
+	dsgr = Designer.theDesigner();
+	in = dsgr.getToDoList().getToDoItems();
+	out = new Vector();
+	for (i = 0; i < in.size(); i++)
+	{
+	    try
+	    {
+		tdi = (ToDoItem) in.elementAt(i);
+		if (tdi == null)
+		    continue;
+	    }
+	    catch (ClassCastException e)
+	    {
+		continue;
+	    }
+
+	    if (tdi.getPoster() instanceof Designer)
+		out.addElement(new ToDoItemXMLHelper(tdi));
+	}
+	return out;
+    }
+
+    public Vector getResolvedCriticsList()
+    {
+	Vector in, out;
+	ResolvedCritic rci;
+	Designer dsgr;
+	int i;
+
+	dsgr = Designer.theDesigner();
+	in = dsgr.getToDoList().getResolvedItems();
+	out = new Vector();
+	for (i = 0; i < in.size(); i++)
+	{
+	    try
+	    {
+		rci = (ResolvedCritic) in.elementAt(i);
+		if (rci == null)
+		    continue;
+	    }
+	    catch (ClassCastException e)
+	    {
+		continue;
+	    }
+	    out.addElement(new ResolvedCriticXMLHelper(rci));
+	}
+	return out;
+    }
+
+    public void load(InputStream is) throws IOException, SAXException
+    {
+	TodoParser.SINGLETON.readTodoList(is, true);
+    }
+
+    public void load() throws IOException, SAXException
+    {
+	InputStream is = null;
+	if (getURL() != null)
+	{
+	    is = getURL().openStream();
+	    load(is);
+	}
     }
 
     /**
-     * @see org.argouml.kernel.ProjectMember#getType()
+     * @deprecated since 0.l5.3 since the function in the
+     * interface is deprecated since 0.13.6.
      */
-    public String getType() {
-        return "todo";
+    public void save(String path, boolean overwrite, Writer writer)
+    {
+	if (writer == null)
+	{
+	    cat.warn("ProjectMemberTodoList.cognitive.argouml.org:"
+		     + " No writer specified");
+	    return;
+	}
+
+	cat.debug("Saving TODO LIST " + path + "/" + getName() + " !!!");
+
+	if (expander == null)
+	{
+	    Hashtable templates = TemplateReader.readFile(TODO_TEE);
+	    expander = new OCLExpander(templates);
+	}
+
+	expander.expand(writer, this, "", "");
+	
+	cat.debug("Done saving TODO LIST!!!");
     }
 
     /**
-     * @see org.argouml.kernel.ProjectMember#getFileExtension()
+     * @deprecated since 0.l5.3 since the function in the
+     * interface is removed.
      */
-    public String getFileExtension() {
-        return TO_DO_EXT;
-    }
-
-    /**
-     * @return a vector containing the to do list
-     */
-    public Vector getToDoList() {
-        Vector in, out;
-        ToDoItem tdi;
-        Designer dsgr;
-        int i;
-        
-        dsgr = Designer.theDesigner();
-        in = dsgr.getToDoList().getToDoItems();
-        out = new Vector();
-        for (i = 0; i < in.size(); i++) {
-            try {
-            	tdi = (ToDoItem) in.elementAt(i);
-            	if (tdi == null) {
-                    continue;
-                }
-            } catch (ClassCastException e) {
-                continue;
-            }
-        
-            if (tdi.getPoster() instanceof Designer) {
-                out.addElement(new ToDoItemXMLHelper(tdi));
-            }
-        }
-        return out;
-    }
-
-    /**
-     * @return Vector conaining the resolved critics list
-     */
-    public Vector getResolvedCriticsList() {
-    	Vector in, out;
-    	ResolvedCritic rci;
-    	Designer dsgr;
-    	int i;
-    
-    	dsgr = Designer.theDesigner();
-    	in = dsgr.getToDoList().getResolvedItems();
-    	out = new Vector();
-    	for (i = 0; i < in.size(); i++) {
-    	    try {
-        	rci = (ResolvedCritic) in.elementAt(i);
-        	if (rci == null) {
-        		    continue;
-                }
-    	    }
-    	    catch (ClassCastException e) {
-        		continue;
-    	    }
-    	    out.addElement(new ResolvedCriticXMLHelper(rci));
-    	}
-    	return out;
-    }
-
-    /**
-     * @param is an InputStream
-     */
-    public void load(InputStream is) {
-        TodoParser.SINGLETON.readTodoList(is, true);
-    }
-
-    /**
-     * @see org.argouml.kernel.ProjectMember#load()
-     */
-    public void load() throws IOException, SAXException {
-    	InputStream is = null;
-    	if (getURL() != null) {
-    	    is = getURL().openStream();
-    	    load(is);
-    	}
-    }
-
-    /**
-     * @see org.argouml.kernel.ProjectMember#save(java.io.Writer)
-     */
-    public void save(Writer writer) {
-        if (writer == null) {
-            LOG.warn("ProjectMemberTodoList.cognitive.argouml.org:"
-        	     + " No writer specified");
-            return;
-        }
-        
-        if (expander == null) {
-            Hashtable templates = TemplateReader.readFile(TO_DO_TEE);
-            expander = new OCLExpander(templates);
-        }
-        
-        expander.expand(writer, this, "", "");
-        
-        LOG.debug("Done saving TO DO LIST!!!");
+    public void save(String path, boolean overwrite)
+    {
+	save(path, overwrite, null);
     }
 }
 

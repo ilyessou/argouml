@@ -32,42 +32,33 @@ import javax.swing.Action;
 import javax.swing.Icon;
 import org.argouml.kernel.ProjectManager;
 
+import org.argouml.uml.diagram.ui.UMLDiagram;
 import org.tigris.gef.base.Editor;
 import org.tigris.gef.base.Globals;
 import org.tigris.toolbar.toolbutton.AbstractButtonAction;
 
 /**
  * A wrapper around a standard action to indicate that any buttons created
- * from this actions should act like radio buttons, i.e. that when the 
- * toolbar buttons are double-clicked, they remain active, and every click 
- * on the diagram will place a new modelelement.
+ * from this actions should act like radio buttons.
  *
  * @author Bob Tarling
  */
 public class RadioAction extends AbstractButtonAction {
 
-    private Action realAction;
+    Action realAction;
 
-    /**
-     * @param action the action
-     */
     public RadioAction(Action action) {
-        super((String) action.getValue(Action.NAME),
-		(Icon) action.getValue(Action.SMALL_ICON));
-        putValue(Action.SHORT_DESCRIPTION, 
-                action.getValue(Action.SHORT_DESCRIPTION));
+        super((String)action.getValue(Action.NAME),
+		(Icon)action.getValue(Action.SMALL_ICON));
+        putValue(Action.SHORT_DESCRIPTION, action.getValue(Action.SHORT_DESCRIPTION));
         realAction = action;
     }
 
-    /**
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-     */
     public void actionPerformed(java.awt.event.ActionEvent actionEvent) {
         super.actionPerformed(actionEvent);
         realAction.actionPerformed(actionEvent);
-        // TODO: Change this to ArgoDiagram
-        UMLDiagram diagram = (UMLDiagram) 
-            ProjectManager.getManager().getCurrentProject().getActiveDiagram();
+        // TODO Change this to ArgoDiagram
+        UMLDiagram diagram = (UMLDiagram)ProjectManager.getManager().getCurrentProject().getActiveDiagram();
         diagram.deselectOtherTools(this);
         Globals.setSticky(isDoubleClick());
         if (!isDoubleClick()) {
@@ -78,9 +69,6 @@ public class RadioAction extends AbstractButtonAction {
         }
     }
 
-    /**
-     * @return the action
-     */
     public Action getAction() {
         return realAction;
     }

@@ -49,8 +49,8 @@ import org.argouml.model.uml.foundation.extensionmechanisms.ExtensionMechanismsF
 import org.argouml.model.uml.modelmanagement.ModelManagementFactory;
 
 class CopyFunction {
-    final Object object;
-    final Method method;
+    public final Object object;
+    public final Method method;
 
     public CopyFunction(Object obj, Method m) {
 	if (m == null)
@@ -72,8 +72,7 @@ class CopyFunction {
  * @since 0.13.2
  */
 public final class CopyHelper {
-    private static final Logger LOG = 
-        Logger.getLogger(CopyHelper.class);
+    protected static Logger cat = Logger.getLogger(CopyHelper.class);
 
     private static CopyHelper theInstance;
 
@@ -104,9 +103,6 @@ public final class CopyHelper {
 	    "copyStereotype");
     }
 
-    /**
-     * @return get the helper
-     */
     public static CopyHelper getHelper() {
 	if (theInstance == null)
 	    theInstance = new CopyHelper();
@@ -144,7 +140,7 @@ public final class CopyHelper {
 
 	    copyfunctions.put(type, new CopyFunction(obj, m));
 	} catch (Exception e) {
-	    LOG.error("Exception resolving copy method", e);
+	    cat.error("Exception resolving copy method", e);
 	}
     }
 
@@ -157,9 +153,7 @@ public final class CopyHelper {
      * 2. The copy function fails or throws.
      *
      * @param anelement is the element to copy.
-     * @param ans the namespace
      * @return a copy of element, or null.
-     * 
      * @throws NullPointerException if element is null.
      */
     public Object/*MModelElement*/ copy(Object/*MModelElement*/ anelement,
@@ -170,8 +164,8 @@ public final class CopyHelper {
 	CopyFunction f =
 	    (CopyFunction) copyfunctions.get(element.getClass());
 	if (f == null) {
-	    LOG.warn("CopyHelper is unable to copy element of " 
-		     + "type: " + element.getClass());
+	    cat.warn("CopyHelper is unable to copy element of " +
+		     "type: " + element.getClass());
 	    return null;
 	}
 
@@ -179,7 +173,7 @@ public final class CopyHelper {
 	    Object args[] = {element, ns};
 	    return (MModelElement) f.method.invoke(f.object, args);
 	} catch (Exception e) {
-	    LOG.error("CopyHelper copy method exception", e);
+	    cat.error("CopyHelper copy method exception", e);
 	    return null;
 	}
     }

@@ -35,13 +35,12 @@ import javax.swing.JScrollPane;
 import org.argouml.i18n.Translator;
 import org.argouml.model.ModelFacade;
 import org.argouml.model.uml.UmlFactory;
+import org.argouml.model.uml.behavioralelements.commonbehavior.CommonBehaviorFactory;
 import org.argouml.model.uml.foundation.core.CoreHelper;
+
 import org.argouml.ui.ProjectBrowser;
 import org.argouml.ui.targetmanager.TargetManager;
-import org.argouml.uml.ui.ActionNavigateNamespace;
-import org.argouml.uml.ui.ActionRemoveFromModel;
 import org.argouml.uml.ui.PropPanelButton;
-import org.argouml.uml.ui.PropPanelButton2;
 import org.argouml.uml.ui.UMLAddDialog;
 import org.argouml.uml.ui.UMLList;
 import org.argouml.uml.ui.UMLModelElementListModel;
@@ -73,12 +72,19 @@ public class PropPanelSignal extends PropPanelModelElement {
 	contextList.setBackground(getBackground());
         contextList.setForeground(Color.blue);
         JScrollPane contextScroll = new JScrollPane(contextList, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        addField(Translator.localize("UMLMenu", "label.contexts"), contextScroll);        
+        addField(Translator.localize("UMLMenu", "label.contexts"), contextScroll);
 
-        buttonPanel.add(new PropPanelButton2(this, new ActionNavigateNamespace()));
+        JList receiverList = new UMLList(new UMLReflectionListModel(this, "receivers", false, "getReceptions", null, "addReception", "deleteReception"), true);
+	receiverList.setBackground(getBackground());
+        receiverList.setForeground(Color.blue);
+        JScrollPane receiverScroll = new JScrollPane(receiverList, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        addField(Translator.localize("UMLMenu", "label.receptions"), receiverScroll);
+
+        new PropPanelButton(this, buttonPanel, _navUpIcon, Translator.localize("UMLMenu", "button.go-up"), "navigateNamespace", null);
         new PropPanelButton(this, buttonPanel, _signalIcon, Translator.localize("UMLMenu", "button.new-signal"), "newSignal", null);
-        buttonPanel
-        .add(new PropPanelButton2(this, new ActionRemoveFromModel()));   }
+        new PropPanelButton(this, buttonPanel, _receptionIcon, Translator.localize("UMLMenu", "button.new-reception"), "newReception", null);
+        new PropPanelButton(this, buttonPanel, _deleteIcon, Translator.localize("UMLMenu", "button.delete-signal"), "removeElement", null);
+    }
 
     public void newSignal() {
         Object target = getTarget();
@@ -91,7 +97,15 @@ public class PropPanelSignal extends PropPanelModelElement {
             }
         }
     }
-   
+
+    public void newReception() {
+    	Object target = getTarget();
+    	if (ModelFacade.isASignal(target)) {
+	    Object signal = /*(MSignal)*/ target;
+	    Object reception = CommonBehaviorFactory.getFactory().buildReception(signal);
+            TargetManager.getInstance().setTarget(reception);
+    	}
+    }
 
 
     /**
@@ -152,6 +166,33 @@ public class PropPanelSignal extends PropPanelModelElement {
 	    receptions = ModelFacade.getReceptions(target);
     	}
     	return receptions;
-    }    
+    }
+
+    /**
+     * Adds a new reception. The user has to fill in the classifier the reception
+     * belongs too on the proppanel of the reception
+     * @param index
+     */
+    public void addReception(Integer index) {
+    	newReception();
+    }
+
+    /**
+     * Deletes the reception at index from the list with receptions.
+     * @param index
+     */
+    public void deleteReception(Integer index) {
+    	Object target = getTarget();
+    	if (ModelFacade.isASignal(target)) {
+	    Object signal = /*(MSignal)*/ target;
+	    Object reception = /*(MReception)*/ UMLModelElementListModel.elementAtUtil(ModelFacade.getReceptions(signal), index.intValue(), null);
+	    ModelFacade.removeReception(signal, reception);
+    	}
+    }
+
+
+
+
+
 
 } /* end class PropPanelSignal */

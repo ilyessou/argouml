@@ -35,17 +35,11 @@ import org.argouml.uml.ui.AbstractActionAddModelElement;
 
 public class ActionAddInstanceClassifier extends AbstractActionAddModelElement {
 
-    protected Class _choiceClass = (Class) ModelFacade.CLASSIFIER;
     /**
      * Constructor for ActionAddExtendExtensionPoint.
      */
-    public ActionAddInstanceClassifier() {
+    protected ActionAddInstanceClassifier() {
         super();
-    }
-    
-    public ActionAddInstanceClassifier(Class choice) {
-        super();
-        _choiceClass = choice;
     }
     
     /**
@@ -61,7 +55,7 @@ public class ActionAddInstanceClassifier extends AbstractActionAddModelElement {
     protected Vector getChoices() {
         Vector ret = new Vector();
         if (getTarget() != null) {
-            ret.addAll(ModelManagementHelper.getHelper().getAllModelElementsOfKind(_choiceClass));
+            ret.addAll(ModelManagementHelper.getHelper().getAllModelElementsOfKind((Class)ModelFacade.CLASSIFIER));
         }
         return ret;
     }

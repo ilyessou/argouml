@@ -26,12 +26,26 @@ package org.argouml.kernel;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.io.IOException;
+import java.net.URL;
 import java.util.Vector;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import javax.swing.event.EventListenerList;
+import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.argouml.application.Main;
+import org.argouml.cognitive.ProjectMemberTodoList;
+import org.argouml.model.uml.UmlHelper;
 import org.argouml.ui.ArgoDiagram;
+import org.argouml.util.FileConstants;
+import org.argouml.xml.argo.ArgoParser;
+import org.argouml.xml.xmi.XMIParser;
+import org.argouml.xml.xmi.XMIReader;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 /**
  * This class manages the projects loaded in argouml.
@@ -50,8 +64,7 @@ import org.argouml.ui.ArgoDiagram;
 public final class ProjectManager {
 
     public static final String CURRENT_PROJECT_PROPERTY_NAME =
-        "currentProject";
-    
+	"currentProject";
     public static final String SAVE_STATE_PROPERTY_NAME = "saveState";
 
     /** logger */
@@ -60,22 +73,22 @@ public final class ProjectManager {
     /**
      * The singleton instance of this class
      */
-    private static ProjectManager instance;
+    private static ProjectManager _instance;
 
     /**
      * The project that is visible in the projectbrowser
      */
-    private static Project currentProject;
+    private static Project _currentProject;
 
     /**
      * Flag to indicate we are creating a new current project
      */
-    private boolean creatingCurrentProject;
+    private boolean _creatingCurrentProject;
 
     /**
      * The listener list
      */
-    private EventListenerList listenerList = new EventListenerList();
+    private EventListenerList _listenerList = new EventListenerList();
 
     /**
      * The event to fire.
@@ -85,7 +98,7 @@ public final class ProjectManager {
      * event again if the previous invocation resulted in an exception?
      * If so, please document why. If not, fix it.
      */
-    private PropertyChangeEvent event;
+    private PropertyChangeEvent _event;
 
     /**
      * The singleton accessor method of this class.
@@ -93,10 +106,10 @@ public final class ProjectManager {
      * @return The singleton.
      */
     public static ProjectManager getManager() {
-        if (instance == null) {
-            instance = new ProjectManager();
+        if (_instance == null) {
+            _instance = new ProjectManager();
         }
-        return instance;
+        return _instance;
     }
 
     /**
@@ -112,7 +125,7 @@ public final class ProjectManager {
      * @param listener The listener to add.
      */
     public void addPropertyChangeListener(PropertyChangeListener listener) {
-        listenerList.add(PropertyChangeListener.class, listener);
+        _listenerList.add(PropertyChangeListener.class, listener);
     }
 
     /**
@@ -121,7 +134,7 @@ public final class ProjectManager {
      * @param listener The listener to remove.
      */
     public void removePropertyChangeListener(PropertyChangeListener listener) {
-        listenerList.remove(PropertyChangeListener.class, listener);
+        _listenerList.remove(PropertyChangeListener.class, listener);
     }
 
     /**
@@ -135,24 +148,24 @@ public final class ProjectManager {
 				     Object oldValue, Object newValue) 
     {
         // Guaranteed to return a non-null array
-        Object[] listeners = listenerList.getListenerList();
+        Object[] listeners = _listenerList.getListenerList();
         // Process the listeners last to first, notifying
         // those that are interested in this event
         for (int i = listeners.length - 2; i >= 0; i -= 2) {
             if (listeners[i] == PropertyChangeListener.class) {
                 // Lazily create the event:
-                if (event == null)
-                    event =
+                if (_event == null)
+                    _event =
                         new PropertyChangeEvent(
                             this,
                             propertyName,
                             oldValue,
                             newValue);
                 ((PropertyChangeListener) listeners[i + 1]).propertyChange(
-                    event);
+                    _event);
             }
         }
-        event = null;
+        _event = null;
     }
 
     /**
@@ -166,15 +179,15 @@ public final class ProjectManager {
      * @param newProject The new project.
      */
     public void setCurrentProject(Project newProject) {
-        Project oldProject = currentProject;        
-        currentProject = newProject;
-        if (currentProject != null
-	    && currentProject.getActiveDiagram() == null) {
-            Vector diagrams = currentProject.getDiagrams();
+        Project oldProject = _currentProject;        
+        _currentProject = newProject;
+        if (_currentProject != null
+	    && _currentProject.getActiveDiagram() == null) {
+            Vector diagrams = _currentProject.getDiagrams();
             if (diagrams != null && !diagrams.isEmpty()) {
 		ArgoDiagram activeDiagram =
-		    (ArgoDiagram) currentProject.getDiagrams().get(0);
-                currentProject.setActiveDiagram(activeDiagram);
+		    (ArgoDiagram) _currentProject.getDiagrams().get(0);
+                _currentProject.setActiveDiagram(activeDiagram);
 	    }
         }
         firePropertyChanged(CURRENT_PROJECT_PROPERTY_NAME,
@@ -189,10 +202,10 @@ public final class ProjectManager {
      * @return Project The current project.
      */
     public Project getCurrentProject() {
-        if (currentProject == null && !creatingCurrentProject) {
-            currentProject = makeEmptyProject();
+        if (_currentProject == null && !_creatingCurrentProject) {
+            _currentProject = makeEmptyProject();
         }
-        return currentProject;
+        return _currentProject;
     }
 
     /**
@@ -200,7 +213,7 @@ public final class ProjectManager {
      * @return Project
      */
     public Project makeEmptyProject() {
-        creatingCurrentProject = true;
+        _creatingCurrentProject = true;
         LOG.info("making empty project");
         Project p = new Project();
         // the following line should not normally be here,
@@ -209,10 +222,182 @@ public final class ProjectManager {
         p.makeUntitledProject();
         // set the current project after making it!
         setCurrentProject(p);
-        creatingCurrentProject = false;
+        _creatingCurrentProject = false;
         return p;
     }
-    
+
+    /**   
+     * This method creates a project from the specified URL
+     *
+     * Unlike the constructor which forces an .argo extension This
+     * method will attempt to load a raw XMI file
+     * 
+     * This method can fail in several different ways. Either by
+     * throwing an exception or by having the
+     * ArgoParser.SINGLETON.getLastLoadStatus() set to not true.
+     * 
+     * @param url The URL to load the project from.
+     * @return The newly loaded project.
+     * @throws IOException if the file cannot be read.
+     * @throws IllegalFormatException if we don't understand the contents.
+     * @throws SAXException if there is some syntax error in the file.
+     * @throws ParserConfigurationException if the XML parser is not 
+     *         configured properly - shouldn't happen.
+     */
+    public Project loadProject(URL url)
+        throws IOException, IllegalFormatException, SAXException,
+	       ParserConfigurationException 
+    {
+        Project p = null;
+        String urlString = url.toString();
+        int lastDot = urlString.lastIndexOf(".");
+        String suffix = "";
+        if (lastDot >= 0) {
+            suffix = urlString.substring(lastDot).toLowerCase();
+        }
+        if (suffix.equals(".xmi")) {
+            p = loadProjectFromXMI(url);
+        } else if (suffix.equals(FileConstants.COMPRESSED_FILE_EXT)) {
+	    // normal case, .zargo
+            p = loadProjectFromZargo(url);
+        } else if (suffix.equals(FileConstants.UNCOMPRESSED_FILE_EXT)) {
+	    // the old argo format probably
+            p = loadProjectFromZargo(url);
+        } else {
+            throw new IllegalFormatException(
+                "No legal format found for url " + url.toString());
+        }
+        return p;
+    }
+
+    /**
+     * Reads an XMI file.<p>
+     *
+     * This could be used to import models from other tools.
+     *
+     * @param url is the file name of the file
+     * @return Project is a new project containing the read model
+     * @throws IOException is thrown if some error occurs
+     */
+    private Project loadProjectFromXMI(URL url) throws IOException {
+        Project p = new Project();
+        XMIParser.SINGLETON.readModels(p, url);
+        Object model = XMIParser.SINGLETON.getCurModel();
+        UmlHelper.getHelper().addListenersToModel(model);
+        p.setUUIDRefs(XMIParser.SINGLETON.getUUIDRefs());
+        p.addMember(new ProjectMemberTodoList("", p));
+        p.addMember(model);
+        p.setNeedsSave(false);
+        Main.addPostLoadAction(new ResetStatsLater());
+        return p;
+    }
+
+    /**
+     * Reads an url of the .zargo format.
+     * 
+     * @param url The URL to load the project from.
+     * @return The newly created Project.
+     * @throws IOException if we cannot read the file.
+     * @throws SAXException if there is a syntax error in the file.
+     * @throws ParserConfigurationException if the parser is incorrectly 
+     *         configured. - Shouldn't happen.
+     */
+    private Project loadProjectFromZargo(URL url)
+        throws IOException, SAXException, ParserConfigurationException {
+        Project p = null;
+        // read the argo 
+        try {
+            ZipInputStream zis = new ZipInputStream(url.openStream());
+
+            // first read the .argo file from Zip
+            ZipEntry entry = zis.getNextEntry();
+            while (entry != null
+		   && !entry.getName().endsWith(FileConstants.PROJECT_FILE_EXT))
+	    {
+                entry = zis.getNextEntry();
+            }
+
+            // the "false" means that members should not be added,
+            // we want to do this by hand from the zipped stream.
+            ArgoParser.SINGLETON.setURL(url);
+            ArgoParser.SINGLETON.readProject(zis, false);
+            p = ArgoParser.SINGLETON.getProject();
+            ArgoParser.SINGLETON.setProject(null); // clear up project refs
+
+            zis.close();
+
+        } catch (IOException e) {
+            // exception can occur both due to argouml code as to J2SE
+            // code, so lets log it
+            LOG.error(e);
+            throw e;
+        }
+        // read the xmi
+        try {
+            ZipInputStream zis = new ZipInputStream(url.openStream());
+
+            // first read the .argo file from Zip
+            String name = zis.getNextEntry().getName();
+            while (!name.endsWith(".xmi")) {
+                ZipEntry nextEntry = zis.getNextEntry();
+                if (nextEntry == null)
+                    throw new IOException("The XMI file is missing "
+					  + "from the .zargo file.");
+                name = nextEntry.getName();
+            }
+
+            XMIReader xmiReader = null;
+            try {
+                xmiReader = new XMIReader();
+            } catch (SAXException se) { // duh, this must be catched and handled
+                LOG.error(se);
+                throw se;
+            } catch (ParserConfigurationException pc) {
+		// duh, this must be catched and handled
+                LOG.error(pc);
+                throw pc;
+            }
+//            Object mmodel = null;
+
+            InputSource source = new InputSource(zis);
+            source.setEncoding("UTF-8");
+//            mmodel = xmiReader.parseToModel(new InputSource(zis));
+            // the following strange construction is needed because
+            // Novosoft does not really know how to handle
+            // exceptions...
+            if (xmiReader.getErrors()) {
+                if (xmiReader.getErrors()) {
+                    ArgoParser.SINGLETON.setLastLoadStatus(false);
+                    ArgoParser.SINGLETON.setLastLoadMessage(
+                        "XMI file "
+                            + url.toString()
+                            + " could not be "
+                            + "parsed.");
+                    LOG.error(
+                        "XMI file "
+                            + url.toString()
+                            + " could not be "
+                            + "parsed.");
+                    throw new SAXException(
+                        "XMI file "
+                            + url.toString()
+                            + " could not be "
+                            + "parsed.");
+                }
+            }
+            zis.close();
+
+        } catch (IOException e) {
+            // exception can occur both due to argouml code as to J2SE
+            // code, so lets log it
+            LOG.error(e);
+            throw e;
+        }
+        p.loadZippedProjectMembers(url);
+        p.postLoad();
+        return p;
+    }
+
     /**
      * Notify the gui from the project manager that the
      * current project's save state has changed.
@@ -233,10 +418,19 @@ public final class ProjectManager {
      */
     public void removeProject(Project oldProject) {
         
-        if (currentProject == oldProject) {
-            currentProject = null;
+        if (_currentProject == oldProject) {
+            _currentProject = null;
         }
         
         oldProject.remove();
     }
 }
+
+
+/**
+ * @deprecated since 0.15.1. TODO: What is this replaced by?
+ */
+class ResetStatsLater implements Runnable {
+    public void run() {
+    }
+} /* end class ResetStatsLater */

@@ -100,7 +100,7 @@ import org.tigris.gef.base.Globals;
 public class Import {
     
     /** logger */
-    private static final Logger LOG = Logger.getLogger(Import.class);
+    private Logger cat = Logger.getLogger(Import.class);
                 
     /** Imported directory */
     private String src_path;
@@ -489,6 +489,9 @@ public class Import {
      * ImportStatusScreen, in order to cancel long import runs.<p>
      */
     class ImportRun implements Runnable {
+	/** logger */
+	private Logger cat = Logger.getLogger(ImportRun.class);
+        
         Vector _filesLeft;
         
         int _countFiles;
@@ -529,7 +532,7 @@ public class Import {
          * Called once for each file to be parsed.<p>
          *
          * To refresh the GUI it calls itself again using the
-         * {@link SwingUtilities#invokeLater(Runnable)} method.<p>
+         * {@link SwingUtilities.invokeLater(Runnable)} method.<p>
          */
         public void run() {
             
@@ -584,13 +587,13 @@ public class Import {
                     
                     // RuntimeExceptions should be reported here!
                     if (e1 instanceof RuntimeException) {
-                        LOG.error("program bug encountered "
+                        cat.error("program bug encountered "
 				  + "in reverese engineering, "
 				  + "the project file will be corrupted",
 				  e1);
                     }
                     else
-                        LOG.warn("exception encountered "
+                        cat.warn("exception encountered "
 				 + "in reverese engineering, "
 				 + "the project file will be corrupted",
 				 e1);
@@ -658,7 +661,7 @@ public class Import {
             ExplorerEventAdaptor.getInstance().structureChanged();
             ProjectBrowser.getInstance().setEnabled(true);
             
-            LOG.info(_st);
+            cat.info(_st);
             ProjectBrowser.getInstance().getStatusBar().showProgress(0);
             
         }
@@ -754,8 +757,7 @@ public class Import {
 class ImportClasspathDialog extends JDialog {
     
     /** logger */
-    private static final Logger LOG =
-	Logger.getLogger(ImportClasspathDialog.class);
+    private Logger cat = Logger.getLogger(ImportClasspathDialog.class);
 
     private JList paths;
     private DefaultListModel pathsModel;
@@ -841,7 +843,7 @@ class ImportClasspathDialog extends JDialog {
 //            try{
 //            ImportClassLoader.getInstance().setPath(pathsModel.toArray());
 //            ImportClassLoader.getInstance().saveUserPath();
-//        }catch(Exception e1){LOG.warn("could not do save "+e1);}
+//        }catch(Exception e1){cat.warn("could not do save "+e1);}
 //        }
 //    }
     
@@ -853,7 +855,7 @@ class ImportClasspathDialog extends JDialog {
                 try {
                     urls[i] = new File((String) pathsModel.get(i)).toURL();
                 } catch (Exception e1) {
-		    LOG.warn("could not do ok: could not make"
+		    cat.warn("could not do ok: could not make"
 			     + "url " + pathsModel.get(i) + ", " + e1,
 			     e1);
 		}
@@ -863,7 +865,7 @@ class ImportClasspathDialog extends JDialog {
                 ImportClassLoader.getInstance(urls);
                 ImportClassLoader.getInstance().saveUserPath();
             } catch (Exception e1) {
-		LOG.warn("could not do ok", e1);
+		cat.warn("could not do ok", e1);
 	    }
             doFiles();
             dispose();

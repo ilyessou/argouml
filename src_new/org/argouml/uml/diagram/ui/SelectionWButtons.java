@@ -51,16 +51,12 @@ import org.tigris.gef.presentation.FigEdge;
 import org.tigris.gef.presentation.FigPoly;
 import org.tigris.gef.presentation.Handle;
 
-/**
- * 
- *
- */
 public abstract class SelectionWButtons extends SelectionNodeClarifiers {
     ////////////////////////////////////////////////////////////////
     // constants
-    private static final int IMAGE_SIZE = 22;
-    private static final int MARGIN = 2;
-    private static final Color PRESSED_COLOR = Color.gray.brighter();
+    public static final int IMAGE_SIZE = 22;
+    public static final int MARGIN = 2;
+    public static final Color PRESSED_COLOR = Color.gray.brighter();
 
     /**
      * The maximum number of tries to place a fig.
@@ -69,19 +65,19 @@ public abstract class SelectionWButtons extends SelectionNodeClarifiers {
 
     ////////////////////////////////////////////////////////////////
     // static variables
-    private static int numButtonClicks = 0;
-    private static boolean showRapidButtons = true;
+    public static int Num_Button_Clicks = 0;
+    public static boolean _showRapidButtons = true;
 
     ////////////////////////////////////////////////////////////////
     // instance variables
-    private boolean paintButtons = true;
-    private int pressedButton = -1;
+    protected boolean _paintButtons = true;
+    protected int _pressedButton = -1;
 
     /**
      * Counter for counting the number of times there has been a try to place 
      * a fig.
      */
-    private int placeCounter = 0;
+    private int _placeCounter = 0;
 
     ////////////////////////////////////////////////////////////////
     // constructors
@@ -93,78 +89,35 @@ public abstract class SelectionWButtons extends SelectionNodeClarifiers {
      */
     public SelectionWButtons(Fig f) {
         super(f);
-        paintButtons = showRapidButtons;
+        _paintButtons = _showRapidButtons;
     }
 
     ////////////////////////////////////////////////////////////////
     // static accessors
 
-    /**
-     * toggle ShowRapidButtons
-     */
     public static void toggleShowRapidButtons() {
-        showRapidButtons = !showRapidButtons;
+        _showRapidButtons = !_showRapidButtons;
     }
 
     ////////////////////////////////////////////////////////////////
     // interaction utility methods
 
-    /**
-     * @param x
-     * @param y
-     * @param w
-     * @param h
-     * @param r
-     * @return
-     */
     public boolean hitAbove(int x, int y, int w, int h, Rectangle r) {
         return intersectsRect(r, x - w / 2, y - h - MARGIN, w, h + MARGIN);
     }
 
-    /**
-     * @param x
-     * @param y
-     * @param w
-     * @param h
-     * @param r
-     * @return
-     */
     public boolean hitBelow(int x, int y, int w, int h, Rectangle r) {
         return intersectsRect(r, x - w / 2, y, w, h + MARGIN);
     }
 
-    /**
-     * @param x
-     * @param y
-     * @param w
-     * @param h
-     * @param r
-     * @return
-     */
     public boolean hitLeft(int x, int y, int w, int h, Rectangle r) {
         return intersectsRect(r, x, y - h / 2, w + MARGIN, h);
     }
 
-    /**
-     * @param x
-     * @param y
-     * @param w
-     * @param h
-     * @param r
-     * @return
-     */
     public boolean hitRight(int x, int y, int w, int h, Rectangle r) {
         return intersectsRect(r, x - w - MARGIN, y - h / 2, w + MARGIN, h);
     }
 
-    /**
-     * @param r
-     * @param x
-     * @param y
-     * @param w
-     * @param h
-     * @return
-     */
     public boolean intersectsRect(Rectangle r, int x, int y, int w, int h) {
         return !(
 		 (r.x + r.width <= x)
@@ -184,14 +137,14 @@ public abstract class SelectionWButtons extends SelectionNodeClarifiers {
      */
     public void paint(Graphics g) {
         super.paint(g);
-        if (!paintButtons)
+        if (!_paintButtons)
             return;
         Editor ce = Globals.curEditor();
         SelectionManager sm = ce.getSelectionManager();
         if (sm.size() != 1)
             return;
         ModeManager mm = ce.getModeManager();
-        if (mm.includes(ModeModify.class) && pressedButton == -1)
+        if (mm.includes(ModeModify.class) && _pressedButton == -1)
             return;
         paintButtons(g);
     }
@@ -204,13 +157,6 @@ public abstract class SelectionWButtons extends SelectionNodeClarifiers {
      */
     public abstract void paintButtons(Graphics g);
 
-    /**
-     * @param i
-     * @param g
-     * @param x
-     * @param y
-     * @param hi
-     */
     public void paintButtonAbove(Icon i, Graphics g, int x, int y, int hi) {
         paintButton(
 		    i,
@@ -220,35 +166,14 @@ public abstract class SelectionWButtons extends SelectionNodeClarifiers {
 		    hi);
     }
 
-    /**
-     * @param i
-     * @param g
-     * @param x
-     * @param y
-     * @param hi
-     */
     public void paintButtonBelow(Icon i, Graphics g, int x, int y, int hi) {
         paintButton(i, g, x - i.getIconWidth() / 2, y + MARGIN, hi);
     }
 
-    /**
-     * @param i
-     * @param g
-     * @param x
-     * @param y
-     * @param hi
-     */
     public void paintButtonLeft(Icon i, Graphics g, int x, int y, int hi) {
         paintButton(i, g, x + MARGIN, y - i.getIconHeight() / 2, hi);
     }
 
-    /**
-     * @param i
-     * @param g
-     * @param x
-     * @param y
-     * @param hi
-     */
     public void paintButtonRight(Icon i, Graphics g, int x, int y, int hi) {
         paintButton(
 		    i,
@@ -258,18 +183,11 @@ public abstract class SelectionWButtons extends SelectionNodeClarifiers {
 		    hi);
     }
 
-    /**
-     * @param i
-     * @param g
-     * @param x
-     * @param y
-     * @param hi
-     */
     public void paintButton(Icon i, Graphics g, int x, int y, int hi) {
         int w = i.getIconWidth() + 4;
         int h = i.getIconHeight() + 4;
 
-        if (hi == pressedButton) {
+        if (hi == _pressedButton) {
             g.setColor(PRESSED_COLOR);
             g.fillRect(x - 2, y - 2, w, h);
         }
@@ -282,7 +200,7 @@ public abstract class SelectionWButtons extends SelectionNodeClarifiers {
         g.drawRect(0, 0, w - 2, h - 2);
 
         g.setColor(handleColor.brighter().brighter().brighter());
-        if (hi != pressedButton) {
+        if (hi != _pressedButton) {
             g.drawLine(1, h - 3, 1, 1);
             g.drawLine(1, 1, w - 3, 1);
         }
@@ -293,9 +211,6 @@ public abstract class SelectionWButtons extends SelectionNodeClarifiers {
         g.translate(-x + 2, -y + 2);
     }
 
-    /**
-     * @see org.tigris.gef.base.Selection#getBounds()
-     */
     public Rectangle getBounds() {
         return new Rectangle(
 			     _content.getX() - IMAGE_SIZE * 2,
@@ -307,15 +222,12 @@ public abstract class SelectionWButtons extends SelectionNodeClarifiers {
     /** Dont show buttons while the user is moving the Class.  Called
      *  from FigClass when it is translated. */
     public void hideButtons() {
-        paintButtons = false;
+        _paintButtons = false;
     }
 
-    /**
-     * @param buttonCode
-     */
     public void buttonClicked(int buttonCode) {
         if (buttonCode >= 10)
-            numButtonClicks++;
+            Num_Button_Clicks++;
         // get a new node (modelelement) that should be added
         Object newNode = getNewNode(buttonCode);
         Object owner = _content.getOwner();
@@ -423,51 +335,39 @@ public abstract class SelectionWButtons extends SelectionNodeClarifiers {
     ////////////////////////////////////////////////////////////////
     // event handlers
 
-    /**
-     * @see java.awt.event.MouseListener#mousePressed(java.awt.event.MouseEvent)
-     */
     public void mousePressed(MouseEvent me) {
         Handle h = new Handle(-1);
         hitHandle(me.getX(), me.getY(), 0, 0, h);
-        pressedButton = h.index;
+        _pressedButton = h.index;
         Editor ce = Globals.curEditor();
         ce.damaged(this);
     }
 
-    /**
-     * @see java.awt.event.MouseListener#mouseReleased(java.awt.event.MouseEvent)
-     */
     public void mouseReleased(MouseEvent me) {
-        if (pressedButton < 10)
+        if (_pressedButton < 10)
             return;
         Handle h = new Handle(-1);
         hitHandle(me.getX(), me.getY(), 0, 0, h);
-        if (pressedButton == h.index) {
-            buttonClicked(pressedButton);
+        if (_pressedButton == h.index) {
+            buttonClicked(_pressedButton);
             me.consume();
         }
-        pressedButton = -1;
+        _pressedButton = -1;
         Editor ce = Globals.curEditor();
         ce.damaged(this);
     }
 
-    /**
-     * @see java.awt.event.MouseListener#mouseEntered(java.awt.event.MouseEvent)
-     */
     public void mouseEntered(MouseEvent me) {
         super.mouseEntered(me);
-        if (showRapidButtons)
-            paintButtons = true;
+        if (_showRapidButtons)
+            _paintButtons = true;
         Editor ce = Globals.curEditor();
         ce.damaged(this);
     }
 
-    /**
-     * @see java.awt.event.MouseListener#mouseExited(java.awt.event.MouseEvent)
-     */
     public void mouseExited(MouseEvent me) {
         super.mouseExited(me);
-        paintButtons = false;
+        _paintButtons = false;
         Editor ce = Globals.curEditor();
         ce.damaged(this);
     }
@@ -495,10 +395,10 @@ public abstract class SelectionWButtons extends SelectionNodeClarifiers {
 			       int x,
 			       int y,
 			       Rectangle bumpRect) {
-        if (placeCounter > MAX_PLACINGS)
+        if (_placeCounter > MAX_PLACINGS)
             return false;
         // to prevent outofmemory errors and stackoverflow errors
-        placeCounter++;
+        _placeCounter++;
         figToPlace.setLocation(x, y);
         layerToPlaceOn.bumpOffOtherNodesIn(figToPlace, bumpRect, false, false);
         if (figToPlace.getX() < 0) {
@@ -545,9 +445,6 @@ public abstract class SelectionWButtons extends SelectionNodeClarifiers {
 
     /**
      * Implementors should return a new node for adding via the buttons.
-     *
-     * @param buttonCode
-     * @return
      */
     protected abstract Object getNewNode(int buttonCode);
     
@@ -617,34 +514,6 @@ public abstract class SelectionWButtons extends SelectionNodeClarifiers {
      */
     protected Object createEdgeToSelf(MutableGraphModel gm) {
         return null;
-    }
-
-    /**
-     * @param paint The _paintButtons to set.
-     */
-    protected void setPaintButtons(boolean paint) {
-        this.paintButtons = paint;
-    }
-
-    /**
-     * @return Returns the _paintButtons.
-     */
-    protected boolean isPaintButtons() {
-        return paintButtons;
-    }
-
-    /**
-     * @param pressed The _pressedButton to set.
-     */
-    protected void setPressedButton(int pressed) {
-        this.pressedButton = pressed;
-    }
-
-    /**
-     * @return Returns the _pressedButton.
-     */
-    protected int getPressedButton() {
-        return pressedButton;
     }
 
 } /* end class SelectionWButtons */

@@ -29,18 +29,19 @@
 
 package org.argouml.uml.ui.behavior.common_behavior;
 
+import java.awt.Color;
+
 import javax.swing.ImageIcon;
-import javax.swing.JList;
 import javax.swing.JScrollPane;
 
 import org.argouml.application.helpers.ResourceLoaderWrapper;
 import org.argouml.i18n.Translator;
 import org.argouml.model.ModelFacade;
 import org.argouml.model.uml.UmlFactory;
-import org.argouml.uml.ui.ActionNavigateNamespace;
-import org.argouml.uml.ui.ActionRemoveFromModel;
-import org.argouml.uml.ui.PropPanelButton2;
-import org.argouml.uml.ui.UMLLinkedList;
+import org.argouml.ui.targetmanager.TargetManager;
+import org.argouml.uml.ui.PropPanelButton;
+import org.argouml.uml.ui.UMLList;
+import org.argouml.uml.ui.UMLReflectionListModel;
 import org.argouml.uml.ui.UMLStimulusActionTextField;
 import org.argouml.uml.ui.UMLStimulusActionTextProperty;
 import org.argouml.uml.ui.foundation.core.PropPanelModelElement;
@@ -54,7 +55,7 @@ import ru.novosoft.uml.MElementEvent;
  */
 public class PropPanelStimulus extends PropPanelModelElement {
 
-    protected static ImageIcon _stimulusIcon = ResourceLoaderWrapper.lookupIconResource("Stimulus");
+    protected static ImageIcon _stimulusIcon = ResourceLoaderWrapper.getResourceLoaderWrapper().lookupIconResource("Stimulus");
 
     public PropPanelStimulus() {
         super("Stimulus Properties", _stimulusIcon, ConfigLoader.getTabPropsOrientation());
@@ -70,23 +71,36 @@ public class PropPanelStimulus extends PropPanelModelElement {
         addField("Action:", new UMLStimulusActionTextField(this, new UMLStimulusActionTextProperty("name")));
         addField(Translator.localize("UMLMenu", "label.stereotype"), getStereotypeBox());
 
-        JList senderList = new UMLLinkedList(new UMLStimulusSenderListModel());
-	senderList.setVisibleRowCount(1);
-	JScrollPane senderScroll = new JScrollPane(senderList);
-	addField(Translator.localize("UMLMenu", "label.sender"), senderScroll);
+        UMLList senderList = new UMLList(new UMLReflectionListModel(this, "sender", true, "getSender", null, null, null), true);
+        senderList.setForeground(Color.blue);
+        senderList.setVisibleRowCount(1);
+        senderList.setFont(smallFont);
+        JScrollPane senderScroll = new JScrollPane(senderList);
+        addField("Sender:", senderScroll);
 
-        JList receiverList =
-	    new UMLLinkedList(new UMLStimulusReceiverListModel());
-	receiverList.setVisibleRowCount(1);
-	JScrollPane receiverScroll = new JScrollPane(receiverList);
-	addField(Translator.localize("UMLMenu", "label.receiver"), receiverScroll);
-        
-        addField(Translator.localize("UMLMenu", "label.namespace"), getNamespaceComboBox());
+        UMLList receiverList = new UMLList(new UMLReflectionListModel(this, "receiver", true, "getReceiver", null, null, null), true);
+        receiverList.setForeground(Color.blue);
+        receiverList.setVisibleRowCount(1);
+        receiverList.setFont(smallFont);
+        JScrollPane receiverScroll = new JScrollPane(receiverList);
+        addField(Translator.localize("UMLMenu", "label.receiver"), receiverScroll);
 
-        buttonPanel.add(new PropPanelButton2(this, new ActionNavigateNamespace()));    
-        buttonPanel.add(new PropPanelButton2(this, new ActionRemoveFromModel()));
+        addLinkField(Translator.localize("UMLMenu", "label.namespace"), getNamespaceComboBox());
+
+        new PropPanelButton(this, buttonPanel, _navUpIcon, Translator.localize("UMLMenu", "button.go-up"), "navigateNamespace", null);
+        new PropPanelButton(this, buttonPanel, _deleteIcon, localize("Delete object"), "removeElement", null);
     }
 
+    public void navigateNamespace() {
+        Object target = getTarget();
+        if (org.argouml.model.ModelFacade.isAModelElement(target)) {
+            Object elem = /*(MModelElement)*/ target;
+            Object ns = ModelFacade.getNamespace(elem);
+            if (ns != null) {
+                TargetManager.getInstance().setTarget(ns);
+            }
+        }
+    }
 
     public void removed(MElementEvent mee) {
     }
@@ -161,4 +175,16 @@ public class PropPanelStimulus extends PropPanelModelElement {
             }
         }
     }
+
+    public void removeElement() {
+        Object target = /*(MStimulus)*/ getTarget();
+	Object newTarget = /*(MModelElement)*/ ModelFacade.getNamespace(target);
+
+	UmlFactory.getFactory().delete(target);
+	if (newTarget != null) {
+            TargetManager.getInstance().setTarget(newTarget);
+	}
+
+    }
+
 }

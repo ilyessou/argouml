@@ -48,7 +48,7 @@ import org.tigris.gef.base.Globals;
  */
 public class ActionCut extends AbstractAction implements CaretListener {
 
-    private static ActionCut instance = new ActionCut();
+    private static ActionCut _Instance = new ActionCut();
 
     private static final String LOCALIZE_KEY = "action.cut";
 
@@ -58,7 +58,7 @@ public class ActionCut extends AbstractAction implements CaretListener {
     private ActionCut() {
         super(Translator.localize(LOCALIZE_KEY));
         Icon icon =
-            ResourceLoaderWrapper
+            ResourceLoaderWrapper.getResourceLoaderWrapper()
 	        .lookupIconResource(
 				    Translator.getImageBinding(LOCALIZE_KEY),
 				    Translator.localize(LOCALIZE_KEY));
@@ -70,26 +70,21 @@ public class ActionCut extends AbstractAction implements CaretListener {
 		 Translator.localize(LOCALIZE_KEY) + " ");
     }
 
-    /**
-     * @return the singleton
-     */
     public static ActionCut getInstance() {
-        return instance;
+        return _Instance;
     }
 
-    private JTextComponent textSource;
+    private JTextComponent _textSource;
 
     /**
      * Cuts some text or a fig
-     *
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
      */
     public void actionPerformed(ActionEvent ae) {
-        if (textSource == null) {
+        if (_textSource == null) {
             CmdCut cmd = new CmdCut();
             cmd.doIt();
         } else {
-            textSource.cut();
+            _textSource.cut();
         }
         if (isSystemClipBoardEmpty()
             && Globals.clipBoard == null
@@ -107,7 +102,7 @@ public class ActionCut extends AbstractAction implements CaretListener {
     public void caretUpdate(CaretEvent e) {
         if (e.getMark() != e.getDot()) { // there is a selection        
             setEnabled(true);
-            textSource = (JTextComponent) e.getSource();
+            _textSource = (JTextComponent) e.getSource();
         } else {
             Collection figSelection =
                 Globals.curEditor().getSelectionManager().selections();
@@ -115,7 +110,7 @@ public class ActionCut extends AbstractAction implements CaretListener {
                 setEnabled(false);
             } else
                 setEnabled(true);
-            textSource = null;
+            _textSource = null;
         }
 
     }

@@ -29,7 +29,6 @@ import javax.swing.JCheckBox;
 import org.argouml.model.ModelFacade;
 
 import org.argouml.model.uml.UmlModelEventPump;
-import org.argouml.ui.LookAndFeelMgr;
 import org.argouml.ui.targetmanager.TargetEvent;
 import org.argouml.ui.targetmanager.TargetListener;
 import org.tigris.gef.presentation.Fig;
@@ -61,7 +60,6 @@ public abstract class UMLCheckBox2
      */
     public UMLCheckBox2(String text, Action a, String propertySetName) {
         super(text);
-        setFont(LookAndFeelMgr.getInstance().getSmallFont());
         _propertySetName = propertySetName;
         addActionListener(a);
 
@@ -136,6 +134,7 @@ public abstract class UMLCheckBox2
         if (ModelFacade.isABase(_target)) {
             UmlModelEventPump.getPump()
 		.removeModelEventListener(this, _target, _propertySetName);
+            _target = null;
         }
        
         if (ModelFacade.isABase(target)) {
@@ -180,21 +179,21 @@ public abstract class UMLCheckBox2
      * @see TargetListener#targetAdded(TargetEvent)
      */
     public void targetAdded(TargetEvent e) {
-        setTarget(e.getNewTarget());
+	setTarget(e.getNewTarget());
     }
 
     /**
      * @see TargetListener#targetRemoved(TargetEvent)
      */
     public void targetRemoved(TargetEvent e) {
-        setTarget(e.getNewTarget());
+	setTarget(e.getNewTarget());
     }
 
     /**
      * @see TargetListener#targetSet(TargetEvent)
      */
     public void targetSet(TargetEvent e) {
-        setTarget(e.getNewTarget());
+	setTarget(e.getNewTarget());
     }
 
 }

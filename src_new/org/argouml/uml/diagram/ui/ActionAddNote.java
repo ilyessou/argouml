@@ -49,19 +49,16 @@ import org.tigris.gef.presentation.FigNode;
  */
 public class ActionAddNote extends UMLChangeAction {
 
-    private static final int DISTANCE = 80;
+    protected static final int DISTANCE = 80;
 
     ////////////////////////////////////////////////////////////////
     // static variables
 
-    private static ActionAddNote singleton = new ActionAddNote();
+    public static ActionAddNote SINGLETON = new ActionAddNote();
 
     ////////////////////////////////////////////////////////////////
     // constructors
 
-    /**
-     * The constructor.
-     */
     public ActionAddNote() {
         super("New Note");
     }
@@ -69,9 +66,6 @@ public class ActionAddNote extends UMLChangeAction {
     ////////////////////////////////////////////////////////////////
     // main methods
 
-    /**
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-     */
     public void actionPerformed(ActionEvent ae) {
         Object target = TargetManager.getInstance().getModelTarget();
 
@@ -136,9 +130,6 @@ public class ActionAddNote extends UMLChangeAction {
 
     }
 
-    /**
-     * @see org.argouml.uml.ui.UMLAction#shouldBeEnabled()
-     */
     public boolean shouldBeEnabled() {
         ProjectBrowser pb = ProjectBrowser.getInstance();
         Object target = TargetManager.getInstance().getModelTarget();
@@ -153,12 +144,5 @@ public class ActionAddNote extends UMLChangeAction {
             && (ProjectManager.getManager().getCurrentProject()
                 .getActiveDiagram().presentationFor(target)
                 instanceof FigNode);
-    }
-
-    /**
-     * @return Returns the singleton.
-     */
-    public static ActionAddNote getSingleton() {
-        return singleton;
     }
 } /* end class ActionAddNote */

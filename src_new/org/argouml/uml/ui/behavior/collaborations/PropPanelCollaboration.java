@@ -27,6 +27,8 @@ package org.argouml.uml.ui.behavior.collaborations;
 import javax.swing.JScrollPane;
 
 import org.argouml.i18n.Translator;
+
+import org.argouml.uml.ui.UMLComboBoxNavigator;
 import org.argouml.uml.ui.UMLLinkedList;
 import org.argouml.uml.ui.foundation.core.PropPanelNamespace;
 import org.argouml.util.ConfigLoader;
@@ -49,12 +51,11 @@ public class PropPanelCollaboration extends PropPanelNamespace {
         super("Collaboration", ConfigLoader.getTabPropsOrientation());
 
         addField(Translator.localize("UMLMenu", "label.name"), getNameTextField());
-//        addField(Translator.localize("UMLMenu", "label.stereotype"),
-//            new UMLComboBoxNavigator(this, Translator.localize("UMLMenu",
-//							 "tooltip.nav-stereo"),
-//				     getStereotypeBox()));
-        addField(Translator.localize("UMLMenu", "label.stereotype"), getStereotypeBox());
-       addField(Translator.localize("UMLMenu", "label.namespace"), getNamespaceScroll());
+        addField(Translator.localize("UMLMenu", "label.stereotype"),
+            new UMLComboBoxNavigator(this, Translator.localize("UMLMenu",
+							 "tooltip.nav-stereo"),
+				     getStereotypeBox()));
+        addField(Translator.localize("UMLMenu", "label.namespace"), getNamespaceScroll());
 
         UMLLinkedList classifierList =
 	    new UMLLinkedList(new UMLCollaborationRepresentedClassifierListModel());

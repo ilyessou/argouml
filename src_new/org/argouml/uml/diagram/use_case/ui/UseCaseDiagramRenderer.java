@@ -35,9 +35,6 @@ package org.argouml.uml.diagram.use_case.ui;
 
 import org.apache.log4j.Logger;
 import org.argouml.model.ModelFacade;
-import org.argouml.uml.diagram.static_structure.ui.CommentEdge;
-import org.argouml.uml.diagram.static_structure.ui.FigComment;
-import org.argouml.uml.diagram.static_structure.ui.FigEdgeNote;
 import org.argouml.uml.diagram.ui.FigAssociation;
 import org.argouml.uml.diagram.ui.FigDependency;
 import org.argouml.uml.diagram.ui.FigGeneralization;
@@ -100,9 +97,6 @@ public class UseCaseDiagramRenderer
         else if (org.argouml.model.ModelFacade.isAUseCase(node)) {
             return new FigUseCase(gm, node);
         }
-        else if (ModelFacade.isAComment(node)) {
-            return new FigComment(gm, node);
-        }
 
         // If we get here we were asked for a fig we can't handle.
 
@@ -130,7 +124,7 @@ public class UseCaseDiagramRenderer
      *              one.
      */
 
-    public FigEdge getFigEdgeFor(GraphModel gm, Layer lay, Object edge) {        
+    public FigEdge getFigEdgeFor(GraphModel gm, Layer lay, Object edge) {
 
         cat.debug("making figedge for " + edge);
 
@@ -184,10 +178,13 @@ public class UseCaseDiagramRenderer
 
         else if (org.argouml.model.ModelFacade.isAInclude(edge)) {
             Object   inc    = /*(MInclude)*/ edge;
-            FigInclude incFig = new FigInclude(inc);          
+            FigInclude incFig = new FigInclude(inc);
 
-            Object base     = ModelFacade.getBase(inc);
-            Object addition = ModelFacade.getAddition(inc);
+            // The nodes at the two ends. NSUML has a bug which gets base and
+            // additon reversed, so we must reverse their accessors here.
+
+            Object base     = ModelFacade.getAddition(inc);
+            Object addition = ModelFacade.getBase(inc);
 
             // The figs for the two end nodes
 
@@ -234,11 +231,7 @@ public class UseCaseDiagramRenderer
             depFig.setDestFigNode(supplierFN);
 
             return depFig;
-        } else 
-        if (edge instanceof CommentEdge) {
-            return new FigEdgeNote(edge, lay);
         }
-            
 
         // If we get here, we can't handle this sort of edge.
 

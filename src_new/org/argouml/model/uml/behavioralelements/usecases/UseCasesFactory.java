@@ -52,16 +52,14 @@ public class UseCasesFactory extends AbstractUmlModelFactory {
     /**
      * Singleton instance.
      */
-    private static UseCasesFactory singleton =
+    private static UseCasesFactory SINGLETON =
 	new UseCasesFactory();
 
     /**
      * Singleton instance access method.
-     *
-     * @return the singleton
      */
     public static UseCasesFactory getFactory() {
-        return singleton;
+        return SINGLETON;
     }
 
     /**
@@ -178,15 +176,6 @@ public class UseCasesFactory extends AbstractUmlModelFactory {
 	return extend;
     }
      
-    /**
-     * Build an extend relationship.<p>
-     * 
-     * @param abase       The base use case for the relationship
-     * @param anextension The extension use case for the relationship
-     * @param apoint      The insertion point for the extension
-     * @return            The new extend relationship or <code>null</code>
-     *                    if it can't be created.
-     */
     public MExtend buildExtend(Object abase,
 			       Object anextension,
 			       Object apoint) {
@@ -312,8 +301,8 @@ public class UseCasesFactory extends AbstractUmlModelFactory {
     /**
      * Builds an actor in the given namespace.
      *
-     * @param ns the given namespace
-     * @return MActor the newly build actor
+     * @param ns
+     * @return MActor
      */
     public MActor buildActor(MNamespace ns) {
      	if (ns == null) return buildActor();
@@ -329,8 +318,8 @@ public class UseCasesFactory extends AbstractUmlModelFactory {
      * object is no actor nothing is build. Did not give MActor as an
      * argument but object to seperate argouml better from NSUML.<p>
      *
-     * @param actor the given actor
-     * @return MActor the newly build actor
+     * @param actor
+     * @return MActor
      */
     public MActor buildActor(Object actor) {
         if (actor instanceof MActor) {
@@ -339,44 +328,27 @@ public class UseCasesFactory extends AbstractUmlModelFactory {
         return null;
     }
      
-    /**
-     * @param elem the UML element to be deleted
-     */
     public void deleteActor(MActor elem) { }
      
-    /**
-     * @param elem the UML element to be deleted
-     */
     public void deleteExtend(MExtend elem) {
 	UmlHelper.getHelper().deleteCollection(elem.getExtensionPoints());
     }
      
-    /**
-     * @param elem the UML element to be deleted
-     */
-    public void deleteExtensionPoint(MExtensionPoint elem) {
-        
-    }
+    public void deleteExtensionPoint(MExtensionPoint elem) { }
      
-    /**
-     * @param elem the UML element to be deleted
-     */
     public void deleteInclude(MInclude elem) { }
      
-    /**
-     * @param elem the UML element to be deleted
-     */
     public void deleteUseCase(MUseCase elem) {
 	UmlHelper.getHelper().deleteCollection(elem.getExtends());
 	UmlHelper.getHelper().deleteCollection(elem.getExtends2());
-	UmlHelper.getHelper().deleteCollection(elem.getIncludes());       
+	UmlHelper.getHelper().deleteCollection(elem.getIncludes());
 	UmlHelper.getHelper().deleteCollection(elem.getIncludes2());
     }
      
-    /**
-     * @param elem the UML element to be deleted
-     */
     public void deleteUseCaseInstance(MUseCaseInstance elem) { }
+
+
+
 
 }
 

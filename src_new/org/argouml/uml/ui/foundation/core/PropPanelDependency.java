@@ -28,10 +28,10 @@ import javax.swing.JList;
 import javax.swing.JScrollPane;
 
 import org.argouml.i18n.Translator;
+
 import org.argouml.swingext.Orientation;
-import org.argouml.uml.ui.ActionNavigateNamespace;
-import org.argouml.uml.ui.ActionRemoveFromModel;
-import org.argouml.uml.ui.PropPanelButton2;
+import org.argouml.uml.ui.PropPanelButton;
+import org.argouml.uml.ui.UMLComboBoxNavigator;
 import org.argouml.uml.ui.UMLLinkedList;
 import org.argouml.util.ConfigLoader;
 
@@ -56,8 +56,7 @@ public class PropPanelDependency extends PropPanelRelationship {
         this("Dependency", ConfigLoader.getTabPropsOrientation());
 
         addField(Translator.localize("UMLMenu", "label.name"), getNameTextField());
-        // addField(Translator.localize("UMLMenu", "label.stereotype"), new UMLComboBoxNavigator(this, Translator.localize("UMLMenu", "tooltip.nav-stereo"), getStereotypeBox()));
-        addField(Translator.localize("UMLMenu", "label.stereotype"), getStereotypeBox());
+        addField(Translator.localize("UMLMenu", "label.stereotype"), new UMLComboBoxNavigator(this, Translator.localize("UMLMenu", "tooltip.nav-stereo"), getStereotypeBox()));
         addField(Translator.localize("UMLMenu", "label.namespace"), getNamespaceComboBox());
 
         addSeperator();
@@ -65,9 +64,9 @@ public class PropPanelDependency extends PropPanelRelationship {
         addField(Translator.localize("UMLMenu", "label.suppliers"), _supplierScroll);
         addField(Translator.localize("UMLMenu", "label.clients"), _clientScroll);
 
-        buttonPanel.add(new PropPanelButton2(this, new ActionNavigateNamespace()));
-        buttonPanel
-        .add(new PropPanelButton2(this, new ActionRemoveFromModel()));
+        new PropPanelButton(this, buttonPanel, _navUpIcon, Translator.localize("UMLMenu", "button.go-up"), "navigateNamespace", null);
+        new PropPanelButton(this, buttonPanel, _deleteIcon, Translator.localize("UMLMenu", "button.delete-association"), "removeElement", null);
+
     }
 
     /**

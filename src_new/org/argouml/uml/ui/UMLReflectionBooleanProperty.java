@@ -40,8 +40,16 @@ import org.argouml.kernel.*;
  * that used reflection a lot.
  */
 public class UMLReflectionBooleanProperty extends UMLBooleanProperty {
+    /**
+     * @deprecated by Linus Tolke as of 0.15.4. Use your own logger in your
+     * class. This will be removed.
+     */
+    protected static Logger cat =
+	Logger.getLogger(UMLReflectionBooleanProperty.class);
+
     private Method _getMethod;
     private Method _setMethod;
+    private Class _objectClass;
     private static final Object[] _noArg = {};
     private static final Object[] _trueArg = {
 	new Boolean(true) 
@@ -57,6 +65,8 @@ public class UMLReflectionBooleanProperty extends UMLBooleanProperty {
 					Class elementClass,
 					String getMethod, String setMethod) {
         super(propertyName);
+
+	_objectClass = elementClass;
 
         Class[] noClass = {};
         try {
@@ -121,7 +131,8 @@ public class UMLReflectionBooleanProperty extends UMLBooleanProperty {
     
     public boolean getProperty(Object element) {
         boolean state = false;
-        if (_getMethod != null && element != null) {
+        if (_getMethod != null && element != null
+	    && _objectClass.isAssignableFrom(element.getClass())) {
             try {
                 Object retval = _getMethod.invoke(element, _noArg);
                 if (retval != null && retval instanceof Boolean) {

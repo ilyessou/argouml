@@ -24,19 +24,26 @@
 
 package org.argouml.uml.ui.behavior.common_behavior;
 
+import java.awt.Color;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Vector;
 
+import javax.swing.JList;
 import javax.swing.JScrollPane;
 
-import org.argouml.i18n.Translator;
 import org.argouml.model.ModelFacade;
-import org.argouml.uml.ui.AbstractActionAddModelElement;
-import org.argouml.uml.ui.ActionNavigateNamespace;
-import org.argouml.uml.ui.ActionRemoveFromModel;
-import org.argouml.uml.ui.PropPanelButton2;
-import org.argouml.uml.ui.UMLMutableLinkedList;
+import org.argouml.i18n.Translator;
+import org.argouml.model.uml.UmlFactory;
+
+import org.argouml.ui.targetmanager.TargetManager;
+import org.argouml.uml.ui.PropPanelButton;
+import org.argouml.uml.ui.UMLClassifierComboBoxModel;
+import org.argouml.uml.ui.UMLComboBox;
+import org.argouml.uml.ui.UMLComboBoxNavigator;
+import org.argouml.uml.ui.UMLList;
+import org.argouml.uml.ui.UMLStimulusListModel;
+import org.argouml.uml.ui.foundation.core.PropPanelModelElement;
 import org.argouml.util.ConfigLoader;
 
 import ru.novosoft.uml.foundation.core.MClassifier;
@@ -47,13 +54,8 @@ import ru.novosoft.uml.foundation.core.MModelElement;
  * TODO: this property panel needs refactoring to remove dependency on
  *       old gui components.
  */
-public class PropPanelObject extends PropPanelInstance {
+public class PropPanelObject extends PropPanelModelElement {
 
-    protected JScrollPane stimuliSenderScroll;
-    protected JScrollPane stimuliReceiverScroll;
-    
-    protected static UMLInstanceSenderStimulusListModel stimuliSenderListModel;
-    protected static UMLInstanceReceiverStimulusListModel stimuliReceiverListModel;
     /**
      * Constructor.
      */
@@ -64,31 +66,67 @@ public class PropPanelObject extends PropPanelInstance {
 
 	addField(Translator.localize("label.name"), getNameTextField());
 
-	addField(Translator.localize("UMLMenu", "label.stereotype"), getStereotypeBox());
+	UMLClassifierComboBoxModel classifierModel =
+	    new UMLClassifierComboBoxModel(this,
+					   "isAcceptibleClassifier",
+					   "classifier",
+					   "getClassifier",
+					   "setClassifier",
+					   true,
+					   (Class) ModelFacade.CLASSIFIER,
+					   true);
+	UMLComboBox clsComboBox = new UMLComboBox(classifierModel);
+	addField("Classifier:",
+		 new UMLComboBoxNavigator(this,
+			 Translator.localize("tooltip.nav-class"),
+			 clsComboBox));
 
-	addField(Translator.localize("label.namespace"),
+	addField(Translator.localize("label.stereotype"),
+		 new UMLComboBoxNavigator(this,
+			 Translator.localize("tooltip.nav-stereo"),
+			 getStereotypeBox()));
+
+	addLinkField(Translator.localize("label.namespace"),
 		     getNamespaceComboBox());
 
         addSeperator();
 
-	// TODO: i18n
-	addField("Stimuli sent:", getStimuliSenderScroll());
-	
-	//TODO: i18n
-	addField("Stimuli received:", getStimuliReceiverScroll());
-	
-	addSeperator();
-	AbstractActionAddModelElement _action = new ActionAddInstanceClassifier((Class)ModelFacade.CLASS);
-	        JScrollPane _classifierScroll = new JScrollPane(new UMLMutableLinkedList(
-	                new UMLInstanceClassifierListModel(), 
-	            _action, null, null, true));
-	        addField(Translator.localize("UMLMenu","label.classifiers"), _classifierScroll);
+	JList sentList =
+	    new UMLList(new UMLStimulusListModel(this, null, true, "sent"),
+			true);
+	sentList.setForeground(Color.blue);
+	JScrollPane sentScroll = new JScrollPane(sentList);
+	addField("Stimuli sent:", sentScroll);
 
+	JList receivedList =
+	    new UMLList(new UMLStimulusListModel(this, null, true, "received"),
+			true);
+	receivedList.setForeground(Color.blue);
+	JScrollPane receivedScroll = new JScrollPane(receivedList);
+	addField("Stimuli received:", receivedScroll);
 
-	buttonPanel.add(new PropPanelButton2(this, new ActionNavigateNamespace()));	
-	buttonPanel.add(new PropPanelButton2(this, new ActionRemoveFromModel()));
-	
+	new PropPanelButton(this,
+			    buttonPanel, _navUpIcon,
+			    Translator.localize("button.go-up"),
+			    "navigateNamespace", null);
+	new PropPanelButton(this,
+			    buttonPanel, _deleteIcon,
+			    Translator.localize("Delete object"),
+			    "removeElement", null);
     }
+
+
+    public void navigateNamespace() {
+        Object target = getTarget();
+        if (org.argouml.model.ModelFacade.isAModelElement(target)) {
+            Object elem = /*(MModelElement)*/ target;
+            Object ns = ModelFacade.getNamespace(elem);
+            if (ns != null) {
+                TargetManager.getInstance().setTarget(ns);
+            }
+        }
+    }
+
 
 
     /**
@@ -166,12 +204,41 @@ public class PropPanelObject extends PropPanelInstance {
                 ModelFacade.setClassifiers(inst, classifiers);
             }
         }
-    }
-    
- 
-    
-    
-    
-    
+	/*
+	//            ((MInstance) target).setClassifier((MClassifier) element);
 
+	// delete all classifiers
+	Collection col = inst.getClassifiers();
+	if (col != null) {
+	Iterator iter = col.iterator();
+	if (iter != null && iter.hasNext()) {
+	MClassifier classifier = (MClassifier)iter.next();
+	inst.removeClassifier(classifier);
+	}
+	}
+
+	Iterator it = inst.getClassifiers().iterator();
+	while (it.hasNext()) {
+	inst.removeClassifier((MClassifier)it.next());
+	}
+	// add classifier
+	if (element != null) {
+	inst.addClassifier( element);
+	}
+
+        }
+        */
+    }
+
+
+    public void removeElement() {
+
+        Object target = /*(MObject)*/ getTarget();
+	Object newTarget = /*(MModelElement)*/ ModelFacade.getNamespace(target);
+
+        UmlFactory.getFactory().delete(target);
+	if (newTarget != null) {
+	    TargetManager.getInstance().setTarget(newTarget);
+	}
+    }
 }

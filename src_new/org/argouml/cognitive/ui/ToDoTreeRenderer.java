@@ -68,7 +68,9 @@ public class ToDoTreeRenderer extends DefaultTreeCellRenderer {
     protected UMLTreeCellRenderer _navRenderer = new UMLTreeCellRenderer();
     
     private static ImageIcon lookupIconResource(String name) {
-        return ResourceLoaderWrapper.lookupIconResource(name);
+        ResourceLoaderWrapper w =
+	    ResourceLoaderWrapper.getResourceLoaderWrapper();
+        return w.lookupIconResource(name);
     }
     
     ////////////////////////////////////////////////////////////////

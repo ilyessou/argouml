@@ -52,17 +52,23 @@ import org.tigris.gef.presentation.Handle;
  * @author jrobbins@ics.uci.edu
  */
 public class SelectionState extends SelectionWButtons {
+    /**
+     * @deprecated by Linus Tolke as of 0.15.7. Will be removed.
+     *             Use your own Logger!
+     */
+    protected static Logger cat = Logger.getLogger(SelectionState.class);
 
     private static final Logger LOG = Logger.getLogger(SelectionState.class);
     ////////////////////////////////////////////////////////////////
     // constants
-    private static Icon trans =
-	ResourceLoaderWrapper.lookupIconResource("Transition");
+    public static Icon trans =
+	ResourceLoaderWrapper.getResourceLoaderWrapper()
+	    .lookupIconResource("Transition");
 
     ////////////////////////////////////////////////////////////////
     // instance varables
-    private boolean showIncoming = true;
-    private boolean showOutgoing = true;
+    protected boolean _showIncoming = true;
+    protected boolean _showOutgoing = true;
 
     ////////////////////////////////////////////////////////////////
     // constructors
@@ -79,36 +85,26 @@ public class SelectionState extends SelectionWButtons {
     ////////////////////////////////////////////////////////////////
     // accessors
 
-    /**
-     * @param b true if the buton is enabled
-     */
     public void setIncomingButtonEnabled(boolean b) {
-	showIncoming = b;
+	_showIncoming = b;
     }
 
-    /**
-     * @param b true if the buton is enabled
-     */
     public void setOutgoingButtonEnabled(boolean b) {
-	showOutgoing = b;
+	_showOutgoing = b;
     }
 
-    /**
-     * @see org.tigris.gef.base.Selection#hitHandle(java.awt.Rectangle, 
-     * org.tigris.gef.presentation.Handle)
-     */
     public void hitHandle(Rectangle r, Handle h) {
 	super.hitHandle(r, h);
 	if (h.index != -1)
 	    return;
-	if (!isPaintButtons())
+	if (!_paintButtons)
 	    return;
 	Editor ce = Globals.curEditor();
 	SelectionManager sm = ce.getSelectionManager();
 	if (sm.size() != 1)
 	    return;
 	ModeManager mm = ce.getModeManager();
-	if (mm.includes(ModeModify.class) && getPressedButton() == -1)
+	if (mm.includes(ModeModify.class) && _pressedButton == -1)
 	    return;
 	int cx = _content.getX();
 	int cy = _content.getY();
@@ -116,10 +112,10 @@ public class SelectionState extends SelectionWButtons {
 	int ch = _content.getHeight();
 	int iw = trans.getIconWidth();
 	int ih = trans.getIconHeight();
-	if (showOutgoing && hitLeft(cx + cw, cy + ch / 2, iw, ih, r)) {
+	if (_showOutgoing && hitLeft(cx + cw, cy + ch / 2, iw, ih, r)) {
 	    h.index = 12;
 	    h.instructions = "Add an outgoing transition";
-	} else if (showIncoming && hitRight(cx, cy + ch / 2, iw, ih, r)) {
+	} else if (_showIncoming && hitRight(cx, cy + ch / 2, iw, ih, r)) {
 	    h.index = 13;
 	    h.instructions = "Add an incoming transition";
 	} else {
@@ -136,19 +132,15 @@ public class SelectionState extends SelectionWButtons {
 	int cy = _content.getY();
 	int cw = _content.getWidth();
 	int ch = _content.getHeight();
-	if (showOutgoing)
+	if (_showOutgoing)
 	    paintButtonLeft(trans, g, cx + cw, cy + ch / 2, 12);
-	if (showIncoming)
+	if (_showIncoming)
 	    paintButtonRight(trans, g, cx, cy + ch / 2, 13);
     }
 
-    /**
-     * @see org.tigris.gef.base.Selection#dragHandle(int, int, int, int, 
-     * org.tigris.gef.presentation.Handle)
-     */
     public void dragHandle(int mX, int mY, int anX, int anY, Handle hand) {
 	if (hand.index < 10) {
-	    setPaintButtons(false);
+	    _paintButtons = false;
 	    super.dragHandle(mX, mY, anX, anY, hand);
 	    return;
 	}

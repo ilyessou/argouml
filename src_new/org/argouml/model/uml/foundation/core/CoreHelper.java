@@ -37,7 +37,6 @@ import org.argouml.model.ModelFacade;
 import org.argouml.model.uml.UmlModelEventPump;
 import org.argouml.model.uml.foundation.extensionmechanisms.ExtensionMechanismsFactory;
 import org.argouml.model.uml.modelmanagement.ModelManagementHelper;
-import org.argouml.uml.diagram.static_structure.ui.CommentEdge;
 
 import ru.novosoft.uml.MElementListener;
 import ru.novosoft.uml.behavior.collaborations.MAssociationRole;
@@ -51,7 +50,6 @@ import ru.novosoft.uml.behavior.use_cases.MUseCase;
 import ru.novosoft.uml.foundation.core.MAssociation;
 import ru.novosoft.uml.foundation.core.MAssociationEnd;
 import ru.novosoft.uml.foundation.core.MAttribute;
-import ru.novosoft.uml.foundation.core.MBehavioralFeature;
 import ru.novosoft.uml.foundation.core.MClass;
 import ru.novosoft.uml.foundation.core.MClassifier;
 import ru.novosoft.uml.foundation.core.MComponent;
@@ -90,7 +88,11 @@ import ru.novosoft.uml.model_management.MModel;
  */
 public class CoreHelper {
 
-    private static final Logger LOG = Logger.getLogger(CoreHelper.class);
+    /**
+     * @deprecated by Linus Tolke as of 0.15.4. Use your own logger in your
+     * class. This will be removed.
+     */
+    protected static Logger cat = Logger.getLogger(CoreHelper.class);
 
     /**
      * Don't allow instantiation.
@@ -101,12 +103,10 @@ public class CoreHelper {
     /**
      * Singleton instance.
      */
-    private static final CoreHelper SINGLETON = new CoreHelper();
+    private static CoreHelper SINGLETON = new CoreHelper();
 
     /**
      * Singleton instance access method.
-     *
-     * @return The instance.
      */
     public static CoreHelper getHelper() {
         return SINGLETON;
@@ -307,7 +307,7 @@ public class CoreHelper {
         Iterator parents = ((MClassifier) classifier).getParents().iterator();
         while (parents.hasNext()) {
             MClassifier parent = (MClassifier) parents.next();
-            LOG.debug("Adding attributes for: " + parent);
+            cat.debug("Adding attributes for: " + parent);
             result.addAll(getAttributesInh(parent));
         }
         return result;
@@ -349,6 +349,7 @@ public class CoreHelper {
         MOperation operation = (MOperation) operation1;
         
         Vector returnParams = new Vector();
+        MParameter firstReturnParameter = null;
         Iterator params = operation.getParameters().iterator();
         while (params.hasNext()) {
             MParameter parameter = (MParameter) params.next();
@@ -365,7 +366,7 @@ public class CoreHelper {
 	    //cat.debug("No ReturnParameter found!");
 	    return null;
 	default :
-	    LOG.debug(
+	    cat.debug(
 		      "More than one ReturnParameter found, returning first!");
 	    return (MParameter) returnParams.elementAt(0);
         }
@@ -378,10 +379,11 @@ public class CoreHelper {
      */
     public Collection getReturnParameters(Object operation) {
         Vector returnParams = new Vector();
+        MParameter firstReturnParameter = null;
         Iterator params = ((MOperation) operation).getParameters().iterator();
         while (params.hasNext()) {
             MParameter parameter = (MParameter) params.next();
-            if ((parameter.getKind()).equals(MParameterDirectionKind.RETURN)) {
+            if (MParameterDirectionKind.RETURN.equals(parameter.getKind())) {
                 returnParams.add(parameter);
             }
         }
@@ -495,8 +497,10 @@ public class CoreHelper {
     public MDependency buildSupportDependency(MModelElement from,
 					      MModelElement to) {
         MDependency dep = CoreFactory.getFactory().buildDependency(from, to);
-        ExtensionMechanismsFactory.getFactory()
-	    .buildStereotype(dep, "support", getCurrentModel());
+        MStereotype stereo =
+            ExtensionMechanismsFactory.getFactory()
+	        .buildStereotype(dep, "support",
+				 getCurrentModel());
         return dep;
     }
 
@@ -521,27 +525,6 @@ public class CoreHelper {
         }
         return list;
     }
-    
-    /**
-     * Returns all behavioral features of some classifier.
-     * @param clazz The classifier
-     * @return
-     */
-    public Collection getBehavioralFeatures(Object clazz) {
-        if (ModelFacade.isAClassifier(clazz)) {
-            List ret = new ArrayList();
-            Iterator it = ModelFacade.getFeatures(clazz).iterator();
-            while (it.hasNext()) {
-                Object o = it.next();
-                if (ModelFacade.isABehavioralFeature(o)) {
-                    ret.add(o);
-                }      
-            }        
-            return ret;
-        } else {
-            throw new IllegalArgumentException("Argument is not a classifier");
-        }
-    }
 
     /**
      * Returns all behavioralfeatures found in this classifier and its
@@ -556,7 +539,7 @@ public class CoreHelper {
             Iterator it = clazz.getFeatures().iterator();
             while (it.hasNext()) {
                 Object o = it.next();
-                if (o instanceof MBehavioralFeature) {
+                if (!(o instanceof MStructuralFeature)) {
                     features.add(o);
                 }
             }
@@ -646,6 +629,7 @@ public class CoreHelper {
             return new ArrayList();
         Iterator it = classifier.getClientDependencies().iterator();
         List list = new ArrayList();
+        MNamespace model = getCurrentModel();
         while (it.hasNext()) {
             Object clientDependency = it.next();
             if (ModelFacade.isAAbstraction(clientDependency)) {
@@ -1065,8 +1049,6 @@ public class CoreHelper {
      * destination the end.<p>
      *
      * This method also works to get the source of a Link.<p>
-     * <p>This method also works for CommentEdge</p>
-     * TODO: move this method to a generic ModelHelper
      *
      * @param relationship is the relation
      * @return Object
@@ -1075,10 +1057,7 @@ public class CoreHelper {
         if (!(relationship instanceof MRelationship)
 	    && !(ModelFacade.isALink(relationship))) {
 
-
-            throw new IllegalArgumentException("Argument " 
-                    			       + relationship.toString() 
-                    			       + " is not "
+            throw new IllegalArgumentException("Argument is not "
 					       + "a relationship");
 
 	}
@@ -1089,43 +1068,41 @@ public class CoreHelper {
 	    } else {
 		return null;
 	    }
-        }       
-        if (relationship instanceof MAssociation) {
-            MAssociation assoc = (MAssociation) relationship;
+        }
+        MRelationship relation = (MRelationship) relationship;
+        
+        if (relation instanceof MAssociation) {
+            MAssociation assoc = (MAssociation) relation;
             List conns = assoc.getConnections();
             if (conns == null || conns.isEmpty())
                 return null;
             return ((MAssociationEnd) conns.get(0)).getType();
         }
-        if (relationship instanceof MGeneralization) {
-            MGeneralization gen = (MGeneralization) relationship;
+        if (relation instanceof MGeneralization) {
+            MGeneralization gen = (MGeneralization) relation;
             return gen.getChild();
         }
-        if (relationship instanceof MDependency) {
-            MDependency dep = (MDependency) relationship;
+        if (relation instanceof MDependency) {
+            MDependency dep = (MDependency) relation;
             Collection col = dep.getClients();
             if (col.isEmpty())
                 return null;
             return (MModelElement) (col.toArray())[0];
         }
-        if (relationship instanceof MFlow) {
-            MFlow flow = (MFlow) relationship;
+        if (relation instanceof MFlow) {
+            MFlow flow = (MFlow) relation;
             Collection col = flow.getSources();
             if (col.isEmpty())
                 return null;
             return (MModelElement) (col.toArray())[0];
         }
-        if (relationship instanceof MExtend) {
-            MExtend extend = (MExtend) relationship;
+        if (relation instanceof MExtend) {
+            MExtend extend = (MExtend) relation;
             return extend.getExtension(); // we have to follow the arrows..
         }
-        if (relationship instanceof MInclude) {
-            MInclude include = (MInclude) relationship;
-            // we use modelfacade here to cover up for a messup in NSUML
-            return ModelFacade.getBase(include);
-        }
-        if (relationship instanceof CommentEdge) {
-            return ((CommentEdge) relationship).getSource();
+        if (relation instanceof MInclude) {
+            MInclude include = (MInclude) relation;
+            return include.getAddition();
         }
         return null;
     }
@@ -1142,8 +1119,6 @@ public class CoreHelper {
      * the connections list.<p>
      *
      * This method also works for links.<p>
-     * <p>This method also works for CommentEdge</p>
-     * TODO: move this method to a generic ModelHelper
      *
      * @param relationship is the relation
      * @return object
@@ -1151,9 +1126,7 @@ public class CoreHelper {
     public Object getDestination(Object relationship) {
         
 	if (!(relationship instanceof MRelationship)
-	    && !(ModelFacade.isALink(relationship)) 
-	    && !(relationship instanceof CommentEdge)) {
-
+	    && !(ModelFacade.isALink(relationship))) {
 	    throw new IllegalArgumentException("Argument is not "
 					       + "a relationship");
 	}
@@ -1169,43 +1142,41 @@ public class CoreHelper {
 	    } else
 		return null;        
 	}
-              
         
-        if (relationship instanceof MAssociation) {
-            MAssociation assoc = (MAssociation) relationship;
+        MRelationship relation = (MRelationship) relationship;
+        
+        if (relation instanceof MAssociation) {
+            MAssociation assoc = (MAssociation) relation;
             List conns = assoc.getConnections();
             if (conns.size() <= 1)
                 return null;
             return ((MAssociationEnd) conns.get(1)).getType();
         }
-        if (relationship instanceof MGeneralization) {
-            MGeneralization gen = (MGeneralization) relationship;
+        if (relation instanceof MGeneralization) {
+            MGeneralization gen = (MGeneralization) relation;
             return gen.getParent();
         }
-        if (relationship instanceof MDependency) {
-            MDependency dep = (MDependency) relationship;
+        if (relation instanceof MDependency) {
+            MDependency dep = (MDependency) relation;
             Collection col = dep.getSuppliers();
             if (col.isEmpty())
                 return null;
             return (MModelElement) (col.toArray())[0];
         }
-        if (relationship instanceof MFlow) {
-            MFlow flow = (MFlow) relationship;
+        if (relation instanceof MFlow) {
+            MFlow flow = (MFlow) relation;
             Collection col = flow.getTargets();
             if (col.isEmpty())
                 return null;
             return (MModelElement) (col.toArray())[0];
         }
-        if (relationship instanceof MExtend) {
-            MExtend extend = (MExtend) relationship;
+        if (relation instanceof MExtend) {
+            MExtend extend = (MExtend) relation;
             return extend.getBase();
         }
-        if (relationship instanceof MInclude) {
-            MInclude include = (MInclude) relationship;
-            return ModelFacade.getAddition(include);
-        }
-        if (relationship instanceof CommentEdge) {
-            return ((CommentEdge) relationship).getDestination();
+        if (relation instanceof MInclude) {
+            MInclude include = (MInclude) relation;
+            return include.getBase();
         }
         return null;
     }
@@ -1379,7 +1350,6 @@ public class CoreHelper {
         }
         return true;
     }
-
     private boolean isValidNamespace(MGeneralization gen, MNamespace ns) {
         if (gen.getParent() == null || gen.getChild() == null)
             return true;
@@ -1389,7 +1359,6 @@ public class CoreHelper {
             return true;
         return false;
     }
-
     private boolean isValidNamespace(MStructuralFeature struc, MNamespace ns) {
         if (struc.getType() == null || struc.getOwner() == null)
             return true;

@@ -150,9 +150,9 @@ public class TabProps
      */
     public void setOrientation(Orientation orientation) {
         super.setOrientation(orientation);
-        Enumeration pps = _panels.elements();
-        while (pps.hasMoreElements()) {
-            Object o = pps.nextElement();
+        Enumeration enum = _panels.elements();
+        while (enum.hasMoreElements()) {
+            Object o = enum.nextElement();
             if (o instanceof Orientable) {
                 Orientable orientable = (Orientable) o;
                 orientable.setOrientation(orientation);
@@ -388,31 +388,23 @@ public class TabProps
      * @see org.argouml.ui.targetmanager.TargetListener#targetAdded(org.argouml.ui.targetmanager.TargetEvent)
      */
     public void targetAdded(TargetEvent e) {
-        setTarget(e.getNewTarget());
-        fireTargetAdded(e);
-        if (_listenerList.getListenerCount() > 0) {
-            validate();
-            repaint();
-        }
-
+	targetSet(e);
     }
 
     /**
      * @see org.argouml.ui.targetmanager.TargetListener#targetRemoved(org.argouml.ui.targetmanager.TargetEvent)
      */
     public void targetRemoved(TargetEvent e) {
-        //setTarget(e.getNewTarget());
-        fireTargetRemoved(e);
-        //validate();
-        //repaint(); 
+	targetSet(e);
     }
 
     /**
      * @see org.argouml.ui.targetmanager.TargetListener#targetSet(org.argouml.ui.targetmanager.TargetEvent)
      */
     public void targetSet(TargetEvent e) {
+	fireTargetEvent(e);
         setTarget(e.getNewTarget());
-        fireTargetSet(e);        
+	fireTargetEvent(e);
         validate();
         repaint();        
     }
@@ -431,6 +423,18 @@ public class TabProps
      */
     private void removeTargetListener(TargetListener listener) {
         _listenerList.remove(TargetListener.class, listener);
+    }
+
+    private void fireTargetEvent(TargetEvent e) {
+	if (TargetEvent.TARGET_SET.equals(e.getName())) {
+	    fireTargetSet(e);
+	} else if (TargetEvent.TARGET_ADDED.equals(e.getName())) {
+	    fireTargetAdded(e);
+	} else if (TargetEvent.TARGET_REMOVED.equals(e.getName())) {
+	    fireTargetRemoved(e);
+	} else {
+	    cat.warn("fireTargetEvent didn't recognize target event name: " + e.getName());
+	}
     }
 
     private void fireTargetSet(TargetEvent targetEvent) {

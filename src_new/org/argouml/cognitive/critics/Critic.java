@@ -145,7 +145,7 @@ public class Critic implements Poster, Serializable {
     /** The icon representing the resource.
      */
     public static Icon DEFAULT_CLARIFIER =
-	ResourceLoaderWrapper
+	ResourceLoaderWrapper.getResourceLoaderWrapper()
 	    .lookupIconResource("PostIt0");
     protected Icon _clarifier = DEFAULT_CLARIFIER;
 
@@ -207,7 +207,7 @@ public class Critic implements Poster, Serializable {
 	}
 	addControlRec(SNOOZE_ORDER, new SnoozeOrder());
 	_criticType = "correctness";
-	_knowledgeTypes.addElement(KT_CORRECTNESS);
+	_knowledgeTypes.addElement("Correctness");
 	_decisionCategory = "Checking";
 	// TODO: make this configurable
 	_emailAddr = "users@argouml.tigris.org";
@@ -398,7 +398,6 @@ public class Critic implements Poster, Serializable {
 	_knowledgeTypes.addElement(type);
     }
 
-    public VectorSet getKnowledgeTypes() { return _knowledgeTypes; }
     public void setKnowledgeTypes(VectorSet kt) { _knowledgeTypes = kt; }
     public void setKnowledgeTypes(String t1) {
 	_knowledgeTypes = new VectorSet();
@@ -509,9 +508,9 @@ public class Critic implements Poster, Serializable {
     public boolean isRelevantToDecisions(Designer dsgr) {
 //	cat.debug(this);
 //        boolean isDebugEnabled = cat.isDebugEnabled();
-	Enumeration elems = getSupportedDecisions().elements();
-	while (elems.hasMoreElements()) {
-	    Decision d = (Decision) elems.nextElement();
+	Enumeration enum = getSupportedDecisions().elements();
+	while (enum.hasMoreElements()) {
+	    Decision d = (Decision) enum.nextElement();
 	    if (d.getPriority() > 0 && d.getPriority() <= getPriority()) {
                 
 //                if(isDebugEnabled) cat.debug(d + " " + d.getPriority());

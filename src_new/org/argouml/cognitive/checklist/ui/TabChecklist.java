@@ -119,7 +119,7 @@ public class TabChecklist extends TabSpawnable
      * or a model element when an object is selected from the explorer.<p>
      *
      * @param target that is an object.
-     * @return target that is always model element.
+     * @returns target that is always model element.
      */
     private Object findTarget(Object target) {
         if (target instanceof Fig) {
@@ -212,14 +212,14 @@ public class TabChecklist extends TabSpawnable
      * @see org.argouml.ui.targetmanager.TargetListener#targetAdded(org.argouml.ui.targetmanager.TargetEvent)
      */
     public void targetAdded(TargetEvent e) {
-
+	targetSet(e);
     }
 
     /**
      * @see org.argouml.ui.targetmanager.TargetListener#targetRemoved(org.argouml.ui.targetmanager.TargetEvent)
      */
     public void targetRemoved(TargetEvent e) {
-	setTarget(e.getNewTarget());
+	targetSet(e);
     }
 
     /**
@@ -237,9 +237,8 @@ public class TabChecklist extends TabSpawnable
 class TableModelChecklist extends AbstractTableModel
     implements VetoableChangeListener, DelayedVChangeListener, MElementListener
 {
-    private static final Logger LOG =
+    protected static Logger cat =
         Logger.getLogger(TableModelChecklist.class);
-
     ////////////////
     // instance varables
     Object _target;
@@ -307,7 +306,7 @@ class TableModelChecklist extends AbstractTableModel
     }
 
     public void setValueAt(Object aValue, int rowIndex, int columnIndex)  {
-	LOG.debug("setting table value " + rowIndex + ", " + columnIndex);
+	cat.debug("setting table value " + rowIndex + ", " + columnIndex);
 	if (columnIndex != 0) return;
 	if (!(aValue instanceof Boolean)) return;
 	boolean val = ((Boolean) aValue).booleanValue();

@@ -3,14 +3,14 @@
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
-// and this paragraph appear in all copies. This software program and
+// and this paragraph appear in all copies.  This software program and
 // documentation are copyrighted by The Regents of the University of
 // California. The software program and documentation are supplied "AS
 // IS", without any accompanying services from The Regents. The Regents
 // does not warrant that the operation of the program will be
 // uninterrupted or error-free. The end-user understands that the program
 // was developed for research purposes and is advised not to rely
-// exclusively on the program for any reason. IN NO EVENT SHALL THE
+// exclusively on the program for any reason.  IN NO EVENT SHALL THE
 // UNIVERSITY OF CALIFORNIA BE LIABLE TO ANY PARTY FOR DIRECT, INDIRECT,
 // SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, INCLUDING LOST PROFITS,
 // ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN IF
@@ -34,33 +34,22 @@ import java.awt.Graphics;
 import org.tigris.gef.base.*;
 import org.tigris.gef.presentation.*;
 
-/**
- *
- *
- */
 public class SelectionNodeClarifiers extends SelectionResize {
 
     ////////////////////////////////////////////////////////////////
     // constructors
 
-    /** Construct a new SelectionNodeClarifiers for the given Fig 
-     * 
-     * @param f the given Fig
-     */
-    public SelectionNodeClarifiers(Fig f) {
-        super(f);
-    }
+    /** Construct a new SelectionNodeClarifiers for the given Fig */
+    public SelectionNodeClarifiers(Fig f) { super(f); }
 
-    /**
-     * Paint the handles at the four corners and midway along each edge of the
-     * bounding box.
-     *
-     * @see org.tigris.gef.base.Selection#paint(java.awt.Graphics)
-     */
+    /** Paint the handles at the four corners and midway along each edge
+     * of the bounding box.  */
     public void paint(Graphics g) {
-        ((FigNodeModelElement) _content).paintClarifiers(g);
-        super.paint(g);
+	((FigNodeModelElement) _content).paintClarifiers(g);
+	super.paint(g);
     }
 
+  
+  
 } /* end class SelectionNodeClarifiers */
 

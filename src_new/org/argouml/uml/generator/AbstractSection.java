@@ -41,25 +41,18 @@ import org.apache.log4j.Logger;
  *
  * @author  Marian
  */
-public abstract class AbstractSection
+abstract public class AbstractSection
 {
-    private static final Logger LOG = 
-        Logger.getLogger(AbstractSection.class);
-
-    private Map mAry;
+    private Logger _log = Logger.getLogger(this.getClass());
+    protected Map m_ary;
 
     /** Creates a new instance of Section */
     public AbstractSection() {
-        mAry = new HashMap();
-        mAry.clear();
+        m_ary = new HashMap();
+        m_ary.clear();
     }
 
-    /**
-     * @param id
-     * @param indent
-     * @return
-     */
-    public static String generate(String id, String indent) {
+    public static String generate(String id, String INDENT) {
         return "";
     }
 
@@ -69,8 +62,8 @@ public abstract class AbstractSection
     // hint: use a second Map to compare with the used keys
     // =======================================================================
 
-    public void write(String filename, String indent,
-		      boolean outputLostSections)
+    public void write(String filename, String INDENT,
+		      boolean OutputLostSections)
     {
         try {           
             FileReader f = new FileReader(filename);
@@ -80,42 +73,39 @@ public abstract class AbstractSection
             while (line != null) {
                 line = fr.readLine();
                 if (line != null) {
-                    String sectionId = getSectId(line);
-                    if (sectionId != null) {
-                        String content = (String) mAry.get(sectionId);
+                    String section_id = get_sect_id(line);
+                    if (section_id != null) {
+                        String content = (String) m_ary.get(section_id);
                         fw.write(line + "\n");
                         if (content != null) {
                             fw.write(content);                        
                         }
                         line = fr.readLine(); // read end section;
-                        mAry.remove(sectionId);
+                        m_ary.remove(section_id);
                     }
                     fw.write(line + "\n");           
                 }
             }
-            if ((!mAry.isEmpty()) && (outputLostSections)) {
+            if ((m_ary.isEmpty() != true) && (OutputLostSections)) {
                 fw.write("/* lost code following: \n");
-                Set mapEntries = mAry.entrySet();
-                Iterator itr = mapEntries.iterator();
+                Set map_entries = m_ary.entrySet();
+                Iterator itr = map_entries.iterator();
                 while (itr.hasNext()) {
                     Map.Entry entry = (Map.Entry) itr.next();
-                    fw.write(indent + "// section " + entry.getKey()
+                    fw.write(INDENT + "// section " + entry.getKey()
 			     + " begin\n");
                     fw.write((String) entry.getValue());
-                    fw.write(indent + "// section " + entry.getKey()
+                    fw.write(INDENT + "// section " + entry.getKey()
 			     + " end\n");
                 }
             }
             fr.close();
             fw.close();
         } catch (IOException e) {
-            LOG.error("Error: " + e.toString());
+            _log.error("Error: " + e.toString());
         }
     }
 
-    /**
-     * @param filename the filename to read from
-     */
     public void read(String filename) {
         try {            
             FileReader f = new FileReader(filename);
@@ -123,45 +113,45 @@ public abstract class AbstractSection
 
             String line = "";
             String content = "";
-            boolean inSection = false;
+            boolean in_section = false;
             while (line != null) {
                 line = fr.readLine();
                 if (line != null) {
-                    if (inSection) {
-                        String sectionId = getSectId(line);
-                        if (sectionId != null) {
-                            inSection = false;
-                            mAry.put(sectionId, content);
+                    if (in_section) {
+                        String section_id = get_sect_id(line);
+                        if (section_id != null) {
+                            in_section = false;
+                            m_ary.put(section_id, content);
                             content = "";
                         } else {
                             content += line + "\n";
                         }
                     } else {
-                        String sectionId = getSectId(line);
-                        if (sectionId != null) {
-                            inSection = true;
+                        String section_id = get_sect_id(line);
+                        if (section_id != null) {
+                            in_section = true;
                         }
                     }
                 }
             }
             fr.close();
         } catch (IOException e) {
-            LOG.error("Error: " + e.toString());
+            _log.error("Error: " + e.toString());
         }
     }
 
-    public static String getSectId(String line) {
-        final String begin = "// section ";
-        final String end1 = " begin";
-        final String end2 = " end";
-        int first = line.indexOf(begin);
-        int second = line.indexOf(end1);
+    public static String get_sect_id(String line) {
+        final String BEGIN = "// section ";
+        final String END1 = " begin";
+        final String END2 = " end";
+        int first = line.indexOf(BEGIN);
+        int second = line.indexOf(END1);
         if (second < 0) {
-            second = line.indexOf(end2);
+            second = line.indexOf(END2);
         }
         String s = null;
         if ( (first >= 0) && (second >= 0) ) {
-            first = first + new String(begin).length();
+            first = first + new String(BEGIN).length();
             s = line.substring(first, second);
         }
         return s;

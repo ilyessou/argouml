@@ -48,29 +48,26 @@ public class FigGeneralization extends FigEdgeModelElement {
     /**
      * Text box for discriminator
      */
-    private FigText discriminator = new FigText(10, 30, 90, 20);
+    FigText _discriminator = new FigText(10, 30, 90, 20);
 
     ////////////////////////////////////////////////////////////////
     // constructors
 
-    private ArrowHeadTriangle endArrow;
+    protected ArrowHeadTriangle endArrow;
 
-    /**
-     * The constructor
-     */
     public FigGeneralization() {
-	addPathItem(getStereotypeFig(), new PathConvPercent(this, 50, 10));
+	addPathItem(_stereo, new PathConvPercent(this, 50, 10));
 	endArrow = new ArrowHeadTriangle();
 
-	discriminator.setFont(getLabelFont());
-	discriminator.setTextColor(Color.black);
-	discriminator.setTextFilled(false);
-	discriminator.setFilled(false);
-	discriminator.setLineWidth(0);
-	discriminator.setExpandOnly(false);
-	discriminator.setMultiLine(false);
-	discriminator.setAllowsTab(false);
-	addPathItem(discriminator, new PathConvPercent(this, 40, -10));
+	_discriminator.setFont(LABEL_FONT);
+	_discriminator.setTextColor(Color.black);
+	_discriminator.setTextFilled(false);
+	_discriminator.setFilled(false);
+	_discriminator.setLineWidth(0);
+	_discriminator.setExpandOnly(false);
+	_discriminator.setMultiLine(false);
+	_discriminator.setAllowsTab(false);
+	addPathItem(_discriminator, new PathConvPercent(this, 40, -10));
 	endArrow.setFillColor(Color.white);
 	setDestArrowHead(endArrow);
 	setBetweenNearestPoints(true);
@@ -82,11 +79,6 @@ public class FigGeneralization extends FigEdgeModelElement {
     
     }
 
-    /**
-     * The constructor that hooks the Fig into the UML element
-     * @param edge the UML element
-     * @param lay the layer
-     */
     public FigGeneralization(Object edge, Layer lay) {
 	this();
 	setLayer(lay);
@@ -94,18 +86,11 @@ public class FigGeneralization extends FigEdgeModelElement {
     
     }
   
-    /**
-     * The constructor that hooks the Fig into the UML element
-     * @param edge the UML element
-     */
     public FigGeneralization(Object edge) {
   	this();
   	setOwner(edge);
     }
 
-    /**
-     * @see org.argouml.uml.diagram.ui.FigEdgeModelElement#canEdit(org.tigris.gef.presentation.Fig)
-     */
     protected boolean canEdit(Fig f) { return false; }
 
     ////////////////////////////////////////////////////////////////
@@ -113,10 +98,7 @@ public class FigGeneralization extends FigEdgeModelElement {
 
     /** This is called aftern any part of the UML MModelElement has
      *  changed. This method automatically updates the name FigText.
-     *  Subclasses should override and update other parts.
-     * 
-     * @see org.argouml.uml.diagram.ui.FigEdgeModelElement#modelChanged(ru.novosoft.uml.MElementEvent)
-     */
+     *  Subclasses should override and update other parts. */
     protected void modelChanged(MElementEvent e) {
 	// do not set _name
 	updateStereotypeText();
@@ -136,12 +118,9 @@ public class FigGeneralization extends FigEdgeModelElement {
   	if (disc == null) {
 	    disc = "";
   	}
-  	discriminator.setText(disc);
+  	_discriminator.setText(disc);
     }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#paint(java.awt.Graphics)
-     */
     public void paint(Graphics g) {
         endArrow.setLineColor(getLineColor());
         super.paint(g);

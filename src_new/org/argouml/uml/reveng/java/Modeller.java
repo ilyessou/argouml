@@ -52,7 +52,12 @@ public class Modeller
 {
     /**
      * Logger.<p>
+     *
+     * @deprecated by Linus Tolke as of 0.15.4. Use your own logger in your
+     * class. This will be removed.
      */
+    protected static Logger cat = Logger.getLogger(Modeller.class);
+
     private static final Logger LOG = Logger.getLogger(Modeller.class);
 
     /**
@@ -60,10 +65,10 @@ public class Modeller
      */
     private Object model;
 
-    private DiagramInterface diagram;
+    private DiagramInterface _diagram;
     
     /** Current import session */
-    private Import importSession;
+    private Import _import;
 
     /** The package which the currentClassifier belongs to. */
     private Object currentPackage;
@@ -94,30 +99,30 @@ public class Modeller
     private Hashtable attributes = new Hashtable();
     
     /** Create a new modeller.
-     * @param diag the interface to the diagram to add nodes and edges to
-     * @param imp The current Import session.
-     * @param noAss whether associations are modelled as attributes
-     * @param arraysAsDT whether darrays are modelled as dataypes
-     * @param fName the current file name
+     * @param diagram the interface to the diagram to add nodes and edges to
+     * @param _import
+     * @param noAssociations whether associations are modelled as attributes
+     * @param arraysAsDatatype whether darrays are modelled as dataypes
+     * @param fileName the current file name
      *
-     * @param m The model to work with.
+     * @param model The model to work with.
      */
-    public Modeller(Object m,
-		    DiagramInterface diag,
-		    Import imp,
-		    boolean noAss,
-		    boolean arraysAsDT,
-		    String fName)
+    public Modeller(Object model,
+		    DiagramInterface diagram,
+		    Import _import,
+		    boolean noAssociations,
+		    boolean arraysAsDatatype,
+		    String fileName)
     {
-	model = m;
-	noAssociations = noAss;
-	arraysAsDatatype = arraysAsDT;
-	importSession = imp;
+	this.model = model;
+	this.noAssociations = noAssociations;
+	this.arraysAsDatatype = arraysAsDatatype;
+	this._import = _import;
 	currentPackage = this.model;
 	parseState = new ParseState(this.model, getPackage("java.lang"));
 	parseStateStack = new Stack();
-	diagram = diag;
-        fileName = fName;
+	_diagram = diagram;
+        this.fileName = fileName;
     }
 
     public Object getAttribute(String key) {
@@ -135,7 +140,7 @@ public class Modeller
      * @return a interface to the current diagram.
      */
     private DiagramInterface getDiagram() {
-	return diagram;
+	return _diagram;
     }
 
     /**
@@ -210,7 +215,7 @@ public class Modeller
 	String ownerPackageName, currentName = name;
 	while (!"".equals((ownerPackageName = getPackageName(currentName)))) {
 	    if (getDiagram() != null
-		&& importSession.isCreateDiagramsChecked()
+		&& _import.isCreateDiagramsChecked()
 		&& getDiagram().isDiagramInProject(ownerPackageName)) {
 
                 getDiagram().selectClassDiagram(getPackage(ownerPackageName),
@@ -222,10 +227,10 @@ public class Modeller
 	}
 	// Save src_path in the upper package
 	Object mPackage = getPackage(currentName);
-	if (importSession.getSrcPath() != null
+	if (_import.getSrcPath() != null
 	    && ModelFacade.getTaggedValue(mPackage, "src_path") == null)
 	    ModelFacade.setTaggedValue(mPackage, "src_path",
-				       importSession.getSrcPath());
+				       _import.getSrcPath());
 		
 	// Find or create a MPackage NSUML object for this package.
 	mPackage = getPackage(name);
@@ -422,7 +427,7 @@ public class Modeller
 			getContext(interfaceName)
 			    .getInterface(getClassifierName(interfaceName));
 		    Object mAbstraction =
-			getAbstraction(mInterface, mClass);
+			getAbstraction(currentPackage, mInterface, mClass);
 		    if (ModelFacade.getSuppliers(mAbstraction).size() == 0) {
 			ModelFacade.addSupplier(mAbstraction, mInterface);
 			ModelFacade.addClient(mAbstraction, mClass);
@@ -640,18 +645,18 @@ public class Modeller
     public void popClassifier()
     {
         // now create diagram if it doesn't exists in project
-	if (importSession.isCreateDiagramsChecked()) {
+	if (_import.isCreateDiagramsChecked()) {
 	    if (getDiagram() == null) {
-		diagram = new DiagramInterface(Globals.curEditor());
+		_diagram = new DiagramInterface(Globals.curEditor());
 		if (currentPackageName != null
 		    && !currentPackageName.trim().equals(""))
 		{
 		    // create new diagram or select existing diagram for package
-		    diagram.createOrSelectClassDiagram(currentPackage,
+		    _diagram.createOrSelectClassDiagram(currentPackage,
 							currentPackageName);
 		} else {
 		    // create new diagram in root for classifier without package
-		    diagram.createRootClassDiagram();
+		    _diagram.createRootClassDiagram();
 		}
 				
 	    } else {
@@ -664,23 +669,21 @@ public class Modeller
 		// with no package declaration
 		else {
 		    // create new diagram in root for classifier without package
-		    diagram.createRootClassDiagram();
+		    _diagram.createRootClassDiagram();
 		}
 	    }
 	}
         // add the current classifier to the diagram.
         Object classifier = parseState.getClassifier();
         if (ModelFacade.isAInterface(classifier)) {
-            if (getDiagram() != null && importSession.isCreateDiagramsChecked())
-		diagram.addInterface(classifier,
-				      importSession.isMinimiseFigsChecked());
+            if (getDiagram() != null && _import.isCreateDiagramsChecked())
+		_diagram.addInterface(classifier,
+				      _import.isMinimiseFigsChecked());
         } else {
             if (ModelFacade.isAClass(classifier)) {
-                if (getDiagram() != null 
-                        && importSession.isCreateDiagramsChecked()) {
-                    diagram.addClass(classifier,
-				      importSession.isMinimiseFigsChecked());
-                }
+                if (getDiagram() != null && _import.isCreateDiagramsChecked())
+		    _diagram.addClass(classifier,
+				      _import.isMinimiseFigsChecked());
             }
         }
 
@@ -735,6 +738,7 @@ public class Modeller
 
 	Object mParameter;
 	String typeName;
+	Object mPackage;
 	Object mClassifier;
 
 	if (returnType == null) {
@@ -1006,15 +1010,18 @@ public class Modeller
     }
 
     /**
-     * Find an abstraction<<realize>> in the model. If it does not
-     * exist, a new abstraction is created.
-     *
-     * @param parent The superclass.
-     * @param child The subclass.
-     * @return The abstraction found or created.
-     */
-    private Object getAbstraction(Object parent,
-                                  Object child) {
+       Find an abstraction<<realize>> in the model. If it does not
+       exist, a new abstraction is created.
+
+       @param mPackage Look in this package.
+       @param parent The superclass.
+       @param child The subclass.
+       @return The abstraction found or created.
+    */
+    private Object getAbstraction(Object mPackage,
+                                  Object parent,
+                                  Object child)
+    {
         String name =
 	    ModelFacade.getName(child) + " -> " + ModelFacade.getName(parent);
         Object mAbstraction = null;
@@ -1432,15 +1439,15 @@ public class Modeller
      * This is called from {@link #addDocumentationTag} only.
      *
      * @param me the model element to add to
-     * @param sTagName the name of the javadoc tag
-     * @param sTagData the contents of the javadoc tag
+     * @sTagName the name of the javadoc tag
+     * @sTagData the contents of the javadoc tag
      */
-    private void addJavadocTagContents(Object me,
-				       String sTagName,
-				       String sTagData) {
-	if ((sTagName.equals("invariant"))
-	    || (sTagName.equals("pre-condition"))
-	    || (sTagName.equals("post-condition"))) {
+    private void addJavadocTagContents (Object me,
+					String sTagName,
+					String sTagData) {
+	if ((sTagName.equals ("invariant"))
+	    || (sTagName.equals ("pre-condition"))
+	    || (sTagName.equals ("post-condition"))) {
 
 	    // add as OCL constraint
 	    String sContext = OCLUtil.getContextString(me);
@@ -1483,7 +1490,7 @@ public class Modeller
      *
      * Added 2001-10-05 STEFFEN ZSCHALER.
      *
-     * @param modelElement the model element to which to add the documentation
+     * @param me the model element to which to add the documentation
      * @param sJavaDocs the documentation comment to add ("" or null
      * if no java docs)
      */
@@ -1672,13 +1679,10 @@ public class Modeller
 	}
     }
 
-    /** 
-     * This method currently does nothing.<p>
-     *
-     * Once we start reverse engineering interactions, this is used.
-     *
-     * @param method The method name called.
-     * @param obj The object it is called in.
+    /** this method currently does nothing
+     * TODO: why?
+     * @param method
+     * @param obj
      */    
     public void addCall(String method, String obj) {
     }

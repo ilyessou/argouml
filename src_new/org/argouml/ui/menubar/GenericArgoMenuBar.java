@@ -119,13 +119,13 @@ public class GenericArgoMenuBar extends JMenuBar
     private static final String MENU = "menu.";
     private static final String MENUITEM = "menu.item.";
 
-    private JToolBar fileToolbar;
-    private JToolBar editToolbar;
-    private JToolBar viewToolbar;
-    private JToolBar createDiagramToolbar;
+    private JToolBar _fileToolbar;
+    private JToolBar _editToolbar;
+    private JToolBar _viewToolbar;
+    private JToolBar _createDiagramToolbar;
     
     /** lru project list */
-    private LastRecentlyUsedMenuList lruList = null;
+    private LastRecentlyUsedMenuList _lruList = null;
 
     /** Edit menu
      */
@@ -165,6 +165,45 @@ public class GenericArgoMenuBar extends JMenuBar
 
     public GenericArgoMenuBar() {
         initMenus();
+    }
+
+    /** Gets the shortcut for a key.
+     *
+     * @deprecated in 0.15.1. No longer needed since we have moved from
+     *             the MenuResouceBundle.java to menu.properties.
+     */
+    protected static final KeyStroke getShortcut(String key) {
+        return Localizer.getShortcut("CoreMenu", key);
+    }
+
+    /** This should be a user specified option. New laws
+     * for handicapped people who cannot use the
+     * mouse require software developers in US to
+     * make all components of User interface accessible
+     * through keyboard
+     * 
+     * @deprecated since 0.15.2.
+     * Use @{link #setMnemonic(JMenuItem item, String key)} instead.
+     * @author Braun.Harald
+     * @since 09/14/2003
+     */
+    protected static final void setMnemonic(JMenuItem item,
+					    String key, char defMnemonic)
+    {
+	String propertykey = new String();
+	if (item instanceof JMenu) {
+	    propertykey = MENU + prepareKey(key) + ".mnemonic";
+	}
+	else {
+	    propertykey = MENUITEM + prepareKey(key) + ".mnemonic";
+	}
+		
+	String localMnemonic = Translator.localize(propertykey);
+        char mnemonic = defMnemonic;
+        if (localMnemonic != null && localMnemonic.length() == 1) {
+            mnemonic = localMnemonic.charAt(0);
+        }
+        item.setMnemonic(mnemonic);
     }
 
     /** This should be a user specified option. New laws
@@ -326,8 +365,8 @@ public class GenericArgoMenuBar extends JMenuBar
 	    KeyStroke.getKeyStroke(KeyEvent.VK_EQUALS, menuShortcut);
 
         
-        KeyStroke f3 = KeyStroke.getKeyStroke(KeyEvent.VK_F3, 0);
-        KeyStroke f7 = KeyStroke.getKeyStroke(KeyEvent.VK_F7, 0);
+        KeyStroke F3 = KeyStroke.getKeyStroke(KeyEvent.VK_F3, 0);
+        KeyStroke F7 = KeyStroke.getKeyStroke(KeyEvent.VK_F7, 0);
         KeyStroke altF4 =
 	    KeyStroke.getKeyStroke(KeyEvent.VK_F4, KeyEvent.ALT_MASK);
         KeyStroke altLeft =
@@ -342,30 +381,30 @@ public class GenericArgoMenuBar extends JMenuBar
         JMenuItem mi;
         // ------------------------------------- File Menu
         
-        JMenu file = new JMenu(menuLocalize("File"));
-        add(file);
-        setMnemonic(file, "File");
-        fileToolbar = new ToolBar("File Toolbar");
-        fileToolbar.putClientProperty("JToolBar.isRollover",  Boolean.TRUE);
-        JMenuItem newItem = file.add(ActionNew.SINGLETON);
+        JMenu _file = new JMenu(menuLocalize("File"));
+        add(_file);
+        setMnemonic(_file, "File");
+        _fileToolbar = new ToolBar("File Toolbar");
+        _fileToolbar.putClientProperty("JToolBar.isRollover",  Boolean.TRUE);
+        JMenuItem newItem = _file.add(ActionNew.SINGLETON);
         setMnemonic(newItem, "New");
         setAccelerator(newItem, ctrlN);
-        fileToolbar.add((ActionNew.SINGLETON));
-        JMenuItem openProjectItem = file.add(new ActionOpenProject());
+        _fileToolbar.add((ActionNew.SINGLETON));
+        JMenuItem openProjectItem = _file.add(new ActionOpenProject());
         setMnemonic(openProjectItem, "Open");
         setAccelerator(openProjectItem, ctrlO);
-        fileToolbar.add(new ActionOpenProject());
-        file.addSeparator();
+        _fileToolbar.add(new ActionOpenProject());
+        _file.addSeparator();
 
-        JMenuItem saveProjectItem = file.add(ActionSaveProject.SINGLETON);
+        JMenuItem saveProjectItem = _file.add(ActionSaveProject.SINGLETON);
         setMnemonic(saveProjectItem, "Save");
         setAccelerator(saveProjectItem, ctrlS);
-        fileToolbar.add((ActionSaveProject.SINGLETON));
-        JMenuItem saveProjectAsItem = file.add(ActionSaveProjectAs.SINGLETON);
+        _fileToolbar.add((ActionSaveProject.SINGLETON));
+        JMenuItem saveProjectAsItem = _file.add(ActionSaveProjectAs.SINGLETON);
         setMnemonic(saveProjectAsItem, "SaveAs");
-        JMenuItem revertToSavedItem = file.add(new ActionRevertToSaved());
+        JMenuItem revertToSavedItem = _file.add(new ActionRevertToSaved());
         setMnemonic(revertToSavedItem, "Revert To Saved");
-        file.addSeparator();
+        _file.addSeparator();
 
         //_import = new JMenu(menuLocalize("action.import"));
         //JMenuItem importProjectAsItem =
@@ -373,30 +412,30 @@ public class GenericArgoMenuBar extends JMenuBar
         //appendPluggableMenus(_import,
         //PluggableMenu.KEY_FILE_IMPORT);
         JMenuItem importFromSources =
-	    file.add(ActionImportFromSources.SINGLETON);
+	    _file.add(ActionImportFromSources.SINGLETON);
         setMnemonic(importFromSources, "Import");
-        file.addSeparator();
+        _file.addSeparator();
     
-        JMenuItem pageSetupItem = file.add(Actions.PageSetup);
+        JMenuItem pageSetupItem = _file.add(Actions.PageSetup);
 	setMnemonic(pageSetupItem, "PageSetup");
-        JMenuItem printItem = file.add(Actions.Print);
+        JMenuItem printItem = _file.add(Actions.Print);
         setMnemonic(printItem, "Print");
         setAccelerator(printItem, ctrlP);
-        fileToolbar.add((Actions.Print));
-        JMenuItem saveGraphicsItem = file.add(new ActionSaveGraphics());
+        _fileToolbar.add((Actions.Print));
+        JMenuItem saveGraphicsItem = _file.add(new ActionSaveGraphics());
         setMnemonic(saveGraphicsItem, "SaveGraphics");
-        file.addSeparator();
+        _file.addSeparator();
         JMenuItem saveConfiguration = 
-            file.add(new ActionSaveConfiguration());
+            _file.add(ActionSaveConfiguration.SINGLETON);
         setMnemonic(saveConfiguration, "Save Configuration");
-        file.addSeparator();
+        _file.addSeparator();
 
         // add last recently used list _before_ exit menu
-        lruList = new LastRecentlyUsedMenuList( file);
+        _lruList = new LastRecentlyUsedMenuList( _file);
 
         // and exit menu entry starting with separator
-        file.addSeparator();
-        JMenuItem exitItem = file.add(ActionExit.SINGLETON);
+        _file.addSeparator();
+        JMenuItem exitItem = _file.add(ActionExit.SINGLETON);
         setMnemonic(exitItem, "Exit");
         setAccelerator(exitItem, altF4);
 
@@ -455,7 +494,7 @@ public class GenericArgoMenuBar extends JMenuBar
 
         _edit.addSeparator();
 
-        JMenuItem removeItem = _edit.add(ActionDeleteFromDiagram.getSingleton());
+        JMenuItem removeItem = _edit.add(ActionDeleteFromDiagram.SINGLETON);
         setMnemonic(removeItem, "Remove from Diagram");
         setAccelerator(removeItem, delKey);
 
@@ -473,7 +512,7 @@ public class GenericArgoMenuBar extends JMenuBar
 
         _edit.addSeparator();
 
-        JMenuItem settingsItem = _edit.add(new ActionSettings());
+        JMenuItem settingsItem = _edit.add(ActionSettings.getInstance());
 	setMnemonic(settingsItem, "Settings");
 		
 	// ------------------------------------- View Menu
@@ -486,7 +525,7 @@ public class GenericArgoMenuBar extends JMenuBar
         
         JMenuItem findItem =  _view.add(Actions.Find);
         setMnemonic(findItem, "Find");
-        setAccelerator(findItem, f3);
+        setAccelerator(findItem, F3);
 
         _view.addSeparator();
 
@@ -541,39 +580,40 @@ public class GenericArgoMenuBar extends JMenuBar
 
 	// ------------------------------------- Create Menu
 		
-        _createDiagrams = add(new JMenu(menuLocalize("Create Diagram")));
+        _createDiagrams =
+	    (JMenu) add(new JMenu(menuLocalize("Create Diagram")));
         setMnemonic(_createDiagrams, "Create Diagram");
-        createDiagramToolbar = new ToolBar("Create Diagram Toolbar");
-        createDiagramToolbar.putClientProperty("JToolBar.isRollover",  
+        _createDiagramToolbar = new ToolBar("Create Diagram Toolbar");
+        _createDiagramToolbar.putClientProperty("JToolBar.isRollover",  
                                                 Boolean.TRUE);
         JMenuItem classDiagram = 
             _createDiagrams.add(ActionClassDiagram.SINGLETON);
         setMnemonic(classDiagram, "Class Diagram");
-        createDiagramToolbar.add((ActionClassDiagram.SINGLETON));
+        _createDiagramToolbar.add((ActionClassDiagram.SINGLETON));
         JMenuItem usecaseDiagram = 
             _createDiagrams.add(ActionUseCaseDiagram.SINGLETON);
         setMnemonic(usecaseDiagram, "Usecase Diagram");
-        createDiagramToolbar.add((ActionUseCaseDiagram.SINGLETON));
+        _createDiagramToolbar.add((ActionUseCaseDiagram.SINGLETON));
         JMenuItem stateDiagram = 
             _createDiagrams.add(ActionStateDiagram.SINGLETON);
         setMnemonic(stateDiagram, "State Diagram");
-        createDiagramToolbar.add((ActionStateDiagram.SINGLETON));
+        _createDiagramToolbar.add((ActionStateDiagram.SINGLETON));
         JMenuItem activityDiagram = 
             _createDiagrams.add(ActionActivityDiagram.SINGLETON);
         setMnemonic(activityDiagram, "Activity Diagram");
-        createDiagramToolbar.add((ActionActivityDiagram.SINGLETON));
+        _createDiagramToolbar.add((ActionActivityDiagram.SINGLETON));
         JMenuItem collaborationDiagram = 
             _createDiagrams.add(ActionCollaborationDiagram.SINGLETON);
         setMnemonic(collaborationDiagram, "Collaboration Diagram");
-        createDiagramToolbar.add((ActionCollaborationDiagram.SINGLETON));
+        _createDiagramToolbar.add((ActionCollaborationDiagram.SINGLETON));
         JMenuItem deploymentDiagram = 
             _createDiagrams.add(ActionDeploymentDiagram.SINGLETON);
         setMnemonic(deploymentDiagram, "Deployment Diagram");
-        createDiagramToolbar.add((ActionDeploymentDiagram.SINGLETON));
+        _createDiagramToolbar.add((ActionDeploymentDiagram.SINGLETON));
         JMenuItem sequenzDiagram = 
             _createDiagrams.add(ActionSequenceDiagram.SINGLETON);
         setMnemonic(sequenzDiagram, "Sequenz Diagram");
-        createDiagramToolbar.add((ActionSequenceDiagram.SINGLETON));
+        _createDiagramToolbar.add((ActionSequenceDiagram.SINGLETON));
         appendPluggableMenus(_createDiagrams,
 			     PluggableMenu.KEY_CREATE_DIAGRAMS);
 
@@ -615,13 +655,13 @@ public class GenericArgoMenuBar extends JMenuBar
 
 	// ------------------------------------- Generation Menu
 		
-        _generate = add(new JMenu(menuLocalize("Generation")));
+        _generate = (JMenu) add(new JMenu(menuLocalize("Generation")));
         setMnemonic(_generate, "Generation");
         JMenuItem genOne = _generate.add(ActionGenerateOne.SINGLETON);
         setMnemonic(genOne, "Generate Selected Classes");
         JMenuItem genAllItem = _generate.add(new ActionGenerateAll());
         setMnemonic(genAllItem, "Generate all classes");
-        setAccelerator(genAllItem, f7);
+        setAccelerator(genAllItem, F7);
         _generate.addSeparator();
         JMenuItem genProject = 
             _generate.add(ActionGenerateProjectCode.SINGLETON);
@@ -682,26 +722,26 @@ public class GenericArgoMenuBar extends JMenuBar
      * @return Value of property _createDiagramToolbar.
      */
     public JToolBar getCreateDiagramToolbar() {
-        return createDiagramToolbar;
+        return _createDiagramToolbar;
     }
     
     /** Get the edit toolbar.
      * @return the edit toolbar.
      */
     public JToolBar getEditToolbar() {
-        if (editToolbar == null) {
-            editToolbar = new ToolBar("Edit Toolbar");
-            editToolbar.putClientProperty("JToolBar.isRollover",
+        if (_editToolbar == null) {
+            _editToolbar = new ToolBar("Edit Toolbar");
+            _editToolbar.putClientProperty("JToolBar.isRollover",
 					   Boolean.TRUE);
-            editToolbar.add(ActionCut.getInstance());
-            editToolbar.add(ActionCopy.getInstance());
-            editToolbar.add(ActionPaste.getInstance());
-            editToolbar.addFocusListener(ActionPaste.getInstance());
-            editToolbar.add(ActionDeleteFromDiagram.getSingleton());
-            editToolbar.add(NavigateTargetBackAction.getInstance());
-            editToolbar.add(NavigateTargetForwardAction.getInstance());
+            _editToolbar.add(ActionCut.getInstance());
+            _editToolbar.add(ActionCopy.getInstance());
+            _editToolbar.add(ActionPaste.getInstance());
+            _editToolbar.addFocusListener(ActionPaste.getInstance());
+            _editToolbar.add(ActionDeleteFromDiagram.SINGLETON);
+            _editToolbar.add(NavigateTargetBackAction.getInstance());
+            _editToolbar.add(NavigateTargetForwardAction.getInstance());
         }
-        return editToolbar;
+        return _editToolbar;
     }
     
     /** Getter for the file toolbar.
@@ -709,21 +749,21 @@ public class GenericArgoMenuBar extends JMenuBar
      *
      */
     public JToolBar getFileToolbar() {
-        return fileToolbar;
+        return _fileToolbar;
     }
     
     /** Getter for the view toolbar.
      * @return the view toolbar.
      */
     public JToolBar getViewToolbar() {
-        if (viewToolbar == null) {
-            viewToolbar = new ToolBar("View Toolbar");
-            viewToolbar.putClientProperty("JToolBar.isRollover",
+        if (_viewToolbar == null) {
+            _viewToolbar = new ToolBar("View Toolbar");
+            _viewToolbar.putClientProperty("JToolBar.isRollover",
 					   Boolean.TRUE);
-            viewToolbar.add((Actions.Find));
-            viewToolbar.add(new ZoomSliderButton());
+            _viewToolbar.add((Actions.Find));
+            _viewToolbar.add(new ZoomSliderButton());
         }
-        return viewToolbar;
+        return _viewToolbar;
     }
     
     /**
@@ -752,7 +792,7 @@ public class GenericArgoMenuBar extends JMenuBar
      * @param filename of the project
      */
     public void addFileSaved(String filename) {
-        lruList.addEntry(filename);
+        _lruList.addEntry(filename);
     }
     
 }

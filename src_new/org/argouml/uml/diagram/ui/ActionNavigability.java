@@ -35,24 +35,13 @@ import org.argouml.uml.ui.UMLAction;
  * @author  Bob Tarling
  */
 public class ActionNavigability extends UMLAction {
-    /**
-     * Enumeration constant for <code>BIDIRECTIONAL</code> navigability.
-     */
-    public static final int BIDIRECTIONAL = 0;
-    
-    /**
-     * Enumeration constant for <code>STARTTOEND</code> navigability.
-     */
-    public static final int STARTTOEND = 1;
-    
-    /**
-     * Enumeration constant for <code>ENDTOSTART</code> navigability.
-     */
-    public static final int ENDTOSTART = 2;
+    final public static int BIDIRECTIONAL = 0;
+    final public static int STARTTOEND = 1;
+    final public static int ENDTOSTART = 2;
 
-    private int nav = BIDIRECTIONAL;
-    private Object assocStart = null;
-    private Object assocEnd = null;
+    int nav = BIDIRECTIONAL;
+    Object assocStart = null;
+    Object assocEnd = null;
 
     /**
      * The <code>ActionNavigability</code> constructor.
@@ -64,9 +53,8 @@ public class ActionNavigability extends UMLAction {
      * @param nav the type of navigation required in the association
      * being either <ul> <li>BIDIRECTIONAL <li>STARTTOEND
      * <li>ENDTOSTART </ul>
-     *
-     * @return the constructed class
      */
+
     public static ActionNavigability newActionNavigability(Object assocStart,
 							   Object assocEnd,
 							   int nav) {
@@ -76,17 +64,7 @@ public class ActionNavigability extends UMLAction {
 				      nav);
     }
 
-    /**
-     * Build a description string from the given association ends, 
-     * and the navigability.
-     * 
-     * @param assocStart association end 1
-     * @param assocEnd   association end 2
-     * @param nav        the navigability
-     * @return           the string containing a human-readible indication 
-     *                   of the navigability
-     */
-    private static String getDescription(Object assocStart,
+    static private String getDescription(Object assocStart,
 					 Object assocEnd,
 					 int nav) {
         String startName = ModelFacade.getName(ModelFacade.getType(assocStart));
@@ -106,42 +84,27 @@ public class ActionNavigability extends UMLAction {
         }
     }
 
-    /**
-     * The constructor. 
-     * 
-     * @param label   the description as build in <code>getDescription</code>
-     * @param theAssociationStart association end 1
-     * @param theAssociationEnd   association end 2
-     * @param theNavigability     the navigability: one of 
-     *                            BIDIRECTIONAL, STARTTOEND, ENDTOSTART
-     */
     protected ActionNavigability(String label,
-				 Object theAssociationStart,
-				 Object theAssociationEnd,
-				 int theNavigability) {
+				 Object assocStart,
+				 Object assocEnd,
+				 int nav) {
         super(label, NO_ICON);
 
-        this.nav = theNavigability;
-        this.assocStart = theAssociationStart;
-        this.assocEnd = theAssociationEnd;
+        this.nav = nav;
+        this.assocStart = assocStart;
+        this.assocEnd = assocEnd;
     }
 
     /**
-     * To perform the action of changing navigability.
-     *
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
+     * To perform the action of changing navigability
      */
     public void actionPerformed(ActionEvent ae) {
-	ModelFacade.setNavigable(assocStart, 
-	        (nav == BIDIRECTIONAL || nav == ENDTOSTART));
-        ModelFacade.setNavigable(assocEnd,   
-                (nav == BIDIRECTIONAL || nav == STARTTOEND));
+	ModelFacade.setNavigable(assocStart, (nav == BIDIRECTIONAL || nav == ENDTOSTART));
+        ModelFacade.setNavigable(assocEnd,   (nav == BIDIRECTIONAL || nav == STARTTOEND));
     }
 
     /**
-     * The is action is always enabled.
-     *
-     * @see org.argouml.uml.ui.UMLAction#shouldBeEnabled()
+     * The is action is always enabled
      */
     public boolean shouldBeEnabled() {
 	return true;

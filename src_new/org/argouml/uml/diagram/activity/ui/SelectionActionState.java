@@ -51,23 +51,31 @@ import org.tigris.gef.presentation.Handle;
  * @author jrobbins@ics.uci.edu
  */
 public class SelectionActionState extends SelectionWButtons {
+    /**
+     * @deprecated by Linus Tolke as of 0.15.7. Will be removed.
+     *             Use your own logger!
+     */
+    protected static Logger cat = 
+        Logger.getLogger(SelectionActionState.class);
 
     private static final Logger LOG = 
         Logger.getLogger(SelectionActionState.class);
 
     ////////////////////////////////////////////////////////////////
     // constants
-    private static Icon trans = 
-	ResourceLoaderWrapper.lookupIconResource("Transition");
-    private static Icon transDown = 
-	ResourceLoaderWrapper.lookupIconResource("TransitionDown");
+    public static Icon trans = 
+	ResourceLoaderWrapper.getResourceLoaderWrapper()
+	    .lookupIconResource("Transition");
+    public static Icon transDown = 
+	ResourceLoaderWrapper.getResourceLoaderWrapper()
+	    .lookupIconResource("TransitionDown");
     
     ////////////////////////////////////////////////////////////////
     // instance varables
-    private boolean showIncomingLeft = true;
-    private boolean showIncomingAbove = true;
-    private boolean showOutgoingRight = true;
-    private boolean showOutgoingBelow = true;
+    protected boolean _showIncomingLeft = true;
+    protected boolean _showIncomingAbove = true;
+    protected boolean _showOutgoingRight = true;
+    protected boolean _showOutgoingBelow = true;
 
     ////////////////////////////////////////////////////////////////
     // constructors
@@ -82,63 +90,41 @@ public class SelectionActionState extends SelectionWButtons {
     ////////////////////////////////////////////////////////////////
     // accessors
 
-    /**
-     * @param b true if the buton is enabled
-     */
     public void setOutgoingButtonEnabled(boolean b) {
         setOutgoingRightButtonEnabled(b);
         setIncomingAboveButtonEnabled(b);
     }
 
-    /**
-     * @param b true if the buton is enabled
-     */
     public void setIncomingButtonEnabled(boolean b) {
         setIncomingLeftButtonEnabled(b);
         setOutgoingBelowButtonEnabled(b);
     }
 
-    /**
-     * @param b true if the buton is enabled
-     */
     public void setIncomingLeftButtonEnabled(boolean b) {
-	showIncomingLeft = b;
+	_showIncomingLeft = b;
     }
 
-    /**
-     * @param b true if the buton is enabled
-     */
     public void setOutgoingRightButtonEnabled(boolean b) {
-	showOutgoingRight = b;
+	_showOutgoingRight = b;
     }
 
-    /**
-     * @param b true if the buton is enabled
-     */
     public void setIncomingAboveButtonEnabled(boolean b) {
-	showIncomingAbove = b;
+	_showIncomingAbove = b;
     }
 
-    /**
-     * @param b true if the buton is enabled
-     */
     public void setOutgoingBelowButtonEnabled(boolean b) {
-	showOutgoingBelow = b;
+	_showOutgoingBelow = b;
     }
 
-    /**
-     * @see org.tigris.gef.base.Selection#hitHandle(java.awt.Rectangle, 
-     * org.tigris.gef.presentation.Handle)
-     */
     public void hitHandle(Rectangle r, Handle h) {
 	super.hitHandle(r, h);
 	if (h.index != -1) return;
-	if (!isPaintButtons()) return;
+	if (!_paintButtons) return;
 	Editor ce = Globals.curEditor();
 	SelectionManager sm = ce.getSelectionManager();
 	if (sm.size() != 1) return;
 	ModeManager mm = ce.getModeManager();
-	if (mm.includes(ModeModify.class) && getPressedButton() == -1) return;
+	if (mm.includes(ModeModify.class) && _pressedButton == -1) return;
 	int cx = _content.getX();
 	int cy = _content.getY();
 	int cw = _content.getWidth();
@@ -147,19 +133,19 @@ public class SelectionActionState extends SelectionWButtons {
 	int ih = trans.getIconHeight();
 	int iwd = transDown.getIconWidth();
 	int ihd = transDown.getIconHeight();
-	if (showOutgoingRight && hitLeft(cx + cw, cy + ch / 2, iw, ih, r)) {
+	if (_showOutgoingRight && hitLeft(cx + cw, cy + ch / 2, iw, ih, r)) {
 	    h.index = 12;
 	    h.instructions = "Add an outgoing transition";
 	}
-	else if (showIncomingLeft && hitRight(cx, cy + ch / 2, iw, ih, r)) {
+	else if (_showIncomingLeft && hitRight(cx, cy + ch / 2, iw, ih, r)) {
 	    h.index = 13;
 	    h.instructions = "Add an incoming transition";
 	}
-	else if (showOutgoingBelow && hitAbove(cx + cw / 2, cy, iwd, ihd, r)) {
+	else if (_showOutgoingBelow && hitAbove(cx + cw / 2, cy, iwd, ihd, r)) {
 	    h.index = 10;
 	    h.instructions = "Add an incoming transaction";
 	}
-	else if (showIncomingAbove
+	else if (_showIncomingAbove
 		 && hitBelow(cx + cw / 2, cy + ch, iwd, ihd, r))
 	{
 	    h.index = 11;
@@ -180,24 +166,20 @@ public class SelectionActionState extends SelectionWButtons {
 	int cy = _content.getY();
 	int cw = _content.getWidth();
 	int ch = _content.getHeight();
-	if (showOutgoingRight) 
+	if (_showOutgoingRight) 
 	    paintButtonLeft(trans, g, cx + cw, cy + ch / 2, 12);
-	if (showIncomingLeft) 
+	if (_showIncomingLeft) 
 	    paintButtonRight(trans, g, cx, cy + ch / 2, 13);
-	if (showOutgoingBelow) 
+	if (_showOutgoingBelow) 
 	    paintButtonAbove(transDown, g, cx + cw / 2, cy , 14);
-	if (showIncomingAbove) 
+	if (_showIncomingAbove) 
 	    paintButtonBelow(transDown, g, cx + cw / 2, cy + ch, 15);
     }
 
 
-    /**
-     * @see org.tigris.gef.base.Selection#dragHandle(int, int, int, int, 
-     * org.tigris.gef.presentation.Handle)
-     */
     public void dragHandle(int mX, int mY, int anX, int anY, Handle hand) {
 	if (hand.index < 10) {
-	    setPaintButtons(false);
+	    _paintButtons = false;
 	    super.dragHandle(mX, mY, anX, anY, hand);
 	    return;
 	}

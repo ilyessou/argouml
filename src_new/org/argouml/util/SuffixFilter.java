@@ -25,7 +25,7 @@
 package org.argouml.util;
 
 import java.io.File;
-import javax.swing.filechooser.FileFilter;
+import javax.swing.filechooser.*;
 
 public class SuffixFilter extends FileFilter {
 

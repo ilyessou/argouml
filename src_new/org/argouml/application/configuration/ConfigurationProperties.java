@@ -48,7 +48,7 @@ import org.apache.log4j.Logger;
  */
 public class ConfigurationProperties extends ConfigurationHandler {
     /** logger */
-    private static final Logger LOG = 
+    private static Logger LOG = 
 	Logger.getLogger(ConfigurationProperties.class);
 
     /** The location of Argo's default properties resource.

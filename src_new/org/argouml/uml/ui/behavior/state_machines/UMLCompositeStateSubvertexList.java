@@ -48,18 +48,18 @@ public class UMLCompositeStateSubvertexList extends UMLMutableLinkedList {
             
             JMenu newMenu = new JMenu();
             newMenu.setText(Translator.localize("action.new"));
-            ActionNewPseudoState.getSingleton().setTarget(getTarget());
-            newMenu.add(ActionNewPseudoState.getSingleton());
+            ActionNewPseudoState.SINGLETON.setTarget(getTarget());
+            newMenu.add(ActionNewPseudoState.SINGLETON);
             newMenu.add(ActionNewSynchState.SINGLETON);
             ActionNewSynchState.SINGLETON.setTarget(getTarget());
             newMenu.add(ActionNewStubState.SINGLETON);
             ActionNewStubState.SINGLETON.setTarget(getTarget());
-            newMenu.add(ActionNewCompositeState.getSingleton());
-            ActionNewCompositeState.getSingleton().setTarget(getTarget());
-            newMenu.add(ActionNewSimpleState.getSingleton());
-            ActionNewSimpleState.getSingleton().setTarget(getTarget());
-            newMenu.add(ActionNewFinalState.getSingleton());
-            ActionNewFinalState.getSingleton().setTarget(getTarget());
+            newMenu.add(ActionNewCompositeState.SINGLETON);
+            ActionNewCompositeState.SINGLETON.setTarget(getTarget());
+            newMenu.add(ActionNewSimpleState.SINGLETON);
+            ActionNewSimpleState.SINGLETON.setTarget(getTarget());
+            newMenu.add(ActionNewFinalState.SINGLETON);
+            ActionNewFinalState.SINGLETON.setTarget(getTarget());
             newMenu.add(ActionNewSubmachineState.SINGLETON);
             ActionNewSubmachineState.SINGLETON.setTarget(getTarget());
             add(newMenu);
@@ -79,7 +79,7 @@ public class UMLCompositeStateSubvertexList extends UMLMutableLinkedList {
      */
     public UMLCompositeStateSubvertexList(
         UMLModelElementListModel2 dataModel) {
-        super(dataModel);
+        super(dataModel, null);
     }
 
     /**

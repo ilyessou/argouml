@@ -47,9 +47,6 @@ public class ActionGenerateProjectCode extends UMLAction {
     ////////////////////////////////////////////////////////////////
     // static variables
 
-    /**
-     * The singleton.
-     */
     public static ActionGenerateProjectCode SINGLETON =
 	new ActionGenerateProjectCode();
 
@@ -57,9 +54,6 @@ public class ActionGenerateProjectCode extends UMLAction {
     ////////////////////////////////////////////////////////////////
     // constructors
 
-    /**
-     *  The constructor.
-     */
     protected ActionGenerateProjectCode() {
 	super("action.generate-code-for-project", NO_ICON);
     }
@@ -68,9 +62,6 @@ public class ActionGenerateProjectCode extends UMLAction {
     ////////////////////////////////////////////////////////////////
     // main methods
 
-    /**
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-     */
     public void actionPerformed(ActionEvent ae) {
 	Vector classes = new Vector();
 	// The following lines should be substituted by the following
@@ -81,17 +72,15 @@ public class ActionGenerateProjectCode extends UMLAction {
 	    ProjectManager.getManager().getCurrentProject().getActiveDiagram();
 	if (!(activeDiagram instanceof org.argouml.uml.diagram.ui.UMLDiagram))
 	    return;
-	Object/*MNamespace*/ ns = ((org.argouml.uml.diagram.ui.UMLDiagram) 
-            activeDiagram).getNamespace();
+	Object/*MNamespace*/ ns =
+	    ((org.argouml.uml.diagram.ui.UMLDiagram) activeDiagram).getNamespace();
 	if (ns == null) return;
-	while (ModelFacade.getNamespace(ns) != null) 
-	    ns = ModelFacade.getNamespace(ns);
-	Collection elems = ModelManagementHelper.getHelper()
-	    .getAllModelElementsOfKind(ns, (Class) ModelFacade.CLASSIFIER);
+	while (ModelFacade.getNamespace(ns) != null) ns = ModelFacade.getNamespace(ns);
+	Collection elems =
+	    ModelManagementHelper.getHelper().getAllModelElementsOfKind(ns, (Class)ModelFacade.CLASSIFIER);
 	//Project p = ProjectManager.getManager().getCurrentProject();
 	//Collection elems =
-	//ModelManagementHelper.getHelper()
-        //    .getAllModelElementsOfKind(MClassifier.class);
+	//ModelManagementHelper.getHelper().getAllModelElementsOfKind(MClassifier.class);
 	Iterator iter = elems.iterator();
 	while (iter.hasNext()) {
 	    Object/*MClassifier*/ cls = iter.next();
@@ -103,9 +92,6 @@ public class ActionGenerateProjectCode extends UMLAction {
 	cgd.show();
     }
 
-    /**
-     * @see org.argouml.uml.ui.UMLAction#shouldBeEnabled()
-     */
     public boolean shouldBeEnabled() {
 	ProjectBrowser pb = ProjectBrowser.getInstance();
 	ArgoDiagram activeDiagram =
@@ -116,9 +102,7 @@ public class ActionGenerateProjectCode extends UMLAction {
     private boolean isCodeRelevantClassifier(Object/*MClassifier*/ cls) {
 	String path = Generator2.getCodePath(cls);
 	String name = ModelFacade.getName(cls);
-	if (name == null 
-            || name.length() == 0 
-            || Character.isDigit(name.charAt(0))) {
+	if (name == null || name.length() == 0 || Character.isDigit(name.charAt(0))) {
 	    return false;
 	}
 	if (path != null) {

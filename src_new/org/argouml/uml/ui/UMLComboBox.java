@@ -24,10 +24,6 @@
 
 package org.argouml.uml.ui;
 import javax.swing.*;
-
-import org.argouml.ui.LookAndFeelMgr;
-
-import java.awt.Color;
 import java.awt.event.*;
 import ru.novosoft.uml.MElementEvent;
 
@@ -46,8 +42,6 @@ public class UMLComboBox
 
     public UMLComboBox(UMLComboBoxModel model) {
         super(model);
-        setFont(LookAndFeelMgr.getInstance().getSmallFont());
-        setBackground(Color.green.brighter());
         _model = model;
 	addActionListener(_model);
     }

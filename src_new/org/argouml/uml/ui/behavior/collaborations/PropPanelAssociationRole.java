@@ -29,9 +29,8 @@ import javax.swing.JList;
 import javax.swing.JScrollPane;
 
 import org.argouml.i18n.Translator;
-import org.argouml.uml.ui.ActionNavigateContainerElement;
-import org.argouml.uml.ui.ActionRemoveFromModel;
-import org.argouml.uml.ui.PropPanelButton2;
+
+import org.argouml.uml.ui.PropPanelButton;
 import org.argouml.uml.ui.UMLComboBox2;
 import org.argouml.uml.ui.UMLLinkedList;
 import org.argouml.uml.ui.foundation.core.PropPanelAssociation;
@@ -72,10 +71,16 @@ public class PropPanelAssociationRole extends PropPanelAssociation {
         addField(Translator.localize("UMLMenu", "label.messages"),
 		 new JScrollPane(messageList));
 
-        buttonPanel.add(new PropPanelButton2(this,
-                new ActionNavigateContainerElement()));
-        buttonPanel
-                .add(new PropPanelButton2(this, new ActionRemoveFromModel()));
+        new PropPanelButton(this, buttonPanel, _navUpIcon,
+                Translator.localize("UMLMenu",
+					  "button.go-up"),
+			    "navigateUp",
+			    null);
+        new PropPanelButton(this, buttonPanel, _deleteIcon,
+			    localize("Delete"),
+			    "removeElement",
+			    null);
+
     }
 
 } /* end class PropPanelAssociationRole */

@@ -43,6 +43,7 @@ import org.argouml.uml.diagram.static_structure.ui.UMLClassDiagram;
 import org.tigris.gef.base.Editor;
 import org.tigris.gef.base.LayerPerspective;
 import org.tigris.gef.presentation.Fig;
+import org.argouml.model.ModelFacade;
 
 /**
  * Instances of this class interface the current Class diagram.
@@ -55,7 +56,12 @@ import org.tigris.gef.presentation.Fig;
  * @since 0.9
  */
 public class DiagramInterface {
-    private static final Logger LOG =
+
+    /**
+     * @deprecated by Linus Tolke as of 0.15.4. Use your own logger in your
+     * class. This will be removed.
+     */
+    protected static Logger cat =
         Logger.getLogger(DiagramInterface.class);
     
     Editor _currentEditor = null;
@@ -187,6 +193,16 @@ public class DiagramInterface {
     }
 
     /**
+     * Create a diagram name for a package
+     *
+     * @param p The package.
+     * @return The name for the diagram.
+     */
+    private String getDiagramName(Object p) {
+	return getDiagramName(ModelFacade.getName(p));
+    }
+
+    /**
      * Select or create a class diagram for a package.
      *
      * @param p The package.
@@ -245,8 +261,8 @@ public class DiagramInterface {
             currentGM.addNode(newClass);
             currentLayer.putInPosition(newClassFig);
             
-            newClassFig.setAttributesVisible(!minimise);
-            newClassFig.setOperationsVisible(!minimise);
+            newClassFig.setAttributeVisible(!minimise);
+            newClassFig.setOperationVisible(!minimise);
             
             newClassFig.setSize(newClassFig.getMinimumSize());
         }
@@ -288,7 +304,7 @@ public class DiagramInterface {
             currentGM.addNode(newInterface);
             currentLayer.putInPosition(newInterfaceFig);
             
-            newInterfaceFig.setOperationsVisible(!minimise);
+            newInterfaceFig.setOperationVisible(!minimise);
             newInterfaceFig.setSize(newInterfaceFig.getMinimumSize());
         }
         // the class is in the diagram
@@ -330,7 +346,7 @@ public class DiagramInterface {
 	    try {
 		d.setName(diagramName);
 	    } catch (Exception e) {
-		LOG.error("Failed to set diagram name.");
+		cat.error("Failed to set diagram name.");
 	    }
 	    p.addMember(d);
 	    setCurrentDiagram(d);

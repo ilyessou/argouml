@@ -31,7 +31,7 @@ import org.argouml.uml.DocumentationManager;
 import org.tigris.gef.presentation.Fig;
 
 public class TabDocs extends TabText {
-    protected static final Logger LOG = 
+    protected static Logger cat = 
         Logger.getLogger(TabDocs.class);
     ////////////////////////////////////////////////////////////////
     // constructor

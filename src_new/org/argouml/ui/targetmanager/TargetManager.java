@@ -208,40 +208,27 @@ public final class TargetManager {
         }
 
         /**
-         * Listener for additions of targets to the selected targets. On addition of targets we put them in
-         * the history.
          * @see
          * org.argouml.ui.targetmanager.TargetListener#targetAdded(org.argouml.ui.targetmanager.TargetEvent)
          */
         public void targetAdded(TargetEvent e) {
-            Object[] addedTargets = e.getAddedTargets();
-            // we put the targets 'backwards' in the history since the first target in the addedTargets array is 
-            // the first one selected.
-            for (int i = addedTargets.length-1; i >=0 ; i--) {
-                putInHistory(addedTargets[i]);
-            }
+	    targetSet(e);
         }
 
         /**
-         * Listener for the removal of targets from the selection. On removal of a target from the selection we do nothing
-         * with respect to the history of targets.
          * @see
          * org.argouml.ui.targetmanager.TargetListener#targetRemoved(org.argouml.ui.targetmanager.TargetEvent)
          */
-        public void targetRemoved(TargetEvent e) {            
+        public void targetRemoved(TargetEvent e) {
+	    targetSet(e);
         }
 
         /**
-         * Listener for the selection of a whole bunch of targets in one go (or just one). Puts all the new 
-         * targets in the history starting with the 'newest' target.
          * @see
          * org.argouml.ui.targetmanager.TargetListener#targetSet(org.argouml.ui.targetmanager.TargetEvent)
          */
         public void targetSet(TargetEvent e) {
-            Object[] newTargets = e.getNewTargets();
-            for (int i = newTargets.length-1; i >=0 ; i--) {
-                putInHistory(newTargets[i]);
-            }
+	    putInHistory(e.getNewTarget());
         }
 
         /**
@@ -366,7 +353,6 @@ public final class TargetManager {
 
 	Object oldTargets[] = _targets.toArray();
 	_targets.clear();
-	// internalOnSetTarget(TargetEvent.TARGET_REMOVED, oldTargets);
 	if (o != null)
 	    _targets.add(o);
 	internalOnSetTarget(TargetEvent.TARGET_SET, oldTargets);
@@ -423,7 +409,7 @@ public final class TargetManager {
      * will be taken to be the primary target (see getTarget()), and that
      * an event will be fired also in case that that element would not equal
      * the element returned by getTarget().
-     * Note also that any nulls within the Collection will be ignored.    
+     * Note also that any nulls within the Collection will be ignored.
      * @param targetsList The new targets list.
      */
     public synchronized void setTargets(Collection targetsList) {
@@ -435,20 +421,8 @@ public final class TargetManager {
 	if (targetsList == null)
 	    targetsList = Collections.EMPTY_LIST;
 
-	// remove any nulls so we really ignore them
-	if (targetsList.contains(null)) {
-	    List withoutNullList = new ArrayList(targetsList);
-	    while (withoutNullList.contains(null)) {
-	        int nullIndex = withoutNullList.indexOf(null);
-	        withoutNullList.remove(nullIndex);
-	    }
-	    targetsList = withoutNullList;
-	}
-	
 	Object oldTargets[] = null;
 
-	// check if there are new elements in the list if the old and new list are of the same size
-	// set the oldTargets to the correct selection
 	if (targetsList.size() == _targets.size()) {
 	    boolean first = true;
 	    ntarg = targetsList.iterator();
@@ -468,20 +442,18 @@ public final class TargetManager {
 	    oldTargets = _targets.toArray();
 
 	if (oldTargets == null)
-	    return;	
+	    return;
 
 	startTargetTransaction();
-	
+
 	_targets.clear();
-	
-	// implement set-like behaviour. The same element may not be added more then once.
 	ntarg = targetsList.iterator();
 	while (ntarg.hasNext()) {
 	    Object targ = ntarg.next();
-	    if (_targets.contains(targ))
+	    if (targ == null || _targets.contains(targ))
 		continue;
 	    _targets.add(targ);
-	}		
+	}
 
 	internalOnSetTarget(TargetEvent.TARGET_SET, oldTargets);
 
@@ -506,7 +478,7 @@ public final class TargetManager {
 	startTargetTransaction();
 
 	Object[] oldTargets = _targets.toArray();
-	_targets.add(0, target);
+	_targets.add(target);
 	internalOnSetTarget(TargetEvent.TARGET_ADDED, oldTargets);
 
 	endTargetTransaction();

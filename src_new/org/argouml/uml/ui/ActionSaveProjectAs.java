@@ -29,13 +29,13 @@ import java.io.File;
 import java.net.URL;
 
 import javax.swing.JFileChooser;
-import javax.swing.filechooser.FileFilter;
 
 import org.argouml.i18n.Translator;
-import org.argouml.kernel.AbstractFilePersister;
 import org.argouml.kernel.Project;
 import org.argouml.kernel.ProjectManager;
 import org.argouml.ui.ProjectBrowser;
+import org.argouml.util.FileFilters;
+import org.argouml.util.FileConstants;
 import org.argouml.util.osdep.OsUtil;
 
 /** Action to save project under name.
@@ -46,20 +46,14 @@ public class ActionSaveProjectAs extends ActionSaveProject {
     ////////////////////////////////////////////////////////////////
     // static variables
 
-    /**
-     * The singleton.
-     */
     public static ActionSaveProjectAs SINGLETON = new ActionSaveProjectAs();
 
-    //public static final String separator = "/";
+    public static final String separator = "/";
     //System.getProperty("file.separator");
 
     ////////////////////////////////////////////////////////////////
     // constructors
 
-    /**
-     * The constructor. 
-     */
     protected ActionSaveProjectAs() {
         super("action.save-project-as", HAS_ICON);
     }
@@ -67,16 +61,10 @@ public class ActionSaveProjectAs extends ActionSaveProject {
     ////////////////////////////////////////////////////////////////
     // main methods
 
-    /**
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-     */
     public void actionPerformed(ActionEvent e) {
         trySave(false);
     }
 
-    /**
-     * @see org.argouml.uml.ui.ActionSaveProject#trySave(boolean)
-     */
     public boolean trySave(boolean overwrite) {
         File f = getNewFile();
         if (f == null)
@@ -89,9 +77,6 @@ public class ActionSaveProjectAs extends ActionSaveProject {
         return success;
     }
 
-    /**
-     * @return the File to save to
-     */
     protected File getNewFile() {
         ProjectBrowser pb = ProjectBrowser.getInstance();
         Project p = ProjectManager.getManager().getCurrentProject();
@@ -112,27 +97,18 @@ public class ActionSaveProjectAs extends ActionSaveProject {
         String sChooserTitle =
 	    Translator.localize("Actions", "filechooser.save-as-project");
         chooser.setDialogTitle(sChooserTitle + " " + p.getName());
+        chooser.setFileFilter(FileFilters.CompressedFileFilter);
 
-        FileFilter allFiles = chooser.getFileFilter();
-        chooser.removeChoosableFileFilter(allFiles);
-        
-        chooser.addChoosableFileFilter(zargoPersister);
-        chooser.addChoosableFileFilter(argoPersister);
-        chooser.addChoosableFileFilter(xmiPersister);
-        chooser.setFileFilter(zargoPersister);
-        
         int retval = chooser.showSaveDialog(pb);
         if (retval == JFileChooser.APPROVE_OPTION) {
             File file = chooser.getSelectedFile();
-            AbstractFilePersister filter = 
-                (AbstractFilePersister) chooser.getFileFilter();
             if (file != null) {
                 String name = file.getName();
-                if (!name.endsWith("." + filter.getExtension())) {
+                if (!name.endsWith(FileConstants.COMPRESSED_FILE_EXT)) {
                     file =
                         new File(
                             file.getParent(),
-                            name + "." + filter.getExtension());
+                            name + FileConstants.COMPRESSED_FILE_EXT);
                 }
             }
             return file;
@@ -141,9 +117,6 @@ public class ActionSaveProjectAs extends ActionSaveProject {
         }
     }
 
-    /**
-     * @see org.argouml.uml.ui.UMLAction#shouldBeEnabled()
-     */
     public boolean shouldBeEnabled() {
         return true;
     }

@@ -49,7 +49,7 @@ public class DataTypesHelper {
     
      /** Singleton instance.
      */
-    private static DataTypesHelper singleton =
+    private static DataTypesHelper SINGLETON =
                    new DataTypesHelper();
 
     
@@ -57,13 +57,9 @@ public class DataTypesHelper {
      * @return the singleton instance.
      */
     public static DataTypesHelper getHelper() {
-        return singleton;
+        return SINGLETON;
     }
 
-    /**
-     * @param from source
-     * @param to destination
-     */
     public void copyTaggedValues(MModelElement from, MModelElement to) {
 	Iterator it = from.getTaggedValues().iterator();
 	while (it.hasNext()) {
@@ -72,10 +68,6 @@ public class DataTypesHelper {
 	}
     }
     
-    /**
-     * @param kind the pseudostate kind
-     * @return true if this is a initial kind
-     */
     public boolean equalsINITIALKind(Object kind) {
         
         if (!(kind instanceof MPseudostateKind)) {
@@ -85,11 +77,7 @@ public class DataTypesHelper {
         return MPseudostateKind.INITIAL.equals(kind);
     }
     
-    /**
-     * @param kind the pseudostate kind
-     * @return if this is a history kind
-     */
-    public boolean equalsDeepHistoryKind(Object kind) {
+    public boolean equalsDEEP_HISTORYKind(Object kind) {
         
         if (!(kind instanceof MPseudostateKind)) {
             throw new IllegalArgumentException();
@@ -98,11 +86,7 @@ public class DataTypesHelper {
         return MPseudostateKind.DEEP_HISTORY.equals(kind);
     }
     
-    /**
-     * @param kind the pseudostate kind
-     * @return if this is a shallow history kind
-     */
-    public boolean equalsShallowHistoryKind(Object kind) {
+    public boolean equalsSHALLOW_HISTORYKind(Object kind) {
         
         if (!(kind instanceof MPseudostateKind)) {
             throw new IllegalArgumentException();
@@ -111,10 +95,6 @@ public class DataTypesHelper {
         return MPseudostateKind.SHALLOW_HISTORY.equals(kind);
     }
     
-    /**
-     * @param kind the pseudostate kind
-     * @return if this is a fork kind
-     */
     public boolean equalsFORKKind(Object kind) {
         
         if (!(kind instanceof MPseudostateKind)) {
@@ -124,10 +104,6 @@ public class DataTypesHelper {
         return MPseudostateKind.FORK.equals(kind);
     }
     
-    /**
-     * @param kind the pseudostate kind
-     * @return if this is a join kind
-     */
     public boolean equalsJOINKind(Object kind) {
         
         if (!(kind instanceof MPseudostateKind)) {
@@ -137,10 +113,6 @@ public class DataTypesHelper {
         return MPseudostateKind.JOIN.equals(kind);
     }
     
-    /**
-     * @param kind the pseudostate kind (Choice)
-     * @return if this is a branch-choice kind
-     */
     public boolean equalsBRANCHKind(Object kind) {
         
         if (!(kind instanceof MPseudostateKind)) {
@@ -150,10 +122,6 @@ public class DataTypesHelper {
         return MPseudostateKind.BRANCH.equals(kind);
     }
     
-    /**
-     * @param kind the pseudostate kind
-     * @return if this is a junction kind
-     */
     public boolean equalsJUNCTIONKind(Object kind) {
     
         if (!(kind instanceof MPseudostateKind)) {
@@ -171,8 +139,7 @@ public class DataTypesHelper {
      */
     public String multiplicityToString(Object multiplicity) {
 	if (!(multiplicity instanceof MMultiplicity))
-	    throw new IllegalArgumentException("Unrecognized object: " 
-                + multiplicity);
+	    throw new IllegalArgumentException("Unrecognized object: " + multiplicity);
 
 	return ((MMultiplicity) multiplicity).toString();
     }

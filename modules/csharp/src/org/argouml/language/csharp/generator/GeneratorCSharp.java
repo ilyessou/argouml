@@ -1075,9 +1075,9 @@ public class GeneratorCSharp extends Generator2
     public String generateGeneralzation(Collection generalizations) {
 	if (generalizations == null) return "";
 	Collection classes = new ArrayList();
-	Iterator genEnum = generalizations.iterator();
-	while (genEnum.hasNext()) {
-	    MGeneralization g = (MGeneralization) genEnum.next();
+	Iterator enum = generalizations.iterator();
+	while (enum.hasNext()) {
+	    MGeneralization g = (MGeneralization) enum.next();
 	    MGeneralizableElement ge = g.getParent();
 	    // assert ge != null
 	    if (ge != null) classes.add(ge);
@@ -1394,13 +1394,6 @@ public class GeneratorCSharp extends Generator2
     public String getModuleAuthor() { return "Mike Lipkie"; }
     public String getModuleVersion() { return "0.1.0"; }
     public String getModuleKey() { return "module.language.csharp.generator"; }
-    
-    /**
-     * @see org.argouml.application.api.NotationProvider2#generateActionState(java.lang.Object)
-     */
-    public String generateActionState(Object actionState) {       
-        return generateState(actionState);
-    }
 
 
 } /* end class GeneratorCSharp */

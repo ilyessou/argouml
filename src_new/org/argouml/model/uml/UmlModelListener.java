@@ -49,7 +49,7 @@ public class UmlModelListener implements MElementListener {
     /**
      * Singleton instance.
      */
-    private static UmlModelListener singleton = new UmlModelListener();
+    private static UmlModelListener SINGLETON = new UmlModelListener();
 
     /**
      * Singleton instance access method.
@@ -57,7 +57,7 @@ public class UmlModelListener implements MElementListener {
      * @return the singleton instance.
      */
     public static UmlModelListener getInstance() {
-        return singleton;
+        return SINGLETON;
     }
 
     /**
@@ -68,8 +68,6 @@ public class UmlModelListener implements MElementListener {
 
     /**
      * Handle the event.
-     *
-     * @see ru.novosoft.uml.MElementListener#listRoleItemSet(ru.novosoft.uml.MElementEvent)
      */
     public void listRoleItemSet(MElementEvent mee) {
         LOG.debug("listRoleItemSet(" + mee + ")");
@@ -80,8 +78,6 @@ public class UmlModelListener implements MElementListener {
      * Handle the event.
      * Provides a model change notification only if the property
      * values differ.
-     *
-     * @see ru.novosoft.uml.MElementListener#propertySet(ru.novosoft.uml.MElementEvent)
      */
     public void propertySet(MElementEvent mee) {
 	notifyModelChanged(mee);
@@ -89,8 +85,6 @@ public class UmlModelListener implements MElementListener {
 
     /**
      * Handle the event.
-     *
-     * @see ru.novosoft.uml.MElementListener#recovered(ru.novosoft.uml.MElementEvent)
      */
     public void recovered(MElementEvent mee) {
         LOG.debug("recovered(" + mee + ")");
@@ -99,8 +93,6 @@ public class UmlModelListener implements MElementListener {
 
     /**
      * Handle the event.
-     *
-     * @see ru.novosoft.uml.MElementListener#removed(ru.novosoft.uml.MElementEvent)
      */
     public void removed(MElementEvent mee) {
         LOG.debug("removed(" + mee + ")");
@@ -112,8 +104,6 @@ public class UmlModelListener implements MElementListener {
     /**
      * Handle the event.
      * Provides a model change notification.
-     *
-     * @see ru.novosoft.uml.MElementListener#roleAdded(ru.novosoft.uml.MElementEvent)
      */
     public void roleAdded(MElementEvent mee) {
         LOG.debug("roleAdded(" + mee + ")");
@@ -123,8 +113,6 @@ public class UmlModelListener implements MElementListener {
     /**
      * Handle the event.
      * Provides a model change notification.
-     *
-     * @see ru.novosoft.uml.MElementListener#roleRemoved(ru.novosoft.uml.MElementEvent)
      */
     public void roleRemoved(MElementEvent mee) {
         LOG.debug("roleRemoved(" + mee + ")");

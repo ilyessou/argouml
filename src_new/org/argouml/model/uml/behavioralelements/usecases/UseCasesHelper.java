@@ -62,17 +62,15 @@ public class UseCasesHelper {
     /**
      * Singleton instance.
      */
-    private static UseCasesHelper singleton =
+    private static UseCasesHelper SINGLETON =
 	new UseCasesHelper();
 
     
     /**
      * Singleton instance access method.
-     *
-     * @return the singleton
      */
     public static UseCasesHelper getHelper() {
-        return singleton;
+        return SINGLETON;
     }
     
     /** 
@@ -157,10 +155,10 @@ public class UseCasesHelper {
     }
 	
     /**
-     * Returns all usecases this given usecase extends.<p>
+     * Returns all usecases this usecase extends.<p>
      *
-     * @param ausecase the given usecase
-     * @return Collection all usecases this given usecase extends
+     * @param ausecase
+     * @return Collection
      */
     public Collection getExtendedUseCases(Object ausecase) {
 	if (ausecase == null) return new ArrayList();
@@ -175,10 +173,6 @@ public class UseCasesHelper {
 	return list;
     }
     
-    /**
-     * @param usecase the given usecase
-     * @return Collection all usecases that extend the given usecase
-     */
     public Collection getExtendingUseCases(Object usecase) {
         if (usecase == null) return new ArrayList();
         Iterator it = ((MUseCase) usecase).getExtends2().iterator();
@@ -195,9 +189,9 @@ public class UseCasesHelper {
      * Returns the extend relation between two usecases base and
      * extension. If there is none null is returned.
      *
-     * @param abase the given base usecase
-     * @param anextension the given extension usecase
-     * @return MExtend the extend relation
+     * @param abase
+     * @param anextension
+     * @return MExtend
      */
     public Object getExtends(Object/*MUseCase*/ abase,
 			     Object/*MUseCase*/ anextension) {
@@ -217,8 +211,8 @@ public class UseCasesHelper {
     /**
      * Returns all usecases this usecase includes.
      *
-     * @param ausecase the given usecase
-     * @return Collection all usecases the given usecase includes
+     * @param ausecase
+     * @return Collection
      */
     public Collection getIncludedUseCases(Object/*MUseCase*/ ausecase) {
 	if (ausecase == null) return new ArrayList();
@@ -237,9 +231,9 @@ public class UseCasesHelper {
      * Returns the include relation between two usecases base and
      * inclusion. If there is none null is returned.
      *
-     * @param abase the given base usecase
-     * @param aninclusion the given inclusion usecase
-     * @return MExtend the include relation
+     * @param abase
+     * @param aninclusion
+     * @return MExtend
      */
     public MInclude getIncludes(Object abase, Object aninclusion) {
         MUseCase base = (MUseCase) abase;
@@ -259,8 +253,8 @@ public class UseCasesHelper {
      * Returns the specificationpath operation of some usecase. See 
      * section 2.11.3.5 of the UML 1.3 spec for a definition.<p>
      *
-     * @param ausecase the given usecase
-     * @return Collection the specificationpath operation of the given usecase
+     * @param ausecase
+     * @return Collection
      */
     public Collection getSpecificationPath(Object ausecase) {
         MUseCase uc = (MUseCase) ausecase;
@@ -281,8 +275,8 @@ public class UseCasesHelper {
     /**
      * Sets the base usecase of a given extend. Updates the
      * extensionpoints of the extend too.
-     * @param extend the given extend
-     * @param base the base usecase
+     * @param extend
+     * @param base
      */
     public void setBase(MExtend extend, MUseCase base) {
         if (extend == null || base == null)

@@ -28,13 +28,12 @@ import javax.swing.ImageIcon;
 import javax.swing.JScrollPane;
 
 import org.argouml.i18n.Translator;
-import org.argouml.uml.ui.ActionNavigateContainerElement;
-import org.argouml.uml.ui.ActionRemoveFromModel;
-import org.argouml.uml.ui.PropPanelButton2;
+import org.argouml.model.ModelFacade;
+
+import org.argouml.uml.ui.PropPanelButton;
 import org.argouml.uml.ui.UMLExpressionBodyField;
 import org.argouml.uml.ui.UMLExpressionLanguageField;
-import org.argouml.uml.ui.UMLExpressionModel2;
-import org.argouml.uml.ui.UMLScriptExpressionModel;
+import org.argouml.uml.ui.UMLExpressionModel;
 import org.argouml.uml.ui.foundation.core.PropPanelModelElement;
 import org.argouml.util.ConfigLoader;
 
@@ -60,23 +59,32 @@ public abstract class PropPanelAction extends PropPanelModelElement {
         
         addField(Translator.localize("UMLMenu", "label.name"), getNameTextField());
 
-//        UMLExpressionModel expressionModel =
-//            new UMLExpressionModel(
-//                this,
-//                (Class) ModelFacade.ACTION,
-//                "script",
-//                (Class) ModelFacade.ACTION_EXPRESSION,
-//                "getScript",
-//                "setScript");
-        UMLExpressionModel2 expressionModel = new UMLScriptExpressionModel(this,"script");
+        UMLExpressionModel expressionModel =
+            new UMLExpressionModel(
+                this,
+                (Class) ModelFacade.ACTION,
+                "script",
+                (Class) ModelFacade.ACTION_EXPRESSION,
+                "getScript",
+                "setScript");
         addField(Translator.localize("UMLMenu", "label.expression"), new JScrollPane(new UMLExpressionBodyField(expressionModel, true)));
 
         addField(Translator.localize("UMLMenu", "label.language"), new UMLExpressionLanguageField(expressionModel, true));
 
-        buttonPanel.add(new PropPanelButton2(this,
-                new ActionNavigateContainerElement()));
-        buttonPanel
-                .add(new PropPanelButton2(this, new ActionRemoveFromModel()));
+        new PropPanelButton(
+            this,
+            buttonPanel,
+            _navUpIcon,
+            Translator.localize("UMLMenu", "button.go-up"),
+            "navigateUp",
+            null);
+        new PropPanelButton(
+            this,
+            buttonPanel,
+            _deleteIcon,
+            localize("Delete"),
+            "removeElement",
+            null);
     }
 
 } /* end class PropPanelCallAction */

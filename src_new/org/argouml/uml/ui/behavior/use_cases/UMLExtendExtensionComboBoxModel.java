@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2003 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -27,7 +27,6 @@ package org.argouml.uml.ui.behavior.use_cases;
 import org.argouml.model.ModelFacade;
 import org.argouml.model.uml.UmlModelEventPump;
 import org.argouml.model.uml.modelmanagement.ModelManagementHelper;
-import org.argouml.ui.targetmanager.TargetEvent;
 import org.argouml.uml.ui.UMLComboBoxModel2;
 
 /**
@@ -41,7 +40,7 @@ public class UMLExtendExtensionComboBoxModel extends UMLComboBoxModel2 {
      */
     public UMLExtendExtensionComboBoxModel() {
         super("extension", false);
-        
+        UmlModelEventPump.getPump().addClassModelEventListener(this, (Class)ModelFacade.NAMESPACE, "ownedElement");
     }
 
     /**
@@ -49,7 +48,10 @@ public class UMLExtendExtensionComboBoxModel extends UMLComboBoxModel2 {
      */
     protected void buildModelList() {
         Object extend = /*(MExtend)*/ getTarget();
-        if (extend == null) return;
+        if (!ModelFacade.isAExtend(getTarget())) {
+	    return;
+	}
+
         Object ns = ModelFacade.getNamespace(extend);
         addAll(ModelManagementHelper.getHelper().getAllModelElementsOfKind(ns, (Class)ModelFacade.USE_CASE));
         if (ModelFacade.getBase(extend) != null) {
@@ -61,34 +63,15 @@ public class UMLExtendExtensionComboBoxModel extends UMLComboBoxModel2 {
      * @see org.argouml.uml.ui.UMLComboBoxModel2#getSelectedModelElement()
      */
     protected Object getSelectedModelElement() {
-        if (getTarget() != null) {
-            return ModelFacade.getExtension(getTarget());
-        }
-        return null;
+        return ModelFacade.isAExtend(getTarget())
+		? ModelFacade.getExtension(getTarget())
+		: null;
     }
 
     /**
      * @see org.argouml.uml.ui.UMLComboBoxModel2#isValidElement(Object)
      */
     protected boolean isValidElement(Object element) {
-        return org.argouml.model.ModelFacade.isAUseCase(element);
-    }
-    
-    
-
-    /**
-     * @see org.argouml.ui.targetmanager.TargetListener#targetRemoved(org.argouml.ui.targetmanager.TargetEvent)
-     */
-    public void targetRemoved(TargetEvent e) {
-        // if (e.getNewTarget() != getTarget())
-            UmlModelEventPump.getPump().removeClassModelEventListener(this, (Class)ModelFacade.NAMESPACE, "ownedElement");
-        super.targetRemoved(e);
-    }
-    /**
-     * @see org.argouml.ui.targetmanager.TargetListener#targetSet(org.argouml.ui.targetmanager.TargetEvent)
-     */
-    public void targetSet(TargetEvent e) {
-        UmlModelEventPump.getPump().addClassModelEventListener(this, (Class)ModelFacade.NAMESPACE, "ownedElement");
-        super.targetSet(e);
+        return ModelFacade.isAUseCase(element);
     }
 }

@@ -42,7 +42,7 @@ public class BehavioralElementsHelper {
     
      /** Singleton instance.
      */
-    private static BehavioralElementsHelper singleton =
+    private static BehavioralElementsHelper SINGLETON =
                    new BehavioralElementsHelper();
 
     
@@ -50,7 +50,7 @@ public class BehavioralElementsHelper {
      * @return the singleton instance of the helper
      */
     public static BehavioralElementsHelper getHelper() {
-        return singleton;
+        return SINGLETON;
     }
 }
 

@@ -32,6 +32,7 @@ import javax.swing.JComboBox;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 
+import org.apache.log4j.Logger;
 import org.argouml.application.api.QuadrantPanel;
 import org.argouml.i18n.Translator;
 import org.argouml.ui.explorer.ExplorerTree;
@@ -60,49 +61,52 @@ public class NavigatorPane
     extends JPanel
     implements QuadrantPanel
 {
+
+    protected transient Logger cat = Logger.getLogger(this.getClass());
+
     private static final String BUNDLE = "statusmsg";
     
     /** for collecting user statistics */
     public static int _clicksInNavPane = 0;
     /** for collecting user statistics */
     public static int _navPerspectivesChanged = 0;
+
+    /**
+     * to be removed once forceUpdate() is also removed
+     *
+     * @deprecated from 0.15.3.
+     */
+    ExplorerTree tree;
     
     ////////////////////////////////////////////////////////////////
     // constructors
 
-    /**
-     * The NavigatorPane instance. This can be a NavigatorPane or 
-     * <tt>null</tt>.
-     */
-    private static NavigatorPane theInstance = null;
-    private static boolean theInstanceIsSet = false;
+    private static NavigatorPane INSTANCE = null;
 
-    /** 
-     * Don't automatically instantiate the instance.
+    private static boolean instanceSet = false;
+    
+    /** Don't automatically instantiate the instance.
      * 
-     * @return the singleton or <tt>null</tt> if the NavigatorPane was 
-     * 	       explicitly set to <tt>null</tt>.
+     * @return the singleton
      */
     public static NavigatorPane getInstance() {
-	if (!theInstanceIsSet) {
-	    theInstance = new NavigatorPane();
-	    theInstanceIsSet = true;
+	if (!instanceSet) {
+	    INSTANCE = new NavigatorPane();
+	    instanceSet = true;
 	}
-	return theInstance;
+	return INSTANCE;
     }
     
-    /**
-     * Allow setting of the navigator pane instance.
-     * Currently this is only applicable for unit tests that sets it to 
-     * <tt>null</tt>.
+    /** Allow setting of the navigator pane instance.
+     * Currently this is only applicable for unit tests.
      * 
-     * @param pane A new NavigatorPane or <tt>null</tt>.
+     * @param pane
      * @deprecated without replacement - this is a temporary hack
      * until the model is cleaned up
      */
     public static void setInstance(NavigatorPane pane) {
-	theInstance = pane;
-	theInstanceIsSet = true;
+	INSTANCE = pane;
+	instanceSet = true;
     }
     
     /**
@@ -126,12 +130,14 @@ public class NavigatorPane
      * (back and forward arrows) buttons that are currently disabled,
      * and a configuration dialog to tailor the perspectives (but this
      * is not saved).
+     * @deprecated 0.15 delete in 0.16 use NavigatorPane.getInstance()
+     * instead making this private.
      */
-    private NavigatorPane(boolean doSplash) {
+    public NavigatorPane(boolean doSplash) {
         
         JComboBox combo = new PerspectiveComboBox();
         JComboBox orderByCombo = new JComboBox();
-        ExplorerTree tree = new ExportExplorer(); //DnDExplorerTree();
+        tree = new ExportExplorer(); //DnDExplorerTree();
         ToolBar toolbar = new ToolBar();
         
         toolbar.putClientProperty("JToolBar.isRollover",  Boolean.TRUE);
@@ -191,18 +197,12 @@ public class NavigatorPane
     public void forceUpdate() {
     }
 
-    /**
-     * @see java.awt.Component#getMinimumSize()
-     *
-     * sets minimum size to 120,100
-     */
+    /** sets minimum size to 120,100 */
     public Dimension getMinimumSize() {
         return new Dimension(120, 100);
     }
 
-    /**
-     * @see org.argouml.application.api.QuadrantPanel#getQuadrant()
-     */
+    /** QuadrantPanel implementation */
     public int getQuadrant() {
         return Q_TOP_LEFT;
     }

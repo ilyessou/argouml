@@ -63,9 +63,6 @@ public class SequenceDiagramGraphModel
     extends UMLMutableGraphSupport
     implements VetoableChangeListener {
 
-    private static final Logger LOG = 
-        Logger.getLogger(SequenceDiagramGraphModel.class);
-    
     private abstract class CanConnectCmd {
         private Object _srcPort;
         private Object _destPort;
@@ -371,6 +368,12 @@ public class SequenceDiagramGraphModel
         }
     }
 
+    /**
+     * @deprecated by Linus Tolke as of 0.15.4. Use your own logger in your
+     * class. This will be removed.
+     */
+    protected static Logger cat =
+        Logger.getLogger(SequenceDiagramGraphModel.class);
     ////////////////////////////////////////////////////////////////
     // instance variables
 
@@ -751,7 +754,7 @@ public class SequenceDiagramGraphModel
             edge = link;
         }
         if (edge == null) {
-            LOG.debug("Incorrect edge");
+            cat.debug("Incorrect edge");
         }
         return edge;
 
@@ -768,13 +771,13 @@ public class SequenceDiagramGraphModel
             Object eo = /*(MElementImport)*/ pce.getNewValue();
             Object me = ModelFacade.getModelElement(eo);
             if (oldOwned.contains(eo)) {
-                LOG.debug("model removed " + me);
+                cat.debug("model removed " + me);
                 if (ModelFacade.isAObject(me))
                     removeNode(me);
                 if (ModelFacade.isAAssociation(me))
                     removeEdge(me);
             } else {
-                LOG.debug("model added " + me);
+                cat.debug("model added " + me);
             }
         }
     }
@@ -808,13 +811,5 @@ public class SequenceDiagramGraphModel
         }
         return _interaction;
     }
-    
-    
 
-    /**
-     * @see org.argouml.uml.diagram.UMLMutableGraphSupport#getNamespace()
-     */
-    public Object getNamespace() {
-        return _collaboration;
-    }
 }

@@ -24,10 +24,13 @@
 
 package org.argouml.uml.diagram.ui;
 
+import java.awt.Color;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ItemListener;
 
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.text.Document;
 
 import org.apache.log4j.Logger;
@@ -38,7 +41,7 @@ import org.tigris.gef.ui.ColorRenderer;
 public class SPFigEdgeModelElement extends StylePanelFig implements
         ItemListener {
 
-    private static final Logger LOG = Logger.getLogger(SPFigEdgeModelElement.class);
+    protected static Logger cat = Logger.getLogger(SPFigEdgeModelElement.class);
 
     SpacerPanel _spacer = new SpacerPanel();
 

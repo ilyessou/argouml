@@ -23,10 +23,8 @@
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 package org.argouml.uml.ui;
-import javax.swing.JTextField;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
-
+import javax.swing.event.*;
+import javax.swing.*;
 import ru.novosoft.uml.MElementEvent;
 
 /**
@@ -40,7 +38,7 @@ public class UMLExpressionLanguageField
     extends JTextField
     implements DocumentListener, UMLUserInterfaceComponent {
 
-    private UMLExpressionModel2 _model;
+    private UMLExpressionModel _model;
     private boolean _notifyModel;
 
     /**
@@ -51,7 +49,7 @@ public class UMLExpressionLanguageField
      * @param notifyModel Only one of Language and Body fields should
      * forward events to model
      */
-    public UMLExpressionLanguageField(UMLExpressionModel2 model,
+    public UMLExpressionLanguageField(UMLExpressionModel model,
 				      boolean notifyModel) {
         _model = model;
         _notifyModel = notifyModel;

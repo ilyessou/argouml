@@ -33,13 +33,10 @@ import java.util.Iterator;
 import java.util.Vector;
 
 import org.apache.log4j.Logger;
-import org.argouml.kernel.ProjectManager;
 import org.argouml.model.ModelFacade;
-import org.argouml.model.uml.UmlFactory;
 import org.argouml.model.uml.behavioralelements.statemachines.StateMachinesFactory;
 import org.argouml.model.uml.behavioralelements.statemachines.StateMachinesHelper;
 import org.argouml.uml.diagram.UMLMutableGraphSupport;
-import org.argouml.uml.diagram.static_structure.ui.CommentEdge;
 
 /**
  * This class defines a bridge between the UML meta-model representation of the
@@ -50,8 +47,12 @@ import org.argouml.uml.diagram.static_structure.ui.CommentEdge;
 public class StateDiagramGraphModel extends UMLMutableGraphSupport implements
         VetoableChangeListener {
 
-    private static final Logger LOG = 
-        Logger.getLogger(StateDiagramGraphModel.class);
+    /**
+     * @deprecated by Linus Tolke as of 0.16. Will be private.
+     */
+    protected static Logger cat = Logger
+            .getLogger(StateDiagramGraphModel.class);
+
     /**
      * The "home" UML model of this diagram, not all ModelElements in
      * this graph are in the home model, but if they are added and
@@ -59,48 +60,36 @@ public class StateDiagramGraphModel extends UMLMutableGraphSupport implements
      * model". Also, elements from other models will have their
      * FigNodes add a line to say what their model is.
      */
-    private Object namespace;
+    protected Object _namespace;
 
     /** The statemachine we are diagramming */
-    private Object machine;
+    protected Object _machine;
 
     ////////////////////////////////////////////////////////////////
     // accessors
 
-    /**
-     * @see org.argouml.uml.diagram.UMLMutableGraphSupport#getNamespace()
-     */
     public Object getNamespace() {
-        return namespace;
+        return _namespace;
     }
 
-    /**
-     * @param ns the namespace
-     */
-    public void setNamespace(Object ns) {
+    public void setNamespace(Object namespace) {
 
-        if (!ModelFacade.isANamespace(ns))
+        if (!ModelFacade.isANamespace(namespace))
                 throw new IllegalArgumentException();
-        namespace = ns;
+        _namespace = namespace;
     }
 
-    /**
-     * @return the statemachine of this diagram
-     */
     public Object getMachine() {
-        return machine;
+        return _machine;
     }
 
-    /**
-     * @param sm   the statemachine of this diagram
-     */
     public void setMachine(Object sm) {
 
         if (!ModelFacade.isAStateMachine(sm))
                 throw new IllegalArgumentException();
 
         if (sm != null) {
-            machine = sm;
+            _machine = sm;
         }
     }
 
@@ -127,128 +116,92 @@ public class StateDiagramGraphModel extends UMLMutableGraphSupport implements
     /**
      * Return the node or edge that owns the given port.
      *
-     * @param port the port
      * @return The owner of the port.
-     * @see org.tigris.gef.graph.BaseGraphModel#getOwner(java.lang.Object)
      */
     public Object getOwner(Object port) {
         return port;
     }
 
-    /** Return all edges going to given port 
-     * 
-     * @see org.tigris.gef.graph.GraphModel#getInEdges(java.lang.Object)
-     */
+    /** Return all edges going to given port */
     public Vector getInEdges(Object port) {
         if (ModelFacade.isAStateVertex(port)) {
 	    return new Vector(ModelFacade.getIncomings(port));
 	}
-        LOG.debug("TODO: getInEdges of MState");
+        cat.debug("TODO: getInEdges of MState");
         return new Vector(); //wasteful!
     }
 
-    /** Return all edges going from given port
-     * 
-     * @see org.tigris.gef.graph.GraphModel#getOutEdges(java.lang.Object)
-     */
+    /** Return all edges going from given port */
     public Vector getOutEdges(Object port) {
         if (ModelFacade.isAStateVertex(port)) {
 	    return new Vector(ModelFacade.getOutgoings(port));
 	}
-        LOG.debug("TODO: getOutEdges of MState");
+        cat.debug("TODO: getOutEdges of MState");
         return new Vector(); //wasteful!
     }
 
-    /** Return one end of an edge
-     * 
-     * @see org.tigris.gef.graph.BaseGraphModel#getSourcePort(java.lang.Object)
-     */
+    /** Return one end of an edge */
     public Object getSourcePort(Object edge) {
         if (ModelFacade.isATransition(edge)) {
 	    return StateMachinesHelper.getHelper()
 		.getSource(/* (MTransition) */edge);
 	}
-        LOG.debug("TODO: getSourcePort of MTransition");
+        cat.debug("TODO: getSourcePort of MTransition");
         return null;
     }
 
-    /** Return the other end of an edge 
-     *
-     * @see org.tigris.gef.graph.BaseGraphModel#getDestPort(java.lang.Object)
-     */
+    /** Return the other end of an edge */
     public Object getDestPort(Object edge) {
         if (ModelFacade.isATransition(edge)) {
 	    return StateMachinesHelper.getHelper()
 		.getDestination(/* (MTransition) */edge);
 	}
-        LOG.debug("TODO: getDestPort of MTransition");
+        cat.debug("TODO: getDestPort of MTransition");
         return null;
     }
 
     ////////////////////////////////////////////////////////////////
     // MutableGraphModel implementation
 
-    /** Return true if the given object is a valid node in this graph
-     * 
-     * @see org.tigris.gef.graph.MutableGraphModel#canAddNode(java.lang.Object)
-     */
+    /** Return true if the given object is a valid node in this graph */
     public boolean canAddNode(Object node) {
         if (node == null) return false;
-        if (containsNode(node)) return false;
-        return (ModelFacade.isAStateVertex(node) 
-                || ModelFacade.isAPartition(node) 
-                || ModelFacade.isAComment(node));
+        if (_nodes.contains(node)) return false;
+        return (ModelFacade.isAStateVertex(node));
     }
 
-    /** Return true if the given object is a valid edge in this graph
-     * 
-     * @see org.tigris.gef.graph.MutableGraphModel#canAddEdge(java.lang.Object)
-     */
+    /** Return true if the given object is a valid edge in this graph */
     public boolean canAddEdge(Object edge) {
-        if (super.canAddEdge(edge)) {
-            return true;
-        }
         if (edge == null) return false;
-        if (containsEdge(edge)) return false;
+        if (_edges.contains(edge)) return false;
         Object end0 = null, end1 = null, state = null;
 
         if (ModelFacade.isATransition(edge)) {
             state = ModelFacade.getState(edge);
             end0 = ModelFacade.getSource(edge);
             end1 = ModelFacade.getTarget(edge);
-            // it's not allowed to directly draw a transition 
-            // from a composite state to one of it's substates.
-            if (ModelFacade.isACompositeState(end0) 
-                    && StateMachinesHelper.getHelper().getAllSubStates(end0)
-                                                        .contains(end1)) {
-                return false;
-            }
         }
 
         if (end0 == null || end1 == null) return false;
         // if all states are equal it is an internal transition
         if ((state == end0) && (state == end1)) return false;
-        if (!containsNode(end0)) return false;
-        if (!containsNode(end1)) return false;
-        
+        if (!_nodes.contains(end0)) return false;
+        if (!_nodes.contains(end1)) return false;
         return true;
     }
 
-    /** Add the given node to the graph, if valid.
-     * 
-     * @see org.tigris.gef.graph.MutableGraphModel#addNode(java.lang.Object)
-     */
+    /** Add the given node to the graph, if valid. */
     public void addNode(Object node) {
-        LOG.debug("adding statechart diagram node: " + node);
+        cat.debug("adding statechart diagram node: " + node);
         if (!canAddNode(node)) return;
         if (!(ModelFacade.isAStateVertex(node))) {
-            LOG.error("internal error: got past canAddNode");
+            cat.error("internal error: got past canAddNode");
             return;
         }
         Object sv = /* (MStateVertex) */node;
 
-        if (containsNode(sv)) return;
-        getNodes().addElement(sv);
+        if (_nodes.contains(sv)) return;
+        _nodes.addElement(sv);
         // TODO: assumes public, user pref for default visibility?
         //if (sv.getNamespace() == null)
         //_namespace.addOwnedElement(sv);
@@ -264,21 +217,16 @@ public class StateDiagramGraphModel extends UMLMutableGraphSupport implements
         fireNodeAdded(node);
     }
 
-    /** Add the given edge to the graph, if valid.     
-     * @see org.tigris.gef.graph.MutableGraphModel#addEdge(java.lang.Object)
-     */
+    /** Add the given edge to the graph, if valid. */
     public void addEdge(Object edge) {
-        LOG.debug("adding statechart diagram edge!!!!!!");
+        cat.debug("adding statechart diagram edge!!!!!!");
 
         if (!canAddEdge(edge)) return;
         Object tr = /* (MTransition) */edge;
-        getEdges().addElement(tr);
+        _edges.addElement(tr);
         fireEdgeAdded(edge);
     }
 
-    /**
-     * @see org.tigris.gef.graph.MutableGraphModel#addNodeRelatedEdges(java.lang.Object)
-     */
     public void addNodeRelatedEdges(Object node) {
         if (ModelFacade.isAStateVertex(node)) {
             Vector transen = new Vector(ModelFacade.getOutgoings(node));
@@ -294,86 +242,70 @@ public class StateDiagramGraphModel extends UMLMutableGraphSupport implements
     /**
      * Return true if the two given ports can be connected by a kind of edge to
      * be determined by the ports.
-     *
-     * @see org.tigris.gef.graph.MutableGraphModel#canConnect(java.lang.Object, 
-     * java.lang.Object)
      */
     public boolean canConnect(Object fromPort, Object toPort) {
         if (!(ModelFacade.isAStateVertex(fromPort))) {
-            LOG.error("internal error not from sv");
+            cat.error("internal error not from sv");
             return false;
         }
         if (!(ModelFacade.isAStateVertex(toPort))) {
-            LOG.error("internal error not to sv");
+            cat.error("internal error not to sv");
             return false;
         }
+        Object fromSV = /* (MStateVertex) */fromPort;
+        Object toSV = /* (MStateVertex) */toPort;
 
-        if (ModelFacade.isAFinalState(fromPort)) { return false; }
-        if (ModelFacade.isAPseudostate(toPort)) {
+        if (ModelFacade.isAFinalState(fromSV)) { return false; }
+        if (ModelFacade.isAPseudostate(toSV)) {
             if ((ModelFacade.INITIAL_PSEUDOSTATEKIND).equals(ModelFacade
-                    .getKind(toPort))) { return false; }
-        }        
+                    .getKind(toSV))) { return false; }
+        }
+
         return true;
     }
 
-    /** Contruct and add a new edge of the given kind
-     * 
-     * @see org.tigris.gef.graph.MutableGraphModel#connect(java.lang.Object, 
-     * java.lang.Object, java.lang.Class)
-     */
+    /** Contruct and add a new edge of the given kind */
     public Object connect(Object fromPort, Object toPort,
 			  Class edgeClass) {
+        //    try {
+        if (!(ModelFacade.isAStateVertex(fromPort))) {
+            cat.error("internal error not from sv");
+            return null;
+        }
+        if (!(ModelFacade.isAStateVertex(toPort))) {
+            cat.error("internal error not to sv");
+            return null;
+        }
+        Object fromSV = /* (MStateVertex) */fromPort;
+        Object toSV = /* (MStateVertex) */toPort;
 
-        if (ModelFacade.isAFinalState(fromPort)) {
+        if (ModelFacade.isAFinalState(fromSV)) {
 	    return null;
 	}
-        if (ModelFacade.isAPseudostate(toPort)) {
+        if (ModelFacade.isAPseudostate(toSV)) {
 	    if ((ModelFacade.INITIAL_PSEUDOSTATEKIND).equals(
-			ModelFacade.getKind(toPort))) {
+			ModelFacade.getKind(toSV))) {
 		return null;
 	    }
 	}
 
         if (edgeClass == (Class) ModelFacade.TRANSITION) {
             Object tr = null;
-            Object comp = ModelFacade.getContainer(fromPort);
+            Object comp = ModelFacade.getContainer(fromSV);
             tr = StateMachinesFactory.getFactory()
-                    .buildTransition(fromPort, toPort);
-            if (canAddEdge(tr)) {
-                addEdge(tr);
-            } else {
-                ProjectManager.getManager().getCurrentProject().moveToTrash(tr);
-                tr = null;
-            }
+                    .buildTransition(fromSV, toSV);
+            addEdge(tr);
             return tr;
-        } else
-            if (edgeClass == CommentEdge.class) {
-                try {
-                    Object connection = UmlFactory.getFactory()
-                        .buildConnection(edgeClass, fromPort, null, 
-                                                toPort, null, null);
-                    addEdge(connection);
-                    return connection;
-                }
-                catch (Exception ex) {
-                    // fail silently                
-                }
-                return null;
-            }
-            
-            else {
-                LOG.debug("wrong kind of edge in StateDiagram connect3 "
-                        + edgeClass);
-                return null;
-            }
+        } else {
+            cat.debug("wrong kind of edge in StateDiagram connect3 "
+                    + edgeClass);
+            return null;
+        }
     }
 
     ////////////////////////////////////////////////////////////////
     // VetoableChangeListener implementation
 
-    /**
-     * @see java.beans.VetoableChangeListener#vetoableChange(java.beans.PropertyChangeEvent)
-     */
     public void vetoableChange(PropertyChangeEvent pce) {
         //throws PropertyVetoException
 
@@ -382,12 +314,12 @@ public class StateDiagramGraphModel extends UMLMutableGraphSupport implements
             Object eo = /* (MElementImport) */pce.getNewValue();
             Object me = ModelFacade.getModelElement(eo);
             if (oldOwned.contains(eo)) {
-                LOG.debug("model removed " + me);
+                cat.debug("model removed " + me);
                 if (ModelFacade.isAState(me)) removeNode(me);
                 if (ModelFacade.isAPseudostate(me)) removeNode(me);
                 if (ModelFacade.isATransition(me)) removeEdge(me);
             } else {
-                LOG.debug("model added " + me);
+                cat.debug("model added " + me);
             }
         }
     }

@@ -37,9 +37,6 @@ public class ActionAddTopLevelPackage extends UMLChangeAction {
     ////////////////////////////////////////////////////////////////
     // static variables
     
-    /**
-     * The singleton.
-     */
     public static ActionAddTopLevelPackage SINGLETON =
 	new ActionAddTopLevelPackage(); 
 
@@ -47,9 +44,6 @@ public class ActionAddTopLevelPackage extends UMLChangeAction {
     ////////////////////////////////////////////////////////////////
     // constructors
 
-    /**
-     *  The constructor.
-     */
     public ActionAddTopLevelPackage() {
 	super("action.add-top-level-package", NO_ICON);
     }
@@ -58,9 +52,6 @@ public class ActionAddTopLevelPackage extends UMLChangeAction {
     ////////////////////////////////////////////////////////////////
     // main methods
 
-    /**
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-     */
     public void actionPerformed(ActionEvent ae) {
 	Project p = ProjectManager.getManager().getCurrentProject();	
         int numPacks = p.getUserDefinedModels().size();

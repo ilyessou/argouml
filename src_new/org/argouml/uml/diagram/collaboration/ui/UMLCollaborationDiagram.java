@@ -42,94 +42,85 @@ import org.argouml.ui.CmdSetMode;
 import org.argouml.uml.diagram.collaboration.CollabDiagramGraphModel;
 import org.argouml.uml.diagram.ui.ActionAddAssociationRole;
 import org.argouml.uml.diagram.ui.FigMessage;
-import org.argouml.uml.diagram.ui.RadioAction;
 import org.argouml.uml.diagram.ui.UMLDiagram;
 import org.argouml.uml.diagram.ui.ActionAddMessage;
+import org.argouml.uml.diagram.ui.ActionAddNote;
 import org.tigris.gef.base.Layer;
 import org.tigris.gef.base.LayerPerspective;
 import org.tigris.gef.base.LayerPerspectiveMutable;
 import org.tigris.gef.base.ModeCreatePolyEdge;
 import org.tigris.gef.presentation.Fig;
 
-/**
- * The base class of the collaboration diagram.<p>
- *
- * Defines the toolbar, provides for its initialization and provides
- * constructors for a top level diagram and one within a defined
- * namespace.<p>
- *
- */
 public class UMLCollaborationDiagram extends UMLDiagram {
 
     /** for logging */
-    private static final Logger LOG =
-        Logger.getLogger(UMLCollaborationDiagram.class);
+    private static final Logger cat =
+        Logger.getLogger(
+            "org.argouml.uml.diagram.collaboration.ui."
+                + "UMLCollaborationDiagram");
 
     ////////////////
     // actions for toolbar
 
-    protected static Action _actionClassifierRole = new RadioAction(
-        new CmdCreateNode(ModelFacade.CLASSIFIER_ROLE, "ClassifierRole"));
+    protected static Action _actionClassifierRole =
+        new CmdCreateNode(ModelFacade.CLASSIFIER_ROLE, "ClassifierRole");
 
-    protected static Action _actionAssoc = new RadioAction(
+    protected static Action _actionAssoc =
         new CmdSetMode(
             ModeCreatePolyEdge.class,
             "edgeClass",
             ModelFacade.ASSOCIATION_ROLE,
-            "AssociationRole"));
+            "AssociationRole");
 
-    protected static Action _actionGeneralize = new RadioAction(
+    protected static Action _actionGeneralize =
         new CmdSetMode(
             ModeCreatePolyEdge.class,
             "edgeClass",
             ModelFacade.GENERALIZATION,
-            "Generalization"));
+            "Generalization");
 
-    protected static Action _actionAssociation = new RadioAction(
+    protected static Action _actionAssociation =
         new ActionAddAssociationRole(
             ModelFacade.NONE_AGGREGATIONKIND,
             false,
-            "Association"));
-    protected static Action _actionAggregation = new RadioAction(
+            "Association");
+    protected static Action _actionAggregation =
         new ActionAddAssociationRole(
             ModelFacade.AGGREGATE_AGGREGATIONKIND,
             false,
-            "Aggregation"));
-    protected static Action _actionComposition = new RadioAction(
+            "Aggregation");
+    protected static Action _actionComposition =
         new ActionAddAssociationRole(
             ModelFacade.COMPOSITE_AGGREGATIONKIND,
             false,
-            "Composition"));
-    protected static Action _actionUniAssociation = new RadioAction(
+            "Composition");
+    protected static Action _actionUniAssociation =
         new ActionAddAssociationRole(
             ModelFacade.NONE_AGGREGATIONKIND,
             true,
-            "UniAssociation"));
-    protected static Action _actionUniAggregation = new RadioAction(
+            "UniAssociation");
+    protected static Action _actionUniAggregation =
         new ActionAddAssociationRole(
             ModelFacade.AGGREGATE_AGGREGATIONKIND,
             true,
-            "UniAggregation"));
-    protected static Action _actionUniComposition = new RadioAction(
+            "UniAggregation");
+    protected static Action _actionUniComposition =
         new ActionAddAssociationRole(
             ModelFacade.COMPOSITE_AGGREGATIONKIND,
             true,
-            "UniComposition"));
+            "UniComposition");
 
-    protected static Action _actionDepend = new RadioAction(
+    protected static Action _actionDepend =
         new CmdSetMode(
             ModeCreatePolyEdge.class,
             "edgeClass",
             ModelFacade.DEPENDENCY,
-            "Dependency"));
+            "Dependency");
 
     ////////////////////////////////////////////////////////////////
     // contructors
-    private static int collaborationDiagramSerial = 1;
+    protected static int _CollaborationDiagramSerial = 1;
 
-    /**
-     * constructor
-     */
     public UMLCollaborationDiagram() {
 
         try {
@@ -137,17 +128,11 @@ public class UMLCollaborationDiagram extends UMLDiagram {
         } catch (PropertyVetoException pve) { }
     }
 
-    /**
-     * @param namespace the namespace for the diagram
-     */
     public UMLCollaborationDiagram(Object namespace) {
         this();
         setNamespace(namespace);
     }
 
-    /**
-     * @return the number of UML messages in the diagram
-     */
     public int getNumMessages() {
         Layer lay = getLayer();
         Collection figs = lay.getContents(null);
@@ -180,7 +165,7 @@ public class UMLCollaborationDiagram extends UMLDiagram {
      */
     public void setNamespace(Object handle) {
         if (!ModelFacade.isANamespace(handle)) {
-            LOG.error(
+            cat.error(
                 "Illegal argument. Object " + handle + " is not a namespace");
             throw new IllegalArgumentException(
                 "Illegal argument. Object " + handle + " is not a namespace");
@@ -201,20 +186,17 @@ public class UMLCollaborationDiagram extends UMLDiagram {
     /**
      * Get the actions from which to create a toolbar or equivilent
      * graphic triggers
-     *
-     * @see org.argouml.uml.diagram.ui.UMLDiagram#getUmlActions()
      */
     protected Object[] getUmlActions() {
         Object actions[] = {
 	    _actionClassifierRole,
 	    null,
 	    getAssociationActions(),
-	    ActionAddMessage.getSingleton(),
+	    ActionAddMessage.SINGLETON,
 	    _actionGeneralize,
 	    _actionDepend,
 	    null,
-	    _actionComment,
-            _actionCommentLink};
+	    ActionAddNote.SINGLETON };
         return actions;
     }
 
@@ -239,7 +221,7 @@ public class UMLCollaborationDiagram extends UMLDiagram {
         Collection messages;
         Iterator msgIterator;
         if (getNamespace() == null) {
-            LOG.error("Collaboration Diagram does not belong to a namespace");
+            cat.error("Collaboration Diagram does not belong to a namespace");
             return;
         }
         Collection ownedElements = ModelFacade.getOwnedElements(getNamespace());
@@ -270,8 +252,8 @@ public class UMLCollaborationDiagram extends UMLDiagram {
      */
     protected static String getNewDiagramName() {
         String name = null;
-        name = "Collaboration Diagram " + collaborationDiagramSerial;
-        collaborationDiagramSerial++;
+        name = "Collaboration Diagram " + _CollaborationDiagramSerial;
+        _CollaborationDiagramSerial++;
         if (!ProjectManager.getManager().getCurrentProject()
 	        .isValidDiagramName(name)) {
             name = getNewDiagramName();

@@ -51,16 +51,13 @@ import org.argouml.model.uml.UmlHelper;
 
 public class GeneratorDisplay extends Generator2 {
 
-    private static GeneratorDisplay singleton;
+    private static GeneratorDisplay SINGLETON;
 
-    /**
-     * @return get the singleton
-     */
     public static GeneratorDisplay getInstance() {
-        if (singleton == null) {
-            singleton = new GeneratorDisplay();
+        if (SINGLETON == null) {
+            SINGLETON = new GeneratorDisplay();
         }
-        return singleton;
+        return SINGLETON;
     }
 
     private GeneratorDisplay() {
@@ -71,12 +68,8 @@ public class GeneratorDisplay extends Generator2 {
                 Argo.lookupIconResource("UmlNotation")));
     }
 
-    /**
-     * @param o
-     * @return 
-     */
     public static String Generate(Object o) {
-        return singleton.generate(o);
+        return SINGLETON.generate(o);
     }
 
     /**
@@ -133,7 +126,7 @@ public class GeneratorDisplay extends Generator2 {
      *
      *  @author jaap.branderhorst@xs4all.nl
      *  @see org.argouml.application.api.NotationProvider2#generateOperation(
-     *          Object, boolean)
+     *          MOperation, boolean)
      */
     public String generateOperation(Object op, boolean documented) {
         String stereoStr = generateStereotype(ModelFacade.getStereotypes(op));
@@ -159,9 +152,7 @@ public class GeneratorDisplay extends Generator2 {
                 parameterListBuffer.length() - 1,
                 parameterListBuffer.length());
         }
-
-        StringBuffer parameterStr = new StringBuffer();
-	parameterStr.append("(").append(parameterListBuffer).append(")");
+        String parameterStr = "(" + parameterListBuffer.toString() + ")";
 
         // the returnparameters
         coll = UmlHelper.getHelper().getCore().getReturnParameters(op);
@@ -180,7 +171,8 @@ public class GeneratorDisplay extends Generator2 {
                 returnParasSb.length() - 1,
                 returnParasSb.length());
         }
-        
+        String returnParasStr = returnParasSb.toString();
+
         // the properties
         StringBuffer propertySb = new StringBuffer().append("{");
         // the query state
@@ -217,9 +209,10 @@ public class GeneratorDisplay extends Generator2 {
         } else {
             propertySb = new StringBuffer();
         }
+        String propertiesStr = propertySb.toString();
 
         // lets concatenate it to the resulting string (genStr)
-        StringBuffer genStr = new StringBuffer(30);
+        StringBuffer genStr = new StringBuffer();
         if ((stereoStr != null) && (stereoStr.length() > 0)) {
             genStr.append(stereoStr).append(" ");
         }
@@ -232,13 +225,13 @@ public class GeneratorDisplay extends Generator2 {
             genStr.append(nameStr);
         }
         genStr.append(parameterStr).append(" ");
-        if ((returnParasSb != null) && (returnParasSb.length() > 0)) {
-            genStr.append(returnParasSb).append(" ");
+        if ((returnParasStr != null) && (returnParasStr.length() > 0)) {
+            genStr.append(returnParasStr).append(" ");
         }
-        if ((propertySb != null)
-            && (propertySb.length() > 0)
+        if ((propertiesStr != null)
+            && (propertiesStr.length() > 0)
             && Configuration.getBoolean(Notation.KEY_SHOW_PROPERTIES)) {
-            genStr.append(propertySb);
+            genStr.append(propertiesStr);
         }
         return genStr.toString().trim();
     }
@@ -252,7 +245,7 @@ public class GeneratorDisplay extends Generator2 {
      * initial value and properties are shown/not shown.
      *
      * @see org.argouml.application.api.NotationProvider2#generateAttribute(
-     *          Object, boolean)
+     *          MAttribute, boolean)
      */
     public String generateAttribute(Object attr, boolean documented) {
         String visibility = generateVisibility(attr);
@@ -281,12 +274,12 @@ public class GeneratorDisplay extends Generator2 {
                 changeableKind = "addOnly";
 	    }
         }
-        StringBuffer properties = new StringBuffer();
+        String properties = "";
         if (changeableKind.length() > 0) {
-            properties.append("{ ").append(changeableKind).append(" }");
+            properties = "{ " + changeableKind + " }";
         }
 
-        StringBuffer sb = new StringBuffer(20);
+        StringBuffer sb = new StringBuffer();
         if ((visibility != null)
             && (visibility.length() > 0)
             && Configuration.getBoolean(Notation.KEY_SHOW_VISIBILITY)) {
@@ -318,38 +311,17 @@ public class GeneratorDisplay extends Generator2 {
         return sb.toString().trim();
 
     }
-    
-    /**
-     * Generates the representation of a parameter on the display
-     * (diagram). The string to be returned will have the following
-     * syntax:<p>
-     *
-     * kind name : type-expression = default-value
-     *
-     * @see org.argouml.application.api.NotationProvider2#generateParameter(java.lang.Object)
-     */
+
     public String generateParameter(Object parameter) {
-        StringBuffer s = new StringBuffer();
-        s.append(generateKind(ModelFacade.getKind(parameter)));
-        s.append(" ");
-        s.append(generateName(ModelFacade.getName(parameter)));        
-        String classRef = generateClassifierRef(ModelFacade.getType(parameter));
-        if (classRef.length() > 0) {
-            s.append(" : ");
-            s.append(classRef);
-        }
-        String defaultValue =
-	    generateExpression(ModelFacade.getDefaultValue(parameter));
-        if (defaultValue.length() > 0) {
-            s.append(" = ");
-            s.append(defaultValue);
-        }
-        return s.toString();
+        String s = "";
+        //TODO: qualifiers (e.g., const)
+        //TODO: stereotypes...
+        s += generateName(ModelFacade.getName(parameter)) + ": ";
+        s += generateClassifierRef(ModelFacade.getType(parameter));
+        //TODO: initial value
+        return s;
     }
 
-    /**
-     * @see org.argouml.application.api.NotationProvider2#generatePackage(java.lang.Object)
-     */
     public String generatePackage(Object p) {
         String s = "package ";
         String packName = generateName(ModelFacade.getName(p));
@@ -383,9 +355,6 @@ public class GeneratorDisplay extends Generator2 {
         return s;
     }
 
-    /**
-     * @see org.argouml.application.api.NotationProvider2#generateClassifier(java.lang.Object)
-     */
     public String generateClassifier(Object cls) {
         String generatedName = generateName(ModelFacade.getName(cls));
         String classifierKeyword;
@@ -452,9 +421,6 @@ public class GeneratorDisplay extends Generator2 {
         return s;
     }
 
-    /**
-     * @see org.argouml.application.api.NotationProvider2#generateTaggedValue(java.lang.Object)
-     */
     public String generateTaggedValue(Object tv) {
         if (tv == null)
             return "";
@@ -478,21 +444,6 @@ public class GeneratorDisplay extends Generator2 {
         MsgPtr ptr = new MsgPtr();
         int pos = recCountPredecessors(m, ptr) + 1;
         return generateMessageNumber(m, ptr.message, pos);
-    }
-    
-    private String generateKind(Object /*Parameter etc.*/ kind) {
-        StringBuffer s = new StringBuffer();
-        if (kind == null || kind == ModelFacade.IN_PARAMETERDIRECTIONKIND) {
-            s.append("in");
-        } else if (kind == ModelFacade.INOUT_PARAMETERDIRECTIONKIND) {
-            s.append("inout");
-        } else if (kind == ModelFacade.RETURN_PARAMETERDIRECTIONKIND) {
-            // return nothing
-        } else if (kind == ModelFacade.OUT_PARAMETERDIRECTIONKIND) {
-            s.append("out");
-        }
-        return s.toString();
-             
     }
 
     private String generateMessageNumber(
@@ -587,9 +538,6 @@ public class GeneratorDisplay extends Generator2 {
 
     /**
      * Generates a textual description of a MIterationExpression.
-     *
-     * @param expr the given expression
-     * @return the string
      */
     public String generateRecurrence(Object expr) {
         if (expr == null)
@@ -667,11 +615,6 @@ public class GeneratorDisplay extends Generator2 {
         return predecessors + number + " : " + action;
     }
 
-    /**
-     * @param a the association
-     * @param ae the associationend
-     * @return a string representing the association-end
-     */
     public String generateAssociationFrom(Object a, Object ae) {
         // TODO: does not handle n-ary associations
         String s = "";
@@ -687,9 +630,6 @@ public class GeneratorDisplay extends Generator2 {
         return s;
     }
 
-    /**
-     * @see org.argouml.application.api.NotationProvider2#generateAssociation(java.lang.Object)
-     */
     public String generateAssociation(Object a) {
         String s = "";
         //     String generatedName = generateName(a.getName());
@@ -705,9 +645,6 @@ public class GeneratorDisplay extends Generator2 {
         return s;
     }
 
-    /**
-     * @see org.argouml.application.api.NotationProvider2#generateAssociationEnd(java.lang.Object)
-     */
     public String generateAssociationEnd(Object ae) {
         if (!ModelFacade.isNavigable(ae))
             return "";
@@ -746,10 +683,6 @@ public class GeneratorDisplay extends Generator2 {
         return s + ";\n";
     }
 
-    /**
-     * @param me the given ModelElement
-     * @return a string representing the constraints for the given modelelements
-     */
     public String generateConstraints(Object me) {
         Collection constr = ModelFacade.getConstraints(me);
         if (constr == null || constr.size() == 0)
@@ -765,10 +698,6 @@ public class GeneratorDisplay extends Generator2 {
         return s;
     }
 
-    /**
-     * @param c the given constraint
-     * @return a string representing the given constraint
-     */
     public String generateConstraint(Object c) {
         return generateExpression(c);
     }
@@ -776,11 +705,7 @@ public class GeneratorDisplay extends Generator2 {
     /**
      * generate the name of an association role of the form:
      *  / name : name of the base association
-     * 
-     * @param assocRole the given associationrole
      * @return the generated name
-     *
-     * @see org.argouml.application.api.NotationProvider2#generateAssociationRole(java.lang.Object)
      */
     public String generateAssociationRole(Object assocRole) {
         //get the associationRole name
@@ -796,20 +721,15 @@ public class GeneratorDisplay extends Generator2 {
     ////////////////////////////////////////////////////////////////
     // internal methods?
 
-    /**
-     * @param generalizations the given collection of generalizations
-     * @param impl 
-     * @return a string representing the g.
-     */
     public String generateGeneralization(
         Collection generalizations,
         boolean impl) {
         Collection classes = new ArrayList();
         if (generalizations == null)
             return "";
-        Iterator gens = generalizations.iterator();
-        while (gens.hasNext()) {
-            Object g = /*(MGeneralization)*/ gens.next();
+        Iterator enum = generalizations.iterator();
+        while (enum.hasNext()) {
+            Object g = /*(MGeneralization)*/ enum.next();
             Object ge = ModelFacade.getPowertype(g);
             // assert ge != null
             if (ge != null) {
@@ -825,10 +745,6 @@ public class GeneratorDisplay extends Generator2 {
         return generateClassList(classes);
     }
 
-    /**
-     * @param classifiers the given collection of classifiers
-     * @return the names, separated by commas
-     */
     public String generateClassList(Collection classifiers) {
         String s = "";
         if (classifiers == null)
@@ -842,7 +758,7 @@ public class GeneratorDisplay extends Generator2 {
         return s;
     }
 
-    /** Returns a visibility String eihter for a MVisibilityKind (according to
+    /* Returns a visibility String eihter for a MVisibilityKind (according to
      * the definition in NotationProvider2), but also for a model element.
      * @see org.argouml.application.api.NotationProvider2#generateVisibility(java.lang.Object)
      */
@@ -868,10 +784,6 @@ public class GeneratorDisplay extends Generator2 {
         return "";
     }
 
-    /**
-     * @param f the given feature
-     * @return a string representing the scope of the feature or ""
-     */
     public String generateScope(Object f) {
         Object scope = ModelFacade.getOwnerScope(f);
         //if (scope == null) return "";
@@ -880,10 +792,6 @@ public class GeneratorDisplay extends Generator2 {
         return "";
     }
 
-    /**
-     * @param sf the given structural feature
-     * @return a string representing the scope of the structural feature or ""
-     */
     public String generateChangability(Object sf) {
         Object ck = ModelFacade.getChangeability(sf);
         //if (ck == null) return "";
@@ -895,7 +803,7 @@ public class GeneratorDisplay extends Generator2 {
 
     /**
      * @see org.argouml.application.api.NotationProvider2#generateMultiplicity(
-     *          Object)
+     *          MMultiplicity)
      */
     public String generateMultiplicity(Object m) {
         if (m == null) {
@@ -925,16 +833,13 @@ public class GeneratorDisplay extends Generator2 {
         return s;
     }
 
-    /**
-     * <code>ANY_RANGE</code> stands for "0..*"
-     */
     public static final String ANY_RANGE = "0..*";
 
     /**
      * Generates a multiplicity range. The standard getLower and
      * getUpper defined on MMultiplicityRange give a -1 if the
      * multiplicity is n or *. This method circumvents that behaviour.
-     * @param mr the given MultiplicityRange object
+     * @param mr
      * @return String
      */
     //public static final String ANY_RANGE = "*";
@@ -956,16 +861,10 @@ public class GeneratorDisplay extends Generator2 {
         return lowerStr + ".." + upperStr;
     }
 
-    /**
-     * @see org.argouml.application.api.NotationProvider2#generateState(java.lang.Object)
-     */
     public String generateState(Object m) {
         return ModelFacade.getName(m);
     }
 
-    /**
-     * @see org.argouml.application.api.NotationProvider2#generateStateBody(java.lang.Object)
-     */
     public String generateStateBody(Object m) {
         StringBuffer s = new StringBuffer();
 
@@ -1003,23 +902,21 @@ public class GeneratorDisplay extends Generator2 {
         return s.toString();
     }
 
-    /**
-     * @see org.argouml.application.api.NotationProvider2#generateTransition(java.lang.Object)
-     */
-    public String generateTransition(Object m) {       
+    public String generateTransition(Object m) {
+        String s = generate(ModelFacade.getName(m));
         String t = generate(ModelFacade.getTrigger(m));
         String g = generate(ModelFacade.getGuard(m));
         String e = generate(ModelFacade.getEffect(m));
+        if (s.length() > 0)
+            s += ": ";
+        s += t;
         if (g.length() > 0)
-            t += " [" + g + "]";
+            s += " [" + g + "]";
         if (e.length() > 0)
-            t += " / " + e;
-        return t;
+            s += " / " + e;
+        return s;
     }
 
-    /**
-     * @see org.argouml.application.api.NotationProvider2#generateAction(java.lang.Object)
-     */
     public String generateAction(Object m) {
         Collection c;
         Iterator it;
@@ -1064,9 +961,6 @@ public class GeneratorDisplay extends Generator2 {
         return s + " (" + p + ")";
     }
 
-    /**
-     * @see org.argouml.application.api.NotationProvider2#generateGuard(java.lang.Object)
-     */
     public String generateGuard(Object m) {
         if (ModelFacade.getExpression(m) != null)
             return generateExpression(ModelFacade.getExpression(m));
@@ -1077,127 +971,51 @@ public class GeneratorDisplay extends Generator2 {
      * Generates the text for a (trigger) event.
      * 
      * @param m Object of any MEvent kind
-     * @return the string representing the event
-     *
-     * @see org.argouml.application.api.NotationProvider2#generateEvent(java.lang.Object)
      */
     public String generateEvent(Object m) {
-        StringBuffer event = new StringBuffer();
-        if (ModelFacade.isAChangeEvent(m)) {
-            event.append("when(");
-            event.append(generateExpression(ModelFacade.getExpression(m)));
-            event.append(")");           
-        } else if (ModelFacade.isATimeEvent(m)) {
-            event.append("after(");
-            event.append(generateExpression(ModelFacade.getExpression(m)));
-            event.append(")");                   
-        } else if (ModelFacade.isASignalEvent(m)) {
-            event.append(generateName(ModelFacade.getName(m)));         
-        } else if (ModelFacade.isACallEvent(m)) {
-            event.append(generateName(ModelFacade.getName(m)));     
-            event.append(generateParameterList(m));           
-        }
-        return event.toString();
+        if (ModelFacade.isAChangeEvent(m))
+            return "when(" 
+                + generateExpression(ModelFacade.getExpression(m)) 
+                + ")";
+        if (ModelFacade.isATimeEvent(m))
+            return "after(" 
+                + generateExpression(ModelFacade.getExpression(m)) 
+                + ")";
+        if (ModelFacade.isASignalEvent(m))
+            return generateName(ModelFacade.getName(m));
+        if (ModelFacade.isACallEvent(m))
+            return generateName(ModelFacade.getName(m));
+        return "";
     }
-    
-    /**
-     * Generates a list of parameters. The parameters belong to the
-     * given object.  The returned string will have the following
-     * syntax:<p>
-     * 
-     * (param1, param2, param3, ..., paramN)
-     *
-     * @param parameterListOwner the 'owner' of the parameters
-     * @return the generated parameter list
-     */
-    private String generateParameterList(Object parameterListOwner) {
-        Iterator it = ModelFacade.getParameters(parameterListOwner).iterator();
-        StringBuffer list = new StringBuffer();
-        if (it.hasNext()) {
-            list.append("(");
-            while (it.hasNext()) {
-                Object param = it.next();
-                list.append(generateParameter(param));
-                if (it.hasNext()) {
-                    list.append(", ");
-                }
-            }
-            list.append(")");
-        }        
-        return list.toString();
-    }
-    
-    
 
-    
-    /**
-     * @see org.argouml.application.api.NotationProvider2#generateActionState(java.lang.Object)
-     */
-    public String generateActionState(Object actionState) {
-        String ret = "";
-        Object action = ModelFacade.getEntry(actionState);
-        if (action != null) {
-            Object expression = ModelFacade.getScript(action);
-            if (expression != null)
-                ret = generateExpression(expression);
-        }
-        return ret;
-    }
     
     // public NotationName getNotation() {
     // return Notation.NOTATION_ARGO;
     // }
 
-    /**
-     * @return
-     */
     public boolean canParse() {
         return true;
     }
 
-    /**
-     * @param o
-     * @return
-     */
     public boolean canParse(Object o) {
         return true;
     }
 
-    /**
-     * @see org.argouml.application.api.ArgoModule#getModuleName()
-     */
     public String getModuleName() {
         return "GeneratorDisplay";
     }
-    
-    /**
-     * @see org.argouml.application.api.ArgoModule#getModuleDescription()
-     */
     public String getModuleDescription() {
         return "Uml 1.3 Notation Generator";
     }
-    
-    /**
-     * @see org.argouml.application.api.ArgoModule#getModuleAuthor()
-     */
     public String getModuleAuthor() {
         return "ArgoUML Core";
     }
-    
-    /**
-     * @see org.argouml.application.api.ArgoModule#getModuleVersion()
-     */
     public String getModuleVersion() {
         return ArgoVersion.getVersion();
     }
-    
-    /**
-     * @see org.argouml.application.api.ArgoModule#getModuleKey()
-     */
     public String getModuleKey() {
         return "module.language.uml.generator";
     }
-    
     /**
      * @see org.argouml.application.api.Pluggable#inContext(java.lang.Object[])
      */
@@ -1209,6 +1027,5 @@ public class GeneratorDisplay extends Generator2 {
      * @see org.argouml.application.api.ArgoModule#isModuleEnabled()
      */
     public boolean isModuleEnabled() { return true; }
-    
-    
+
 } /* end class GeneratorDisplay */

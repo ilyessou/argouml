@@ -28,8 +28,6 @@ import java.awt.event.ActionEvent;
 
 import javax.swing.JComboBox;
 
-import org.argouml.ui.LookAndFeelMgr;
-import org.argouml.ui.targetmanager.TargetEvent;
 import org.argouml.ui.targetmanager.TargetListener;
 import org.argouml.ui.targetmanager.TargettableModelView;
 
@@ -40,7 +38,7 @@ import org.argouml.ui.targetmanager.TargettableModelView;
  * replaced with this implementation to improve performance.
  */
 public class UMLComboBox2
-    extends JComboBox implements TargettableModelView, TargetListener {    
+    extends JComboBox implements TargettableModelView {       
     
     /**
      * Constructor for UMLMessageActivatorComboBox.
@@ -50,7 +48,6 @@ public class UMLComboBox2
      */
     protected UMLComboBox2(UMLComboBoxModel2 arg0) {
         super(arg0);
-        setFont(LookAndFeelMgr.getInstance().getSmallFont());
         addActionListener(this);
 
     }
@@ -64,14 +61,13 @@ public class UMLComboBox2
     public UMLComboBox2(UMLComboBoxModel2 arg0, UMLAction action,
 			boolean showIcon) {
         super(arg0);
-        setFont(LookAndFeelMgr.getInstance().getSmallFont());
         addActionListener(action);
         // setDoubleBuffered(true);
         setRenderer(new UMLListCellRenderer2(showIcon));      
     }
            
     public UMLComboBox2(UMLComboBoxModel2 arg0, UMLAction action) {
-        this(arg0, action, true);
+        this(arg0, action, false);
     }
 
     /**
@@ -107,26 +103,4 @@ public class UMLComboBox2
         return (TargetListener) getModel();
     }
 
-    /**
-     * @see org.argouml.ui.targetmanager.TargetListener#targetAdded(org.argouml.ui.targetmanager.TargetEvent)
-     */
-    public void targetAdded(TargetEvent e) {
-        if (e.getNewTarget() != getTarget()) {
-            removeActionListener(this);
-        }
-    }
-    
-    /**
-     * @see org.argouml.ui.targetmanager.TargetListener#targetRemoved(org.argouml.ui.targetmanager.TargetEvent)
-     */
-    public void targetRemoved(TargetEvent e) {
-        removeActionListener(this);  
-    }
-    
-    /**
-     * @see org.argouml.ui.targetmanager.TargetListener#targetSet(org.argouml.ui.targetmanager.TargetEvent)
-     */
-    public void targetSet(TargetEvent e) {
-        addActionListener(this);
-    }
 }

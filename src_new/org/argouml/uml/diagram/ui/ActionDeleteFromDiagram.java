@@ -49,10 +49,10 @@ public class ActionDeleteFromDiagram extends UMLChangeAction {
     // static variables
 
     /** logger */
-    private static final Logger LOG = 
-        Logger.getLogger(ActionDeleteFromDiagram.class);
+    private static Logger cat = 
+	Logger.getLogger(ActionDeleteFromDiagram.class);
 
-    private static ActionDeleteFromDiagram singleton =
+    public static ActionDeleteFromDiagram SINGLETON =
         new ActionDeleteFromDiagram();
 
     ////////////////////////////////////////////////////////////////
@@ -103,14 +103,11 @@ public class ActionDeleteFromDiagram extends UMLChangeAction {
             Vector figs = ce.getSelectionManager().getFigs();
             size = figs.size();
         } catch (Exception e) {
-            LOG.error("could not determine number of figs", e);
+            cat.error("could not determine number of figs", e);
         }
         return size > 0;
     }
 
-    /**
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-     */
     public void actionPerformed(ActionEvent ae) {
         int size = 0;
         try {
@@ -123,16 +120,9 @@ public class ActionDeleteFromDiagram extends UMLChangeAction {
                 TargetManager.getInstance().removeHistoryElement(f);
             }
         } catch (Exception ex) {
-            LOG.error(
+            cat.error(
                 ex);
         }
-    }
-
-    /**
-     * @return Returns the singleton.
-     */
-    public static ActionDeleteFromDiagram getSingleton() {
-        return singleton;
     }
 
 }

@@ -25,19 +25,26 @@
 package org.argouml.kernel;
 
 import java.beans.VetoableChangeSupport;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.Vector;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
 import javax.xml.parsers.ParserConfigurationException;
 
@@ -73,6 +80,7 @@ import org.argouml.xml.xmi.XMIReader;
 
 import org.tigris.gef.base.Diagram;
 import org.tigris.gef.ocl.OCLExpander;
+import org.tigris.gef.ocl.TemplateReader;
 import org.tigris.gef.presentation.Fig;
 import org.tigris.gef.util.Util;
 
@@ -90,13 +98,23 @@ public class Project implements java.io.Serializable, TargetListener {
     
     ////////////////////////////////////////////////////////////////
     // constants
-
-    private static final String ARGO_TEE = "/org/argouml/xml/dtd/argo.tee";
+    
+    /**
+     * @deprecated by Linus Tolke as of 0.15.6. Will be removed.
+     *             Not currently used.
+     */
+    public static final String TEMPLATES = "/org/argouml/templates/";
+    
+    /**
+     * @deprecated by Linus Tolke as of 0.15.6. Will become private.
+     */
+    public static String ARGO_TEE = "/org/argouml/xml/dtd/argo.tee";
 
     /**
      * Default name for a project.
+     * @deprecated by Linus Tolke as of 0.15.6. Will become private.
      */
-    private static final String UNTITLED_FILE = "Untitled";
+    public static final String UNTITLED_FILE = "Untitled";
 
     ////////////////////////////////////////////////////////////////
     // static variables
@@ -113,53 +131,46 @@ public class Project implements java.io.Serializable, TargetListener {
 
     /** TODO: should just be the directory to write
      */
-    private URL url;
-    protected ChangeRegistry saveRegistry;
+    private URL _url;
+    protected ChangeRegistry _saveRegistry;
 
-    private String authorname;
-    private String description;
-    private String version;
+    private String _authorname;
+    private String _description;
+    private String _version;
 
-    private Vector searchpath;
-    private Vector members;
-    private String historyFile;
-
-    /**
-     * The version number of the persistence format that last
-     * saved this project.
-     */
-    private int persistenceVersion;
+    private Vector _searchpath;
+    private Vector _members;
+    private String _historyFile;
 
     /**
      * Instances of the uml model.
      */
-    private Vector models;
-
+    private Vector _models;
     /**
      * Instances of the uml diagrams.
      */
-    private Vector diagrams;
-    private Object defaultModel;
-    private boolean needsSave;
-    private Object currentNamespace;
-    private HashMap uuidRefs;
-    private GenerationPreferences cgPrefs;
-    private transient VetoableChangeSupport vetoSupport;
+    private Vector _diagrams;
+    protected Object _defaultModel;
+    private boolean _needsSave;
+    protected Object _currentNamespace;
+    private HashMap _UUIDRefs;
+    private GenerationPreferences _cgPrefs;
+    private transient VetoableChangeSupport _vetoSupport;
 
     /**
      * The root of the modeltree the user is working on. (The untitled_model in
      * the navpane).
      */
-    private Object treeRoot;
+    private Object _root;
     
     /**
      * The active diagram, pointer to a diagram in the list with diagrams.
      */
-    private ArgoDiagram activeDiagram;
+    private ArgoDiagram _activeDiagram;
 
     /** Cache for the default model.
      */
-    private HashMap defaultModelCache;
+    private HashMap _defaultModelCache;
 
     /**
      * Constructor.
@@ -175,13 +186,12 @@ public class Project implements java.io.Serializable, TargetListener {
     /**
      * Constructor.
      *
-     * @param theProjectUrl Url to read the project from.
+     * @param url Url to read the project from.
      */
-    public Project(URL theProjectUrl) {
+    public Project(URL url) {
         this();
-        url = Util.fixURLExtension(theProjectUrl, 
-                FileConstants.COMPRESSED_FILE_EXT);
-        saveRegistry = new UMLChangeRegistry();
+        _url = Util.fixURLExtension(url, FileConstants.COMPRESSED_FILE_EXT);
+        _saveRegistry = new UMLChangeRegistry();
 
     }
 
@@ -190,20 +200,20 @@ public class Project implements java.io.Serializable, TargetListener {
      */
     public Project() {
         
-        authorname = "";
-        description = "";
+        _authorname = "";
+        _description = "";
         // this should be moved to a ui action.
-        version = ArgoVersion.getVersion();
+        _version = ArgoVersion.getVersion();
         
-        searchpath = new Vector();
-        members = new Vector();
-        historyFile = "";
-        models = new Vector();
-        diagrams = new Vector();
-        cgPrefs = new GenerationPreferences();
-        defaultModelCache = new HashMap();
+        _searchpath = new Vector();
+        _members = new Vector();
+        _historyFile = "";
+        _models = new Vector();
+        _diagrams = new Vector();
+        _cgPrefs = new GenerationPreferences();
+        _defaultModelCache = new HashMap();
         
-        saveRegistry = new UMLChangeRegistry();
+        _saveRegistry = new UMLChangeRegistry();
         LOG.info("making empty project with empty model");
         // Jaap Branderhorst 2002-12-09
         // load the default model
@@ -264,25 +274,22 @@ public class Project implements java.io.Serializable, TargetListener {
      * ArgoParser.SINGLETON.getLastLoadStatus() field. This needs to be
      * examined by the calling function.
      *
-     * @param theUrl The url with the .zargo file
+     * @param url The url with the .zargo file
      * @return MModel The model loaded
      * @throws IOException Thrown if the model or the .zargo file is corrupted.
      * @throws SAXException If the parser template is syntactically incorrect. 
      * @throws ParserConfigurationException If the initialization of 
      *         the parser fails.
      */
-    protected Object loadModelFromXMI(URL theUrl)
-        throws IOException, SAXException, ParserConfigurationException {
-        ZipInputStream zis = new ZipInputStream(theUrl.openStream());
+    protected Object loadModelFromXMI(URL url)
+	throws IOException, SAXException, ParserConfigurationException {
+        ZipInputStream zis = new ZipInputStream(url.openStream());
 
         String name = zis.getNextEntry().getName();
         while (!name.endsWith(".xmi")) {
             name = zis.getNextEntry().getName();
         }
-        
-        if (LOG.isInfoEnabled()) {
-            LOG.info("Loading Model from " + theUrl);
-        }
+        LOG.info("Loading Model from " + url);
         // 2002-07-18
         // Jaap Branderhorst
         // changed the loading of the projectfiles to solve hanging 
@@ -291,12 +298,12 @@ public class Project implements java.io.Serializable, TargetListener {
         XMIReader xmiReader = null;
         try {
             xmiReader = new XMIReader();
-        } catch (SAXException se) { // duh, this must be caught and handled
-            LOG.error("SAXException caught", se);
+        } catch (SAXException se) { // duh, this must be catched and handled
+            LOG.error(se);
             throw se;
         } catch (ParserConfigurationException pc) { 
-	        // duh, this must be caught and handled
-            LOG.error("ParserConfigurationException caught", pc);
+	    // duh, this must be catched and handled
+            LOG.error(pc);
             throw pc;
         }
         Object mmodel = null;
@@ -306,11 +313,10 @@ public class Project implements java.io.Serializable, TargetListener {
         mmodel = xmiReader.parseToModel(source);        
         if (xmiReader.getErrors()) {
             ArgoParser.SINGLETON.setLastLoadStatus(false);
-            ArgoParser.SINGLETON.setLastLoadMessage("XMI file " + theUrl
+            ArgoParser.SINGLETON.setLastLoadMessage("XMI file " + url
 						    + " could not be parsed.");
-            LOG.error("XMI file " + theUrl + " could not be parsed.");
-            throw new SAXException(
-                    "XMI file " + theUrl + " could not be parsed.");
+            LOG.error("XMI file " + url + " could not be parsed.");
+            throw new SAXException("XMI file " + url + " could not be parsed.");
         }
 
         // This should probably be inside xmiReader.parse
@@ -323,42 +329,41 @@ public class Project implements java.io.Serializable, TargetListener {
 
         addMember(mmodel);
 
-        uuidRefs = new HashMap(xmiReader.getXMIUUIDToObjectMap());
+        _UUIDRefs = new HashMap(xmiReader.getXMIUUIDToObjectMap());
         return mmodel;
     }
 
     /**
      * Loads all the members from a zipped input stream.
      *
-     * @param theUrl The URL to the input stream.
+     * @param url The URL to the input stream.
      * @throws IOException if there is something wrong with the zipped archive
      *                     or with the model.
      * @throws ParserConfigurationException if the parser is misconfigured.
      * @throws SAXException if the input is not correctly formatted XML.
      */
-    protected void loadZippedProjectMembers(URL theUrl)
+    protected void loadZippedProjectMembers(URL url)
         throws IOException, ParserConfigurationException, SAXException {
 
-        loadModelFromXMI(theUrl); // throws a IOException if things go wrong
+        loadModelFromXMI(url); // throws a IOException if things go wrong
         // user interface has to handle that one
         try {
 
             // now close again, reopen and read the Diagrams.
 
-            PGMLParser.SINGLETON.setOwnerRegistry(uuidRefs);
+            PGMLParser.SINGLETON.setOwnerRegistry(_UUIDRefs);
 
             //zis.close();
-            ZipInputStream zis = new ZipInputStream(theUrl.openStream());
+            ZipInputStream zis = new ZipInputStream(url.openStream());
             SubInputStream sub = new SubInputStream(zis);
 
             ZipEntry currentEntry = null;
             while ((currentEntry = sub.getNextEntry()) != null) {
                 if (currentEntry.getName().endsWith(".pgml")) {
-                    if (LOG.isInfoEnabled()) {
-                        LOG.info("Now going to load "
-                                 + currentEntry.getName()
-                                 + " from ZipInputStream");
-                    }
+                    LOG.info(
+				  "Now going to load "
+				  + currentEntry.getName()
+				  + " from ZipInputStream");
 
                     // "false" means the stream shall not be closed,
                     // but it doesn't seem to matter...
@@ -374,14 +379,16 @@ public class Project implements java.io.Serializable, TargetListener {
                             + currentEntry.getName());
                     }
                     // sub.closeEntry();
-                    if (LOG.isInfoEnabled()) {
-                        LOG.info("Finished loading " + currentEntry.getName());
-                    }
+                    LOG.info("Finished loading " + currentEntry.getName());
                 }
                 if (currentEntry.getName().endsWith(".todo")) {
                     ProjectMemberTodoList pm =
                         new ProjectMemberTodoList(currentEntry.getName(), this);
-                    pm.load(sub);
+                    try {
+                        pm.load(sub);
+                    } catch (IOException ioe) {
+                    } catch (org.xml.sax.SAXException se) {
+                    }
                     addMember(pm);
                 }
             }
@@ -390,8 +397,9 @@ public class Project implements java.io.Serializable, TargetListener {
 	} catch (IOException e) {
             ArgoParser.SINGLETON.setLastLoadStatus(false);
             ArgoParser.SINGLETON.setLastLoadMessage(e.toString());
-            LOG.error("Something went wrong in " 
-		              + "Project.loadZippedProjectMembers()", e);
+            LOG.error("Something went wrong in "
+		      + "Project.loadZippedProjectMembers()",
+		      e);
             throw e;
         }
     }
@@ -422,9 +430,9 @@ public class Project implements java.io.Serializable, TargetListener {
 
     public String getName() {
         // TODO: maybe separate name
-        if (url == null)
+        if (_url == null)
             return UNTITLED_FILE;
-        String name = url.getFile();
+        String name = _url.getFile();
         int i = name.lastIndexOf('/');
         return name.substring(i + 1);
     }
@@ -451,26 +459,23 @@ public class Project implements java.io.Serializable, TargetListener {
      * @return The URL.
      */
     public URL getURL() {
-        return url;
+        return _url;
     }
 
     /**
      * Set the URL for this project.
      * 
-     * @param theUrl The URL to set.
+     * @param url The URL to set.
      */
-    public void setURL(URL theUrl) {
-        if (theUrl != null) {
-            theUrl = Util.fixURLExtension(theUrl, 
-                    FileConstants.COMPRESSED_FILE_EXT);
+    public void setURL(URL url) {
+        if (url != null) {
+            url = Util.fixURLExtension(url, FileConstants.COMPRESSED_FILE_EXT);
         }
 
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Setting project URL from \"" + url 
-                      + "\" to \"" + theUrl + "\".");
-        }
+        LOG.debug("Setting project URL from \"" + _url 
+		  + "\" to \"" + url + "\".");
 
-        url = theUrl;
+        _url = url;
     }
 
     /**
@@ -482,17 +487,16 @@ public class Project implements java.io.Serializable, TargetListener {
      */
     public void setFile(File file) {
         try {
-            URL theProjectUrl = Util.fileToURL(file);
+            URL url = Util.fileToURL(file);
 
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Setting project file name from \"" 
-                          + url 
-                          + "\" to \"" 
-                          + theProjectUrl 
-                          + "\".");
-            }
+            LOG.debug(
+		      "Setting project file name from \""
+		      + _url
+		      + "\" to \""
+		      + url
+		      + "\".");
 
-            url = theProjectUrl;
+            _url = url;
         } catch (MalformedURLException murle) {
             LOG.error("problem in setFile:" + file, murle);
         } catch (IOException ex) {
@@ -501,11 +505,10 @@ public class Project implements java.io.Serializable, TargetListener {
     }
 
     public Vector getSearchPath() {
-        return searchpath;
+        return _searchpath;
     }
-
-    public void addSearchPath(String searchPathElement) {
-        this.searchpath.addElement(searchPathElement);
+    public void addSearchPath(String searchpath) {
+        _searchpath.addElement(searchpath);
     }
 
     public URL findMemberURLInSearchPath(String name) {
@@ -514,9 +517,9 @@ public class Project implements java.io.Serializable, TargetListener {
         if (getURL() != null)
             u = getURL().toString();
         u = u.substring(0, u.lastIndexOf("/") + 1);
-        URL theUrl = null;
+        URL url = null;
         try {
-            theUrl = new URL(u + name);
+            url = new URL(u + name);
         } catch (MalformedURLException murle) {
             LOG.error(
 		      "MalformedURLException in findMemberURLInSearchPath:"
@@ -524,7 +527,7 @@ public class Project implements java.io.Serializable, TargetListener {
 		      + name,
 		      murle);
         }
-        return theUrl;
+        return url;
     }
 
     /**
@@ -533,7 +536,7 @@ public class Project implements java.io.Serializable, TargetListener {
      * @return a Vector with all members.
      */
     public Vector getMembers() {
-        return members;
+        return _members;
     }
 
     /**
@@ -560,18 +563,18 @@ public class Project implements java.io.Serializable, TargetListener {
             pm = new ProjectMemberModel(name, this);
         else
             throw new RuntimeException("Unknown member type " + type);
-        members.addElement(pm);
+        _members.addElement(pm);
     }
 
     public void addMember(ArgoDiagram d) {
         ProjectMember pm = new ProjectMemberDiagram(d, this);
         addDiagram(d);
         // if diagram added successfully, add the member too
-        members.addElement(pm);
+        _members.addElement(pm);
     }
 
     public void addMember(ProjectMemberTodoList pm) {
-        Iterator iter = members.iterator();
+        Iterator iter = _members.iterator();
         Object currentMember = null;
         while (iter.hasNext()) {
             currentMember = iter.next();
@@ -581,7 +584,7 @@ public class Project implements java.io.Serializable, TargetListener {
             }
         }
         // got past the veto, add the member
-        members.addElement(pm);
+        _members.addElement(pm);
     }
 
     public void addMember(Object m) {
@@ -590,7 +593,7 @@ public class Project implements java.io.Serializable, TargetListener {
             throw new IllegalArgumentException();
 	}
         
-        Iterator iter = members.iterator();
+        Iterator iter = _members.iterator();
         Object currentMember = null;
         boolean memberFound = false;
         while (iter.hasNext()) {
@@ -605,12 +608,12 @@ public class Project implements java.io.Serializable, TargetListener {
             }
         }
         if (!memberFound) {
-            if (!models.contains(m)) {
+            if (!_models.contains(m)) {
                 addModel(m);
             }
             // got past the veto, add the member
             ProjectMember pm = new ProjectMemberModel(m, this);
-            members.addElement(pm);
+            _members.addElement(pm);
         }
     }
 
@@ -624,16 +627,17 @@ public class Project implements java.io.Serializable, TargetListener {
 	}
         
         // fire indeterminate change to avoid copying vector
-        if (!models.contains(m))
-            models.addElement(m);
+        if (!_models.contains(m))
+            _models.addElement(m);
         setCurrentNamespace(m);
         setNeedsSave(true);
     }
 
     /**
      * Removes a project member diagram completely from the project.
-     * @param d the ArgoDiagram
+     * @param d
      */
+
     protected void removeProjectMemberDiagram(ArgoDiagram d) {
 
         removeDiagram(d);
@@ -644,13 +648,13 @@ public class Project implements java.io.Serializable, TargetListener {
         // _members.removeElement(d);
         // ehhh lets remove the diagram really and remove it from its
         // corresponding projectmember too
-        Iterator it = members.iterator();
+        Iterator it = _members.iterator();
         while (it.hasNext()) {
             Object obj = it.next();
             if (obj instanceof ProjectMemberDiagram) {
                 ProjectMemberDiagram pmd = (ProjectMemberDiagram) obj;
                 if (pmd.getDiagram() == d) {
-                    members.removeElement(pmd);
+                    _members.removeElement(pmd);
                     break;
                 }
             }
@@ -658,32 +662,26 @@ public class Project implements java.io.Serializable, TargetListener {
     }
 
     public ProjectMember findMemberByName(String name) {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("findMemberByName called for \"" + name + "\".");
-        }
-        for (int i = 0; i < members.size(); i++) {
-            ProjectMember pm = (ProjectMember) members.elementAt(i);
+        LOG.debug("findMemberByName called for \"" + name + "\".");
+        for (int i = 0; i < _members.size(); i++) {
+            ProjectMember pm = (ProjectMember) _members.elementAt(i);
             if (name.equals(pm.getPlainName()))
                 return pm;
         }
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Member \"" + name + "\" not found.");
-        }
+        LOG.debug("Member \"" + name + "\" not found.");
         return null;
     }
 
 
     public void loadMembersOfType(String type) {
-        if (type == null) {
+        if (type == null)
             return;
-        }
-        java.util.Enumeration enumeration = getMembers().elements();
+        java.util.Enumeration enum = getMembers().elements();
         try {
-            while (enumeration.hasMoreElements()) {
-                ProjectMember pm = (ProjectMember) enumeration.nextElement();
-                if (type.equalsIgnoreCase(pm.getType())) {
+            while (enum.hasMoreElements()) {
+                ProjectMember pm = (ProjectMember) enum.nextElement();
+                if (type.equalsIgnoreCase(pm.getType()))
                     pm.load();
-                }
             }
         } catch (IOException ignore) {
             LOG.error("IOException in makeEmptyProject", ignore);
@@ -701,13 +699,176 @@ public class Project implements java.io.Serializable, TargetListener {
         loadMembersOfType("html");
     }
 
+    // frank: additional helper. Is there already another function doing this?
+
+    /**
+     * Copies one file src to another, raising file exceptions
+     * if there are some problems.
+     * 
+     * @param dest The destination file.
+     * @param src The source file.
+     * @return The destination file after successful copying.
+     * @throws IOException if there is some problems with the files.
+     * @throws FileNotFoundException if any of the files cannot be found.
+     */
+    private File copyFile(File dest, File src)
+        throws FileNotFoundException, IOException {
+        
+        // first delete dest file
+        if (dest.exists()) {
+	    dest.delete();
+	}
+
+        FileInputStream fis  = new FileInputStream(src);
+        FileOutputStream fos = new FileOutputStream(dest);
+        byte[] buf = new byte[1024];
+        int i = 0;
+        while ((i = fis.read(buf)) != -1) {
+            fos.write(buf, 0, i);
+        }
+        fis.close();
+        fos.close();
+        
+        dest.setLastModified(src.lastModified());
+        
+        return dest;
+    }
+
+    /**
+     * There are known issues with saving, particularly
+     * losing the xmi at save time. see issue
+     * http://argouml.tigris.org/issues/show_bug.cgi?id=410
+     *
+     * It is also being considered to save out individual
+     * xmi's from individuals diagrams to make
+     * it easier to modularize the output of Argo.
+     * 
+     * @param overwrite <tt>true</tt> if we are allowed to replace a file.
+     * @param file The file to write.
+     * @throws Exception if anything goes wrong.
+     * TODO: Replace the general Exception with specific Exceptions.
+     */
+    public void save(boolean overwrite, File file)
+        throws Exception {
+        setFile(file);
+        setVersion(ArgoVersion.getVersion());
+
+        if (expander == null) {
+            Hashtable templates = TemplateReader.readFile(ARGO_TEE);
+            expander = new OCLExpander(templates);
+        }
+
+        preSave();
+        
+        // frank: first backup the existing file to name+"#"
+        File tempFile = new File( file.getAbsolutePath() + "#");
+        File backupFile = new File( file.getAbsolutePath() + "~");
+        if (tempFile.exists()) {
+	    tempFile.delete();
+	}
+        if (file.exists()) {
+	    copyFile(tempFile, file);
+	}
+        // frank end
+
+        ZipOutputStream stream =
+            new ZipOutputStream(new FileOutputStream(file));
+        BufferedWriter writer =
+            new BufferedWriter(new OutputStreamWriter(stream, "UTF-8"));
+
+        ZipEntry zipEntry =
+	    new ZipEntry(getBaseName() + FileConstants.UNCOMPRESSED_FILE_EXT);
+        stream.putNextEntry(zipEntry);
+        expander.expand(writer, this, "", "");
+        writer.flush();
+        stream.closeEntry();
+
+        String path = file.getParent();
+        LOG.info("Dir ==" + path);
+        int size = _members.size();
+
+        try {
+            // First we save all objects that are not XMI objects i.e. the
+            // diagrams (first for loop).
+            // The we save all XMI objects (second for loop).
+            // This is because order is important on saving.
+            Collection names = new ArrayList();
+            int counter = 0;  
+            for (int i = 0; i < size; i++) {
+                ProjectMember p = (ProjectMember) _members.elementAt(i);
+                if (!(p.getType().equalsIgnoreCase("xmi"))) {
+                    LOG.info("Saving member of type: "
+				  + ((ProjectMember) _members.elementAt(i))
+				        .getType());
+                    String name = p.getName();
+                    String originalName = name;
+                    while (names.contains(name)) {
+                        name = ++counter + originalName;
+                    }
+                    names.add(name);
+                    stream.putNextEntry(new ZipEntry(name));
+                    p.save(path, overwrite, writer);
+                    writer.flush();
+                    stream.closeEntry();
+                }
+            }
+
+            for (int i = 0; i < size; i++) {
+                ProjectMember p = (ProjectMember) _members.elementAt(i);
+                if (p.getType().equalsIgnoreCase("xmi")) {
+                    LOG.info("Saving member of type: "
+				  + ((ProjectMember) _members.elementAt(i))
+				        .getType());
+                    stream.putNextEntry(new ZipEntry(p.getName()));
+                    p.save(path, overwrite, writer);
+                }
+            }
+            
+            // if save did not raise an exception 
+            // and name+"#" exists move name+"#" to name+"~"
+            // this is the correct backup file
+            if (backupFile.exists()) {
+		backupFile.delete();
+	    }
+            if (tempFile.exists() && !backupFile.exists()) {
+		tempFile.renameTo(backupFile);
+	    }
+            if (tempFile.exists()) {
+		tempFile.delete();
+	    }
+
+        } catch (IOException e) {
+            LOG.debug("hat nicht geklappt: " + e);
+            // frank: deleted it because we are propagating the exception
+            //e.printStackTrace();
+            
+            // frank: close from outside, file have to be closed before
+            // deleting it
+            writer.close();
+            
+            // frank: in case of exception 
+            // delete name and mv name+"#" back to name if name+"#" exists
+            // this is the "rollback" to old file
+            file.delete();
+            tempFile.renameTo( file);
+            // we have to give a message to user and set the system to unsaved!
+            throw e;
+        }
+
+        
+        //TODO: in future allow independent saving
+        writer.close();
+
+        postSave();
+    }
+
     /**
      * Get the author name.
      * 
      * @return The author name.
      */
     public String getAuthorname() {
-        return authorname;
+        return _authorname;
     }
     
     /**
@@ -716,7 +877,7 @@ public class Project implements java.io.Serializable, TargetListener {
      * @param s The new author name.
      */
     public void setAuthorname(String s) {
-        authorname = s;
+        _authorname = s;
     }
 
     /**
@@ -725,7 +886,7 @@ public class Project implements java.io.Serializable, TargetListener {
      * @return the version.
      */
     public String getVersion() {
-        return version;
+        return _version;
     }
     
     /**
@@ -733,7 +894,7 @@ public class Project implements java.io.Serializable, TargetListener {
      * @param s The new version.
      */
     public void setVersion(String s) {
-        version = s;
+        _version = s;
     }
 
     /**
@@ -742,7 +903,7 @@ public class Project implements java.io.Serializable, TargetListener {
      * @return the description.
      */
     public String getDescription() {
-        return description;
+        return _description;
     }
 
     /**
@@ -751,7 +912,7 @@ public class Project implements java.io.Serializable, TargetListener {
      * @param s The new description.
      */
     public void setDescription(String s) {
-        description = s;
+        _description = s;
     }
 
     /**
@@ -760,7 +921,7 @@ public class Project implements java.io.Serializable, TargetListener {
      * @return The history file.
      */
     public String getHistoryFile() {
-        return historyFile;
+        return _historyFile;
     }
 
     /**
@@ -769,7 +930,7 @@ public class Project implements java.io.Serializable, TargetListener {
      * @param s The new history file.
      */
     public void setHistoryFile(String s) {
-        historyFile = s;
+        _historyFile = s;
     }
 
     /**
@@ -778,7 +939,7 @@ public class Project implements java.io.Serializable, TargetListener {
      * @param newValue The new value.
      */
     public void setNeedsSave(boolean newValue) {
-        saveRegistry.setChangeFlag(newValue);
+        _saveRegistry.setChangeFlag(newValue);
     }
     
     /**
@@ -787,7 +948,7 @@ public class Project implements java.io.Serializable, TargetListener {
      * @return <tt>true</tt> if the model needs to be saved.
      */
     public boolean needsSave() {
-        return saveRegistry.hasChanged();
+        return _saveRegistry.hasChanged();
     }
 
     /**
@@ -797,7 +958,7 @@ public class Project implements java.io.Serializable, TargetListener {
      * @return A Vector of all user defined models.
      */
     public Vector getUserDefinedModels() {
-        return models;
+        return _models;
     }
 
     /**
@@ -807,8 +968,8 @@ public class Project implements java.io.Serializable, TargetListener {
      */
     public Collection getModels() {
         Set ret = new HashSet();
-        ret.addAll(models);
-        ret.add(defaultModel);
+        ret.addAll(_models);
+        ret.add(_defaultModel);
         return ret;
     }
 
@@ -820,16 +981,15 @@ public class Project implements java.io.Serializable, TargetListener {
      * @return the model.
      */
     public Object getModel() {
-        if (models.size() != 1) {
+        if (_models.size() != 1)
             return null;
-        }
-        return models.elementAt(0);
+        return _models.elementAt(0);
     }
 
     /**
      * Searches for a type/classifier with name s. If the type is not found,
      * a new type is created and added to the current namespace.
-     * @param s the name of the type/classifier to be found
+     * @param s
      * @return MClassifier
      */
     public Object findType(String s) {
@@ -841,26 +1001,23 @@ public class Project implements java.io.Serializable, TargetListener {
      * true, a new type is defined if the type/classifier is not
      * found. The newly created type is added to the currentNamespace
      * and given the name s.
-     * @param s the name of the type/classifier to be found
+     * @param s
      * @param defineNew
      * @return MClassifier
      */
     public Object findType(String s, boolean defineNew) {
-        if (s != null) {
+        if (s != null)
             s = s.trim();
-        }
-        if (s == null || s.length() == 0) {
+        if (s == null || s.length() == 0)
             return null;
-        }
         Object cls = null;
-        int numModels = models.size();
+        int numModels = _models.size();
         for (int i = 0; i < numModels; i++) {
-            cls = findTypeInModel(s, models.elementAt(i));
-            if (cls != null) {
+            cls = findTypeInModel(s, _models.elementAt(i));
+            if (cls != null)
                 return cls;
-            }
         }
-        cls = findTypeInModel(s, defaultModel);
+        cls = findTypeInModel(s, _defaultModel);
         // hey, now we should move it to the model the user is working in
         if (cls != null) {
             cls = ModelManagementHelper.
@@ -868,8 +1025,9 @@ public class Project implements java.io.Serializable, TargetListener {
         }
         if (cls == null && defineNew) {
             LOG.debug("new Type defined!");
-            cls = UmlFactory.getFactory().getCore()
-        		  .buildClass(getCurrentNamespace());
+            cls =
+                UmlFactory.getFactory().getCore()
+		    .buildClass(getCurrentNamespace());
             ModelFacade.setName(cls, s);
         }
         return cls;
@@ -910,7 +1068,7 @@ public class Project implements java.io.Serializable, TargetListener {
         
         if (!ModelFacade.isANamespace(ns)) {
             throw new IllegalArgumentException();
-    	}
+	}
         
         Collection allClassifiers =
             ModelManagementHelper.getHelper()
@@ -923,7 +1081,7 @@ public class Project implements java.io.Serializable, TargetListener {
             
             classifier = classifiers[i];
             if (ModelFacade.getName(classifier) != null
-            		&& ModelFacade.getName(classifier).equals(s)) {
+		&& ModelFacade.getName(classifier).equals(s)) {
                 return classifier;
             }
         }
@@ -935,17 +1093,17 @@ public class Project implements java.io.Serializable, TargetListener {
         
         if (m != null && !ModelFacade.isANamespace(m)) {
             throw new IllegalArgumentException();
-    	}
+	}
         
-        currentNamespace = m;
+        _currentNamespace = m;
     }
 
     public Object getCurrentNamespace() {
-        return currentNamespace;
+        return _currentNamespace;
     }
 
     public Vector getDiagrams() {
-        return diagrams;
+        return _diagrams;
     }
 
     /**
@@ -955,24 +1113,23 @@ public class Project implements java.io.Serializable, TargetListener {
      * @param name is the name to search for.
      */
     public ArgoDiagram getDiagram(String name) {
-        Iterator it = diagrams.iterator();
-        while (it.hasNext()) {
-            ArgoDiagram ad = (ArgoDiagram) it.next();
-            if (ad.getName() != null && ad.getName().equals(name)) {
-                return ad;
-            }
-            if (ad.getItemUID() != null
-                    && ad.getItemUID().toString().equals(name)) {
-                return ad;
-            }
-        }
-        return null;
+	Iterator it = _diagrams.iterator();
+	while (it.hasNext()) {
+	    ArgoDiagram ad = (ArgoDiagram) it.next();
+	    if (ad.getName() != null
+		&& ad.getName().equals(name))
+		return ad;
+	    if (ad.getItemUID() != null
+		&& ad.getItemUID().toString().equals(name))
+		return ad;
+	}
+	return null;
     } 
 
     public void addDiagram(ArgoDiagram d) {
         // send indeterminate new value instead of making copy of vector
-        diagrams.addElement(d);
-        d.addChangeRegistryAsListener(saveRegistry);
+        _diagrams.addElement(d);
+        d.addChangeRegistryAsListener(_saveRegistry);
         setNeedsSave(true);
     }
 
@@ -984,10 +1141,10 @@ public class Project implements java.io.Serializable, TargetListener {
      * not be called directly. Use moveToTrash if you want to remove a
      * diagram.
      * 
-     * @param d the ArgoDiagram
+     * @param d
      */
     protected void removeDiagram(ArgoDiagram d) {
-        diagrams.removeElement(d);
+        _diagrams.removeElement(d);
         // if the diagram is a statechart,
         // remove its associated statemachine model elements
         if (d instanceof UMLStateDiagram) {
@@ -999,7 +1156,7 @@ public class Project implements java.io.Serializable, TargetListener {
                 this.moveToTrash(statediagram.getStateMachine());
             }
         }
-        d.removeChangeRegistryAsListener(saveRegistry);
+        d.removeChangeRegistryAsListener(_saveRegistry);
         setNeedsSave(true);
     }
 
@@ -1007,75 +1164,70 @@ public class Project implements java.io.Serializable, TargetListener {
         
         if (!ModelFacade.isAModelElement(me)) {
             throw new IllegalArgumentException();
-    	}
+	}
         
         int presentations = 0;
-        int size = diagrams.size();
+        int size = _diagrams.size();
         for (int i = 0; i < size; i++) {
-            Diagram d = (Diagram) diagrams.elementAt(i);
+            Diagram d = (Diagram) _diagrams.elementAt(i);
             presentations += d.getLayer().presentationCountFor(me);
         }
         return presentations;
     }
 
     public Object getInitialTarget() {
-        if (diagrams.size() > 0) {
-            return diagrams.elementAt(0);
-        }
-        if (models.size() > 0) {
-            return models.elementAt(0);
-        }
+        if (_diagrams.size() > 0)
+            return _diagrams.elementAt(0);
+        if (_models.size() > 0)
+            return _models.elementAt(0);
         return null;
     }
 
     public void setGenerationPrefs(GenerationPreferences cgp) {
-        cgPrefs = cgp;
+        _cgPrefs = cgp;
     }
-    
     public GenerationPreferences getGenerationPrefs() {
-        return cgPrefs;
+        return _cgPrefs;
     }
 
     ////////////////////////////////////////////////////////////////
     // event handling
 
     public VetoableChangeSupport getVetoSupport() {
-        if (vetoSupport == null) {
-            vetoSupport = new VetoableChangeSupport(this);
-        }
-        return vetoSupport;
+        if (_vetoSupport == null)
+            _vetoSupport = new VetoableChangeSupport(this);
+        return _vetoSupport;
     }
 
-    public void preSave() {
-        for (int i = 0; i < diagrams.size(); i++) {
-            ((Diagram) diagrams.elementAt(i)).preSave();
-        }
+    private void preSave() {
+        for (int i = 0; i < _diagrams.size(); i++)
+	    ((Diagram) _diagrams.elementAt(i)).preSave();
         // TODO: is preSave needed for models?
     }
 
-    public void postSave() {
-        for (int i = 0; i < diagrams.size(); i++) {
-            ((Diagram) diagrams.elementAt(i)).postSave();
-        }
+    private void postSave() {
+        for (int i = 0; i < _diagrams.size(); i++)
+	    ((Diagram) _diagrams.elementAt(i)).postSave();
         // TODO: is postSave needed for models?
         setNeedsSave(false);
     }
 
-    protected void postLoad() {
-        for (int i = 0; i < diagrams.size(); i++) {
-            ((Diagram) diagrams.elementAt(i)).postLoad();
-        }
+    /**
+     * @deprecated As of 28 Apr 2003 (ArgoUml version 0.13.5).
+     *             Will be protected in future.
+     * TODO: Replace by?
+     */
+    public void postLoad() {
+        for (int i = 0; i < _diagrams.size(); i++)
+	    ((Diagram) _diagrams.elementAt(i)).postLoad();
         // issue 1725: the root is not set, which leads to problems
         // with displaying prop panels
         setRoot( getModel());
         
         setNeedsSave(false);
         // we don't need this HashMap anymore so free up the memory
-        uuidRefs = null;
+        _UUIDRefs = null;
     }
-
-    ////////////////////////////////////////////////////////////////
-    // trash related methods
 
     /**
      * Moves some object to trash. 
@@ -1086,11 +1238,13 @@ public class Project implements java.io.Serializable, TargetListener {
      * @param obj The object to be deleted
      * @see org.argouml.kernel.Project#trashInternal(Object)
      */
+    ////////////////////////////////////////////////////////////////
+    // trash related methos
+
     // Attention: whole Trash mechanism should be rethought concerning nsuml
     public void moveToTrash(Object obj) {
-        if (Trash.SINGLETON.contains(obj)) {
+        if (Trash.SINGLETON.contains(obj))
             return;
-        }
         trashInternal(obj);
     }
 
@@ -1114,15 +1268,13 @@ public class Project implements java.io.Serializable, TargetListener {
         }
         if (ModelFacade.isABase(obj)) { // an object that can be represented
             ProjectBrowser.getInstance().getEditorPane()
-        		.removePresentationFor(obj, getDiagrams());
-            // UmlModelEventPump.getPump().stopPumpingEvents();
+		.removePresentationFor(obj, getDiagrams());
             UmlFactory.getFactory().delete(obj);
-            // UmlModelEventPump.getPump().startPumpingEvents();
-            if (members.contains(obj)) {
-                members.remove(obj);
+            if (_members.contains(obj)) {
+                _members.remove(obj);
             }
-            if (models.contains(obj)) {
-                models.remove(obj);
+            if (_models.contains(obj)) {
+                _models.remove(obj);
             }           
             needSave = true;
         } else {
@@ -1144,26 +1296,52 @@ public class Project implements java.io.Serializable, TargetListener {
     }
 
     public void moveFromTrash(Object obj) {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("TODO: not restoring " + obj);
-        }
+        LOG.debug("TODO: not restoring " + obj);
     }
 
     public boolean isInTrash(Object dm) {
         return Trash.SINGLETON.contains(dm);
     }
 
+    ////////////////////////////////////////////////////////////////
+    // usage statistics (deprecated)
+
     /**
-     * @param theDefaultModel a uml model
+     * @deprecated since 0.15.1.
      */
-    public void setDefaultModel(Object theDefaultModel) {
+    public static void resetStats() { }
+
+    /**
+     * @deprecated since 0.15.1.
+     */
+    public static void setStat(String n, int v) { }
+
+    /**
+     * @deprecated since 0.15.1.
+     */
+    public static Vector getStats() {
         
-        if (!ModelFacade.isAModel(theDefaultModel)) {
+        Vector s = new Vector();
+        return s;
+    }
+
+    /**
+     * @deprecated since 0.15.1.
+     */
+    public static void addStat(Vector stats, String name, int value) {
+    }
+
+    /**
+     * @param defaultModel a uml model
+     */
+    public void setDefaultModel(Object defaultModel) {
+        
+        if (!ModelFacade.isAModel(defaultModel)) {
             throw new IllegalArgumentException();
-        }
+	}
         
-        defaultModel = theDefaultModel;
-        defaultModelCache = new HashMap();
+        _defaultModel = defaultModel;
+	_defaultModelCache = new HashMap();
     }
 
     /**
@@ -1172,7 +1350,7 @@ public class Project implements java.io.Serializable, TargetListener {
      * @return A model.
      */
     public Object getDefaultModel() {
-        return defaultModel;
+        return _defaultModel;
     }
 
     /** Find a type by name in the default model.
@@ -1181,13 +1359,12 @@ public class Project implements java.io.Serializable, TargetListener {
      * @return the type.
      */
     public Object findTypeInDefaultModel(String name) {
-        if (defaultModelCache.containsKey(name)) {
-            return defaultModelCache.get(name);
-        }
-        
-        Object result = findTypeInModel(name, getDefaultModel());
-        defaultModelCache.put(name, result);
-        return result;
+	if (_defaultModelCache.containsKey(name))
+	    return _defaultModelCache.get(name);
+
+	Object result = findTypeInModel(name, getDefaultModel());
+	_defaultModelCache.put(name, result);
+	return result;
     }
 
     /**
@@ -1195,7 +1372,7 @@ public class Project implements java.io.Serializable, TargetListener {
      * @return MModel
      */
     public Object getRoot() {
-        return treeRoot;
+        return _root;
     }
 
     /**
@@ -1206,13 +1383,13 @@ public class Project implements java.io.Serializable, TargetListener {
         
         if (!ModelFacade.isAModel(root)) {
             throw new IllegalArgumentException();
-        }
+	}
         
-        if (treeRoot != null) {
-            members.remove(treeRoot);
-            models.remove(treeRoot);
+        if (_root != null) {
+            _members.remove(_root);
+            _models.remove(_root);
         }
-        treeRoot = root;
+        _root = root;
         addMember(root);
         addModel(root);
 
@@ -1243,7 +1420,7 @@ public class Project implements java.io.Serializable, TargetListener {
      * @return GenerationPreferences
      */
     public GenerationPreferences getCgPrefs() {
-        return cgPrefs;
+        return _cgPrefs;
     }
 
     /**
@@ -1251,7 +1428,7 @@ public class Project implements java.io.Serializable, TargetListener {
      * @return boolean
      */
     public boolean isNeedsSave() {
-        return needsSave;
+        return _needsSave;
     }
 
     /**
@@ -1259,7 +1436,7 @@ public class Project implements java.io.Serializable, TargetListener {
      * @return ChangeRegistry
      */
     public ChangeRegistry getSaveRegistry() {
-        return saveRegistry;
+        return _saveRegistry;
     }
 
     /**
@@ -1267,7 +1444,7 @@ public class Project implements java.io.Serializable, TargetListener {
      * @return Vector
      */
     public Vector getSearchpath() {
-        return searchpath;
+        return _searchpath;
     }
 
     /**
@@ -1275,7 +1452,7 @@ public class Project implements java.io.Serializable, TargetListener {
      * @return URL
      */
     public URL getUrl() {
-        return url;
+        return _url;
     }
 
     /**
@@ -1283,63 +1460,63 @@ public class Project implements java.io.Serializable, TargetListener {
      * @return HashMap
      */
     public HashMap getUUIDRefs() {
-        return uuidRefs;
+        return _UUIDRefs;
     }
 
     /**
      * Sets the cgPrefs.
-     * @param theCgPrefs The cgPrefs to set
+     * @param cgPrefs The cgPrefs to set
      */
-    public void setCgPrefs(GenerationPreferences theCgPrefs) {
-        this.cgPrefs = theCgPrefs;
+    public void setCgPrefs(GenerationPreferences cgPrefs) {
+        _cgPrefs = cgPrefs;
     }
 
     /**
      * Sets the diagrams.
-     * @param theDiagrams The diagrams to set
+     * @param diagrams The diagrams to set
      */
-    public void setDiagrams(Vector theDiagrams) {
-        this.diagrams = theDiagrams;
+    public void setDiagrams(Vector diagrams) {
+        _diagrams = diagrams;
     }
 
     /**
      * Sets the members.
-     * @param theMembers The members to set
+     * @param members The members to set
      */
-    public void setMembers(Vector theMembers) {
-        this.members = theMembers;
+    public void setMembers(Vector members) {
+        _members = members;
     }
 
     /**
      * Sets the models.
-     * @param theModels The models to set
+     * @param models The models to set
      */
-    public void setModels(Vector theModels) {
-        models = theModels;
+    public void setModels(Vector models) {
+        _models = models;
     }
 
     /**
      * Sets the saveRegistry.
-     * @param theSaveRegistry The saveRegistry to set
+     * @param saveRegistry The saveRegistry to set
      */
-    public void setSaveRegistry(ChangeRegistry theSaveRegistry) {
-        saveRegistry = theSaveRegistry;
+    public void setSaveRegistry(ChangeRegistry saveRegistry) {
+        _saveRegistry = saveRegistry;
     }
 
     /**
      * Sets the searchpath.
-     * @param theSearchpath The searchpath to set
+     * @param searchpath The searchpath to set
      */
-    public void setSearchpath(Vector theSearchpath) {
-        this.searchpath = theSearchpath;
+    public void setSearchpath(Vector searchpath) {
+        _searchpath = searchpath;
     }
 
     /**
      * Sets the url.
-     * @param theUrl The url to set
+     * @param url The url to set
      */
-    public void setUrl(URL theUrl) {
-        url = theUrl;
+    public void setUrl(URL url) {
+        _url = url;
     }
 
     /**
@@ -1347,15 +1524,15 @@ public class Project implements java.io.Serializable, TargetListener {
      * @param uUIDRefs The uUIDRefs to set
      */
     public void setUUIDRefs(HashMap uUIDRefs) {
-        uuidRefs = uUIDRefs;
+        _UUIDRefs = uUIDRefs;
     }
 
     /**
      * Sets the vetoSupport.
-     * @param theVetoSupport The vetoSupport to set
+     * @param vetoSupport The vetoSupport to set
      */
-    public void setVetoSupport(VetoableChangeSupport theVetoSupport) {
-        this.vetoSupport = theVetoSupport;
+    public void setVetoSupport(VetoableChangeSupport vetoSupport) {
+        _vetoSupport = vetoSupport;
     }
 
     /**
@@ -1363,35 +1540,35 @@ public class Project implements java.io.Serializable, TargetListener {
      * @return the current viewed diagram
      */
     public ArgoDiagram getActiveDiagram() {
-        return activeDiagram;
+        return _activeDiagram;
     }
 
     /**
-     * @param theDiagram the ArgoDiagram
+     * @param diagram
      */
-    public void setActiveDiagram(ArgoDiagram theDiagram) {
-        activeDiagram = theDiagram;
+    public void setActiveDiagram(ArgoDiagram diagram) {
+        _activeDiagram = diagram;
     }
 
     /** 
      * @see TargetListener#targetAdded(TargetEvent)
      */
     public void targetAdded(TargetEvent e) {       
-    	setTarget(e.getNewTarget());
+	setTarget(e.getNewTarget());
     }
 
     /** 
      * @see TargetListener#targetRemoved(TargetEvent)
      */
     public void targetRemoved(TargetEvent e) {
-    	setTarget(e.getNewTarget());
+	setTarget(e.getNewTarget());
     }
 
     /** 
      * @see TargetListener#targetSet(TargetEvent)
      */
     public void targetSet(TargetEvent e) {
-    	setTarget(e.getNewTarget());
+	setTarget(e.getNewTarget());
     }
     
     /**
@@ -1400,18 +1577,19 @@ public class Project implements java.io.Serializable, TargetListener {
      * @param target
      */
     private void setTarget(Object target) {
-        Object theCurrentNamespace = null;
-        target = TargetManager.getInstance().getModelTarget();
+        Object currentNamespace = null;
+	target = TargetManager.getInstance().getModelTarget();
         if (target instanceof UMLDiagram) {
-            theCurrentNamespace = ((UMLDiagram) target).getNamespace();
-        } else if (ModelFacade.isANamespace(target)) {
-            theCurrentNamespace = target;
-        } else if (ModelFacade.isAModelElement(target)) {
-            theCurrentNamespace = ModelFacade.getNamespace(target);
-        } else {
-            theCurrentNamespace = getRoot();
-        }
-        setCurrentNamespace(theCurrentNamespace);
+            currentNamespace = ((UMLDiagram) target).getNamespace();
+        } else
+	    if (ModelFacade.isANamespace(target))
+		currentNamespace = target;
+	    else 
+		if (ModelFacade.isAModelElement(target))
+		    currentNamespace = ModelFacade.getNamespace(target);
+		else
+		    currentNamespace = getRoot();
+        setCurrentNamespace(currentNamespace);
                
         if (target instanceof ArgoDiagram) {
             setActiveDiagram((ArgoDiagram) target);
@@ -1423,66 +1601,54 @@ public class Project implements java.io.Serializable, TargetListener {
      */
     public void remove() {
         
-        if (members != null) {
-            Iterator membersIt = members.iterator();
+        if (_members != null) {
+            Iterator membersIt = _members.iterator();
             while (membersIt.hasNext()) {
+                
                 ((ProjectMember) membersIt.next()).remove();
             }
-            members.clear();
+            
+            _members.clear();
         }
         
-        if (models != null) {
-            models.clear();
-        }
+        if (_models != null) {
+            _models.clear();
+	}
         
-        if (diagrams != null) {
-            diagrams.clear();
-        }
+        if (_diagrams != null) {
+            _diagrams.clear();
+	}
         
-        if (uuidRefs != null) {
-            uuidRefs.clear();
-        }
+        if (_UUIDRefs != null) {
+            _UUIDRefs.clear();
+	}
         
-        if (defaultModelCache != null) {
-            defaultModelCache.clear();
-        }
+        if (_defaultModelCache != null) {
+            _defaultModelCache.clear();
+	}
         
-        members = null;
-        models = null;
-        diagrams = null;
-        uuidRefs = null;
-        defaultModelCache = null;
+        _members = null;
+        _models = null;
+        _diagrams = null;
+        _UUIDRefs = null;
+        _defaultModelCache = null;
         
         expander = null;
-        url = null;
-        saveRegistry = null;
-        authorname = null;
-        description = null;
-        version = null;
-        searchpath = null;
-        historyFile = null;
-        defaultModel = null;
-        currentNamespace = null;
-        cgPrefs = null;
-        vetoSupport = null;
-        treeRoot = null;
-        activeDiagram = null;
-        defaultModelCache = null;
+        _url = null;
+        _saveRegistry = null;
+        _authorname = null;
+        _description = null;
+        _version = null;
+        _searchpath = null;
+        _historyFile = null;
+        _defaultModel = null;
+        _currentNamespace = null;
+        _cgPrefs = null;
+        _vetoSupport = null;
+        _root = null;
+        _activeDiagram = null;
+        _defaultModelCache = null;
         
         TargetManager.getInstance().removeTargetListener(this);
-    }
-    
-    /**
-     * @return Returns the persistenceVersion.
-     */
-    public int getPersistenceVersion() {
-        return persistenceVersion;
-    }
-    
-    /**
-     * @param persistenceVersion The persistenceVersion to set.
-     */
-    public void setPersistenceVersion(int persistenceVersion) {
-        this.persistenceVersion = persistenceVersion;
     }
 } /* end class Project */

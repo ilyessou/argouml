@@ -46,20 +46,14 @@ public class ActionSetSourcePath extends UMLAction {
     ////////////////////////////////////////////////////////////////
     // static variables
 
-    /**
-     * The singleton.
-     */
     public static ActionSetSourcePath SINGLETON = new ActionSetSourcePath();
 
-    //public static final String separator = "/";
+    public static final String separator = "/";
     //System.getProperty("file.separator");
 
     ////////////////////////////////////////////////////////////////
     // constructors
 
-    /**
-     * The constructor.
-     */
     protected ActionSetSourcePath() {
 	super("action.set-source-path", NO_ICON);
     }
@@ -68,22 +62,16 @@ public class ActionSetSourcePath extends UMLAction {
     ////////////////////////////////////////////////////////////////
     // main methods
 
-    /**
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-     */
     public void actionPerformed(ActionEvent e) {
 	File f = getNewDirectory();
 	if (f != null) {
 	    Object obj = TargetManager.getInstance().getTarget();
 	    if (ModelFacade.isAModelElement(obj)) {
-		ModelFacade.setTaggedValue(obj, "src_path", f.getPath());
+		ModelFacade.setTaggedValue(obj, "src_path",f.getPath());
 	    }
 	}
     }
 
-    /**
-     * @return the new source path directory
-     */
     protected File getNewDirectory() {
 	Project p = ProjectManager.getManager().getCurrentProject();
 	Object obj = TargetManager.getInstance().getTarget();
@@ -137,9 +125,6 @@ public class ActionSetSourcePath extends UMLAction {
 	}
     }
 
-    /**
-     * @see org.argouml.uml.ui.UMLAction#shouldBeEnabled()
-     */
     public boolean shouldBeEnabled() {
 	return true;
     }

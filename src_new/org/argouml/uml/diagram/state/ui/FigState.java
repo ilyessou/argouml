@@ -48,42 +48,36 @@ import ru.novosoft.uml.MElementEvent;
  */
 public abstract class FigState extends FigStateVertex {
 
-    /**
-     * the text inside the state
-     */
-    private FigText internal;
+    protected FigText _internal;
 
     /**
      * Constructor for FigState.
      */
     public FigState() {
         super();
-        internal = new FigText(getInitialX() + 2, getInitialY() + 2 + 21 + 4,
+        _internal = new FigText(getInitialX() + 2, getInitialY() + 2 + 21 + 4,
                 getInitialWidth() - 4, getInitialHeight()
                         - (getInitialY() + 2 + 21 + 4));
-        internal.setFont(getLabelFont());
-        internal.setTextColor(Color.black);
-        internal.setLineWidth(0);
-        internal.setFilled(false);
-        internal.setExpandOnly(true);
-        internal.setMultiLine(true);
-        internal.setJustification(FigText.JUSTIFY_LEFT);
+        _internal.setFont(LABEL_FONT);
+        _internal.setTextColor(Color.black);
+        _internal.setLineWidth(0);
+        _internal.setFilled(false);
+        _internal.setExpandOnly(true);
+        _internal.setMultiLine(true);
+        _internal.setJustification(FigText.JUSTIFY_LEFT);
     }
 
     /**
-     * Constructor for FigState, used when an UML elm already exists.
+     * Constructor for FigState.
      * 
-     * @param gm ignored
-     * @param node the UML element
+     * @param gm
+     * @param node
      */
     public FigState(GraphModel gm, Object node) {
         this();
         setOwner(node);
     }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#setOwner(java.lang.Object)
-     */
     public void setOwner(Object node) {
         super.setOwner(node);
         updateInternal();
@@ -191,44 +185,18 @@ public abstract class FigState extends FigStateVertex {
         Object state = getOwner();
         if (state == null) return;
         String newText = Notation.generateStateBody(this, state);
-        internal.setText(newText);
+        _internal.setText(newText);
 
         calcBounds();
         setBounds(getBounds());
     }
 
-    /**
-     * @return the initial X
-     */
     protected abstract int getInitialX();
 
-    /**
-     * @return the initial Y
-     */
     protected abstract int getInitialY();
 
-    /**
-     * @return the initial width
-     */
     protected abstract int getInitialWidth();
 
-    /**
-     * @return the initial height
-     */
     protected abstract int getInitialHeight();
-
-    /**
-     * @param theInternal The internal to set.
-     */
-    protected void setInternal(FigText theInternal) {
-        this.internal = theInternal;
-    }
-
-    /**
-     * @return Returns the internal.
-     */
-    protected FigText getInternal() {
-        return internal;
-    }
 
 }

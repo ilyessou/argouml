@@ -41,16 +41,9 @@ public abstract class FigStateVertex extends FigNodeModelElement {
     ////////////////////////////////////////////////////////////////
     // constructors
 
-    /**
-     * The main constructor
-     */
     public FigStateVertex() {
     }
 
-    /** The constructor which hooks the Fig into the UML element
-     * @param gm ignored
-     * @param node the UML elm
-     */
     public FigStateVertex(GraphModel gm, Object node) {
         this();
         setOwner(node);
@@ -62,23 +55,34 @@ public abstract class FigStateVertex extends FigNodeModelElement {
     /**
      * Overriden to make it possible to include a statevertex in a composite
      * state.
-     * @see org.tigris.gef.presentation.Fig#setEnclosingFig(org.tigris.gef.presentation.Fig)
      */
     public void setEnclosingFig(Fig encloser) {
-        super.setEnclosingFig(encloser);
-        if (!(ModelFacade.isAStateVertex(getOwner()))) return;
-        Object stateVertex = getOwner();
-        Object compositeState = null;
-        if (encloser != null
-                && (ModelFacade.isACompositeState(encloser.getOwner()))) {
-            compositeState = encloser.getOwner();
-        } else {
-            compositeState = StateMachinesHelper.getHelper().getTop(
-                    StateMachinesHelper.getHelper()
-                            .getStateMachine(stateVertex));
-        }
-        if (compositeState != null)
-                ModelFacade.setContainer(stateVertex, compositeState);
+	super.setEnclosingFig(encloser);
+
+	Object stateVertex = getOwner();
+	Object compositeState = null;
+
+	if (!ModelFacade.isAStateVertex(stateVertex)) {
+	    return;
+	}
+
+	if (encloser == null && !isVisible()) {
+	    // Most likely we're being deleted.
+	    return;
+	}
+
+	if (encloser != null
+		&& ModelFacade.isACompositeState(encloser.getOwner())) {
+	    compositeState = encloser.getOwner();
+	} else {
+	    compositeState = StateMachinesHelper.getHelper().getTop(
+		    StateMachinesHelper.getHelper()
+			.getStateMachine(stateVertex));
+	}
+
+	if (compositeState != null) {
+	    ModelFacade.setContainer(stateVertex, compositeState);
+	}
     }
 
     /**

@@ -42,6 +42,8 @@ import org.tigris.gef.presentation.ArrowHeadGreater;
 import org.tigris.gef.presentation.Fig;
 import org.tigris.gef.presentation.FigText;
 
+import ru.novosoft.uml.MElementEvent;
+
 
 /**
  * <p>A fig for use with include relationships on use case diagrams.</p>
@@ -72,7 +74,7 @@ public class FigInclude extends FigEdgeModelElement {
 
         label = new FigText(10, 30, 90, 20);
 
-        label.setFont(getLabelFont());
+        label.setFont(LABEL_FONT);
         label.setTextColor(Color.black);
         label.setTextFilled(false);
         label.setFilled(false);
@@ -155,8 +157,15 @@ public class FigInclude extends FigEdgeModelElement {
     ///////////////////////////////////////////////////////////////////////////
 
     /**
-     * @see org.tigris.gef.presentation.Fig#paint(java.awt.Graphics)
+     * <p>This is called aftern any part of the UML MModelElement has
+     *   changed. This method automatically updates things specific to this
+     *   fig. Subclasses should override and update other parts.</p>
+     *
+     * <p>This implementation does nothing.</p>
      */
+
+    protected void modelChanged(MElementEvent e) { }
+
     public void paint(Graphics g) {
         endArrow.setLineColor(getLineColor());
         super.paint(g);

@@ -25,7 +25,6 @@
 package org.argouml.model.uml.modelmanagement;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -56,7 +55,12 @@ import org.apache.log4j.Logger;
  * @stereotype singleton
  */
 public class ModelManagementHelper {
-    private static final Logger LOG =
+
+    /**
+     * @deprecated by Linus Tolke as of 0.15.4. Use your own logger in your
+     * class. This will be removed.
+     */
+    protected static Logger cat =
 	Logger.getLogger(ModelManagementHelper.class);
     
     /**
@@ -67,13 +71,11 @@ public class ModelManagementHelper {
 
     /** Singleton instance.
     */
-    private static final ModelManagementHelper SINGLETON =
+    private static ModelManagementHelper SINGLETON =
         new ModelManagementHelper();
 
     /**
      * Singleton instance access method.
-     *
-     * @return The model management helper.
      */
     public static ModelManagementHelper getHelper() {
         return SINGLETON;
@@ -175,7 +177,8 @@ public class ModelManagementHelper {
     }
 
     /**
-     * Returns all modelelements of the given kind
+     * Returns all modelelements found in this namespace and its children
+     * that are of some class kind the projectbrowser model
      *
      * @param kind is the class kind
      * @return Collection
@@ -185,12 +188,7 @@ public class ModelManagementHelper {
             return Collections.EMPTY_LIST;
         Project p = ProjectManager.getManager().getCurrentProject();
         MNamespace model = (MModel) p.getRoot();
-        Collection ret = getAllModelElementsOfKind(model, kind);
-        if (kind.isAssignableFrom(model.getClass())) {
-            ret = new ArrayList(ret);
-            ret.add(model);
-        }
-        return ret;
+        return getAllModelElementsOfKind(model, kind);
     }
 
     /**
@@ -282,7 +280,7 @@ public class ModelManagementHelper {
             // TODO: This assumes we are working with MThings
             col = getAllModelElementsOfKind(nsa, Class.forName("M" + kind));
         } catch (ClassNotFoundException cnfe) {
-            LOG.error(cnfe);
+            cat.error(cnfe);
             return Collections.EMPTY_LIST;
         }
         return col;

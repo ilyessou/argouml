@@ -24,20 +24,25 @@
 
 package org.argouml.uml.ui.foundation.core;
 
+import javax.swing.ButtonGroup;
 import javax.swing.JList;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 
 import org.argouml.i18n.Translator;
 import org.argouml.model.ModelFacade;
 import org.argouml.model.uml.foundation.core.CoreFactory;
+
+import org.argouml.swingext.GridLayout2;
 import org.argouml.ui.targetmanager.TargetManager;
-import org.argouml.uml.ui.ActionNavigateContainerElement;
-import org.argouml.uml.ui.ActionRemoveFromModel;
 import org.argouml.uml.ui.PropPanelButton;
-import org.argouml.uml.ui.PropPanelButton2;
 import org.argouml.uml.ui.UMLComboBox2;
+import org.argouml.uml.ui.UMLComboBoxNavigator;
+import org.argouml.uml.ui.UMLEnumerationBooleanProperty;
 import org.argouml.uml.ui.UMLInitialValueComboBox;
-import org.argouml.uml.ui.UMLLinkedList;
+import org.argouml.uml.ui.UMLList;
+import org.argouml.uml.ui.UMLRadioButton;
+import org.argouml.uml.ui.UMLReflectionListModel;
 import org.argouml.util.ConfigLoader;
 /**
  * TODO: this property panel needs refactoring to remove dependency on
@@ -45,10 +50,6 @@ import org.argouml.util.ConfigLoader;
  */
 public class PropPanelParameter extends PropPanelModelElement {
 
-    private JScrollPane behFeatureScroll;
-
-    private static UMLParameterBehavioralFeatListModel behFeatureModel;
-    
     public PropPanelParameter() {
         super(
 	      "Parameter",
@@ -65,24 +66,44 @@ public class PropPanelParameter extends PropPanelModelElement {
         setNameEventListening(namesToWatch);
 
         addField(Translator.localize("UMLMenu", "label.name"), getNameTextField());
- 
-        addField(Translator.localize("UMLMenu", "label.stereotype"), getStereotypeBox());
+        addField(Translator.localize("UMLMenu", "label.stereotype"), new UMLComboBoxNavigator(this, Translator.localize("UMLMenu", "tooltip.nav-stereo"), getStereotypeBox()));
 
-        addField(Translator.localize("UMLMenu","label.owner"), getBehavioralFeatureScroll());
-        
+        JList namespaceList = new UMLList(new UMLReflectionListModel(this, "behaviorialfeature", false, "getBehavioralFeature", null, null, null), true);
+        namespaceList.setVisibleRowCount(1);
+        addLinkField(Translator.localize("UMLMenu", "label.owner"), new JScrollPane(namespaceList, JScrollPane.VERTICAL_SCROLLBAR_NEVER, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER));
+
         addSeperator();
 
         addField(Translator.localize("UMLMenu", "label.type"), new UMLComboBox2(new UMLParameterTypeComboBoxModel(), ActionSetParameterType.SINGLETON));
 
         addField("Initial Value:", new UMLInitialValueComboBox(this));
-        
-        //      TODO: i18n
-        add(new UMLParameterDirectionKindRadioButtonPanel("ParameterKind:", true));
 
-        buttonPanel.add(new PropPanelButton2(this, new ActionNavigateContainerElement()));
-        	new PropPanelButton(this, buttonPanel, _parameterIcon, Translator.localize("UMLMenu", "button.new-parameter"), "addParameter", null);
-	buttonPanel
-        .add(new PropPanelButton2(this, new ActionRemoveFromModel()));
+        JPanel kindPanel = new JPanel(new GridLayout2(0, 2, GridLayout2.ROWCOLPREFERRED));
+        ButtonGroup kindGroup = new ButtonGroup();
+
+        UMLRadioButton inout = new UMLRadioButton("in/out", this, new UMLEnumerationBooleanProperty("kind", mclass, "getKind", "setKind", ModelFacade.PARAMETERDIRECTIONKIND, ModelFacade.INOUT_PARAMETERDIRECTIONKIND, null));
+        kindGroup.add(inout);
+        kindPanel.add(inout);
+
+        UMLRadioButton in = new UMLRadioButton("in", this, new UMLEnumerationBooleanProperty("kind", mclass, "getKind", "setKind", ModelFacade.PARAMETERDIRECTIONKIND, ModelFacade.IN_PARAMETERDIRECTIONKIND, null));
+        kindGroup.add(in);
+        kindPanel.add(in);
+
+        UMLRadioButton out = new UMLRadioButton("out", this, new UMLEnumerationBooleanProperty("kind", mclass, "getKind", "setKind", ModelFacade.PARAMETERDIRECTIONKIND, ModelFacade.OUT_PARAMETERDIRECTIONKIND, null));
+        kindGroup.add(out);
+        kindPanel.add(out);
+
+        UMLRadioButton ret = new UMLRadioButton("return", this, new UMLEnumerationBooleanProperty("kind", mclass, "getKind", "setKind", ModelFacade.PARAMETERDIRECTIONKIND, ModelFacade.RETURN_PARAMETERDIRECTIONKIND, null));
+        kindGroup.add(ret);
+        kindPanel.add(ret);
+
+	addField("Kind:", kindPanel);
+
+	new PropPanelButton(this, buttonPanel, _navUpIcon, Translator.localize("UMLMenu", "button.go-up"), "navigateUp", null);
+	new PropPanelButton(this, buttonPanel, _parameterIcon, Translator.localize("UMLMenu", "button.new-parameter"), "addParameter", null);
+	//	new PropPanelButton(this,buttonPanel,_dataTypeIcon, Translator.localize("UMLMenu", "button.new-datatype"),"addDataType",null);
+	new PropPanelButton(this, buttonPanel, _deleteIcon, Translator.localize("UMLMenu", "button.delete-parameter"), "removeElement", null);
+
     }
 
     public Object getType() {
@@ -146,23 +167,5 @@ public class PropPanelParameter extends PropPanelModelElement {
     public void addDataType(Object/*MModelElement*/ element) {
         addDataType();
     }
-    
-    /**
-     * Returns the behavioral Feature Scroll.
-     * 
-     * @return JScrollPane
-     */
-    public JScrollPane getBehavioralFeatureScroll() {
-        if (behFeatureScroll == null) {
-            if (behFeatureModel == null) {
-                behFeatureModel = new UMLParameterBehavioralFeatListModel();
-            }
-            JList list = new UMLLinkedList(behFeatureModel);
-            list.setVisibleRowCount(1);
-            behFeatureScroll = new JScrollPane(list);
-        }
-        return behFeatureScroll;
-    }
-
 
 } /* end class PropPanelParameter */

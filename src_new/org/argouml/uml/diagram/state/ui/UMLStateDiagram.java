@@ -42,8 +42,8 @@ import org.argouml.model.uml.UmlModelEventPump;
 import org.argouml.ui.CmdCreateNode;
 import org.argouml.ui.CmdSetMode;
 import org.argouml.uml.diagram.state.StateDiagramGraphModel;
-import org.argouml.uml.diagram.ui.RadioAction;
 import org.argouml.uml.diagram.ui.UMLDiagram;
+import org.argouml.uml.diagram.ui.ActionAddNote;
 
 import org.tigris.gef.base.LayerPerspective;
 import org.tigris.gef.base.LayerPerspectiveMutable;
@@ -62,63 +62,64 @@ public class UMLStateDiagram extends UMLDiagram {
     /**
      * this diagram needs to be deleted when its statemachine is deleted.
      */
-    private Object theStateMachine;
+    Object theStateMachine;
 
     ////////////////
     // actions for toolbar
 
-    protected static Action _actionState = new RadioAction(
-        new CmdCreateNode(ModelFacade.STATE, "State"));
+    protected static Action _actionState =
+        new CmdCreateNode(ModelFacade.STATE, "State");
 
-    protected static Action _actionCompositeState = new RadioAction(
-        new CmdCreateNode(ModelFacade.COMPOSITESTATE, "CompositeState"));
+    protected static Action _actionCompositeState =
+        new CmdCreateNode(ModelFacade.COMPOSITESTATE, "CompositeState");
 
     // start state, end state, forks, joins, etc.
-    protected static Action _actionStartPseudoState = new RadioAction(
+    protected static Action _actionStartPseudoState =
         new ActionCreatePseudostate(
             ModelFacade.INITIAL_PSEUDOSTATEKIND,
-            "Initial"));
+            "Initial");
 
-    protected static Action _actionFinalPseudoState = new RadioAction(
-        new CmdCreateNode(ModelFacade.FINALSTATE, "FinalState"));
+    protected static Action _actionFinalPseudoState =
+        new CmdCreateNode(ModelFacade.FINALSTATE, "FinalState");
 
-    protected static Action _actionBranchPseudoState = new RadioAction(
+    protected static Action _actionBranchPseudoState =
         new ActionCreatePseudostate(
-            ModelFacade.BRANCH_PSEUDOSTATEKIND, "Choice"));
+            ModelFacade.BRANCH_PSEUDOSTATEKIND,
+            /* TODO: The next line shall be changed into "Choice" for V0.17.1.*/
+            "Branch");
 
-    protected static Action _actionForkPseudoState = new RadioAction(
-        new ActionCreatePseudostate(ModelFacade.FORK_PSEUDOSTATEKIND, "Fork"));
+    protected static Action _actionForkPseudoState =
+        new ActionCreatePseudostate(ModelFacade.FORK_PSEUDOSTATEKIND, "Fork");
 
-    protected static Action _actionJoinPseudoState = new RadioAction(
-        new ActionCreatePseudostate(ModelFacade.JOIN_PSEUDOSTATEKIND, "Join"));
+    protected static Action _actionJoinPseudoState =
+        new ActionCreatePseudostate(ModelFacade.JOIN_PSEUDOSTATEKIND, "Join");
 
-    protected static Action _actionShallowHistoryPseudoState = new RadioAction(
+    protected static Action _actionShallowHistoryPseudoState =
         new ActionCreatePseudostate(
             ModelFacade.SHALLOWHISTORY_PSEUDOSTATEKIND,
-            "ShallowHistory"));
+            "ShallowHistory");
 
-    protected static Action _actionDeepHistoryPseudoState = new RadioAction(
+    protected static Action _actionDeepHistoryPseudoState =
         new ActionCreatePseudostate(
             ModelFacade.DEEPHISTORY_PSEUDOSTATEKIND,
-            "DeepHistory"));
+            "DeepHistory");
 
-    protected static Action _actionTransition = new RadioAction(
+    protected static Action _actionTransition =
         new CmdSetMode(
             ModeCreatePolyEdge.class,
             "edgeClass",
             ModelFacade.TRANSITION,
-            "Transition"));
+            "Transition");
 
-    protected static Action _actionJunctionPseudoState = new RadioAction(
+    protected static Action _actionJunctionPseudoState =
         new ActionCreatePseudostate(
             ModelFacade.JUNCTION_PSEUDOSTATEKIND,
-            "Junction")); 
-
-    private static int stateDiagramSerial = 1;
+            "Junction"); 
     
     ////////////////////////////////////////////////////////////////
     // contructors
 
+    protected static int _StateDiagramSerial = 1;
     /** 
      *  this constructor is used to build a dummy statechart diagram so
      *  that a project will load properly.
@@ -130,10 +131,6 @@ public class UMLStateDiagram extends UMLDiagram {
         } catch (PropertyVetoException pve) { }
     }
 
-    /** constructor 
-     * @param namespace the NameSpace for the new diagram
-     * @param sm the StateMachine
-     */
     public UMLStateDiagram(Object namespace, Object sm) {
         this();
 
@@ -149,12 +146,12 @@ public class UMLStateDiagram extends UMLDiagram {
             }
         }
         if (namespace != null && ModelFacade.getName(namespace) != null) {
-            String name = null, diagramName = ModelFacade.getName(namespace);
+            String name = null, diag_name = ModelFacade.getName(namespace);
             int number =
                 (ModelFacade.getBehaviors(namespace)) == null
                     ? 0
                     : ModelFacade.getBehaviors(namespace).size();
-            name = diagramName + " " + (number++);
+            name = diag_name + " " + (number++);
             LOG.info("UMLStateDiagram constructor: String name = " + name);
             try {
                 setName(name);
@@ -168,7 +165,6 @@ public class UMLStateDiagram extends UMLDiagram {
     /**
      * The owner of a statechart diagram is the statechart diagram
      * it's showing.
-     * @see org.argouml.uml.diagram.ui.UMLDiagram#getOwner()
      */
     public Object getOwner() {
         StateDiagramGraphModel gm = (StateDiagramGraphModel) getGraphModel();
@@ -245,16 +241,13 @@ public class UMLStateDiagram extends UMLDiagram {
 
     }
 
-    /**
-     * @return the StateMachine belonging to this diagram
-     */
     public Object getStateMachine() {
         return /*(MStateMachine)*/
          ((StateDiagramGraphModel) getGraphModel()).getMachine();
     }
 
     /**
-     * @param sm Set the StateMachine for this diagram.
+     * @param sm
      */
     public void setStateMachine(Object sm) {
 
@@ -267,7 +260,6 @@ public class UMLStateDiagram extends UMLDiagram {
     /**
      * Get the actions from which to create a toolbar or equivalent
      * graphic triggers.
-     * @see org.argouml.uml.diagram.ui.UMLDiagram#getUmlActions()
      */
     protected Object[] getUmlActions() {
         Object actions[] =
@@ -278,27 +270,24 @@ public class UMLStateDiagram extends UMLDiagram {
 	    null,
 	    _actionStartPseudoState,
 	    _actionFinalPseudoState,
-	    _actionJunctionPseudoState,
+	    /* TODO: The next line shall be uncommented in V0.17.1. */
+	    /*_actionJunctionPseudoState,*/
 	    _actionBranchPseudoState,
 	    _actionForkPseudoState,
 	    _actionJoinPseudoState,
 	    _actionShallowHistoryPseudoState,
 	    _actionDeepHistoryPseudoState,
 	    null,
-	    _actionComment,
-            _actionCommentLink,
+	    ActionAddNote.SINGLETON,
 	    null,
 	};
         return actions;
     }
 
-    /** Creates a name for the diagram.
-     * @return the new diagram name
-     */
     protected static String getNewDiagramName() {
         String name = null;
-        name = "Statechart Diagram " + stateDiagramSerial;
-        stateDiagramSerial++;
+        name = "Statechart Diagram " + _StateDiagramSerial;
+        _StateDiagramSerial++;
         if (!ProjectManager.getManager().getCurrentProject()
                  .isValidDiagramName(name)) {
             name = getNewDiagramName();
@@ -310,7 +299,6 @@ public class UMLStateDiagram extends UMLDiagram {
      * This diagram listens to NSUML events from its Statemachine;
      * When the Statemachine is removed, we also want to delete this
      * diagram too.
-     * @see ru.novosoft.uml.MElementListener#removed(ru.novosoft.uml.MElementEvent)
      */
     public void removed(MElementEvent e) {
 

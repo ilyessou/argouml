@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2004 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -42,17 +42,11 @@ public class ActionGenerateOne extends UMLAction {
     ////////////////////////////////////////////////////////////////
     // static variables
 
-    /**
-     * The singleton.
-     */
     public static ActionGenerateOne SINGLETON = new ActionGenerateOne();
 
     ////////////////////////////////////////////////////////////////
     // constructors
 
-    /**
-     * The constructor.
-     */
     protected ActionGenerateOne() {
         super("action.generate-selected-classes", NO_ICON);
     }
@@ -60,9 +54,6 @@ public class ActionGenerateOne extends UMLAction {
     ////////////////////////////////////////////////////////////////
     // main methods
 
-    /**
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-     */
     public void actionPerformed(ActionEvent ae) {
         ProjectBrowser pb = ProjectBrowser.getInstance();
         Vector classes = new Vector();
@@ -81,10 +72,10 @@ public class ActionGenerateOne extends UMLAction {
         /*
         Editor ce = org.tigris.gef.base.Globals.curEditor();
         Vector sels = ce.getSelectionManager().getFigs();
-        Enumeration figs = sels.elements();
+        java.util.Enumeration enum = sels.elements();
         Vector classes = new Vector();
-        while (figs.hasMoreElements()) {
-        Fig f = (Fig) figs.nextElement();
+        while (enum.hasMoreElements()) {
+        Fig f = (Fig)enum.nextElement();
         Object owner = f.getOwner();
         if (!(owner instanceof MClass) && !(owner instanceof MInterface))
         continue;
@@ -101,9 +92,6 @@ public class ActionGenerateOne extends UMLAction {
         cgd.show();
     }
 
-    /**
-     * @see org.argouml.uml.ui.UMLAction#shouldBeEnabled()
-     */
     public boolean shouldBeEnabled() {
         if (!super.shouldBeEnabled())
             return false;
@@ -126,12 +114,11 @@ public class ActionGenerateOne extends UMLAction {
         Editor ce = org.tigris.gef.base.Globals.curEditor();
         if(ce != null) {
             Vector sels = ce.getSelectionManager().getFigs();
-            java.util.Enumeration figs = sels.elements();
-            while (figs.hasMoreElements()) {
-        	Fig f = (Fig) figs.nextElement();
+            java.util.Enumeration enum = sels.elements();
+            while (enum.hasMoreElements()) {
+        	Fig f = (Fig) enum.nextElement();
         	Object owner = f.getOwner();
-        	if (!(owner instanceof MClass) 
-        	    && !(owner instanceof MInterface))
+        	if (!(owner instanceof MClass) && !(owner instanceof MInterface))
         	    continue;
         	MClassifier cls = (MClassifier) owner;
         	String name = cls.getName();

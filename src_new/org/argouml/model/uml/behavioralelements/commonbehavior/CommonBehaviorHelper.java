@@ -46,24 +46,22 @@ public class CommonBehaviorHelper {
 
      /** Singleton instance.
      */
-    private static CommonBehaviorHelper singleton =
+    private static CommonBehaviorHelper SINGLETON =
                    new CommonBehaviorHelper();
 
 
     /** Singleton instance access method.
-     *
-     * @return the singleton
      */
     public static CommonBehaviorHelper getHelper() {
-        return singleton;
+        return SINGLETON;
     }
 
     /**
      * Returns the source of a link. The source of a binary link is defined as
      * the instance where the first linkend is pointing to via the association
      * instance.
-     * @param link the given link
-     * @return MInstance the source of the given link
+     * @param link
+     * @return MInstance
      */
     public MInstance getSource(Object link) {
         Collection con = ModelFacade.getConnections(link);
@@ -76,8 +74,8 @@ public class CommonBehaviorHelper {
      * Returns the destination of a link. The destination of a binary link is
      * defined as the instance where the second linkend is pointing to via the
      * association instance.
-     * @param link the given link
-     * @return MInstance the destination of the given link
+     * @param link
+     * @return MInstance
      */
     public MInstance getDestination(Object link) {
         Collection con = ModelFacade.getConnections(link);

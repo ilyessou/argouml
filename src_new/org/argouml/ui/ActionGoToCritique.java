@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2004 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -36,28 +36,17 @@ import org.argouml.cognitive.ToDoItem;
 import org.argouml.uml.ui.UMLAction;
 
 public class ActionGoToCritique extends UMLAction {
-    private ToDoItem item = null;
+    ToDoItem _item = null;
 
-    /**
-     * Constructor.
-     *
-     * @param theItem The item that we go to.
-     */
-    public ActionGoToCritique(ToDoItem theItem) {
-	super(theItem.getHeadline(), NO_ICON);
-	item = theItem;
+    public ActionGoToCritique(ToDoItem item) {
+	super(item.getHeadline(), NO_ICON);
+	_item = item;
     }
 
-    /**
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-     */
     public void actionPerformed(ActionEvent ae) {
-	ProjectBrowser.getInstance().getTodoPane().selectItem(item);
+	ProjectBrowser.getInstance().getTodoPane().selectItem(_item);
     }
 
-    /**
-     * @see org.argouml.uml.ui.UMLAction#shouldBeEnabled()
-     */
     public boolean shouldBeEnabled() { return true; }
 
 } /* end class ActionGoToCritique */

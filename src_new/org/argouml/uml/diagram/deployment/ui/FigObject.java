@@ -53,20 +53,18 @@ public class FigObject extends FigNodeModelElement {
     ////////////////////////////////////////////////////////////////
     // instance variables
 
-    private FigRect cover;
-    private Object resident =
+    FigRect _cover;
+    public Object resident =
 	UmlFactory.getFactory().getCore().createElementResidence();
 
+    // add other Figs here aes needed
 
     ////////////////////////////////////////////////////////////////
     // constructors
 
-    /**
-     * Main constructor.
-     */
     public FigObject() {
-	setBigPort( new FigRect(10, 10, 90, 50, Color.cyan, Color.cyan));
-	cover = new FigRect(10, 10, 90, 50, Color.black, Color.white);
+	_bigPort = new FigRect(10, 10, 90, 50, Color.cyan, Color.cyan);
+	_cover = new FigRect(10, 10, 90, 50, Color.black, Color.white);
 	getNameFig().setLineWidth(0);
 	getNameFig().setFilled(false);
 	getNameFig().setUnderline(true);
@@ -74,37 +72,26 @@ public class FigObject extends FigNodeModelElement {
 	getNameFig().setBounds(10, 10, nameMin.width + 20, nameMin.height);
 
 	// add Figs to the FigNode in back-to-front order
-	addFig(getBigPort());
-	addFig(cover);
+	addFig(_bigPort);
+	addFig(_cover);
 	addFig(getNameFig());
 
 	Rectangle r = getBounds();
 	setBounds(r.x, r.y, nameMin.width, nameMin.height);
     }
 
-    /**
-     * Constructor that hooks the Fig to an existing UML element
-     * @param gm ignored
-     * @param node the UML element
-     */
     public FigObject(GraphModel gm, Object node) {
 	this();
 	setOwner(node);
     }
 
-    /**
-     * @see org.argouml.uml.diagram.ui.FigNodeModelElement#placeString()
-     */
     public String placeString() { return "new Object"; }
 
-    /**
-     * @see java.lang.Object#clone()
-     */
     public Object clone() {
 	FigObject figClone = (FigObject) super.clone();
 	Iterator it = figClone.getFigs(null).iterator();
-	figClone.setBigPort((FigRect) it.next());
-	figClone.cover = (FigRect) it.next();
+	figClone._bigPort = (FigRect) it.next();
+	figClone._cover = (FigRect) it.next();
 	figClone.setNameFig((FigText) it.next());
 	return figClone;
     }
@@ -113,60 +100,26 @@ public class FigObject extends FigNodeModelElement {
     ////////////////////////////////////////////////////////////////
     // Fig accessors
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#setLineColor(java.awt.Color)
-     */
-    public void setLineColor(Color col) { cover.setLineColor(col); }
+    public void setLineColor(Color col) { _cover.setLineColor(col); }
+    public Color getLineColor() { return _cover.getLineColor(); }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#getLineColor()
-     */
-    public Color getLineColor() { return cover.getLineColor(); }
+    public void setFillColor(Color col) { _cover.setFillColor(col); }
+    public Color getFillColor() { return _cover.getFillColor(); }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#setFillColor(java.awt.Color)
-     */
-    public void setFillColor(Color col) { cover.setFillColor(col); }
-    
-    /**
-     * @see org.tigris.gef.presentation.Fig#getFillColor()
-     */
-    public Color getFillColor() { return cover.getFillColor(); }
+    public void setFilled(boolean f) { _cover.setFilled(f); }
+    public boolean getFilled() { return _cover.getFilled(); }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#setFilled(boolean)
-     */
-    public void setFilled(boolean f) { cover.setFilled(f); }
-    
-    /**
-     * @see org.tigris.gef.presentation.Fig#getFilled()
-     */
-    public boolean getFilled() { return cover.getFilled(); }
-
-    /**
-     * @see org.tigris.gef.presentation.Fig#setLineWidth(int)
-     */
-    public void setLineWidth(int w) { cover.setLineWidth(w); }
-    
-    /**
-     * @see org.tigris.gef.presentation.Fig#getLineWidth()
-     */
-    public int getLineWidth() { return cover.getLineWidth(); }
+    public void setLineWidth(int w) { _cover.setLineWidth(w); }
+    public int getLineWidth() { return _cover.getLineWidth(); }
 
   
-    /**
-     * @see org.tigris.gef.presentation.Fig#makeSelection()
-     */
     public Selection makeSelection() {
 	return new SelectionObject(this);
     }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#getMinimumSize()
-     */
     public Dimension getMinimumSize() {
-	Dimension bigPortMin = getBigPort().getMinimumSize();
-	Dimension coverMin = cover.getMinimumSize();
+	Dimension bigPortMin = _bigPort.getMinimumSize();
+	Dimension coverMin = _cover.getMinimumSize();
 	Dimension nameMin = getNameFig().getMinimumSize();
 
 	int w = nameMin.width + 10;
@@ -174,9 +127,7 @@ public class FigObject extends FigNodeModelElement {
 	return new Dimension(w, h);
     }
 
-    /** Override setBounds to keep shapes looking right 
-     * @see org.tigris.gef.presentation.Fig#setBounds(int, int, int, int)
-     */
+    /* Override setBounds to keep shapes looking right */
     public void setBounds(int x, int y, int w, int h) {
 	if (getNameFig() == null) {
 	    return;
@@ -186,8 +137,8 @@ public class FigObject extends FigNodeModelElement {
 
 	Dimension nameMin = getNameFig().getMinimumSize();
 
-	getBigPort().setBounds(x, y, w, h);
-	cover.setBounds(x, y, w, h);
+	_bigPort.setBounds(x, y, w, h);
+	_cover.setBounds(x, y, w, h);
 	getNameFig().setBounds(x, y, nameMin.width + 10, nameMin.height + 4);
 
 	//_bigPort.setBounds(x+1, y+1, w-2, h-2);
@@ -202,9 +153,6 @@ public class FigObject extends FigNodeModelElement {
     ////////////////////////////////////////////////////////////////
     // user interaction methods
 
-    /**
-     * @see org.argouml.uml.diagram.ui.FigNodeModelElement#textEdited(org.tigris.gef.presentation.FigText)
-     */
     protected void textEdited(FigText ft) throws PropertyVetoException {
 	Object obj = /*(MObject)*/ getOwner();
 	if (ft == getNameFig()) {
@@ -217,9 +165,6 @@ public class FigObject extends FigNodeModelElement {
     }
 
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#setEnclosingFig(org.tigris.gef.presentation.Fig)
-     */
     public void setEnclosingFig(Fig encloser) {
 	// super.setEnclosingFig(encloser);
 
@@ -255,15 +200,15 @@ public class FigObject extends FigNodeModelElement {
 	    }
 	}
 
-	if (encloser != getEncloser()) {
-	    if (getEncloser() instanceof FigNodeModelElement) {
-		((FigNodeModelElement) getEncloser()).removeEnclosedFig(this);
+	if (encloser != _encloser) {
+	    if (_encloser instanceof FigNodeModelElement) {
+		((FigNodeModelElement) _encloser).removeEnclosedFig(this);
             }
 	    if (encloser instanceof FigNodeModelElement) {
 		((FigNodeModelElement) encloser).addEnclosedFig(this);
             }
 	}
-        setEncloser(encloser);
+        _encloser = encloser;
     }
 
     static final long serialVersionUID = -185736690375678962L;
@@ -292,7 +237,7 @@ public class FigObject extends FigNodeModelElement {
 		    ", "  + ModelFacade.getName(bases.elementAt(i));
 	}
 
-	if (isReadyToEdit()) {
+	if (_readyToEdit) {
 	    if ( nameStr == "" && baseString == "") {
 		getNameFig().setText("");
 	    } else {

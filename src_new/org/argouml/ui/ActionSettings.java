@@ -23,7 +23,6 @@
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 package org.argouml.ui;
-
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -31,49 +30,42 @@ import java.util.ArrayList;
 import java.util.ListIterator;
 
 import javax.swing.JButton;
+import javax.swing.JMenuItem;
 import javax.swing.JTabbedPane;
 
 import org.apache.log4j.Logger;
+import org.argouml.i18n.Translator;
 import org.argouml.application.api.Argo;
 import org.argouml.application.api.PluggableSettingsTab;
 import org.argouml.application.api.SettingsTabPanel;
 import org.argouml.application.events.ArgoModuleEvent;
 import org.argouml.application.events.ArgoModuleEventListener;
-import org.argouml.i18n.Translator;
 import org.argouml.uml.ui.UMLAction;
 
-/**
- * Action object for handling Argo settings
- * 
- * @author Thomas N
- * @author Thierry Lach
- * @since 0.9.4
+/** Action object for handling Argo settings
+ *
+ *  @author Thomas N
+ *  @author Thierry Lach
+ *  @since  0.9.4
  */
-public class ActionSettings extends UMLAction implements
-        ArgoModuleEventListener {
+public class ActionSettings extends UMLAction
+    implements ArgoModuleEventListener 
+{
 
     ////////////////////////////////////////////////////////////////
     // static variables
 
     /**
      * Logger.
+     * @deprecated by Linus Tolke as of 0.16. Will be private.
      */
-    private static final Logger LOG = Logger.getLogger(Translator.class);
+    private static Logger cat = Logger.getLogger(Translator.class);
 
-    /**
-     * One and only instance.
-     * 
-     * @deprecated by Linus Tolke as of 0.17.1. Create your own instance of this
-     *             action.
+	/** One and only instance.
      */
-    private static final ActionSettings SINGLETON = new ActionSettings();
+    private static ActionSettings SINGLETON = new ActionSettings();
 
-    /**
-     * Get the instance.
-     * 
-     * @return The instance.
-     * @deprecated by Linus Tolke as of 0.17.1. Create your own instance of this
-     *             action.
+    /** Get the instance.
      */
     public static ActionSettings getInstance() {
         return SINGLETON;
@@ -81,25 +73,15 @@ public class ActionSettings extends UMLAction implements
 
     ////////////////////////////////////////////////////////////////
     // constructors
-    private JButton applyButton = null;
+    protected JButton buttonApply = null;
+    protected JTabbedPane tabs = null;
+    protected ArgoDialog dlg = null;
 
-    private JTabbedPane tabs = null;
-
-    private ArgoDialog dialog = null;
-
-    /**
-     * Constructor.
-     */
-    public ActionSettings() {
+    protected ActionSettings() {
         super("action.settings", HAS_ICON);
     }
 
-    /**
-     * Helper for localization.
-     * 
-     * @param key
-     *            The key to localize.
-     * @return The localized String.
+    /** Helper for localization.
      */
     protected String localize(String key) {
         return Translator.localize("CoreSettings", key);
@@ -108,94 +90,88 @@ public class ActionSettings extends UMLAction implements
     ////////////////////////////////////////////////////////////////
     // main methods
 
-    /**
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-     */
     public void actionPerformed(ActionEvent event) {
+    	Object source = event.getSource();
+    
+        if (source instanceof JMenuItem) {
+            ProjectBrowser pb = ProjectBrowser.getInstance();
+            if (dlg == null) {
+                try {
+                    dlg = new ArgoDialog(pb, localize("dialog.settings"), 
+					 ArgoDialog.OK_CANCEL_OPTION, true)
+			{
+			    public void actionPerformed(ActionEvent event) {
+				super.actionPerformed(event);
+				if (event.getSource() == getOkButton()) {
+				    handleSave();
+				}
+				else if (event.getSource() == getCancelButton())
+				{
+				    handleCancel();
+				}
+			    }
+			};
 
-        ProjectBrowser pb = ProjectBrowser.getInstance();
-        if (dialog == null) {
-            try {
-                dialog = new ArgoDialog(pb, localize("dialog.settings"),
-                        ArgoDialog.OK_CANCEL_OPTION, true) {
+                    tabs = new JTabbedPane();
 
-                    public void actionPerformed(ActionEvent ev) {
-                        super.actionPerformed(ev);
-                        if (ev.getSource() == getOkButton()) {
-                            handleSave();
-                        } else if (ev.getSource() == getCancelButton()) {
-                            handleCancel();
-                        }
+                    buttonApply = new JButton(localize("button.apply"));
+                    String mnemonic = localize("button.apply.mnemonic");
+                    if (mnemonic != null && mnemonic.length() > 0) {
+                        buttonApply.setMnemonic(mnemonic.charAt(0));
                     }
-                };
+                    buttonApply.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+			    handleSave();
+			}
+		    });
+                    dlg.addButton(buttonApply);
 
-                tabs = new JTabbedPane();
+                    ArrayList list =
+                        Argo.getPlugins(PluggableSettingsTab.class);
+                    ListIterator iterator = list.listIterator();
+                    while (iterator.hasNext()) {
+                        Object o = iterator.next();
+                        SettingsTabPanel stp =
+                            ((PluggableSettingsTab) o).getSettingsTabPanel();
 
-                applyButton = new JButton(localize("button.apply"));
-                String mnemonic = localize("button.apply.mnemonic");
-                if (mnemonic != null && mnemonic.length() > 0) {
-                    applyButton.setMnemonic(mnemonic.charAt(0));
-                }
-                applyButton.addActionListener(new ActionListener() {
-
-                    public void actionPerformed(ActionEvent e) {
-                        handleSave();
+                        tabs.addTab(
+                                Translator.localize(
+						  stp.getTabResourceBundleKey(),
+						  stp.getTabKey()),
+				    stp.getTabPanel());
                     }
-                });
-                dialog.addButton(applyButton);
 
-                ArrayList list = Argo.getPlugins(PluggableSettingsTab.class);
-                ListIterator iterator = list.listIterator();
-                while (iterator.hasNext()) {
-                    Object o = iterator.next();
-                    SettingsTabPanel stp = ((PluggableSettingsTab) o)
-                            .getSettingsTabPanel();
+                    // Increase width to accommodate all tabs on one row.
+                    // (temporary solution until tabs are replaced with tree)
+                    final int minimumWidth = 465;
+                    tabs.setPreferredSize(
+                            new Dimension(Math.max(tabs
+						   .getPreferredSize().width,
+						   minimumWidth),
+					  tabs.getPreferredSize().height));
 
-                    tabs.addTab(Translator.localize(stp
-                            .getTabResourceBundleKey(), stp.getTabKey()), stp
-                            .getTabPanel());
+                    dlg.setContent(tabs);        
                 }
-
-                // Increase width to accommodate all tabs on one row.
-                // (temporary solution until tabs are replaced with tree)
-                final int minimumWidth = 465;
-                tabs.setPreferredSize(new Dimension(Math.max(tabs
-                        .getPreferredSize().width, minimumWidth), tabs
-                        .getPreferredSize().height));
-
-                dialog.setContent(tabs);
-            } catch (Exception exception) {
-                LOG.error("got an Exception in ActionSettings", exception);
+                catch (Exception exception) {
+                    cat.error("got an Exception in ActionSettings", exception);
+                }
             }
-        }
-
-        handleRefresh();
-        dialog.toFront();
-        dialog.setVisible(true);
-
+            
+            handleRefresh();
+            dlg.toFront();
+            dlg.setVisible(true);
+	}
     }
 
-    /**
-     * @see org.argouml.application.events.ArgoModuleEventListener#moduleLoaded(org.argouml.application.events.ArgoModuleEvent)
-     */
     public void moduleLoaded(ArgoModuleEvent event) {
     }
 
-    /**
-     * @see org.argouml.application.events.ArgoModuleEventListener#moduleUnloaded(org.argouml.application.events.ArgoModuleEvent)
-     */
     public void moduleUnloaded(ArgoModuleEvent event) {
     }
 
-    /**
-     * @see org.argouml.application.events.ArgoModuleEventListener#moduleEnabled(org.argouml.application.events.ArgoModuleEvent)
-     */
     public void moduleEnabled(ArgoModuleEvent event) {
     }
 
-    /**
-     * @see org.argouml.application.events.ArgoModuleEventListener#moduleDisabled(org.argouml.application.events.ArgoModuleEvent)
-     */
     public void moduleDisabled(ArgoModuleEvent event) {
     }
 

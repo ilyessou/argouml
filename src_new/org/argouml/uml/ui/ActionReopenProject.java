@@ -45,7 +45,7 @@ public class ActionReopenProject extends UMLAction {
     private static final Logger LOG =
 	Logger.getLogger(ActionReopenProject.class);
 
-    private String filename;
+    String _filename;
     
     ////////////////////////////////////////////////////////////////
     // constructors
@@ -53,11 +53,11 @@ public class ActionReopenProject extends UMLAction {
     /**
      * Constructor.
      *
-     * @param theFilename The name of the file.
+     * @param filename The name of the file.
      */
-    public ActionReopenProject(String theFilename) {
+    public ActionReopenProject(String filename) {
 	super("action.reopen-project");
-	filename = theFilename;
+	_filename = filename;
     }
 
     ////////////////////////////////////////////////////////////////
@@ -69,7 +69,7 @@ public class ActionReopenProject extends UMLAction {
      * @return The filename.
      */
     public String getFilename() {
-        return filename;
+        return _filename;
     }
     
     /** 
@@ -122,7 +122,7 @@ public class ActionReopenProject extends UMLAction {
         
         // load of the new project
         // just reuse of the ActionOpen object
-        File toOpen = new File(filename);;
+        File toOpen = new File(_filename);;
         
         try {
             ActionOpenProject openProjectHandler =

@@ -36,7 +36,7 @@ import org.argouml.uml.ui.AbstractActionNewModelElement;
  */
 public class ActionNewGuard extends AbstractActionNewModelElement {
 
-    private static ActionNewGuard singleton = new ActionNewGuard();
+    public static ActionNewGuard SINGLETON = new ActionNewGuard();
     
     /**
      * Constructor for ActionNewCallAction.
@@ -50,14 +50,7 @@ public class ActionNewGuard extends AbstractActionNewModelElement {
      */
     public void actionPerformed(ActionEvent e) {
         super.actionPerformed(e);
-        StateMachinesFactory.getFactory().buildGuard(getTarget());        
-    }
-
-    /**
-     * @return Returns the singleton.
-     */
-    public static ActionNewGuard getSingleton() {
-        return singleton;
+        StateMachinesFactory.getFactory().buildGuard(getTarget());
     }
 
 }

@@ -45,7 +45,7 @@ public class UMLStateEntryList extends UMLMutableLinkedList {
      */
     public UMLStateEntryList(
         UMLModelElementListModel2 dataModel) {
-        super(dataModel);
+        super(dataModel, null);
     }
 
     /**

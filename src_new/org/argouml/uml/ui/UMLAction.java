@@ -42,8 +42,11 @@ import org.argouml.ui.StatusBar;
 import org.tigris.gef.util.Localizer;
 
 public class UMLAction extends AbstractAction {
-
-    private static Logger LOG = Logger.getLogger(UMLAction.class);
+    /**
+     * @deprecated by Linus Tolke as of 0.15.4. Use your own logger in your
+     * class. This will be removed.
+     */
+    protected static Logger cat = Logger.getLogger(UMLAction.class);
 
     public static boolean HAS_ICON = true;
     public static boolean NO_ICON = false;
@@ -53,7 +56,6 @@ public class UMLAction extends AbstractAction {
     public UMLAction(String name) {
         this(name, true, HAS_ICON);
     }
-    
     public UMLAction(String name, boolean hasIcon) {
         this(name, true, hasIcon);
     }
@@ -97,25 +99,26 @@ public class UMLAction extends AbstractAction {
      * @see #putValue(String, Object)
      */
     public Object getValue(String key) {
-        if (iconName != null && Action.SMALL_ICON.equals(key)) {
-            Icon icon =
-            ResourceLoaderWrapper
-                .lookupIconResource(Translator.getImageBinding(iconName),
-                        Translator.localize(iconName));
-            
-            if (icon != null) {
-                putValue(Action.SMALL_ICON, icon);
-            } else {
-                LOG.debug("icon not found: " + iconName);
-            }
-            iconName = null;
-        }
-        return super.getValue(key);
+	if (iconName != null && Action.SMALL_ICON.equals(key)) {
+	    Icon icon =
+		ResourceLoaderWrapper
+		    .getResourceLoaderWrapper()
+		    .lookupIconResource(Translator.getImageBinding(iconName),
+				    Translator.localize(iconName));
+
+	    if (icon != null) {
+		putValue(Action.SMALL_ICON, icon);
+	    } else {
+		cat.debug("icon not found: " + iconName);
+	    }
+	    iconName = null;
+	}
+	return super.getValue(key);
     }
 
     /** Perform the work the action is supposed to do.*/
     public void actionPerformed(ActionEvent e) {
-        LOG.debug("pushed " + getValue(Action.NAME));
+        cat.debug("pushed " + getValue(Action.NAME));
         StatusBar sb = ProjectBrowser.getInstance().getStatusBar();
         sb.doFakeProgress(stripJunk(getValue(Action.NAME).toString()), 100);
         Actions.updateAllEnabled();

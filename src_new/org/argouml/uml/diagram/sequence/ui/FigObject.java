@@ -95,28 +95,28 @@ public class FigObject extends FigNodeModelElement implements MouseListener {
      * The outer black rectangle of the object box (object fig without
      * lifeline).
      */
-    private FigRect outerBox;
+    private FigRect _outerBox;
 
     /**
      * The filled box for the object box (object fig without lifeline).
      */
-    private FigRect backgroundBox;
+    private FigRect _backgroundBox;
 
     /**
      * The lifeline (dashed line under the object box to which activations are
      * attached)
      */
-    private FigLine lifeLine;
+    private FigLine _lifeLine;
 
     /**
      * The owner of the lifeline.
      */
-    private LifeLinePort lifeLinePort;
+    private LifeLinePort _lifeLinePort;
 
     /**
      * The list where the nodes to which links can be attached are stored
      */
-    private List linkPositions = new ArrayList();
+    private List _linkPositions = new ArrayList();
 
     /**
      * The list where the figrects are stored that are the activation
@@ -124,31 +124,31 @@ public class FigObject extends FigNodeModelElement implements MouseListener {
      * removing a figrect, it should also be removed from this list,
      * not only from the figs list.
      */
-    private List figActivations = new ArrayList();
+    private List _figActivations = new ArrayList();
 
     /**
      * The list with the figLinkPorts. The list is only here for
      * performance issues. When deleting a figLinkPort, it should also
      * be removed from this list, not only from the figs list.
      */
-    private List figFigLinkPorts = new ArrayList();
+    private List _figFigLinkPorts = new ArrayList();
 
     /**
      * The comma seperated list of base names of the classifierRole(s)
      * that this object represents.
      */
-    private String baseNames = "";
+    private String _baseNames = "";
 
     /**
      * The comma seperated list of names of the classifierRole(s) that
      * this object represents.
      */
-    private String classifierRoleNames = "";
+    private String _classifierRoleNames = "";
 
     /**
      * The name of the object (the owner of this fig).
      */
-    private String objectName = "";
+    private String _objectName = "";
 
     /**
      * Default constructor. Constructs the object rectangle, the lifeline,
@@ -156,7 +156,7 @@ public class FigObject extends FigNodeModelElement implements MouseListener {
      */
     public FigObject() {
         super();
-        backgroundBox =
+        _backgroundBox =
             new FigRect(
                 0,
                 0,
@@ -164,9 +164,9 @@ public class FigObject extends FigNodeModelElement implements MouseListener {
                 DEFAULT_HEIGHT,
                 Color.white,
                 Color.white);
-        backgroundBox.setFilled(true);
-        outerBox = new FigRect(0, 0, DEFAULT_WIDTH, DEFAULT_HEIGHT);
-        outerBox.setFilled(false);
+        _backgroundBox.setFilled(true);
+        _outerBox = new FigRect(0, 0, DEFAULT_WIDTH, DEFAULT_HEIGHT);
+        _outerBox.setFilled(false);
         setStereotypeFig(new FigText(DEFAULT_WIDTH / 2,
 				     ROWHEIGHT + ROWDISTANCE,
 				     0,
@@ -175,8 +175,8 @@ public class FigObject extends FigNodeModelElement implements MouseListener {
 				     "Dialog",
 				     12,
 				     false));
-        getStereotypeFigText().setAllowsTab(false);
-        getStereotypeFigText().setEditable(false);
+        _stereo.setAllowsTab(false);
+        _stereo.setEditable(false);
         getStereotypeFig().setFilled(false);
         getStereotypeFig().setLineWidth(0);
         setNameFig(new FigText(DEFAULT_WIDTH / 2,
@@ -191,29 +191,29 @@ public class FigObject extends FigNodeModelElement implements MouseListener {
         getNameFig().setAllowsTab(false);
         getNameFig().setFilled(false);
         getNameFig().setLineWidth(0);
-        lifeLine =
+        _lifeLine =
             new FigLine(
                 DEFAULT_WIDTH / 2,
                 DEFAULT_HEIGHT,
                 DEFAULT_WIDTH / 2,
                 1000,
                 Color.black);
-        lifeLine.setDashed(true);
-        linkPositions.add(new ObjectNode(this));
+        _lifeLine.setDashed(true);
+        _linkPositions.add(new ObjectNode(this));
         for (int i = 0;
-            i <= lifeLine.getHeight() / SequenceDiagramLayout.LINK_DISTANCE;
+            i <= _lifeLine.getHeight() / SequenceDiagramLayout.LINK_DISTANCE;
             i++) {
-            linkPositions.add(new EmptyNode());
+            _linkPositions.add(new EmptyNode());
         }
-        addFig(lifeLine);
-        addFig(backgroundBox);
+        addFig(_lifeLine);
+        addFig(_backgroundBox);
         addFig(getStereotypeFig());
         addFig(getNameFig());
-        addFig(outerBox);
+        addFig(_outerBox);
     }
 
     /**
-     * @param node the owner
+     * @param node
      */
     public FigObject(Object node) {
         this();
@@ -240,7 +240,7 @@ public class FigObject extends FigNodeModelElement implements MouseListener {
      */
     protected void updateNameText() {
         String nameText =
-            (objectName + "/" + classifierRoleNames + ":" + baseNames)
+            (_objectName + "/" + _classifierRoleNames + ":" + _baseNames)
                 .trim();
         getNameFig().setText(nameText);
         center(getNameFig());
@@ -252,7 +252,7 @@ public class FigObject extends FigNodeModelElement implements MouseListener {
      */
     protected void updateStereotypeText() {
         super.updateStereotypeText();
-        center(getStereotypeFigText());
+        center(_stereo);
     }
 
     private void center(FigText figText) {
@@ -289,24 +289,24 @@ public class FigObject extends FigNodeModelElement implements MouseListener {
                 x + w / 2,
                 (getStereotypeFig().getY() - oldBounds.y
 		 + y + getStereotypeFig().getHalfHeight())));
-        reSize(outerBox, x, y, w, h);
-        reSize(backgroundBox, x, y, w, h);
-        lifeLine.setBounds(
-            outerBox.getX() + outerBox.getHalfWidth(),
-            outerBox.getY() + outerBox.getHeight(),
+        reSize(_outerBox, x, y, w, h);
+        reSize(_backgroundBox, x, y, w, h);
+        _lifeLine.setBounds(
+            _outerBox.getX() + _outerBox.getHalfWidth(),
+            _outerBox.getY() + _outerBox.getHeight(),
             0,
-            h - outerBox.getHeight());
+            h - _outerBox.getHeight());
         int factor = h / oldBounds.height;
-        for (int i = 0; i < figActivations.size(); i++) {
-            FigRect fig = (FigRect) figActivations.get(i);
+        for (int i = 0; i < _figActivations.size(); i++) {
+            FigRect fig = (FigRect) _figActivations.get(i);
             fig.setBounds(
                 x - oldBounds.x + fig.getX(),
                 y - oldBounds.y + fig.getY(),
                 fig.getWidth(),
                 fig.getHeight());
         }
-        for (int i = 0; i < figFigLinkPorts.size(); i++) {
-            FigLinkPort fig = (FigLinkPort) figFigLinkPorts.get(i);
+        for (int i = 0; i < _figFigLinkPorts.size(); i++) {
+            FigLinkPort fig = (FigLinkPort) _figFigLinkPorts.get(i);
             fig.setBounds(
                 x - oldBounds.x + fig.getX(),
                 y - oldBounds.y + fig.getY(),
@@ -370,8 +370,8 @@ public class FigObject extends FigNodeModelElement implements MouseListener {
      * @see FigNodeModelElement#calcBounds()
      */
     public void calcBounds() {
-        Rectangle bounds = outerBox.getBounds();
-        bounds.add(lifeLine.getBounds());
+        Rectangle bounds = _outerBox.getBounds();
+        bounds.add(_lifeLine.getBounds());
         _x = bounds.x;
         _y = bounds.y;
         _h = bounds.height;
@@ -379,10 +379,10 @@ public class FigObject extends FigNodeModelElement implements MouseListener {
     }
 
     private void removeActivations() {
-        for (int i = 0; i < figActivations.size(); i++) {
-            getFigs(null).remove(figActivations.get(i));
+        for (int i = 0; i < _figActivations.size(); i++) {
+            getFigs(null).remove(_figActivations.get(i));
         }
-        figActivations = new ArrayList();
+        _figActivations = new ArrayList();
         calcBounds();
     }
 
@@ -390,9 +390,9 @@ public class FigObject extends FigNodeModelElement implements MouseListener {
         boolean startActivation = false;
         ActivationNode startActivationNode = null;
         ActivationNode endActivationNode = null;
-        int x = lifeLine.getX() - WIDTH / 2;
-        for (int i = 0; i < linkPositions.size(); i++) {
-            Node node = (Node) linkPositions.get(i);
+        int x = _lifeLine.getX() - WIDTH / 2;
+        for (int i = 0; i < _linkPositions.size(); i++) {
+            Node node = (Node) _linkPositions.get(i);
             if (node instanceof ActivationNode
                 && ((ActivationNode) node).isStart()) {
                 startActivationNode = (ActivationNode) node;
@@ -428,9 +428,9 @@ public class FigObject extends FigNodeModelElement implements MouseListener {
                         startPos,
                         WIDTH,
                         endPos - startPos,
-                        outerBox.getLineColor(),
-                        backgroundBox.getFillColor());
-                figActivations.add(activation);
+                        _outerBox.getLineColor(),
+                        _backgroundBox.getFillColor());
+                _figActivations.add(activation);
                 addFig(activation);
             }
         }
@@ -466,9 +466,9 @@ public class FigObject extends FigNodeModelElement implements MouseListener {
      * @see org.tigris.gef.presentation.Fig#setLineWidth(int)
      */
     public void setLineWidth(int w) {
-        if (outerBox.getLineWidth() != w && w != 0) {
-            outerBox.setLineWidth(w);
-            lifeLine.setLineWidth(w);
+        if (_outerBox.getLineWidth() != w && w != 0) {
+            _outerBox.setLineWidth(w);
+            _lifeLine.setLineWidth(w);
             damage();
         }
     }
@@ -477,8 +477,8 @@ public class FigObject extends FigNodeModelElement implements MouseListener {
      * @see org.tigris.gef.presentation.Fig#setFillColor(java.awt.Color)
      */
     public void setFillColor(Color col) {
-        if (col != null && col != backgroundBox.getFillColor()) {
-            backgroundBox.setFillColor(col);
+        if (col != null && col != _backgroundBox.getFillColor()) {
+            _backgroundBox.setFillColor(col);
             damage();
         }
     }
@@ -487,8 +487,8 @@ public class FigObject extends FigNodeModelElement implements MouseListener {
      * @see org.tigris.gef.presentation.Fig#setFilled(boolean)
      */
     public void setFilled(boolean filled) {
-        if (backgroundBox.getFilled() != filled) {
-            backgroundBox.setFilled(filled);
+        if (_backgroundBox.getFilled() != filled) {
+            _backgroundBox.setFilled(filled);
             damage();
         }
     }
@@ -497,28 +497,28 @@ public class FigObject extends FigNodeModelElement implements MouseListener {
      * @see org.tigris.gef.presentation.Fig#getFillColor()
      */
     public Color getFillColor() {
-        return backgroundBox.getFillColor();
+        return _backgroundBox.getFillColor();
     }
 
     /**
      * @see org.tigris.gef.presentation.Fig#getFilled()
      */
     public boolean getFilled() {
-        return backgroundBox.getFilled();
+        return _backgroundBox.getFilled();
     }
 
     /**
      * @see org.tigris.gef.presentation.Fig#getLineColor()
      */
     public Color getLineColor() {
-        return outerBox.getLineColor();
+        return _outerBox.getLineColor();
     }
 
     /**
      * @see org.tigris.gef.presentation.Fig#getLineWidth()
      */
     public int getLineWidth() {
-        return outerBox.getLineWidth();
+        return _outerBox.getLineWidth();
     }
 
     /**
@@ -590,29 +590,29 @@ public class FigObject extends FigNodeModelElement implements MouseListener {
                 roleNames += ", ";
             }
         }
-        classifierRoleNames = roleNames;
+        _classifierRoleNames = roleNames;
     }
 
     private void updateBaseNames() {
-        String b = "";
+        String baseNames = "";
         Iterator it = ModelFacade.getClassifiers(getOwner()).iterator();
         while (it.hasNext()) {
             Iterator it2 = ModelFacade.getBases(it.next()).iterator();
             while (it2.hasNext()) {
-                b += getBeautifiedName(it2.next());
+                baseNames += getBeautifiedName(it2.next());
                 if (it2.hasNext()) {
-                    b += ",";
+                    baseNames += ",";
                 }
             }
             if (it.hasNext()) {
-                b += ",";
+                baseNames += ",";
             }
         }
-        baseNames = b;
+        _baseNames = baseNames;
     }
 
     private void updateObjectName() {
-        objectName = getBeautifiedName(getOwner());
+        _objectName = getBeautifiedName(getOwner());
     }
 
     /**
@@ -641,26 +641,26 @@ public class FigObject extends FigNodeModelElement implements MouseListener {
         Object port = null;
         Rectangle rect = new Rectangle(getX(), y - 16, getWidth(), 32);
         Node foundNode = null;
-        if (lifeLine.intersects(rect)) {
-            for (int i = linkPositions.indexOf(getObjectNode());
-                i < linkPositions.size();
+        if (_lifeLine.intersects(rect)) {
+            for (int i = _linkPositions.indexOf(getObjectNode());
+                i < _linkPositions.size();
                 i++) {
-                Node node = (Node) linkPositions.get(i);
+                Node node = (Node) _linkPositions.get(i);
                 int position = getYCoordinate(node);
-                if (i < linkPositions.size() - 1) {
+                if (i < _linkPositions.size() - 1) {
                     int nextPosition =
-                        getYCoordinate((Node) linkPositions.get(i + 1));
+                        getYCoordinate((Node) _linkPositions.get(i + 1));
                     if (nextPosition >= y && position < y) {
                         if ((y - position) <= (nextPosition - y)) {
                             foundNode = node;
                         } else {
-                            foundNode = (Node) linkPositions.get(i + 1);
+                            foundNode = (Node) _linkPositions.get(i + 1);
                         }
                         break;
                     }
                 } else {
                     foundNode =
-                        (Node) linkPositions.get(linkPositions.size() - 1);
+                        (Node) _linkPositions.get(_linkPositions.size() - 1);
                     break;
                 }
             }
@@ -669,12 +669,12 @@ public class FigObject extends FigNodeModelElement implements MouseListener {
             if (!layout.getFigLinks(getYCoordinate(foundNode)).isEmpty()) {
                 FigLinkPort figLinkPort =
                     new FigLinkPort(
-                        lifeLine.getX() - WIDTH / 2,
+                        _lifeLine.getX() - WIDTH / 2,
                         getYCoordinate(foundNode)
                             + SequenceDiagramLayout.LINK_DISTANCE,
-                        lifeLine.getX() + WIDTH / 2);
+                        _lifeLine.getX() + WIDTH / 2);
                 addFig(figLinkPort);
-                figFigLinkPorts.add(figLinkPort);
+                _figFigLinkPorts.add(figLinkPort);
                 LinkNode linkNode = new LinkNode(getOwner(), figLinkPort);
                 layout.addNode(getIndexOf(foundNode) + 1, linkNode);
                 foundNode = linkNode;
@@ -683,21 +683,21 @@ public class FigObject extends FigNodeModelElement implements MouseListener {
                     && !(foundNode instanceof ObjectNode)) {
                     FigLinkPort figLinkPort =
                         new FigLinkPort(
-                            lifeLine.getX() - WIDTH / 2,
+                            _lifeLine.getX() - WIDTH / 2,
                             getYCoordinate(foundNode),
-                            lifeLine.getX() + WIDTH / 2);
+                            _lifeLine.getX() + WIDTH / 2);
                     addFig(figLinkPort);
-                    figFigLinkPorts.add(figLinkPort);
+                    _figFigLinkPorts.add(figLinkPort);
                     LinkNode linkNode = new LinkNode(getOwner(), figLinkPort);
-                    linkPositions.set(
-                        linkPositions.indexOf(foundNode),
+                    _linkPositions.set(
+                        _linkPositions.indexOf(foundNode),
                         linkNode);
                     foundNode = linkNode;
                 }
 
             }
             return foundNode;
-        } else if (outerBox.intersects(rect)) {
+        } else if (_outerBox.intersects(rect)) {
             ObjectNode objectNode = (ObjectNode) getObjectNode();
             if (objectNode.getFigLinkPort() != null
                 && getFigLink(objectNode.getFigLinkPort()) != null) {
@@ -706,9 +706,9 @@ public class FigObject extends FigNodeModelElement implements MouseListener {
             if (objectNode.getFigLinkPort() == null) {
                 FigLinkPort figLinkPort =
                     new FigLinkPort(
-                        lifeLine.getX() - WIDTH / 2,
+                        _lifeLine.getX() - WIDTH / 2,
                         getYCoordinate(foundNode),
-                        lifeLine.getX() + WIDTH / 2);
+                        _lifeLine.getX() + WIDTH / 2);
                 objectNode.setFigLinkPort(figLinkPort);
             }
             objectNode.setObject(getOwner());
@@ -719,15 +719,15 @@ public class FigObject extends FigNodeModelElement implements MouseListener {
     }
 
     private int getYCoordinate(Node node) {
-        int index = linkPositions.indexOf(node);
+        int index = _linkPositions.indexOf(node);
         int y = 0;
         if (index == 0) {
-            y = getY() + outerBox.getHalfHeight();
+            y = getY() + _outerBox.getHalfHeight();
         } else {
             y =
                 (index - 1) * SequenceDiagramLayout.LINK_DISTANCE
                     + getY()
-                    + outerBox.getHeight();
+                    + _outerBox.getHeight();
         }
         return y;
     }
@@ -736,7 +736,7 @@ public class FigObject extends FigNodeModelElement implements MouseListener {
         int y = getYCoordinate(node);
         if (node instanceof ActivationNode) {
             if (node instanceof ObjectNode) {
-                y = y + outerBox.getHalfHeight();
+                y = y + _outerBox.getHalfHeight();
             } else {
                 ActivationNode activationNode = (ActivationNode) node;
                 if (start
@@ -759,14 +759,14 @@ public class FigObject extends FigNodeModelElement implements MouseListener {
      */
     public void setOwner(Object own) {
         super.setOwner(own);
-        bindPort(own, outerBox);
+        bindPort(own, _outerBox);
     }
 
     /**
      * Gets the {@link FigLink} that is attached to the given
      * {@link FigLinkPort}.
      *
-     * @param portFig the given port
+     * @param portFig
      * @return the {@link FigLink} that is attached.
      */
     public FigLink getFigLink(FigLinkPort portFig) {
@@ -782,11 +782,8 @@ public class FigObject extends FigNodeModelElement implements MouseListener {
         return null;
     }
 
-    /**
-     * @return the lifeline Fig
-     */
     public FigLine getLifeLine() {
-        return lifeLine;
+        return _lifeLine;
     }
 
     /**
@@ -804,28 +801,28 @@ public class FigObject extends FigNodeModelElement implements MouseListener {
         if (node instanceof ActivationNode) {
             ActivationNode activationNode = (ActivationNode) node;
             if (activationNode.isStart()) {
-                start = linkPositions.indexOf(activationNode);
+                start = _linkPositions.indexOf(activationNode);
                 ListIterator it =
-                    linkPositions
+                    _linkPositions
                         .subList(
-                            linkPositions.indexOf(activationNode),
-                            linkPositions.size())
+                            _linkPositions.indexOf(activationNode),
+                            _linkPositions.size())
                         .listIterator();
                 while (it.hasNext()) {
                     Node node2 = (Node) it.next();
                     if (node2 instanceof ActivationNode
                         && ((ActivationNode) node2).isEnd()) {
-                        end = linkPositions.indexOf(node2);
+                        end = _linkPositions.indexOf(node2);
                         break;
                     }
                 }
             } else if (activationNode.isEnd()) {
-                end = linkPositions.indexOf(activationNode);
+                end = _linkPositions.indexOf(activationNode);
                 for (int i = end - 1; i >= 1; i--) {
-                    Node node2 = (Node) linkPositions.get(i);
+                    Node node2 = (Node) _linkPositions.get(i);
                     if (node2 instanceof ActivationNode
                         && ((ActivationNode) node2).isStart()) {
-                        start = linkPositions.indexOf(node2);
+                        start = _linkPositions.indexOf(node2);
                         break;
                     }
                 }
@@ -838,9 +835,9 @@ public class FigObject extends FigNodeModelElement implements MouseListener {
                     return new ArrayList();
                 }
                 for (int i = getIndexOf(activationNode) + 1;
-                    i < linkPositions.size();
+                    i < _linkPositions.size();
                     i++) {
-                    Node node2 = (Node) linkPositions.get(i);
+                    Node node2 = (Node) _linkPositions.get(i);
                     if (node2 instanceof ActivationNode
                         && ((ActivationNode) node2).isEnd()) {
                         end = getIndexOf(node2);
@@ -848,7 +845,7 @@ public class FigObject extends FigNodeModelElement implements MouseListener {
                     }
                 }
                 for (int i = getIndexOf(activationNode) - 1; i >= 0; i--) {
-                    Node node2 = (Node) linkPositions.get(i);
+                    Node node2 = (Node) _linkPositions.get(i);
                     if (node2 instanceof ActivationNode
                         && ((ActivationNode) node2).isStart()) {
                         start = getIndexOf(node2);
@@ -860,7 +857,7 @@ public class FigObject extends FigNodeModelElement implements MouseListener {
             if (end == -1 || start == -1) {
                 return new ArrayList();
             }
-            return linkPositions.subList(start, end);
+            return _linkPositions.subList(start, end);
 
         }
         return new ArrayList();
@@ -873,17 +870,17 @@ public class FigObject extends FigNodeModelElement implements MouseListener {
      * @return the index
      */
     public int getIndexOf(Node node) {
-        return linkPositions.indexOf(node);
+        return _linkPositions.indexOf(node);
     }
 
     /**
      * See makeActivation(int startIndex, int endIndex)
-     * @param startNode Node
-     * @param endNode Node
+     * @param startNode
+     * @param endNode
      */
     public void makeActivation(Node startNode, Node endNode) {
-        int startIndex = linkPositions.indexOf(startNode);
-        int endIndex = linkPositions.indexOf(endNode);
+        int startIndex = _linkPositions.indexOf(startNode);
+        int endIndex = _linkPositions.indexOf(endNode);
         makeActivation(startIndex, endIndex);
     }
 
@@ -895,18 +892,18 @@ public class FigObject extends FigNodeModelElement implements MouseListener {
      * via the start property that's a starting node. The same is true
      * for the ending node via the end property.<p>
      *
-     * @param startIndex int
-     * @param endIndex int
+     * @param startIndex
+     * @param endIndex
      */
     public void makeActivation(int startIndex, int endIndex) {
         for (int i = startIndex; i <= endIndex; i++) {
-            Object o = linkPositions.get(i);
+            Object o = _linkPositions.get(i);
             if (!(o instanceof ActivationNode)) {
-                linkPositions.set(i, new ActivationNode());
+                _linkPositions.set(i, new ActivationNode());
             }
         }
-        ((ActivationNode) linkPositions.get(startIndex)).setStart(true);
-        ((ActivationNode) linkPositions.get(endIndex)).setEnd(true);
+        ((ActivationNode) _linkPositions.get(startIndex)).setStart(true);
+        ((ActivationNode) _linkPositions.get(endIndex)).setEnd(true);
     }
 
     /**
@@ -916,8 +913,8 @@ public class FigObject extends FigNodeModelElement implements MouseListener {
      * @return the Node
      */
     public Node nextNode(Node node) {
-        if (getIndexOf(node) < linkPositions.size())
-            return (Node) linkPositions.get(getIndexOf(node) + 1);
+        if (getIndexOf(node) < _linkPositions.size())
+            return (Node) _linkPositions.get(getIndexOf(node) + 1);
         else
             return null;
     }
@@ -930,7 +927,7 @@ public class FigObject extends FigNodeModelElement implements MouseListener {
      */
     public Node previousNode(Node node) {
         if (getIndexOf(node) > 0) {
-            return (Node) linkPositions.get(getIndexOf(node) - 1);
+            return (Node) _linkPositions.get(getIndexOf(node) - 1);
         } else
             return null;
     }
@@ -943,8 +940,8 @@ public class FigObject extends FigNodeModelElement implements MouseListener {
      * @return true if this {@link FigObject} has activations.
      */
     public boolean hasActivations() {
-        for (int i = 0; i < linkPositions.size(); i++) {
-            Node node = (Node) linkPositions.get(i);
+        for (int i = 0; i < _linkPositions.size(); i++) {
+            Node node = (Node) _linkPositions.get(i);
             if (node instanceof ActivationNode) {
                 if (getActivationNodes(node).isEmpty()) {
                     return false;
@@ -967,11 +964,11 @@ public class FigObject extends FigNodeModelElement implements MouseListener {
     /**
      * Sets the given node on the given index in linkPositions.<p>
      *
-     * @param index the given index
-     * @param node the given node
+     * @param index
+     * @param node
      */
     public void setNode(int index, Node node) {
-        linkPositions.set(index, node);
+        _linkPositions.set(index, node);
     }
 
     /**
@@ -981,9 +978,9 @@ public class FigObject extends FigNodeModelElement implements MouseListener {
      * @return the ObjectNode.
      */
     public ObjectNode getObjectNode() {
-        for (int i = 0; i < linkPositions.size(); i++) {
-            if (linkPositions.get(i) instanceof ObjectNode) {
-                return (ObjectNode) linkPositions.get(i);
+        for (int i = 0; i < _linkPositions.size(); i++) {
+            if (_linkPositions.get(i) instanceof ObjectNode) {
+                return (ObjectNode) _linkPositions.get(i);
             }
         }
         return null;
@@ -998,8 +995,8 @@ public class FigObject extends FigNodeModelElement implements MouseListener {
      */
     public void removeFig(Fig f) {
         super.removeFig(f);
-        figActivations.remove(f);
-        figFigLinkPorts.remove(f);
+        _figActivations.remove(f);
+        _figFigLinkPorts.remove(f);
     }
 
     /**
@@ -1019,15 +1016,11 @@ public class FigObject extends FigNodeModelElement implements MouseListener {
         return retList;
     }
 
-    /**
-     * @param position the position in which the node will be added
-     * @param node the node to be added
-     */
     public void addNode(int position, Node node) {
-        linkPositions.add(position, node);
+        _linkPositions.add(position, node);
         Iterator it =
-            linkPositions
-                .subList(position + 1, linkPositions.size())
+            _linkPositions
+                .subList(position + 1, _linkPositions.size())
                 .iterator();
         while (it.hasNext()) {
             Object o = it.next();

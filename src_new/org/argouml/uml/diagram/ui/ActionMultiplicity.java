@@ -32,49 +32,39 @@ import java.util.*;
 import org.argouml.model.ModelFacade;
 
 
-/**
- * Action to set the Multiplicity.
- *
- */
 public class ActionMultiplicity extends UMLAction {
-    private String str = "";
-    private Object/*MMultiplicity*/ mult = null;
+    String str = "";
+    Object/*MMultiplicity*/ mult = null;
 
 
     ////////////////////////////////////////////////////////////////
     // static variables
 
     // multiplicity
-    private static UMLAction srcMultOne =
+    public static UMLAction SrcMultOne =
 	new ActionMultiplicity(ModelFacade.M1_1_MULTIPLICITY, "src");
-    private static UMLAction destMultOne =
+    public static UMLAction DestMultOne =
 	new ActionMultiplicity(ModelFacade.M1_1_MULTIPLICITY, "dest");
 
-    private static UMLAction srcMultZeroToOne =
+    public static UMLAction SrcMultZeroToOne =
 	new ActionMultiplicity(ModelFacade.M0_1_MULTIPLICITY, "src");
-    private static UMLAction destMultZeroToOne =
+    public static UMLAction DestMultZeroToOne =
 	new ActionMultiplicity(ModelFacade.M0_1_MULTIPLICITY, "dest");
 
-    private static UMLAction srcMultZeroToMany =
+    public static UMLAction SrcMultZeroToMany =
 	new ActionMultiplicity(ModelFacade.M0_N_MULTIPLICITY, "src");
-    private static UMLAction destMultZeroToMany =
+    public static UMLAction DestMultZeroToMany =
 	new ActionMultiplicity(ModelFacade.M0_N_MULTIPLICITY, "dest");
 
-    private static UMLAction srcMultOneToMany =
+    public static UMLAction SrcMultOneToMany =
 	new ActionMultiplicity(ModelFacade.M1_N_MULTIPLICITY, "src");
-    private static UMLAction destMultOneToMany =
+    public static UMLAction DestMultOneToMany =
 	new ActionMultiplicity(ModelFacade.M1_N_MULTIPLICITY, "dest");
 
 
     ////////////////////////////////////////////////////////////////
     // constructors
 
-    /**
-     * The Constructor.
-     * 
-     * @param m the multiplicity
-     * @param s "src" or "dest". Anything else is interpreted as "dest".
-     */
     protected ActionMultiplicity(Object/*MMultiplicity*/ m, String s) {
 	//super(m.getLower() + ".." + m.getUpper(), NO_ICON);
 	super(m.toString(), NO_ICON);
@@ -86,9 +76,6 @@ public class ActionMultiplicity extends UMLAction {
     ////////////////////////////////////////////////////////////////
     // main methods
 
-    /**
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-     */
     public void actionPerformed(ActionEvent ae) {
 	Vector sels = Globals.curEditor().getSelectionManager().selections();
 	if ( sels.size() == 1 ) {
@@ -110,74 +97,7 @@ public class ActionMultiplicity extends UMLAction {
 	}
     }
 
-    /**
-     * @see org.argouml.uml.ui.UMLAction#shouldBeEnabled()
-     */
     public boolean shouldBeEnabled() { 
 	return true; 
-    }
-
-
-    /**
-     * @return Returns the srcMultOne.
-     */
-    public static UMLAction getSrcMultOne() {
-        return srcMultOne;
-    }
-
-
-    /**
-     * @return Returns the destMultOne.
-     */
-    public static UMLAction getDestMultOne() {
-        return destMultOne;
-    }
-
-
-    /**
-     * @return Returns the srcMultZeroToOne.
-     */
-    public static UMLAction getSrcMultZeroToOne() {
-        return srcMultZeroToOne;
-    }
-
-
-    /**
-     * @return Returns the destMultZeroToOne.
-     */
-    public static UMLAction getDestMultZeroToOne() {
-        return destMultZeroToOne;
-    }
-
-
-    /**
-     * @return Returns the srcMultZeroToMany.
-     */
-    public static UMLAction getSrcMultZeroToMany() {
-        return srcMultZeroToMany;
-    }
-
-
-    /**
-     * @return Returns the destMultZeroToMany.
-     */
-    public static UMLAction getDestMultZeroToMany() {
-        return destMultZeroToMany;
-    }
-
-
-    /**
-     * @return Returns the srcMultOneToMany.
-     */
-    public static UMLAction getSrcMultOneToMany() {
-        return srcMultOneToMany;
-    }
-
-
-    /**
-     * @return Returns the destMultOneToMany.
-     */
-    public static UMLAction getDestMultOneToMany() {
-        return destMultOneToMany;
     }
 } /* end class ActionSrcMultOneToMany */

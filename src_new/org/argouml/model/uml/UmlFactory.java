@@ -44,7 +44,6 @@ import org.argouml.model.uml.foundation.core.CoreFactory;
 import org.argouml.model.uml.foundation.datatypes.DataTypesFactory;
 import org.argouml.model.uml.foundation.extensionmechanisms.ExtensionMechanismsFactory;
 import org.argouml.model.uml.modelmanagement.ModelManagementFactory;
-import org.argouml.uml.diagram.static_structure.ui.CommentEdge;
 
 import ru.novosoft.uml.MBase;
 import ru.novosoft.uml.MFactory;
@@ -80,10 +79,14 @@ import ru.novosoft.uml.behavior.common_behavior.MSendAction;
 import ru.novosoft.uml.behavior.common_behavior.MSignal;
 import ru.novosoft.uml.behavior.common_behavior.MTerminateAction;
 import ru.novosoft.uml.behavior.common_behavior.MUninterpretedAction;
+import ru.novosoft.uml.behavior.state_machines.MCallEvent;
+import ru.novosoft.uml.behavior.state_machines.MChangeEvent;
 import ru.novosoft.uml.behavior.state_machines.MCompositeState;
+import ru.novosoft.uml.behavior.state_machines.MEvent;
 import ru.novosoft.uml.behavior.state_machines.MFinalState;
 import ru.novosoft.uml.behavior.state_machines.MGuard;
 import ru.novosoft.uml.behavior.state_machines.MPseudostate;
+import ru.novosoft.uml.behavior.state_machines.MSignalEvent;
 import ru.novosoft.uml.behavior.state_machines.MSimpleState;
 import ru.novosoft.uml.behavior.state_machines.MState;
 import ru.novosoft.uml.behavior.state_machines.MStateMachine;
@@ -91,6 +94,7 @@ import ru.novosoft.uml.behavior.state_machines.MStateVertex;
 import ru.novosoft.uml.behavior.state_machines.MStubState;
 import ru.novosoft.uml.behavior.state_machines.MSubmachineState;
 import ru.novosoft.uml.behavior.state_machines.MSynchState;
+import ru.novosoft.uml.behavior.state_machines.MTimeEvent;
 import ru.novosoft.uml.behavior.state_machines.MTransition;
 import ru.novosoft.uml.behavior.use_cases.MActor;
 import ru.novosoft.uml.behavior.use_cases.MExtend;
@@ -149,20 +153,21 @@ import ru.novosoft.uml.model_management.MSubsystem;
 public class UmlFactory extends AbstractUmlModelFactory {
 
     /**
-     * The logger
+     * @deprecated by Linus Tolke as of 0.15.4. Use your own logger in your
+     * class. This will be removed.
      */
-    private static final Logger LOG =
+    protected static Logger cat =
         Logger.getLogger(UmlFactory.class);
     
     /**
      * A map of valid connections keyed by the connection type.
      * The constructor builds this from the data in the VALID_CONNECTIONS array
      */
-    private Map validConnectionMap = new HashMap();
+    private Map _validConnectionMap = new HashMap();
 
-    private boolean jmiProxyCreated = false;
+    private boolean _jmiProxyCreated = false;
 
-    /**
+    /*
      * An array of valid connections, the combination of connecting class
      * and node classes must exist as a row in this list to be considered
      * valid.
@@ -241,12 +246,7 @@ public class UmlFactory extends AbstractUmlModelFactory {
 	{ModelFacade.EXTEND,           ModelFacade.USE_CASE},
 	{ModelFacade.INCLUDE,          ModelFacade.USE_CASE},
 	{ModelFacade.LINK,             ModelFacade.NODE_INSTANCE},
-	{ModelFacade.LINK,             ModelFacade.OBJECT},
-	{CommentEdge.class,            ModelFacade.MODELELEMENT,
-	 ModelFacade.COMMENT},
-	{CommentEdge.class,            ModelFacade.COMMENT,
-         ModelFacade.MODELELEMENT},
-        {ModelFacade.TRANSITION,       ModelFacade.STATEVERTEX}
+	{ModelFacade.LINK,             ModelFacade.OBJECT}
     };
 
     /** Singleton instance.
@@ -274,13 +274,14 @@ public class UmlFactory extends AbstractUmlModelFactory {
         // connection type first and then the elements to be connected
         
         Object connection = null;
+        Object lastConnection = null;
         for (int i = 0; i < VALID_CONNECTIONS.length; ++i) {
             connection = VALID_CONNECTIONS[i][0];
             ArrayList validItems =
-                (ArrayList) validConnectionMap.get(connection);
+                (ArrayList) _validConnectionMap.get(connection);
             if (validItems == null) {
                 validItems = new ArrayList();
-                validConnectionMap.put(connection, validItems);
+                _validConnectionMap.put(connection, validItems);
             }
             if (VALID_CONNECTIONS[i].length < 3) {
                 // If there isn't a 3rd column then this represents a connection
@@ -308,33 +309,34 @@ public class UmlFactory extends AbstractUmlModelFactory {
         }
     }
 
-    /**
-     * Initialization for the "create(UmlModelEntity)" function.
-     */
     private void initializeFactoryMethods() {
         MFactory factory = MFactory.getDefaultFactory();
         elements = new Hashtable(80);
-        
         elements.put(Uml.ABSTRACTION,
-            new ObjectCreateInfo(MAbstraction.class,
+            new ObjectCreateInfo(
+                MAbstraction.class,
                 factory,
                 "createAbstraction"));
         elements.put(Uml.ASSOCIATION,
-            new ObjectCreateInfo(MAssociation.class,
+            new ObjectCreateInfo(
+                MAssociation.class,
                 factory,
                 "createAssociation"));
         elements.put(Uml.ASSOCIATION_ROLE,
-            new ObjectCreateInfo(MAssociationRole.class,
+            new ObjectCreateInfo(
+                MAssociationRole.class,
                 factory,
                 "createAssociationRole"));
         elements.put(Uml.DEPENDENCY,
-            new ObjectCreateInfo(MDependency.class,
+            new ObjectCreateInfo(
+                MDependency.class,
                 factory,
                 "createDependency"));
         elements.put(Uml.EXTEND,
             new ObjectCreateInfo(MExtend.class, factory, "createExtend"));
         elements.put(Uml.GENERALIZATION,
-            new ObjectCreateInfo(MGeneralization.class,
+            new ObjectCreateInfo(
+                MGeneralization.class,
                 factory,
                 "createGeneralization"));
         elements.put(Uml.INCLUDE,
@@ -344,13 +346,15 @@ public class UmlFactory extends AbstractUmlModelFactory {
         elements.put(Uml.LINK_END,
             new ObjectCreateInfo(MLinkEnd.class, factory, "createLinkEnd"));
         elements.put(Uml.PERMISSION,
-            new ObjectCreateInfo(MPermission.class,
+            new ObjectCreateInfo(
+                MPermission.class,
                 factory,
                 "createPermission"));
         elements.put(Uml.USAGE,
             new ObjectCreateInfo(MUsage.class, factory, "createUsage"));
         elements.put(Uml.TRANSITION,
-            new ObjectCreateInfo(MTransition.class,
+            new ObjectCreateInfo(
+                MTransition.class,
                 factory,
                 "createTransition"));
         elements.put(Uml.ACTOR,
@@ -362,17 +366,20 @@ public class UmlFactory extends AbstractUmlModelFactory {
                 factory,
                 "createException"));
         elements.put(Uml.CLASSIFIER,
-            new ObjectCreateInfo(MClassifier.class,
+            new ObjectCreateInfo(
+                MClassifier.class,
                 factory,
                 "createClassifier"));
         elements.put(Uml.CLASSIFIER_ROLE,
-            new ObjectCreateInfo(MClassifierRole.class,
+            new ObjectCreateInfo(
+                MClassifierRole.class,
                 factory,
                 "createClassifierRole"));
         elements.put(Uml.COMPONENT,
             new ObjectCreateInfo(MComponent.class, factory, "createComponent"));
         elements.put(Uml.COMPONENT_INSTANCE,
-            new ObjectCreateInfo(MComponentInstance.class,
+            new ObjectCreateInfo(
+                MComponentInstance.class,
                 CommonBehaviorFactory.getFactory(),
                 "createComponentInstance"));
         elements.put(Uml.INSTANCE,
@@ -382,51 +389,40 @@ public class UmlFactory extends AbstractUmlModelFactory {
         elements.put(Uml.NODE,
             new ObjectCreateInfo(MNode.class, factory, "createNode"));
         elements.put(Uml.NODE_INSTANCE,
-            new ObjectCreateInfo(MNodeInstance.class,
+            new ObjectCreateInfo(
+                MNodeInstance.class,
                 factory,
                 "createNodeInstance"));
         elements.put(Uml.OBJECT,
             new ObjectCreateInfo(MObject.class, factory, "createObject"));
         elements.put(Uml.PACKAGE,
             new ObjectCreateInfo(MPackage.class, factory, "createPackage"));
-	elements.put(Uml.PARTITION,
-	    new ObjectCreateInfo(MPartition.class, factory, "createPartition"));
         elements.put(Uml.STATE,
             new ObjectCreateInfo(MState.class, factory, "createState"));
-        elements.put(Uml.CALL_STATE,
-            new ObjectCreateInfo(MCallState.class, 
-                factory, 
-                "createCallState"));
         elements.put(Uml.COMPOSITE_STATE,
-            new ObjectCreateInfo(MCompositeState.class,
+            new ObjectCreateInfo(
+                MCompositeState.class,
                 factory,
                 "createCompositeState"));
         elements.put(Uml.PSEUDOSTATE,
-            new ObjectCreateInfo(MPseudostate.class,
+            new ObjectCreateInfo(
+                MPseudostate.class,
                 factory,
                 "createPseudostate"));
-        elements.put(Uml.OBJECT_FLOW_STATE,
-            new ObjectCreateInfo(MObjectFlowState.class,
-                factory,
-                "createObjectFlowState"));
-        elements.put(Uml.CLASSIFIER_IN_STATE,
-            new ObjectCreateInfo(MClassifierInState.class,
-                factory,
-                "createClassifierInState"));
-        elements.put(Uml.SUBACTIVITY_STATE,
-            new ObjectCreateInfo(MSubactivityState.class,
-                factory,
-                "createSubactivityState"));
+        elements.put(Uml.SUBMACHINE_STATE,
+            new ObjectCreateInfo(MSubmachineState.class, factory, "createSubmachineState"));
         elements.put(Uml.USE_CASE,
             new ObjectCreateInfo(MUseCase.class, factory, "createUseCase"));
         elements.put(Uml.ACTION,
             new ObjectCreateInfo(MAction.class, factory, "createAction"));
         elements.put(Uml.ASSOCIATION_END,
-            new ObjectCreateInfo(MAssociationEnd.class,
+            new ObjectCreateInfo(
+                MAssociationEnd.class,
                 factory,
                 "createAssociationEnd"));
         elements.put(Uml.CALL_ACTION,
-            new ObjectCreateInfo(MCallAction.class,
+            new ObjectCreateInfo(
+                MCallAction.class,
                 factory,
                 "createCallAction"));
         elements.put(Uml.NAMESPACE,
@@ -434,7 +430,8 @@ public class UmlFactory extends AbstractUmlModelFactory {
         elements.put(Uml.RECEPTION,
             new ObjectCreateInfo(MReception.class, factory, "createReception"));
         elements.put(Uml.STEREOTYPE,
-            new ObjectCreateInfo(MStereotype.class,
+            new ObjectCreateInfo(
+                MStereotype.class,
                 factory,
                 "createStereotype"));
         elements.put(Uml.ATTRIBUTE,
@@ -448,7 +445,8 @@ public class UmlFactory extends AbstractUmlModelFactory {
 
         // NSUML does not have a factory method for this
         elements.put(Uml.ACTION_EXPRESSION,
-            new ObjectCreateInfo(MActionExpression.class,
+            new ObjectCreateInfo(
+                MActionExpression.class,
                 this,
                 "createActionExpression"));
 
@@ -467,14 +465,14 @@ public class UmlFactory extends AbstractUmlModelFactory {
      * over NSUML is created.
      */
     public boolean isJmiProxyCreated() {
-        return jmiProxyCreated;
+        return _jmiProxyCreated;
     }
 
     /**
      * @param arg true to cause the JMI Reflective proxy over NSUML to be used.
      */
     public void setJmiProxyCreated(boolean arg) {
-        jmiProxyCreated = arg;
+        _jmiProxyCreated = arg;
     }
     
     /**
@@ -485,7 +483,7 @@ public class UmlFactory extends AbstractUmlModelFactory {
      * @param connectionType is the type of relationship
      * @param fromElement is an existing model element
      * @param toElement is another existing model element
-     * @throws IllegalModelElementConnectionException if the connection is bad
+     * @throws IllegalModelElementConnectionException
      */
     public Object buildConnection(Object connectionType, 
 				  Object fromElement, Object toElement)
@@ -496,19 +494,6 @@ public class UmlFactory extends AbstractUmlModelFactory {
 
     }
     
-    /**
-     * @param connectionType the UML object type of the connection
-     * @param fromElement    the UML object for the "from" element
-     * @param fromStyle      the aggregationkind for the connection 
-     *                       in case of an association
-     * @param toElement      the UML object for the "to" element
-     * @param toStyle        the aggregationkind for the connection 
-     *                       in case of an association
-     * @param unidirectional for association and associationrole
-     * @return               the newly build connection (UML object)
-     * @throws IllegalModelElementConnectionException if the connection is not 
-     *                                                a valid thing to do
-     */
     public Object buildConnection(Object connectionType,
                   Object fromElement, Object fromStyle,
                   Object toElement, Object toStyle,
@@ -563,9 +548,6 @@ public class UmlFactory extends AbstractUmlModelFactory {
             connection = getUseCases().buildExtend(toElement, fromElement);
         } else if (connectionType == ModelFacade.INCLUDE) {
             connection = getUseCases().buildInclude(fromElement, toElement);
-        } else if (connectionType == CommentEdge.class) {
-            connection = 
-                getCore().buildCommentConnection(fromElement, toElement);
         }
     
         if (connection == null) {
@@ -579,19 +561,12 @@ public class UmlFactory extends AbstractUmlModelFactory {
         return connection;
     }
     
-    /**
-     * Checks if some type of connection is valid between two elements
-     * @param connectionType  the UML object type of the connection
-     * @param fromElement     the UML object type of the "from" 
-     * @param toElement       the UML object type of the "to"
-     * @return true if valid
-     */
     public boolean isConnectionValid(Object connectionType,
                      Object fromElement, Object toElement)
     {
         // Get the list of valid model item pairs for the given connection type
         ArrayList validItems =
-            (ArrayList) validConnectionMap.get(connectionType);
+            (ArrayList) _validConnectionMap.get(connectionType);
         if (validItems == null) {
             return false;
         }
@@ -727,7 +702,7 @@ public class UmlFactory extends AbstractUmlModelFactory {
     public void delete(Object elem) {
         if (elem == null)
             throw new IllegalArgumentException("Element may not be null "
-                + "in delete");        
+                + "in delete");
         if (elem instanceof MElement) {
             getCore().deleteElement((MElement) elem);
             if (elem instanceof MModelElement) {
@@ -821,7 +796,7 @@ public class UmlFactory extends AbstractUmlModelFactory {
         if (elem instanceof MBase) {
             ((MBase) elem).remove();
             UmlModelEventPump.getPump().cleanUp((MBase) elem);
-        }        
+        }
     }
 
     /**
@@ -1027,49 +1002,77 @@ public class UmlFactory extends AbstractUmlModelFactory {
         }
     }
 
+    /**
+     * Factored this method out of delete to simplify the design of the delete
+     * operation
+     * @param elem
+     */
+    private void deleteEvent(MEvent elem) {
+        getStateMachines().deleteEvent(elem);
+        if (elem instanceof MSignalEvent) {
+            getStateMachines().deleteSignalEvent((MSignalEvent) elem);
+        } else if (elem instanceof MCallEvent) {
+            getStateMachines().deleteCallEvent((MCallEvent) elem);
+        } else if (elem instanceof MTimeEvent) {
+            getStateMachines().deleteTimeEvent((MTimeEvent) elem);
+        } else if (elem instanceof MChangeEvent) {
+            getStateMachines().deleteChangeEvent((MChangeEvent) elem);
+        }
+    }
+
+    /**
+     * Used by the copy functions. Do not call this function directly.<p>
+     *
+     * Extensions? I don't think we use them anywhere.
+     *
+     * @deprecated by Linus Tolke as of 0.15.4. Should be made private (if
+     * at all used).
+     */
+    public void doCopyBase(MBase source, MBase target) {
+    }
+    
     class ObjectCreateInfo {
     
-        private Object factory;
+        private Object _factory;
 
-        private String createMethod;
+        private String _createMethod;
 
-        private Class javaClass;
+        private Class _javaClass;
 
 //        ObjectCreateInfo (Class javaClass, Object fact, String meth) {
 //            this(javaClass, fact, meth, fact, meth);
 //        }
         
         ObjectCreateInfo (Class cls, Object fact, String meth) {
-            javaClass = cls;
-            factory = fact;
-            createMethod = meth;
+            _javaClass = cls;
+            _factory = fact;
+            _createMethod = meth;
         }
         /**
          * @return
          */
         public Class getJavaClass() {
-            return javaClass;
+            return _javaClass;
         }
 
         /**
          * @return
          */
         public String getCreateMethod() {
-            return createMethod;
+            return _createMethod;
         }
 
         /**
          * @return
          */
         public Object getFactory() {
-            return factory;
+            return _factory;
         }
 
     }
 
     /** Create an empty but initialized instance of a UML ActionExpression.
-     *  NSUML does not have a factory method for this.
-     * 
+     *  
      *  @return an initialized UML ActionExpression instance.
      */
     public MActionExpression createActionExpression() {
@@ -1108,13 +1111,14 @@ public class UmlFactory extends AbstractUmlModelFactory {
             // throw new InvalidObjectRequestException
             //("Cannot identify the object type", entity);
         }
+        String mName = oi.getCreateMethod();
         Method method = null;
         try {
             method = oi.getFactory().getClass().getMethod(oi.getCreateMethod(),
                                                           new Class[] {} );
         }
         catch (Exception e) {
-            LOG.error("Failed to invoke create method on factory.", e);
+            cat.error("Failed to invoke create method on factory.", e);
             return null;
             // TODO: decide if we want to throw an exception instead
             // throw new InvalidObjectRequestException
@@ -1129,13 +1133,13 @@ public class UmlFactory extends AbstractUmlModelFactory {
             // TODO: decide if we want to throw an exception instead
             // throw new InvalidObjectRequestException
             //("Cannot execute creator method", entity, e);
-            LOG.error("Failed to invoke create method on factory.", e);
+            cat.error("Failed to invoke create method on factory.", e);
             return null;
         }
         UmlFactory.getFactory().initialize(obj);
         
         // Allow for testing of the proxy capability
-        if (jmiProxyCreated) {
+        if (_jmiProxyCreated) {
         	// TODO: implement RefPackageProxy handling
         	
 			// if (obj instanceof MPackage) {

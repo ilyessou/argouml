@@ -72,7 +72,7 @@ public class FigClassifierRole extends FigNodeModelElement {
     /**
      * The minimum padding above and below the stereotype and name.<p>
      */
-    private static final int PADDING = 5;
+    protected int _PADDING = 5;
 
 
     ///////////////////////////////////////////////////////////////////////////
@@ -84,9 +84,9 @@ public class FigClassifierRole extends FigNodeModelElement {
 
     /**
      * The fig that is used for the complete classifier role.
-     * Identical in size to {@link FigNodeModelElement#bigPort}.<p>
+     * Identical in size to {@link FigNodeModelElement#_bigPort}.<p>
      */
-    private FigRect cover;
+    FigRect _cover;
 
     // add other Figs here as needed
 
@@ -102,20 +102,20 @@ public class FigClassifierRole extends FigNodeModelElement {
      * Constructor for a new classifier role.<p>
      *
      * An invisible {@link FigRect} as the point of contact for
-     * connections ({@link FigNodeModelElement#bigPort}), with
+     * connections ({@link FigNodeModelElement#_bigPort}), with
      * matching rectangle providing the graphic rendering ({@link
-     * #cover}). Stereotype and name are rendered centrally in the
+     * #_cover}). Stereotype and name are rendered centrally in the
      * rectangle.<p>
      */
     public FigClassifierRole() {
 	// TODO: I (Linus Tolke) don't understand why I get a warning
-	// on the 'cover' link in the javadoc (jdk1.4.2). I think everything
+	// on the _cover link in the javadoc (jdk1.4.2). I think everything
 	// is correct. I hope that we can eventually solve it.
 
         // The big port and cover. Color of the big port is irrelevant
 
-        setBigPort(new FigRect(10, 10, 90, 50, Color.cyan, Color.cyan));
-        cover   = new FigRect(10, 10, 90, 50, Color.black, Color.white);
+        _bigPort = new FigRect(10, 10, 90, 50, Color.cyan, Color.cyan);
+        _cover   = new FigRect(10, 10, 90, 50, Color.black, Color.white);
 
         // The stereotype. Width is the same as the cover, height is whatever
         // its minimum permitted is. The text should be centred.
@@ -124,7 +124,7 @@ public class FigClassifierRole extends FigNodeModelElement {
 
         getStereotypeFig().setLineWidth(0);
         getStereotypeFig().setFilled(false);
-        getStereotypeFigText().setJustificationByName("Center");
+        _stereo.setJustificationByName("Center");
         getStereotypeFig().setVisible(false);
 
         getStereotypeFig().setBounds(10, 10, 90, stereoMin.height);
@@ -146,8 +146,8 @@ public class FigClassifierRole extends FigNodeModelElement {
 
         // add Figs to the FigNode in back-to-front order
 
-        addFig(getBigPort());
-        addFig(cover);
+        addFig(_bigPort);
+        addFig(_cover);
         addFig(getStereotypeFig());
         addFig(getNameFig());
 
@@ -165,9 +165,10 @@ public class FigClassifierRole extends FigNodeModelElement {
      * <p>Classifier role is constructed with {@link #FigClassifierRole()}.</p>
      *
      * @param gm    The graph model to use. Ignored in this implementation.
-     * @param lay   The layer
+     *
      * @param node  The NSUML object to associate with this Fig.
      */
+
     public FigClassifierRole(GraphModel gm, Layer lay, Object node) {
         this();
         setLayer(lay);
@@ -202,8 +203,8 @@ public class FigClassifierRole extends FigNodeModelElement {
         FigClassifierRole figClone = (FigClassifierRole) super.clone();
         Iterator it = figClone.getFigs(null).iterator();
 
-        figClone.setBigPort((FigRect) it.next());
-        figClone.cover   = (FigRect) it.next();
+        figClone._bigPort = (FigRect) it.next();
+        figClone._cover   = (FigRect) it.next();
         figClone.setStereotypeFig((FigText) it.next());
         figClone.setNameFig((FigText) it.next());
 
@@ -290,45 +291,17 @@ public class FigClassifierRole extends FigNodeModelElement {
     ///////////////////////////////////////////////////////////////////////////
 
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#setLineColor(java.awt.Color)
-     */
-    public void setLineColor(Color col) { cover.setLineColor(col); }
-    
-    /**
-     * @see org.tigris.gef.presentation.Fig#getLineColor()
-     */
-    public Color getLineColor() { return cover.getLineColor(); }
+    public void setLineColor(Color col) { _cover.setLineColor(col); }
+    public Color getLineColor() { return _cover.getLineColor(); }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#setFillColor(java.awt.Color)
-     */
-    public void setFillColor(Color col) { cover.setFillColor(col); }
-    
-    /**
-     * @see org.tigris.gef.presentation.Fig#getFillColor()
-     */
-    public Color getFillColor() { return cover.getFillColor(); }
+    public void setFillColor(Color col) { _cover.setFillColor(col); }
+    public Color getFillColor() { return _cover.getFillColor(); }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#setFilled(boolean)
-     */
-    public void setFilled(boolean f) { cover.setFilled(f); }
-    
-    /**
-     * @see org.tigris.gef.presentation.Fig#getFilled()
-     */
-    public boolean getFilled() { return cover.getFilled(); }
+    public void setFilled(boolean f) { _cover.setFilled(f); }
+    public boolean getFilled() { return _cover.getFilled(); }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#setLineWidth(int)
-     */
-    public void setLineWidth(int w) { cover.setLineWidth(w); }
-    
-    /**
-     * @see org.tigris.gef.presentation.Fig#getLineWidth()
-     */
-    public int getLineWidth() { return cover.getLineWidth(); }
+    public void setLineWidth(int w) { _cover.setLineWidth(w); }
+    public int getLineWidth() { return _cover.getLineWidth(); }
 
 
     /**
@@ -343,8 +316,8 @@ public class FigClassifierRole extends FigNodeModelElement {
 
     public Dimension getMinimumSize() {
 
-        Dimension bigPortMin = getBigPort().getMinimumSize();
-        Dimension coverMin   = cover.getMinimumSize();
+        Dimension bigPortMin = _bigPort.getMinimumSize();
+        Dimension coverMin   = _cover.getMinimumSize();
         Dimension stereoMin  = getStereotypeFig().getMinimumSize();
         Dimension nameMin    = getNameFig().getMinimumSize();
 
@@ -361,11 +334,11 @@ public class FigClassifierRole extends FigNodeModelElement {
 
         newMin.height = Math.max(bigPortMin.height,
                                  Math.max(coverMin.height,
-                                          newMin.height + PADDING * 2));
+                                          newMin.height + _PADDING * 2));
 
         newMin.width  = Math.max(bigPortMin.width,
                                  Math.max(coverMin.width,
-                                          newMin.width + PADDING * 2));
+                                          newMin.width + _PADDING * 2));
 
         return newMin;
     }
@@ -430,8 +403,8 @@ public class FigClassifierRole extends FigNodeModelElement {
 
         // Set the bounds of the bigPort and cover
 
-        getBigPort().setBounds(x, y, newW, newH);
-        cover.setBounds(x, y, newW, newH);
+        _bigPort.setBounds(x, y, newW, newH);
+        _cover.setBounds(x, y, newW, newH);
 
         // Record the changes in the instance variables of our parent, tell GEF
         // and trigger the edges to reconsider themselves.
@@ -456,9 +429,8 @@ public class FigClassifierRole extends FigNodeModelElement {
      * <p>Called after text has been edited directly on the screen.</p>
      *
      * @param ft  The text that was edited.
-     * @throws PropertyVetoException by the parser
-     * @see org.argouml.uml.diagram.ui.FigNodeModelElement#textEdited(org.tigris.gef.presentation.FigText)
      */
+
     protected void textEdited(FigText ft) throws PropertyVetoException {
 
         Object cls = /*(MClassifierRole)*/ getOwner();
@@ -507,7 +479,7 @@ public class FigClassifierRole extends FigNodeModelElement {
 
         // Build the final string and set it as the name text.
 
-        if (isReadyToEdit()) {
+        if (_readyToEdit) {
             if ( nameStr.length() == 0 && baseString.length() == 0)
                 getNameFig().setText("");
             else
@@ -533,9 +505,6 @@ public class FigClassifierRole extends FigNodeModelElement {
             super.modelChanged(mee);
     }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#makeSelection()
-     */
     public Selection makeSelection() {
         return new SelectionClassifierRole(this);
     }

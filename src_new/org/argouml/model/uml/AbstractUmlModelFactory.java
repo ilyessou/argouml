@@ -39,7 +39,16 @@ import ru.novosoft.uml.MBase;
 public abstract class AbstractUmlModelFactory {
 
     /**
-     * Default constructor.
+     * Flag to indicate if the gui is enabled. If the gui is
+     * enabled modelelements that are added should also be added to the
+     * navigatorpane.
+     *
+     * @deprecated by Linus Tolke as of 0.15.4. Thanks to Alex Bagehots work
+     * with the tree, this is no longer needed.
+     */
+    private static boolean guiEnabled = true;
+
+    /** Default constructor.
      */
     protected AbstractUmlModelFactory() {
     }
@@ -58,7 +67,7 @@ public abstract class AbstractUmlModelFactory {
             EventListenerList[] lists =
                 pump.getClassListenerMap().getListenerList(o.getClass());
             for (int i = 0; i < lists.length; i++) {
-                Object[] listenerList = lists[i].getListenerList();
+                Object[] listenerList = lists[i]._listenerList;
                 for (int j = 0; j < listenerList.length; j += 3) {
                     pump.addModelEventListener(
 					       listenerList[j + 2],
@@ -69,6 +78,27 @@ public abstract class AbstractUmlModelFactory {
         }
     }
 
+    /**
+     * Turns the flag for the gui on/off. Default the gui is on. Needed for test
+     * modus.
+     * @param gui flag to turn gui on off
+     * @deprecated by Linus Tolke as of 0.15.4. Thanks to Alex Bagehots work
+     * with the tree, this is no longer needed.
+     */
+    public void setGuiEnabled(boolean gui) {
+        guiEnabled = gui;
+    }
+
+    /**
+     * Checks if the gui is enabled.
+     *
+     * @return the gui flag
+     * @deprecated by Linus Tolke as of 0.15.4. Thanks to Alex Bagehots work
+     * with the tree, this is no longer needed.
+     */
+    public boolean isGuiEnabled() {
+        return guiEnabled;
+    }
 
     /**
      * Adds all interested (and centralized) listeners to the given

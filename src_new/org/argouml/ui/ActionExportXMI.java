@@ -52,7 +52,7 @@ import org.argouml.uml.ui.UMLAction;
 public final class ActionExportXMI extends UMLAction implements PluggableMenu {
 
     /** logger */
-    private static final Logger LOG = Logger.getLogger(ActionExportXMI.class);
+    private static Logger cat = Logger.getLogger(ActionExportXMI.class);
 
     private static ActionExportXMI instance = new ActionExportXMI();
 
@@ -110,9 +110,9 @@ public final class ActionExportXMI extends UMLAction implements PluggableMenu {
      * @see org.argouml.application.api.ArgoModule#initializeModule()
      */
     public boolean initializeModule() {
-        LOG.info("+---------------------------------+");
-        LOG.info("| Export XMI plugin enabled!      |");
-        LOG.info("+---------------------------------+");
+        cat.info("+---------------------------------+");
+        cat.info("| Export XMI plugin enabled!      |");
+        cat.info("+---------------------------------+");
 
         return true;
     }
@@ -225,8 +225,7 @@ public final class ActionExportXMI extends UMLAction implements PluggableMenu {
 			String sTitle =
 			    Translator.localize(
 				"Actions",
-				"optionpane."
-				+ "save-project-general-exception-title"
+				"optionpane.save-project-general-exception-title"
 			    );
 
                         JOptionPane.showMessageDialog(
@@ -235,7 +234,7 @@ public final class ActionExportXMI extends UMLAction implements PluggableMenu {
 			    sTitle,
 			    JOptionPane.ERROR_MESSAGE);
 			
-                        LOG.error(sMessage, ex);
+                        cat.error(sMessage, ex);
                     }
                 }
             }

@@ -32,10 +32,10 @@ import javax.swing.JComboBox;
 
 import org.argouml.i18n.Translator;
 import org.argouml.model.ModelFacade;
-import org.argouml.uml.ui.ActionNavigateNamespace;
-import org.argouml.uml.ui.ActionRemoveFromModel;
-import org.argouml.uml.ui.PropPanelButton2;
+
+import org.argouml.uml.ui.PropPanelButton;
 import org.argouml.uml.ui.UMLComboBox2;
+import org.argouml.uml.ui.UMLComboBoxNavigator;
 import org.argouml.uml.ui.foundation.core.PropPanelModelElement;
 import org.argouml.util.ConfigLoader;
 
@@ -58,13 +58,12 @@ public class PropPanelInclude extends PropPanelModelElement {
 
         addField(Translator.localize("UMLMenu", "label.name"),
 		 getNameTextField());
-//        addField(Translator.localize("UMLMenu", "label.stereotype"),
-//		 new UMLComboBoxNavigator(this,
-//					  Translator.localize(
-//					      "UMLMenu",
-//					      "tooltip.nav-stereo"),
-//					  getStereotypeBox()));
-        addField(Translator.localize("UMLMenu", "label.stereotype"), getStereotypeBox());
+        addField(Translator.localize("UMLMenu", "label.stereotype"),
+		 new UMLComboBoxNavigator(this,
+					  Translator.localize(
+					      "UMLMenu",
+					      "tooltip.nav-stereo"),
+					  getStereotypeBox()));
         addField(Translator.localize("UMLMenu", "label.namespace"),
 		 getNamespaceScroll());
 
@@ -104,9 +103,12 @@ public class PropPanelInclude extends PropPanelModelElement {
 */
         // Add the toolbar. Just the four basic buttons for now.
 
-        buttonPanel.add(new PropPanelButton2(this, new ActionNavigateNamespace()));
-        buttonPanel
-        .add(new PropPanelButton2(this, new ActionRemoveFromModel()));
+        new PropPanelButton(this, buttonPanel, _navUpIcon,
+			    Translator.localize("UMLMenu", "button.go-up"),
+			    "navigateNamespace",
+			    null);
+        new PropPanelButton(this, buttonPanel, _deleteIcon,
+                            localize("Delete"), "removeElement", null);
     }
 
 
@@ -172,6 +174,13 @@ public class PropPanelInclude extends PropPanelModelElement {
     /**
      * Get the current addition use case of the include relationship.<p>
      *
+     * <em>Note</em>. There is a bug in NSUML, where the "include" and
+     * "include2" associations of a use case are back to front, i.e
+     * "include" is used as the opposite end of "addition" to point to
+     * an including use case, rather than an included use case.  Fixed
+     * within the include relationship, rather than the use case, by
+     * reversing the use of access functions for the "base" and
+     * "addition" associations in the code.<p>
      *
      * @return The {@link ru.novosoft.uml.behavior.use_cases.MUseCase}
      * that is the addition of this include relationship or
@@ -183,8 +192,11 @@ public class PropPanelInclude extends PropPanelModelElement {
         Object addition   = null;
         Object target = getTarget();
 
+        // Note that because of the NSUML bug, we must use getBase() rather
+        // than getAddition() to get the addition use case.
+
         if (ModelFacade.isAInclude(target)) {
-            addition = ModelFacade.getAddition(target);
+            addition = ModelFacade.getBase(target);
         }
 
         return addition;
@@ -192,7 +204,14 @@ public class PropPanelInclude extends PropPanelModelElement {
 
     /**
      * Set the addition use case of the include relationship.<p>
-     *   
+     *
+     * <em>Note</em>. There is a bug in NSUML, where the "include" and
+     * "include2" associations of a use case are back to front, i.e
+     * "include" is used as the opposite end of "addition" to point to
+     * an including use case, rather than an included use case.  Fixed
+     * within the include relationship, rather than the use case, by
+     * reversing the use of access functions for the "base" and
+     * "addition" associations in the code.<p>
      *
      * @param addition The {@link
      * ru.novosoft.uml.behavior.use_cases.MUseCase} to set as the
@@ -207,7 +226,7 @@ public class PropPanelInclude extends PropPanelModelElement {
         // than setAddition() to set the addition use case.
 
         if (ModelFacade.isAInclude(target)) {
-            ModelFacade.setAddition(target, addition);
+            ModelFacade.setBase(target, addition);
         }
     }
 

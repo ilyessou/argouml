@@ -58,7 +58,7 @@ public class ActionPaste
     ////////////////////////////////////////////////////////////////
     // static variables
 
-    private static ActionPaste instance = new ActionPaste();
+    private static ActionPaste _Instance = new ActionPaste();
 
     private static final String LOCALIZE_KEY = "action.paste";
 
@@ -72,7 +72,7 @@ public class ActionPaste
     private ActionPaste() {
         super(Translator.localize(LOCALIZE_KEY));
         Icon icon =
-            ResourceLoaderWrapper
+            ResourceLoaderWrapper.getResourceLoaderWrapper()
 	        .lookupIconResource(
 				    Translator.getImageBinding(LOCALIZE_KEY),
 				    Translator.localize(LOCALIZE_KEY));
@@ -92,31 +92,29 @@ public class ActionPaste
      * @return The singleton
      */
     public static ActionPaste getInstance() {
-        return instance;
+        return _Instance;
     }
 
     /**
      * The source textcomponent where the caret is positioned
      */
-    private JTextComponent textSource;
+    private JTextComponent _textSource;
 
     /**
      * Flag to indicate that the mouse is hovering over the JGraph.
      */
-    private boolean inJGraph;
+    private boolean _inJGraph;
 
     /**
      * Copies some text or a fig.
-     *
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
      */
     public void actionPerformed(ActionEvent ae) {
         if (Globals.clipBoard != null && !Globals.clipBoard.isEmpty()) {
             CmdPaste cmd = new CmdPaste();
             cmd.doIt();
         } else {
-            if (!isSystemClipBoardEmpty() && textSource != null) {
-                textSource.paste();
+            if (!isSystemClipBoardEmpty() && _textSource != null) {
+                _textSource.paste();
             }
         }
               
@@ -142,7 +140,7 @@ public class ActionPaste
      * @see java.awt.event.FocusListener#focusLost(java.awt.event.FocusEvent)
      */
     public void focusLost(FocusEvent e) {        
-        if (e.getSource() == textSource) textSource = null;
+        if (e.getSource() == _textSource) _textSource = null;
     }
 
     /**
@@ -150,7 +148,7 @@ public class ActionPaste
      * javax.swing.event.CaretListener#caretUpdate(javax.swing.event.CaretEvent)
      */
     public void caretUpdate(CaretEvent e) {
-        textSource = (JTextComponent) e.getSource();
+        _textSource = (JTextComponent) e.getSource();
 
     }
 
@@ -158,7 +156,7 @@ public class ActionPaste
      * @see java.awt.event.FocusListener#focusGained(java.awt.event.FocusEvent)
      */
     public void focusGained(FocusEvent e) {
-        textSource = (JTextComponent) e.getSource();
+        _textSource = (JTextComponent) e.getSource();
     }
 
 } /* end class ActionPaste */

@@ -35,10 +35,8 @@ import org.argouml.model.ModelFacade;
 import org.argouml.model.uml.UmlFactory;
 import org.argouml.model.uml.foundation.core.CoreFactory;
 import org.argouml.ui.targetmanager.TargetManager;
-import org.argouml.uml.ui.ActionNavigateContainerElement;
-import org.argouml.uml.ui.ActionRemoveFromModel;
 import org.argouml.uml.ui.PropPanelButton;
-import org.argouml.uml.ui.PropPanelButton2;
+import org.argouml.uml.ui.UMLComboBoxNavigator;
 import org.argouml.uml.ui.UMLLinkedList;
 import org.argouml.util.ConfigLoader;
 
@@ -63,20 +61,20 @@ public class PropPanelDataType extends PropPanelClassifier {
 
         Class mclass = (Class) ModelFacade.DATATYPE;
 
-        //addField(Translator.localize("UMLMenu", "label.name"),
-        //        getNameTextField());
-        // addField(Translator.localize("UMLMenu", "label.stereotype"),
-        //        new UMLComboBoxNavigator(this, Translator.localize("UMLMenu",
-        //                "tooltip.nav-stereo"), getStereotypeBox()));
+        addField(Translator.localize("UMLMenu", "label.name"),
+                getNameTextField());
         addField(Translator.localize("UMLMenu", "label.stereotype"),
-                getStereotypeBox());
+                new UMLComboBoxNavigator(this, Translator.localize("UMLMenu",
+                        "tooltip.nav-stereo"), getStereotypeBox()));
         addField(Translator.localize("UMLMenu", "label.namespace"),
                 getNamespaceComboBox());
-        add(_modifiersPanel);
+        addField(Translator.localize("UMLMenu", "label.modifiers"),
+                _modifiersPanel);
+        addField(Translator.localize("UMLMenu", "label.namespace-visibility"),
+                getNamespaceVisibilityPanel());
 
         addSeperator();
 
-        add(getNamespaceVisibilityPanel());
         addField(Translator.localize("UMLMenu", "label.client-dependencies"),
                 getClientDependencyScroll());
         addField(Translator.localize("UMLMenu", "label.supplier-dependencies"),
@@ -94,8 +92,8 @@ public class PropPanelDataType extends PropPanelClassifier {
         addField(Translator.localize("UMLMenu", "label.literals"),
                 getAttributeScroll());
 
-        buttonPanel.add(new PropPanelButton2(this,
-                new ActionNavigateContainerElement()));
+        new PropPanelButton(this, buttonPanel, _navUpIcon, Translator.localize(
+                "UMLMenu", "button.go-up"), "navigateUp", null);
         new PropPanelButton(this, buttonPanel, _dataTypeIcon, Translator
                 .localize("UMLMenu", "button.new-datatype"), "newDataType",
                 null);
@@ -105,8 +103,8 @@ public class PropPanelDataType extends PropPanelClassifier {
 
         new PropPanelButton(this, buttonPanel, _addOpIcon, Translator.localize(
                 "UMLMenu", "button.new-operation"), "addOperation", null);
-        buttonPanel
-                .add(new PropPanelButton2(this, new ActionRemoveFromModel()));
+        new PropPanelButton(this, buttonPanel, _deleteIcon,
+                localize("Delete datatype"), "removeElement", null);
     }
 
     public void addAttribute() {
@@ -156,18 +154,19 @@ public class PropPanelDataType extends PropPanelClassifier {
             }
 
             Object attr = CoreFactory.getFactory().buildAttribute(classifier);
-            ModelFacade.setChangeable(attr, false);
+            ModelFacade.setChangeable(attr,false);
             TargetManager.getInstance().setTarget(attr);
         }
 
     }
-
+    
     public void addOperation() {
         Object target = getTarget();
         if (org.argouml.model.ModelFacade.isAClassifier(target)) {
-            Object newOper = UmlFactory.getFactory().getCore().buildOperation(
-            /* (MClassifier) */target);
-            // due to Well Defined rule [2.5.3.12/1]
+            Object newOper =
+                UmlFactory.getFactory().getCore().buildOperation(
+                    /*(MClassifier)*/ target);
+            // due to Well Defined rule [2.5.3.12/1]       
             ModelFacade.setQuery(newOper, true);
             TargetManager.getInstance().setTarget(newOper);
         }

@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2004 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -32,7 +32,6 @@ package org.argouml.language.java.generator;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.IOException;
 import java.util.Stack;
 
 /**
@@ -49,75 +48,63 @@ public class InterfaceCodePiece extends NamedCodePiece
     /**
        Constructor.
 
-       @param def The code piece this interface represents.
-       @param n The name of the interface.
+       @param interfaceDef The code piece this interface represents.
+       @param name The name of the interface.
     */
-    public InterfaceCodePiece(CodePiece def,
-                              String n)
+    public InterfaceCodePiece(CodePiece interfaceDef,
+                              String name)
     {
-	interfaceDef = def;
-	name = n;
+	this.interfaceDef = interfaceDef;
+	this.name = name;
     }
 
     /**
-     * @see org.argouml.language.java.generator.CodePiece#getText()
-     *
-     * Return the string representation for this piece of code.
-     */
+       Return the string representation for this piece of code.
+    */
     public StringBuffer getText()
     {
 	return interfaceDef.getText();
     }
 
     /**
-     * @see org.argouml.language.java.generator.CodePiece#getStartPosition()
-     * 
-     * Return the start position.
-     */
+       Return the start position.
+    */
     public int getStartPosition()
     {
 	return interfaceDef.getStartPosition();
     }
 
     /**
-     * @see org.argouml.language.java.generator.CodePiece#getEndPosition()
-     *
-     * Return the end position.
-     */
+       Return the end position.
+    */
     public int getEndPosition()
     {
 	return interfaceDef.getEndPosition();
     }
 
     /**
-     * @see org.argouml.language.java.generator.CodePiece#getStartLine()
-     * 
-     * Return the start line
-     */
+       Return the start line
+    */
     public int getStartLine()
     {
 	return interfaceDef.getStartLine();
     }
 
     /**
-     * @see org.argouml.language.java.generator.CodePiece#getEndLine()
-     * Return the end line
-     */
+       Return the end line
+    */
     public int getEndLine()
     {
 	return interfaceDef.getEndLine();
     }
 
     /**
-     * @see org.argouml.language.java.generator.NamedCodePiece#write(
-     *         java.io.BufferedReader, java.io.BufferedWriter, java.util.Stack)
-     * 
-     * Write the code this piece represents to file. This will add one
-     * level to the stack if the interface is in the model.
-     */
+       Write the code this piece represents to file. This will add one
+       level to the stack if the interface is in the model.
+    */
     public void write(BufferedReader reader,
                       BufferedWriter writer,
-                      Stack parseStateStack) throws IOException {
+                      Stack parseStateStack) throws Exception {
         ParseState parseState = (ParseState) parseStateStack.peek();
         Object mInterface = /*(MInterface)*/ parseState.newClassifier(name);
 

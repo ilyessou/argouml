@@ -98,8 +98,7 @@ public class TestUMLIncludeAdditionComboBoxModel extends TestCase {
     }
     
     public void testSetBase() {
-        // NSUML has base and addition for includes mixed up. We mix it back.
-        elem.setBase(additions[0]);
+        elem.setAddition(additions[0]);
         assertTrue(model.getSelectedItem() == additions[0]);
     }
     

@@ -44,7 +44,7 @@ public class FoundationHelper {
     /**
      * Singleton instance.
      */
-    private static FoundationHelper singleton =
+    private static FoundationHelper SINGLETON =
                    new FoundationHelper();
 
     
@@ -54,7 +54,7 @@ public class FoundationHelper {
      * @return the singleton instance of the helper
      */
     public static FoundationHelper getHelper() {
-        return singleton;
+        return SINGLETON;
     }
 }
 

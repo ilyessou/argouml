@@ -26,6 +26,8 @@ package org.argouml.uml.diagram.ui;
 
 import java.awt.event.ActionEvent;
 
+import org.argouml.kernel.Project;
+import org.argouml.kernel.ProjectManager;
 import org.argouml.model.ModelFacade;
 import org.argouml.model.uml.UmlFactory;
 import org.argouml.ui.ProjectBrowser;
@@ -38,17 +40,20 @@ import org.argouml.uml.ui.UMLChangeAction;
  * @stereotype singleton
  */
 public class ActionAddAttribute extends UMLChangeAction {
-    
-    private static ActionAddAttribute singleton = new ActionAddAttribute();    
 
-    /**
-     * The constructor for this class.
-     */
-    public ActionAddAttribute() { super("button.new-attribute"); }    
+    ////////////////////////////////////////////////////////////////
+    // static variables
 
-    /**
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-     */
+    public static ActionAddAttribute SINGLETON = new ActionAddAttribute();
+
+    ////////////////////////////////////////////////////////////////
+    // constructors
+
+    public ActionAddAttribute() { super("button.new-attribute"); }
+
+    ////////////////////////////////////////////////////////////////
+    // main methods
+
     public void actionPerformed(ActionEvent ae) {	
 	Object target = TargetManager.getInstance().getModelTarget();
 	Object/*MClassifier*/ cls = null;
@@ -61,14 +66,11 @@ public class ActionAddAttribute extends UMLChangeAction {
 	else
 	    return;
 
-	Object attr = UmlFactory.getFactory().getCore().buildAttribute(cls);
+	Object/*MAttribute*/ attr = UmlFactory.getFactory().getCore().buildAttribute(cls);
 	TargetManager.getInstance().setTarget(attr);
 	super.actionPerformed(ae);
     }
 
-    /**
-     * @see org.argouml.uml.ui.UMLAction#shouldBeEnabled()
-     */
     public boolean shouldBeEnabled() {
 	ProjectBrowser pb = ProjectBrowser.getInstance();
 	Object target =  TargetManager.getInstance().getModelTarget();
@@ -81,11 +83,5 @@ public class ActionAddAttribute extends UMLChangeAction {
 	       && (ModelFacade.isAClass(target)
 		   || (ModelFacade.isAFeature(target)
 		       && ModelFacade.isAClass(ModelFacade.getOwner(target))));
-    }
-    /**
-     * @return Returns the singleton.
-     */
-    public static ActionAddAttribute getSingleton() {
-        return singleton;
     }
 } /* end class ActionAddAttribute */

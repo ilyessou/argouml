@@ -23,12 +23,11 @@
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 package org.argouml.uml.ui;
-import javax.swing.JTextArea;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
+import javax.swing.event.*;
+import javax.swing.*;
 
 import org.apache.log4j.Logger;
-
+import org.argouml.model.ModelFacade;
 import ru.novosoft.uml.MElementEvent;
 
 /**
@@ -49,10 +48,10 @@ public class UMLExpressionBodyField
     protected static Logger cat = 
         Logger.getLogger(UMLExpressionBodyField.class);
 
-    private UMLExpressionModel2 _model;
+    private UMLExpressionModel _model;
     private boolean _notifyModel;
     
-    public UMLExpressionBodyField(UMLExpressionModel2 model,
+    public UMLExpressionBodyField(UMLExpressionModel model,
 				  boolean notifyModel) {
         _model = model;
         _notifyModel = notifyModel;

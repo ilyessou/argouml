@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2004 The Regents of the University of California. All
+// Copyright (c) 1996-2001 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,23 +22,24 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+/*
+  JavaRE - Code generation and reverse engineering for UML and Java
+  Author: Marcus Andersson andersson@users.sourceforge.net
+*/
+
+
 package org.argouml.language.java.generator;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.IOException;
 import java.util.Stack;
 import java.util.Vector;
 import java.util.Iterator;
 import org.argouml.model.ModelFacade;
 
 /**
- * This code piece represents an operation declaration.
- *
- * JavaRE - Code generation and reverse engineering for UML and Java.
- *
- * @author Marcus Andersson andersson@users.sourceforge.net
- */
+   This code piece represents an operation declaration.
+*/
 public class OperationCodePiece extends NamedCodePiece
 {
     /** The code piece this operation represents. */
@@ -47,87 +48,81 @@ public class OperationCodePiece extends NamedCodePiece
     /** The name of the operation. */
     private String name;
 
+    /** Indicates that the typenames are fully qualified in the
+        source. */
+    private boolean fullyQualifiedTypeNames;
+
     /**
-     * Constructor.
-     *
-     * @param javadoc The code piece for the javadoc.
-     * @param operation The code piece this operation represents.
-     * @param n The name of the operation.
-     */
-    public OperationCodePiece(CodePiece javadoc,
-                              CodePiece operation,
-                              String n)
+       Constructor.
+
+       @param javadocDef The code piece for the javadoc.
+       @param operationDef The code piece this operation represents.
+       @param name The name of the operation.
+    */
+    public OperationCodePiece(CodePiece javadocDef,
+                              CodePiece operationDef,
+                              String name)
     {
-	name = n;
-	if (javadoc != null) {
-	    CompositeCodePiece cp = new CompositeCodePiece(javadoc);
-	    cp.add(operation);
-	    operationDef = cp;
-	} else {
-	    operationDef = operation;
+	this.name = name;
+	fullyQualifiedTypeNames =
+	    (operationDef.getText().toString().indexOf('.') != -1);
+	if (javadocDef != null) {
+	    CompositeCodePiece cp = new CompositeCodePiece(javadocDef);
+	    cp.add(operationDef);
+	    this.operationDef = cp;
+	}
+	else {
+	    this.operationDef = operationDef;
 	}
     }
 
     /**
-     * @see org.argouml.language.java.generator.CodePiece#getText()
-     * 
-     * Return the string representation for this piece of code.
-     */
+       Return the string representation for this piece of code.
+    */
     public StringBuffer getText()
     {
 	return operationDef.getText();
     }
 
     /**
-     * @see org.argouml.language.java.generator.CodePiece#getStartPosition()
-     *
-     * Return the start position.
-     */
+       Return the start position.
+    */
     public int getStartPosition()
     {
 	return operationDef.getStartPosition();
     }
 
     /**
-     * @see org.argouml.language.java.generator.CodePiece#getEndPosition()
-     * 
-     * Return the end position.
-     */
+       Return the end position.
+    */
     public int getEndPosition()
     {
 	return operationDef.getEndPosition();
     }
 
     /**
-     * @see org.argouml.language.java.generator.CodePiece#getStartLine()
-     * 
-     * Return the start line
-     */
+	Return the start line
+    */
     public int getStartLine()
     {
 	return operationDef.getStartLine();
     }
 
     /**
-     * @see org.argouml.language.java.generator.CodePiece#getEndLine()
-     * 
-     * Return the end line
-     */
+	Return the end line
+    */
     public int getEndLine()
     {
 	return operationDef.getEndLine();
     }
 
     /**
-     * @see org.argouml.language.java.generator.NamedCodePiece#write(
-     *         java.io.BufferedReader, java.io.BufferedWriter, java.util.Stack)
-     *
-     * Write the code this piece represents to file. Remove this
-     * feature from the top vector in the stack newFeaturesStack.
-     */
+       Write the code this piece represents to file. Remove this
+       feature from the top vector in the stack newFeaturesStack.
+    */
     public void write (BufferedReader reader,
                        BufferedWriter writer,
-                       Stack parseStateStack) throws IOException
+                       Stack parseStateStack) throws Exception
     {
         ParseState parseState = (ParseState) parseStateStack.peek();
         Vector features = parseState.getNewFeatures();
@@ -135,8 +130,7 @@ public class OperationCodePiece extends NamedCodePiece
 
         for (Iterator j = features.iterator(); j.hasNext() && !found; ) {
             Object feature = /*(MFeature)*/ j.next();
-            if (ModelFacade.getName(feature).equals(name) 
-                    && ModelFacade.isAOperation(feature)) {
+            if (ModelFacade.getName(feature).equals(name) && ModelFacade.isAOperation(feature)) {
                 found = true;
                 parseState.newFeature(feature);
                 Object mOperation = /*(MOperation)*/ feature;

@@ -58,7 +58,7 @@ public class ClAttributeCompartment implements Clarifier {
 	    // added by Eric Lefevre 13 Mar 1999: we must check if the
 	    // FigText for attributes is drawn before drawing things
 	    // over it
-	    if ( !fc.isAttributesVisible() ) {
+	    if ( !fc.isAttributeVisible() ) {
 		_fig = null;
 		return;
 	    }

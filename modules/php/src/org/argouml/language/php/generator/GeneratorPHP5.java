@@ -29,7 +29,7 @@ import org.apache.log4j.Logger;
 /**
  * Generator class for PHP 5.x source code
  * 
- * @author Kai Schr&ouml;der
+ * @author Kai Schröder
  * @since  ArgoUML 0.15.5
  */
 public final class GeneratorPHP5 extends GeneratorPHP4 {

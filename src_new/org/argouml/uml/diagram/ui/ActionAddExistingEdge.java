@@ -38,17 +38,16 @@ import org.tigris.gef.graph.MutableGraphModel;
 */
 public class ActionAddExistingEdge extends UMLAction {
     
-    private Object edge = null;
+    Object _edge = null;
 
     /**
      * Constructor for ActionAddExistingEdge.
      *
-     * @param tabName       the name of the tab
-     * @param edgeObject    the edge
+     * @param tabName
      */
-    public ActionAddExistingEdge(String tabName, Object edgeObject) {
+    public ActionAddExistingEdge(String tabName, Object edge) {
         super(tabName, NO_ICON);
-        edge = edgeObject;
+        _edge = edge;
         
     }
 
@@ -60,19 +59,19 @@ public class ActionAddExistingEdge extends UMLAction {
     public void actionPerformed(ActionEvent arg0) {
         super.actionPerformed(arg0);
         // we have an edge
-        if (edge == null) return;
-        // let's test which situation we have. 3 Possibilities:
+        if (_edge == null) return;
+        // lets test which situation we have. 3 Possibilities:
         // 1. The nodes are allready on the diagram, we can use
-        //    canAddEdge for this.
-        // 2. One of the nodes is already on the diagram. The other
-        //    has to be added.
+        //    canAddEdge for this
+        // 2. One of the nodes is allready on the diagram. The other
+        //    has to be added
         // 3. Both of the nodes are not yet on the diagram.
         // For the time being we will only implement situation 1.
         // TODO: implement situation 2 and 3.
         MutableGraphModel gm = (MutableGraphModel) ProjectManager.getManager().
             getCurrentProject().getActiveDiagram().getGraphModel();
-        if (gm.canAddEdge(edge)) { // situation 1
-            gm.addEdge(edge);
+        if (gm.canAddEdge(_edge)) { // situation 1
+            gm.addEdge(_edge);
         }
     }
 

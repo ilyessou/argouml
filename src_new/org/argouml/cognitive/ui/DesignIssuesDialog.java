@@ -56,6 +56,9 @@ public class DesignIssuesDialog extends ArgoDialog implements ChangeListener {
 
     ////////////////////////////////////////////////////////////////
     // constants
+    private final int WIDTH = 320;
+    private final int HEIGHT = 400;
+
     ////////////////////////////////////////////////////////////////
     // instance variables
     private JPanel  _mainPanel = new JPanel();
@@ -67,9 +70,6 @@ public class DesignIssuesDialog extends ArgoDialog implements ChangeListener {
 
     public DesignIssuesDialog(Frame parent) {
         super(parent, Translator.localize("dialog.title.design-issues"), false);
-
-        final int WIDTH = 320;
-        final int HEIGHT = 400;
 
         initMainPanel();
 
@@ -141,9 +141,9 @@ public class DesignIssuesDialog extends ArgoDialog implements ChangeListener {
 
 
         c.gridy = 2;
-        Enumeration elems = decs.elements();
-        while (elems.hasMoreElements()) {
-            Decision d = (Decision) elems.nextElement();
+        Enumeration enum = decs.elements();
+        while (enum.hasMoreElements()) {
+            Decision d = (Decision) enum.nextElement();
             JLabel decLabel = new JLabel(d.getName());
             JLabel valueLabel = new JLabel(getValueText(d.getPriority()));
             JSlider decSlide = 

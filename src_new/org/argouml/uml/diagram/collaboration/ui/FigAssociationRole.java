@@ -27,6 +27,7 @@ package org.argouml.uml.diagram.collaboration.ui;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Vector;
 
 import org.argouml.application.api.Notation;
 import org.argouml.uml.diagram.ui.FigAssociation;
@@ -37,33 +38,21 @@ import org.tigris.gef.presentation.Fig;
 import org.tigris.gef.presentation.FigGroup;
 
 import ru.novosoft.uml.MElementEvent;
-
-
-
-/**
- * This class represents the Fig of an AssociationRole 
- * for a collaboration diagram.
- * 
- */
 public class FigAssociationRole extends FigAssociation {
- 
-    private FigMessageGroup messages = new FigMessageGroup();
- 
     ////////////////////////////////////////////////////////////////
     // constructors
- 
-    /**
-     * Main Constructor  
-     */
+  
+    protected FigMessageGroup _messages = new FigMessageGroup();
+
     public FigAssociationRole() {
 	super(); // this really is questionable
-	addPathItem(messages, new PathConvPercent(this, 50, 10));
+	addPathItem(_messages, new PathConvPercent(this, 50, 10));
     }
 
     /**
      * Constructor for FigAssociationRole.
-     * @param edge the owning UML element
-     * @param lay the layer
+     * @param edge
+     * @param lay
      */
     public FigAssociationRole(Object edge, Layer lay) {
 	this();
@@ -74,12 +63,10 @@ public class FigAssociationRole extends FigAssociation {
     ////////////////////////////////////////////////////////////////
     // event handlers
     /**
-     * @see org.argouml.uml.diagram.ui.FigEdgeModelElement#modelChanged(ru.novosoft.uml.MElementEvent)
-     *
      * calls the method on the "super" (FigAssociation)
      * and then changes the name to take care of the
      * "/ name : base association name" form.
-     */    
+     **/    
     protected void modelChanged(MElementEvent e) {
         super.modelChanged(e);
         //change the name
@@ -88,17 +75,14 @@ public class FigAssociationRole extends FigAssociation {
         // String asNameStr = ((ar.getName() == null) && (ar.getBase()
         // == null)) ? "" : Notation.generate(this, ar);
         String asNameStr = Notation.generate(this, ar);
-        getNameFig().setText(asNameStr);
+        _name.setText(asNameStr);
     }
     
-    /**
-     * @param message the message to be added
-     */
     public void addMessage(FigMessage message) {
-    	messages.addFig(message);
+    	_messages.addFig(message);
     	// damage();
     	updatePathItemLocations();
-    	messages.damage();
+    	_messages.damage();
     }
 
     /**
@@ -106,15 +90,12 @@ public class FigAssociationRole extends FigAssociation {
      */
     public void delete() {
         super.delete();
-        messages.delete();
+        _messages.delete();
     }
 
 } /* end class FigAssociationRole */
 
-/**
- * TODO: Should this be in its own source file?
- *
- */
+// TODO: Should this be in its own source file?
 class FigMessageGroup extends FigGroup {
 	
     /**
@@ -122,6 +103,15 @@ class FigMessageGroup extends FigGroup {
      */
     public FigMessageGroup() {
 	super();
+    }
+
+    /**
+     * Constructor for FigMessageGroup.
+     * @param figs
+     * @deprecated in 0.15.3 in favour of FigMessageGroup(List)
+     */
+    public FigMessageGroup(Vector figs) {
+	super(figs);
     }
 
     /**

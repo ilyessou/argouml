@@ -43,11 +43,24 @@ import org.argouml.uml.diagram.UMLMutableGraphSupport;
  * This class handles only UML Use Case Diagrams.<p>
  */
 public class UseCaseDiagramGraphModel
-        extends UMLMutableGraphSupport
-        implements VetoableChangeListener {
+    extends UMLMutableGraphSupport
+    implements VetoableChangeListener
+{
+    /**
+     * @deprecated by Linus Tolke as of 0.15.4. Use your own logger in your
+     * class. This will be removed.
+     */
+    protected static Logger cat =
+	Logger.getLogger(UseCaseDiagramGraphModel.class);
+
+    ///////////////////////////////////////////////////////////////////////////
+    //
+    // instance variables
+    //
+    ///////////////////////////////////////////////////////////////////////////
+
     
-    private static final Logger LOG = 
-        Logger.getLogger(UseCaseDiagramGraphModel.class);	
+
     /**
      * The "home" UML model of this diagram, not all ModelElements in
      * this graph are in the home model, but if they are added and
@@ -55,7 +68,7 @@ public class UseCaseDiagramGraphModel
      * model".  Also, elements from other models will have their
      * FigNodes add a line to say what their model is.<p>
      */
-    private Object model;
+    protected Object _model;
 
 
     ///////////////////////////////////////////////////////////////////////////
@@ -70,7 +83,7 @@ public class UseCaseDiagramGraphModel
      * @return  The namespace associated with this graph model.
      */
     public Object getNamespace() {
-        return model;
+        return _model;
     }
 
 
@@ -86,7 +99,7 @@ public class UseCaseDiagramGraphModel
     public void setNamespace(Object namespace) {
         if (!ModelFacade.isANamespace(namespace))
             throw new IllegalArgumentException();
-	model = namespace;
+	_model = namespace;
     }
 
 
@@ -122,7 +135,7 @@ public class UseCaseDiagramGraphModel
     }
 
 
-    /** Return the node or edge that owns the given port.<p>
+    /* Return the node or edge that owns the given port.<p>
      *
      * In our implementation the only objects with ports, use
      * themselves as the port, so are there own owner.<p>
@@ -238,7 +251,7 @@ public class UseCaseDiagramGraphModel
 
         // Don't know what to do otherwise
 
-        LOG.debug(this.getClass().toString() + ": getSourcePort("
+        cat.debug(this.getClass().toString() + ": getSourcePort("
 		  + edge.toString() + ") - can't handle");
 
         return null;
@@ -272,7 +285,7 @@ public class UseCaseDiagramGraphModel
 
         // Don't know what to do otherwise
 
-        LOG.debug(this.getClass().toString() + ": getDestPort("
+        cat.debug(this.getClass().toString() + ": getDestPort("
 		  + edge.toString() + ") - can't handle");
 
         return null;
@@ -302,8 +315,7 @@ public class UseCaseDiagramGraphModel
      *              this graph, <code>false</code> otherwise.
      */
     public boolean canAddNode(Object node) {
-        if (super.canAddNode(node)) return true;
-        if (containsNode(node)) {
+        if (_nodes.contains(node)) {
 	    return false;
 	}
         return ModelFacade.isAActor(node) || ModelFacade.isAUseCase(node);
@@ -327,13 +339,10 @@ public class UseCaseDiagramGraphModel
      *              this graph, <code>false</code> otherwise.
      */
     public boolean canAddEdge(Object edge)  {
-        if (super.canAddEdge(edge)) {
-            return true;
-        }
 
         // Give up if we are already on the graph
         if (edge == null) return false;
-        if (containsEdge(edge)) {
+        if (_edges.contains(edge)) {
             return false;
         }
 
@@ -373,10 +382,14 @@ public class UseCaseDiagramGraphModel
             end0 = ModelFacade.getBase(edge);
             end1 = ModelFacade.getExtension(edge);
         }
-        else if (ModelFacade.isAInclude(edge)) {           
+        else if (ModelFacade.isAInclude(edge)) {
 
-            end0 = ModelFacade.getBase(edge);
-            end1 = ModelFacade.getAddition(edge);
+            // There is a bug in NSUML which gets the addition and base
+            // relationships back to front for include relationships. Solve
+            // by reversing their accessors in the code
+
+            end0 = ModelFacade.getAddition(edge);
+            end1 = ModelFacade.getBase(edge);
         }
         else if (ModelFacade.isADependency(edge)) {
 
@@ -401,8 +414,8 @@ public class UseCaseDiagramGraphModel
 
         if ((end0 == null)
 	    || (end1 == null)
-	    || (!(containsNode(end0)))
-	    || (!(containsNode(end1)))) {
+	    || (!(_nodes.contains(end0)))
+	    || (!(_nodes.contains(end1)))) {
 
             return false;
 
@@ -433,7 +446,7 @@ public class UseCaseDiagramGraphModel
      */
     public void addNode(Object node) {
 
-        LOG.debug("adding usecase node!!");
+        cat.debug("adding usecase node!!");
 
         // Give up if we are already on the graph. This is a bit inconistent
         // with canAddNode above.
@@ -443,7 +456,7 @@ public class UseCaseDiagramGraphModel
         // Add the node, check that it is an actor or use case and add it to
         // the model namespace.
 
-        getNodes().addElement(node);
+        _nodes.addElement(node);
         /*
          * 2002-07-14
          * Jaap Branderhorst
@@ -463,9 +476,9 @@ public class UseCaseDiagramGraphModel
 	     || (ModelFacade.isAUseCase(node)))
 	    && (ModelFacade.getNamespace(node) == null)) {
 	    // end NEW CODE
-	    LOG.debug("setting namespace " + model
+            cat.debug("setting namespace " + _model
 		      + " to element " + node);
-            ModelFacade.addOwnedElement(model, /*(MModelElement)*/ node);
+            ModelFacade.addOwnedElement(_model, /*(MModelElement)*/ node);
         }
 
         // Tell GEF its changed
@@ -489,15 +502,14 @@ public class UseCaseDiagramGraphModel
      * @param edge  The edge to be added to the graph.
      */
     public void addEdge(Object edge) {
-        LOG.debug("adding class edge!!!!!!");
+        cat.debug("adding class edge!!!!!!");
         if (!canAddEdge(edge)) return;
 
         // Add the element and place it in the namespace of the model
-        getEdges().addElement(edge);
+        _edges.addElement(edge);
 
-        if (ModelFacade.isAModelElement(edge) 
-                && ModelFacade.getNamespace(edge) == null) {
-            ModelFacade.addOwnedElement(model, /*(MModelElement)*/ edge);
+        if (ModelFacade.getNamespace(edge) == null) {
+            ModelFacade.addOwnedElement(_model, /*(MModelElement)*/ edge);
         }
 
         // Tell GEF
@@ -688,7 +700,7 @@ public class UseCaseDiagramGraphModel
 
             if (oldOwned.contains(eo)) {
 
-                LOG.debug("model removed " + me);
+                cat.debug("model removed " + me);
 
                 // Remove a node
 
@@ -712,7 +724,7 @@ public class UseCaseDiagramGraphModel
 
             // Something was added - nothing for us to worry about
             else {
-                LOG.debug("model added " + me);
+                cat.debug("model added " + me);
             }
         }
     }

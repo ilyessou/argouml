@@ -61,7 +61,6 @@ public class IllegalModelElementConnectionException extends UmlException {
      * <code>IllegalModelElementConnection</code> with the specified
      * detail message.
      * @param msg the detail message.
-     * @param cause the cause
      */
     public IllegalModelElementConnectionException(String msg, Throwable cause) {
         super(msg, cause);

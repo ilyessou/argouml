@@ -50,12 +50,12 @@ import org.argouml.model.ModelFacade;
 public class ActionModifier extends UMLAction {
     private UMLBooleanProperty _property;
     private Object object;
-    private Class mclassClass = (Class) ModelFacade.CLASS;
-    private Class mpackageClass = (Class) ModelFacade.PACKAGE;
-    private Class minterfaceClass = (Class) ModelFacade.INTERFACE;
-    private Class museCaseClass = (Class) ModelFacade.USE_CASE; //Jeremy Bennett
-    private Object trueValue = null;
-    private Object falseValue = null;
+    Class mclassClass = (Class)ModelFacade.CLASS;
+    Class mpackageClass = (Class)ModelFacade.PACKAGE;
+    Class minterfaceClass = (Class)ModelFacade.INTERFACE;
+    Class museCaseClass = (Class)ModelFacade.USE_CASE;      // Jeremy Bennett
+    Object trueValue = null;
+    Object falseValue = null;
 
     /**
      * Defines an Action object with the specified description which
@@ -98,16 +98,16 @@ public class ActionModifier extends UMLAction {
      * @param mclass the <code>MClass</code> object containing the
      * modifier property.
      * @param     enumClass      the class representing the enumeration
-     * @param     theTrueValue      The enumerated value representing true
-     * @param     theFalseValue     The enumerated value representing false
+     * @param     trueValue      The enumerated value representing true
+     * @param     falseValue     The enumerated value representing false
      */
     public ActionModifier(String name, String propertyName,
 			  String getMethod,
 			  String setMethod,
 			  Object mclass,
 			  Class enumClass,
-			  Object theTrueValue,
-			  Object theFalseValue)
+			  Object trueValue,
+			  Object falseValue)
     {
 	super(name, NO_ICON);
 	this.object = mclass;
@@ -116,8 +116,8 @@ public class ActionModifier extends UMLAction {
 					      getMethod,
 					      setMethod,
 					      enumClass,
-					      theTrueValue,
-					      theFalseValue);
+					      trueValue,
+					      falseValue);
 	putValue("SELECTED", new Boolean(_property.getProperty(object)));
     }
 
@@ -125,9 +125,7 @@ public class ActionModifier extends UMLAction {
     // main methods
 
     /**
-     * To perform the action of changing a modifier.
-     *
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
+     * To perform the action of changing a modifier
      */
     public void actionPerformed(ActionEvent ae) {
     	try {
@@ -138,8 +136,6 @@ public class ActionModifier extends UMLAction {
 
     /**
      * The action is always enabled
-     *
-     * @see org.argouml.uml.ui.UMLAction#shouldBeEnabled()
      */
     public boolean shouldBeEnabled() {
 	return true;

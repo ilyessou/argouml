@@ -45,7 +45,12 @@ import org.argouml.uml.ui.UMLTreeCellRenderer;
  * navigation and todo list.
  */
 public class DisplayTextTree extends JTree {
-    private static final Logger LOG = Logger.getLogger(DisplayTextTree.class);
+
+    /**
+     * @deprecated by Linus Tolke as of 0.15.4. Use your own logger in your
+     * class. This will be removed.
+     */
+    protected static Logger cat = Logger.getLogger(DisplayTextTree.class);
 
     /**
      * A Map helping the tree maintain a consistent expanded paths state.
@@ -55,9 +60,9 @@ public class DisplayTextTree extends JTree {
      * values = Vector of currently expanded paths.
      *</pre>
      */
-    private Hashtable expandedPathsInModel;
+    private Hashtable _expandedPathsInModel;
 
-    private boolean reexpanding;
+    private boolean _reexpanding;
 
     /** Sets the label renderer, line style angled, enable tooltips,
      *  sets row hieght to 18 pixels.
@@ -74,8 +79,8 @@ public class DisplayTextTree extends JTree {
 
         this.setRowHeight(18); 
 
-        expandedPathsInModel = new Hashtable();
-        reexpanding = false;
+        _expandedPathsInModel = new Hashtable();
+        _reexpanding = false;
     }
 
     // ------------ methods that override JTree methods ---------
@@ -95,7 +100,9 @@ public class DisplayTextTree extends JTree {
         int row,
         boolean hasFocus) {
 
-	if (value instanceof ToDoItem) {
+	String name = null;
+
+        if (value instanceof ToDoItem) {
             return ((ToDoItem) value).getHeadline();
         }
         if (value instanceof ToDoList) {
@@ -116,36 +123,30 @@ public class DisplayTextTree extends JTree {
 
         super.fireTreeExpanded(path);
 
-        LOG.debug("fireTreeExpanded");
-        if (reexpanding)
+        cat.debug("fireTreeExpanded");
+        if (_reexpanding)
             return;
-        if (path == null || expandedPathsInModel == null)
+        if (path == null || _expandedPathsInModel == null)
             return;
         Vector expanded = getExpandedPaths();
         expanded.removeElement(path);
         expanded.addElement(path);
     }
 
-    /**
-     * @see javax.swing.JTree#fireTreeCollapsed(javax.swing.tree.TreePath)
-     */
     public void fireTreeCollapsed(TreePath path) {
 
         super.fireTreeCollapsed(path);
 
-        LOG.debug("fireTreeCollapsed");
-        if (path == null || expandedPathsInModel == null)
+        cat.debug("fireTreeCollapsed");
+        if (path == null || _expandedPathsInModel == null)
             return;
         Vector expanded = getExpandedPaths();
         expanded.removeElement(path);
     }
 
-    /**
-     * @see javax.swing.JTree#setModel(javax.swing.tree.TreeModel)
-     */
     public void setModel(TreeModel newModel) {
 
-        LOG.debug("setModel");
+        cat.debug("setModel");
         Object r = newModel.getRoot();
         if (r != null)
             super.setModel(newModel);
@@ -159,12 +160,12 @@ public class DisplayTextTree extends JTree {
      */
     protected Vector getExpandedPaths() {
 
-        LOG.debug("getExpandedPaths");
+        cat.debug("getExpandedPaths");
         TreeModel tm = getModel();
-        Vector res = (Vector) expandedPathsInModel.get(tm);
+        Vector res = (Vector) _expandedPathsInModel.get(tm);
         if (res == null) {
             res = new Vector();
-            expandedPathsInModel.put(tm, res);
+            _expandedPathsInModel.put(tm, res);
         }
         return res;
     }
@@ -177,18 +178,18 @@ public class DisplayTextTree extends JTree {
      */
     private void reexpand() {
 
-        LOG.debug("reexpand");
-        if (expandedPathsInModel == null)
+        cat.debug("reexpand");
+        if (_expandedPathsInModel == null)
             return;
 
-        reexpanding = true;
+        _reexpanding = true;
 
-        Enumeration pathsEnum = getExpandedPaths().elements();
-        while (pathsEnum.hasMoreElements()) {
-            TreePath path = (TreePath) pathsEnum.nextElement();
+        Enumeration enum = getExpandedPaths().elements();
+        while (enum.hasMoreElements()) {
+            TreePath path = (TreePath) enum.nextElement();
             expandPath(path);
         }
-        reexpanding = false;
+        _reexpanding = false;
     }
 
 }

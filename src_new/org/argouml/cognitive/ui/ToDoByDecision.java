@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2004 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -63,9 +63,9 @@ public class ToDoByDecision extends ToDoPerspective
 	path[0] = Designer.TheDesigner.getToDoList();
 
 	Vector decs = Designer.TheDesigner.getDecisions();
-	Enumeration elems = decs.elements();
-	while (elems.hasMoreElements()) {
-	    Decision dec = (Decision) elems.nextElement();
+	Enumeration enum = decs.elements();
+	while (enum.hasMoreElements()) {
+	    Decision dec = (Decision) enum.nextElement();
 	    int nMatchingItems = 0;
 	    path[1] = dec;
 	    for (int i = 0; i < nItems; i++) {
@@ -96,9 +96,9 @@ public class ToDoByDecision extends ToDoPerspective
 	path[0] = Designer.TheDesigner.getToDoList();
 
 	Vector decs = Designer.TheDesigner.getDecisions();
-	Enumeration elems = decs.elements();
-	while (elems.hasMoreElements()) {
-	    Decision dec = (Decision) elems.nextElement();
+	Enumeration enum = decs.elements();
+	while (enum.hasMoreElements()) {
+	    Decision dec = (Decision) enum.nextElement();
 	    int nMatchingItems = 0;
 	    path[1] = dec;
 	    for (int i = 0; i < nItems; i++) {
@@ -130,9 +130,9 @@ public class ToDoByDecision extends ToDoPerspective
 	path[0] = Designer.TheDesigner.getToDoList();
 
 	Vector decs = Designer.TheDesigner.getDecisions();
-	Enumeration elems = decs.elements();
-	while (elems.hasMoreElements()) {
-	    Decision dec = (Decision) elems.nextElement();
+	Enumeration enum = decs.elements();
+	while (enum.hasMoreElements()) {
+	    Decision dec = (Decision) enum.nextElement();
 	    cat.debug("toDoItemRemoved updating decision node!");
 	    boolean anyInDec = false;
 	    for (int i = 0; i < nItems; i++) {
@@ -155,7 +155,7 @@ public class ToDoByDecision extends ToDoPerspective
     //   protected boolean isNeeded(ToDoPseudoNode node) {
     //     PredicateDecision pd = (PredicateDecision) node.getPredicate();
     //     Decision d = pd.getDecision();
-    //     Enumeration items = _root.elements();
+    //     java.util.Enumeration items = _root.elements();
     //     while (items.hasMoreElements()) {
     //       ToDoItem item = (ToDoItem) items.nextElement();
     //       if (item.getPoster().supports(d)) return true;
@@ -170,9 +170,9 @@ public class ToDoByDecision extends ToDoPerspective
     //       addNodeIfNeeded(Decision.UNSPEC, newNodes);
     //     }
     //     else {
-    //       Enumeration elems = decs.elements();
-    //       while (elems.hasMoreElements()) {
-    // 	Decision itemDec = (Decision) elems.nextElement();
+    //       java.util.Enumeration enum = decs.elements();
+    //       while (enum.hasMoreElements()) {
+    // 	Decision itemDec = (Decision) enum.nextElement();
     // 	addNodeIfNeeded(itemDec, newNodes);
     //       }
     //     }
@@ -181,9 +181,9 @@ public class ToDoByDecision extends ToDoPerspective
 
 
     //   protected void addNodeIfNeeded(Decision itemDec, Vector newNodes) {
-    //     Enumeration elems = _pseudoNodes.elements();
-    //     while (elems.hasMoreElements()) {
-    //       ToDoPseudoNode node = (ToDoPseudoNode) elems.nextElement();
+    //     java.util.Enumeration enum2 = _pseudoNodes.elements();
+    //     while (enum2.hasMoreElements()) {
+    //       ToDoPseudoNode node = (ToDoPseudoNode) enum2.nextElement();
     //       PredicateDecision pd = (PredicateDecision) node.getPredicate();
     //       Decision nodeDec = pd.getDecision();
     //       //if (nodeDec.getName().equals(itemDec.getName())) return;

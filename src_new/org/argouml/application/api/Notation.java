@@ -47,9 +47,11 @@ import org.argouml.model.ModelFacade;
  */
 public final class Notation implements PropertyChangeListener {
 
-    /** 
-     * Define a static log4j category variable for ArgoUML notation.
+    /** Define a static log4j category variable for ArgoUML notation.
+     * @deprecated in 0.15.3 public access - will become private
      */
+    public static final Logger cat =
+        Logger.getLogger("org.argouml.application.notation");
     private static final Logger LOG = 
         Logger.getLogger(Notation.class);
     
@@ -150,9 +152,6 @@ public final class Notation implements PropertyChangeListener {
         return np;
     }
 
-    /**
-     * @param n the NotationName that will become default
-     */
     public static void setDefaultNotation(NotationName n) {
         LOG.info("default notation set to " + n.getConfigurationValue());
         Configuration.setString(
@@ -160,18 +159,10 @@ public final class Notation implements PropertyChangeListener {
             n.getConfigurationValue());
     }
 
-    /**
-     * Convert a String into a NotationName.
-     * @param s the String
-     * @return the matching Notationname
-     */
     public static NotationName findNotation(String s) {
         return NotationNameImpl.findNotation(s);
     }
 
-    /**
-     * @return the default NotationName
-     */
     public static NotationName getDefaultNotation() {
         NotationName n =
             NotationNameImpl.findNotation(
@@ -208,122 +199,118 @@ public final class Notation implements PropertyChangeListener {
 	    .generateExtensionPoint(ep);
     }
 
-    private static String generateOperation(
+    protected static String generateOperation(
         NotationName notation,
         Object/*MOperation*/ op,
         boolean documented) {
         return getProvider(notation).generateOperation(op, documented);
     }
 
-    private static String generateAttribute(
+    protected static String generateAttribute(
         NotationName notation,
         Object/*MAttribute*/ attr,
         boolean documented) {
         return getProvider(notation).generateAttribute(attr, documented);
     }
 
-    private static String generateParameter(
+    protected static String generateParameter(
         NotationName notation,
         Object/*MParameter*/ param) {
         return getProvider(notation).generateParameter(param);
     }
 
-    private static String generateName(NotationName notation, String name) {
+    protected static String generateName(NotationName notation, String name) {
         return getProvider(notation).generateName(name);
     }
 
-    private static String generatePackage(NotationName notation,
+    protected static String generatePackage(NotationName notation,
 				     Object/*MPackage*/ pkg) {
         return getProvider(notation).generatePackage(pkg);
     }
 
-    private static String generateExpression(
+    protected static String generateExpression(
         NotationName notation,
         Object/*MExpression*/ expr) {
         return getProvider(notation).generateExpression(expr);
     }
 
-    private static String generateClassifier(
+    protected static String generateClassifier(
         NotationName notation,
         Object/*MClassifier*/ cls) {
         return getProvider(notation).generateClassifier(cls);
     }
 
-    private static String generateStereotype(NotationName notation,
+    protected static String generateStereotype(NotationName notation,
 					Object/*MStereotype*/ s) {
         return getProvider(notation).generateStereotype(s);
     }
 
-    private static String generateTaggedValue(
+    protected static String generateTaggedValue(
         NotationName notation,
         Object/*MTaggedValue*/ s) {
         return getProvider(notation).generateTaggedValue(s);
     }
 
-    private static String generateAssociation(
+    protected static String generateAssociation(
         NotationName notation,
         Object/*MAssociation*/ a) {
         return getProvider(notation).generateAssociation(a);
     }
 
-    private static String generateAssociationEnd(
+    protected static String generateAssociationEnd(
         NotationName notation,
         Object/*MAssociationEnd*/ ae) {
         return getProvider(notation)
 	    .generateAssociationEnd(ae);
     }
 
-    private static String generateMultiplicity(
+    protected static String generateMultiplicity(
         NotationName notation,
         Object/*MMultiplicity*/ m) {
         return getProvider(notation).generateMultiplicity(m);
     }
 
-    private static String generateState(NotationName notation,
+    protected static String generateState(NotationName notation,
 					  Object/*MState*/ m) {
         return getProvider(notation).generateState(m);
     }
 
-    private static String generateStateBody(NotationName notation,
+    protected static String generateStateBody(NotationName notation,
                                         Object/*MState*/ stt) {
         return getProvider(notation).generateStateBody(stt);
     }
 
-    private static String generateTransition(NotationName notation,
+    protected static String generateTransition(NotationName notation,
 					Object/*MTransition*/ m) {
         return getProvider(notation).generateTransition(m);
     }
 
-    private static String generateVisibility(NotationName notation,
+    protected static String generateVisibility(NotationName notation,
 					Object /*MVisibilityKind*/ m) {
         return getProvider(notation).generateVisibility(m);
     }
 
-    private static String generateAction(NotationName notation, Object m) {
+    protected static String generateAction(NotationName notation, Object m) {
         return getProvider(notation).generateAction(m);
     }
-    
-    private static String generateActionState(NotationName notation, Object m) {
-        return getProvider(notation).generateActionState(m);
-    }
 
-    private static String generateGuard(NotationName notation,
+    protected static String generateGuard(NotationName notation,
 					  Object/*MGuard*/ m) {
         return getProvider(notation).generateGuard(m);
     }
 
-    private static String generateMessage(NotationName notation,
+    protected static String generateMessage(NotationName notation,
 				     Object/*MMessage*/ m) {
         return getProvider(notation).generateMessage(m);
     }
 
-    private static String generateClassifierRef(
+    protected static String generateClassifierRef(
         NotationName notation,
         Object/*MClassifier*/ m) {
         return getProvider(notation).generateClassifierRef(m);
     }
 
-    private static String generateAssociationRole(
+    protected static String generateAssociationRole(
         NotationName notation,
         Object/*MAssociationRole*/ m) {
         return getProvider(notation)
@@ -333,9 +320,6 @@ public final class Notation implements PropertyChangeListener {
     ////////////////////////////////////////////////////////////////
     // static accessors
 
-    /**
-     * @return the singleton
-     */
     public static Notation getInstance() {
         return SINGLETON;
     }
@@ -354,239 +338,136 @@ public final class Notation implements PropertyChangeListener {
     public static String generateExtensionPoint(
         NotationContext ctx,
         Object/*MExtensionPoint*/ ep) {
-        return generateExtensionPoint(Notation.getNotation(ctx), ep);
+        return SINGLETON.generateExtensionPoint(Notation.getNotation(ctx), ep);
     }
 
-    /**
-     * Static accessor for operation generation.  Invokes our protected
-     * accessor from the singleton instance with the "documented" flag set
-     * false.<p>
-     * 
-     * @param ctx  Context used to identify the notation
-     * @param op   The operation to generate for.
-     * @return     The generated text.
-     */
     public static String generateOperation(
         NotationContext ctx,
         Object/*MOperation*/ op) {
-        return generateOperation(Notation.getNotation(ctx), op, false);
+        return SINGLETON.generateOperation(Notation.getNotation(ctx),
+					   op,
+					   false);
     }
 
-    /**
-     * @param ctx  Context used to identify the notation
-     * @param op   The operation to generate for.
-     * @param documented <tt>true</tt> if documentation shall be generated.
-     * @return     The generated text.
-     */
     public static String generateOperation(
         NotationContext ctx,
         Object/*MOperation*/ op,
         boolean documented) {
-        return generateOperation(Notation.getNotation(ctx), op, documented);
+        return SINGLETON.generateOperation(Notation.getNotation(ctx),
+					   op,
+					   documented);
     }
 
-    /**
-     * @param ctx  Context used to identify the notation
-     * @param attr   The attribute to generate for.
-     * @return     The generated text.
-     */
     public static String generateAttribute(
         NotationContext ctx,
         Object/*MAttribute*/ attr) {
-        return generateAttribute(Notation.getNotation(ctx), attr, false);
+        return SINGLETON.generateAttribute(Notation.getNotation(ctx),
+					   attr,
+					   false);
     }
 
-    /**
-     * @param ctx  Context used to identify the notation
-     * @param attr   The attribute to generate for.
-     * @param documented <tt>true</tt> if documentation shall be generated.
-     * @return     The generated text.
-     */
     public static String generateAttribute(
         NotationContext ctx,
         Object/*MAttribute*/ attr,
         boolean documented) {
-        return generateAttribute(Notation.getNotation(ctx), attr, documented);
+        return SINGLETON.generateAttribute(Notation.getNotation(ctx),
+					   attr,
+					   documented);
     }
 
-    /**
-     * @param ctx  Context used to identify the notation
-     * @param param   The parameter to generate for.
-     * @return     The generated text.
-     */
     public static String generateParameter(
         NotationContext ctx,
         Object/*MParameter*/ param) {
-        return generateParameter(Notation.getNotation(ctx), param);
+        return SINGLETON.generateParameter(Notation.getNotation(ctx), param);
     }
 
-    /**
-     * @param ctx  Context used to identify the notation
-     * @param p   The UML element to generate for.
-     * @return     The generated text.
-     */
     public static String generatePackage(NotationContext ctx,
 					 Object/*MPackage*/ p) {
-        return generatePackage(Notation.getNotation(ctx), p);
+        return SINGLETON.generatePackage(Notation.getNotation(ctx), p);
     }
 
-    /**
-     * @param ctx  Context used to identify the notation
-     * @param cls   The UML element to generate for.
-     * @return     The generated text.
-     */
     public static String generateClassifier(
         NotationContext ctx,
         Object/*MClassifier*/ cls) {
-        return generateClassifier(Notation.getNotation(ctx), cls);
+        return SINGLETON.generateClassifier(Notation.getNotation(ctx), cls);
     }
 
-    /**
-     * @param ctx  Context used to identify the notation
-     * @param s   The UML element to generate for.
-     * @return     The generated text.
-     */
     public static String generateStereotype(
             NotationContext ctx,
             Object/*MStereotype*/ s) {
-        return generateStereotype(Notation.getNotation(ctx), s);
+        return SINGLETON.generateStereotype(Notation.getNotation(ctx), s);
     }
 
-    /**
-     * @param ctx  Context used to identify the notation
-     * @param s   The UML element to generate for.
-     * @return     The generated text.
-     */
     public static String generateTaggedValue(
         NotationContext ctx,
         Object/*MTaggedValue*/ s) {
-        return generateTaggedValue(Notation.getNotation(ctx), s);
+        return SINGLETON.generateTaggedValue(Notation.getNotation(ctx), s);
     }
 
-    /**
-     * @param ctx  Context used to identify the notation
-     * @param a   The UML element to generate for.
-     * @return     The generated text.
-     */
     public static String generateAssociation(
         NotationContext ctx,
         Object/*MAssociation*/ a) {
-        return generateAssociation(Notation.getNotation(ctx), a);
+        return SINGLETON.generateAssociation(Notation.getNotation(ctx), a);
     }
 
-    /**
-     * @param ctx  Context used to identify the notation
-     * @param ae   The UML element to generate for.
-     * @return     The generated text.
-     */
     public static String generateAssociationEnd(
         NotationContext ctx,
         Object/*MAssociationEnd*/ ae) {
-        return generateAssociationEnd(Notation.getNotation(ctx), ae);
+        return SINGLETON.generateAssociationEnd(Notation.getNotation(ctx), ae);
     }
 
-    /**
-     * @param ctx  Context used to identify the notation
-     * @param m   The UML element to generate for.
-     * @return     The generated text.
-     */
     public static String generateMultiplicity(
         NotationContext ctx,
         Object/*MMultiplicity*/ m) {
-        return generateMultiplicity(Notation.getNotation(ctx), m);
+        return SINGLETON.generateMultiplicity(Notation.getNotation(ctx), m);
     }
 
-    /**
-     * @param ctx  Context used to identify the notation
-     * @param m   The UML element to generate for.
-     * @return     The generated text.
-     */
     public static String generateState(NotationContext ctx,
 				       Object/*MState*/ m) {
-        return generateState(Notation.getNotation(ctx), m);
+        return SINGLETON.generateState(Notation.getNotation(ctx), m);
     }
 
-    /**
-     * @param ctx  Context used to identify the notation
-     * @param m   The UML element to generate for.
-     * @return     The generated text.
-     */
     public static String generateStateBody(NotationContext ctx,
 					   Object/*MState*/ m) {
-        return generateStateBody(Notation.getNotation(ctx), m);
+        return SINGLETON.generateStateBody(Notation.getNotation(ctx), m);
     }
 
-    /**
-     * @param ctx  Context used to identify the notation
-     * @param m   The UML element to generate for.
-     * @return     The generated text.
-     */
     public static String generateTransition(
         NotationContext ctx,
         Object/*MTransition*/ m) {
-        return generateTransition(Notation.getNotation(ctx), m);
+        return SINGLETON.generateTransition(Notation.getNotation(ctx), m);
     }
 
-    /**
-     * @param ctx  Context used to identify the notation
-     * @param m   The UML element to generate for.
-     * @return     The generated text.
-     */
     public static String generateVisibility(
         NotationContext ctx,
         Object m) {
-        return generateVisibility(Notation.getNotation(ctx), m);
+            return SINGLETON.generateVisibility(Notation.getNotation(ctx), m);
     }
 
-    /**
-     * @param ctx  Context used to identify the notation
-     * @param m   The UML element to generate for.
-     * @return     The generated text.
-     */
     public static String generateAction(NotationContext ctx, Object m) {
-        return generateAction(Notation.getNotation(ctx), m);
+        return SINGLETON.generateAction(Notation.getNotation(ctx), m);
     }
 
-    /**
-     * @param ctx  Context used to identify the notation
-     * @param m   The UML element to generate for.
-     * @return     The generated text.
-     */
     public static String generateGuard(NotationContext ctx,
 				       Object/*MGuard*/ m) {
-        return generateGuard(Notation.getNotation(ctx), m);
+        return SINGLETON.generateGuard(Notation.getNotation(ctx), m);
     }
 
-    /**
-     * @param ctx  Context used to identify the notation
-     * @param m   The UML element to generate for.
-     * @return     The generated text.
-     */
     public static String generateMessage(NotationContext ctx,
 					 Object/*MMessage*/ m) {
-        return generateMessage(Notation.getNotation(ctx), m);
+        return SINGLETON.generateMessage(Notation.getNotation(ctx), m);
     }
 
-    /**
-     * @param ctx  Context used to identify the notation
-     * @param cls   The UML element to generate for.
-     * @return     The generated text.
-     */
     public static String generateClassifierRef(
         NotationContext ctx,
         Object/*MClassifier*/ cls) {
-        return generateClassifierRef(Notation.getNotation(ctx), cls);
+        return SINGLETON.generateClassifierRef(Notation.getNotation(ctx), cls);
     }
 
-    /**
-     * @param ctx  Context used to identify the notation
-     * @param m   The UML element to generate for.
-     * @return     The generated text.
-     */
     public static String generateAssociationRole(
         NotationContext ctx,
         Object/*MAssociationRole*/ m) {
-        return generateAssociationRole(Notation.getNotation(ctx), m);
+        return SINGLETON.generateAssociationRole(Notation.getNotation(ctx), m);
     }
 
     /**
@@ -603,7 +484,7 @@ public final class Notation implements PropertyChangeListener {
      * @param o          The object to generate.
      *
      * @param documented  A flag of unknown meaning. Only has any effect for
-     *                    Operations and Attributes.
+     *                    {@link MOperation} and {@link MAttribute}.
      *
      * @return            The generated string.
      */
@@ -631,7 +512,7 @@ public final class Notation implements PropertyChangeListener {
      * @param o          The object to generate.
      *
      * @param documented  A flag of unknown meaning. Only has any effect for
-     *                    Operations and Attributes.
+     *                    {@link MOperation} and {@link MAttribute}.
      *
      * @return            The generated string.
      */
@@ -643,21 +524,16 @@ public final class Notation implements PropertyChangeListener {
             return "";
 	}
         if (ModelFacade.isAOperation(o)) {
-            return generateOperation(nn, /*(MOperation)*/ o,
-                    		     documented);
+            return SINGLETON.generateOperation(nn, /*(MOperation)*/ o,
+					       documented);
 	}
         if (ModelFacade.isAAttribute(o)) {
-            return generateAttribute(nn, /*(MAttribute)*/ o,
-				     documented);
+            return SINGLETON.generateAttribute(nn, /*(MAttribute)*/ o,
+					       documented);
 	}
         return generate(nn, o);
     }
 
-    /**
-     * @param ctx  Context used to identify the notation
-     * @param o    The UML element to generate for.
-     * @return     The generated string.
-     */
     public static String generate(NotationContext ctx, Object o) {
         if (o == null) {
             return "";
@@ -665,11 +541,6 @@ public final class Notation implements PropertyChangeListener {
         return generate(getNotation(ctx), o);
     }
 
-    /**
-     * @param nn   The NotationName to be used for the generation
-     * @param o    The UML element to generate for.
-     * @return     The generated string.
-     */
     public static String generate(NotationName nn, Object o) {
         if (o == null) {
             return "";
@@ -677,89 +548,82 @@ public final class Notation implements PropertyChangeListener {
 
         //added to support association roles
         if (ModelFacade.isAAssociationRole(o)) {
-            return generateAssociationRole(nn, o);
+            return SINGLETON.generateAssociationRole(nn, o);
         }
 
         // Added to support extension points
         if (ModelFacade.isAExtensionPoint(o)) {
-            return generateExtensionPoint(nn, o);
+            return SINGLETON.generateExtensionPoint(nn, o);
         }
 
         if (ModelFacade.isAOperation(o)) {
-            return generateOperation(nn, o, false);
+            return SINGLETON.generateOperation(nn, o, false);
 	}
         if (ModelFacade.isAAttribute(o)) {
-            return generateAttribute(nn, o, false);
+            return SINGLETON.generateAttribute(nn, o, false);
 	}
         if (ModelFacade.isAParameter(o)) {
-            return generateParameter(nn, o);
+            return SINGLETON.generateParameter(nn, o);
 	}
         if (ModelFacade.isAPackage(o)) {
-            return generatePackage(nn, o);
+            return SINGLETON.generatePackage(nn, o);
 	}
         if (ModelFacade.isAClassifier(o)) {
-            return generateClassifier(nn, o);
+            return SINGLETON.generateClassifier(nn, o);
 	}
         if (ModelFacade.isAExpression(o)) {
-            return generateExpression(nn, o);
+            return SINGLETON.generateExpression(nn, o);
 	}
         if (o instanceof String) {
-            return generateName(nn, (String) o);
+            return SINGLETON.generateName(nn, (String) o);
 	}
         // if (o instanceof String) {
-        //     return generateUninterpreted(nn,(String) o);
+        //     return SINGLETON.generateUninterpreted(nn,(String) o);
 	// }
         if (ModelFacade.isAStereotype(o)) {
-            return generateStereotype(nn, o);
+            return SINGLETON.generateStereotype(nn, o);
 	}
         if (ModelFacade.isATaggedValue(o)) {
-            return generateTaggedValue(nn, o);
+            return SINGLETON.generateTaggedValue(nn, o);
 	}
         if (ModelFacade.isAAssociation(o)) {
-            return generateAssociation(nn, o);
+            return SINGLETON.generateAssociation(nn, o);
 	}
         if (ModelFacade.isAAssociationEnd(o)) {
-            return generateAssociationEnd(nn, o);
+            return SINGLETON.generateAssociationEnd(nn, o);
 	}
         if (ModelFacade.isAMultiplicity(o)) {
-            return generateMultiplicity(nn, o);
+            return SINGLETON.generateMultiplicity(nn, o);
 	}
-        if (ModelFacade.isAActionState(o)) {
-            return generateActionState(nn, o);
-        }
         if (ModelFacade.isAState(o)) {
-            return generateState(nn, o);
+            return SINGLETON.generateState(nn, o);
 	}
         if (ModelFacade.isATransition(o)) {
-            return generateTransition(nn, o);
+            return SINGLETON.generateTransition(nn, o);
 	}
         if (ModelFacade.isAAction(o)) {
-            return generateAction(nn, o);
+            return SINGLETON.generateAction(nn, o);
 	}
         if (ModelFacade.isACallAction(o)) {
-            return generateAction(nn, o);
+            return SINGLETON.generateAction(nn, o);
 	}
         if (ModelFacade.isAGuard(o)) {
-            return generateGuard(nn, o);
+            return SINGLETON.generateGuard(nn, o);
 	}
         if (ModelFacade.isAMessage(o)) {
-            return generateMessage(nn, o);
+            return SINGLETON.generateMessage(nn, o);
 	}
         if (ModelFacade.isAVisibilityKind(o)) {
-            return generateVisibility(nn, o);
+            return SINGLETON.generateVisibility(nn, o);
 	}
 
         if (ModelFacade.isAModelElement(o)) {
-            return generateName(nn, ModelFacade.getName(o));
+            return SINGLETON.generateName(nn, ModelFacade.getName(o));
 	}
 
         return o.toString();
     }
 
-    /**
-     * @param context the notation context
-     * @return the notation name
-     */
     public static NotationName getNotation(NotationContext context) {
         // TODO: base it on the configuration.
         // Make sure you check the ModelElement to see if it has
@@ -774,8 +638,6 @@ public final class Notation implements PropertyChangeListener {
 
     /**
      * Called after the notation default property gets changed.
-     *
-     * @see java.beans.PropertyChangeListener#propertyChange(java.beans.PropertyChangeEvent)
      */
     public void propertyChange(PropertyChangeEvent pce) {
         LOG.info(
@@ -787,9 +649,6 @@ public final class Notation implements PropertyChangeListener {
             new ArgoNotationEvent(ArgoEvent.NOTATION_CHANGED, pce));
     }
 
-    /**
-     * @return the provider
-     */
     public static NotationProvider2 getDefaultProvider() {
         return NotationProviderFactory.getInstance().getDefaultProvider();
     }
@@ -929,11 +788,6 @@ public final class Notation implements PropertyChangeListener {
 
     /**
      * Create a versioned notation name with an icon.
-     *
-     * @param k1 the name (?)
-     * @param k2 the version (?)
-     * @param icon the icon
-     * @return the notation name
      */
     public static NotationName makeNotation(String k1, String k2, Icon icon) {
         NotationName nn = NotationNameImpl.makeNotation(k1, k2, icon);
@@ -944,18 +798,10 @@ public final class Notation implements PropertyChangeListener {
         return nn;
     }
 
-    /**
-     * @return <tt>true</tt> if guillemots (&laquo; and &raquo;) are used 
-     * instead of &lt;&lt; and &gt;&gt;.
-     */
     public static boolean getUseGuillemots() {
         return Configuration.getBoolean(KEY_USE_GUILLEMOTS, false);
     }
 
-    /**
-     * @param useGuillemots <tt>true</tt> if guillemots (&laquo; and &raquo;) 
-     * shall be used instead of &lt;&lt; and &gt;&gt;.
-     */
     public static void setUseGuillemots(boolean useGuillemots) {
         Configuration.setBoolean(KEY_USE_GUILLEMOTS, useGuillemots);
     }

@@ -27,7 +27,6 @@ package org.argouml.uml.ui;
 
 import javax.swing.JTextField;
 
-import org.argouml.ui.LookAndFeelMgr;
 import org.argouml.ui.targetmanager.TargetListener;
 import org.argouml.ui.targetmanager.TargettableModelView;
 
@@ -47,7 +46,6 @@ public class UMLTextField2
      */
     public UMLTextField2(UMLPlainTextDocument doc) {
         super(doc, null, 0);
-        setFont(LookAndFeelMgr.getInstance().getSmallFont());
         addCaretListener(ActionCopy.getInstance());
         addCaretListener(ActionCut.getInstance());  
         addCaretListener(ActionPaste.getInstance());

@@ -34,8 +34,6 @@ import ru.novosoft.uml.behavior.activity_graphs.MClassifierInState;
 import ru.novosoft.uml.behavior.activity_graphs.MObjectFlowState;
 import ru.novosoft.uml.behavior.activity_graphs.MPartition;
 import ru.novosoft.uml.behavior.activity_graphs.MSubactivityState;
-import ru.novosoft.uml.behavior.state_machines.MCompositeState;
-import ru.novosoft.uml.behavior.state_machines.MSimpleState;
 import ru.novosoft.uml.foundation.core.MBehavioralFeature;
 import ru.novosoft.uml.foundation.core.MClassifier;
 import ru.novosoft.uml.foundation.core.MModelElement;
@@ -54,15 +52,14 @@ public class ActivityGraphsFactory extends AbstractUmlModelFactory {
 
     /** Singleton instance.
      */
-    private static ActivityGraphsFactory sINGLETON =
+    private static ActivityGraphsFactory SINGLETON =
 	new ActivityGraphsFactory();
 
     /**
      * Singleton instance access method.
-     * @return the singleton
      */
     public static ActivityGraphsFactory getFactory() {
-        return sINGLETON;
+        return SINGLETON;
     }
 
     /** Don't allow instantiation
@@ -174,59 +171,18 @@ public class ActivityGraphsFactory extends AbstractUmlModelFactory {
 					       + "context null or not legal");
     }
     
-    /**
-     * Builds an objectflowstate. The objectflowstate will be a subvertix of
-     * the given compositestate. The parameter compositeState is of
-     * type Object to decouple the factory and NSUML as much as
-     * possible from the rest of ArgoUML.
-     *
-     * @author MVW
-     * @param compositeState the given compositestate
-     * @return MObjectFlowState the newly build objectflow state 
-     */
-    public MObjectFlowState buildObjectFlowState(Object compositeState) {
-        if (compositeState instanceof MCompositeState) {
-            MObjectFlowState state = createObjectFlowState();           
-            state.setContainer((MCompositeState) compositeState);
-            return state;
-        }
-        return null;
-    }
-
-    
-    /**
-     * @param elem the ActionState to be deleted
-     */
     public void deleteActionState(Object elem) { }
     
-    /**
-     * @param elem the ActivityGraph to be deleted
-     */
     public void deleteActivityGraph(MActivityGraph elem) { }
     
-    /**
-     * @param elem the CallState to be deleted
-     */
     public void deleteCallState(MCallState elem) { }
     
-    /**
-     * @param elem the ClassifierInState to be deleted
-     */
     public void deleteClassifierInState(MClassifierInState elem) { }
     
-    /**
-     * @param elem ObjectFlowState
-     */
     public void deleteObjectFlowState(MObjectFlowState elem) { }
     
-    /**
-     * @param elem Partition
-     */
     public void deletePartition(MPartition elem) { }
     
-    /**
-     * @param elem SubactivityState
-     */
     public void deleteSubactivityState(MSubactivityState elem) { }
 
 }

@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2004 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -59,11 +59,11 @@ public class CrOppEndVsAttr extends CrUML {
         Vector namesSeen = new Vector();
         Collection str = ModelFacade.getFeatures(cls);
 
+        Iterator enum = str.iterator();
 
         // warn about inheritied name conflicts, different critic?
-        Iterator features = str.iterator();
-        while (features.hasNext()) {
-            Object o = features.next();
+        while (enum.hasNext()) {
+            Object o = enum.next();
 
             if (!(ModelFacade.isAStructuralFeature(o)))
                 continue;
@@ -84,10 +84,10 @@ public class CrOppEndVsAttr extends CrUML {
 
         Collection assocEnds = ModelFacade.getAssociationEnds(cls);
 
+        enum = assocEnds.iterator();
         // warn about inheritied name conflicts, different critic?
-        Iterator myEnds = assocEnds.iterator();
-        while (myEnds.hasNext()) {
-            Object myAe = /*(MAssociationEnd)*/ myEnds.next();
+        while (enum.hasNext()) {
+            Object myAe = /*(MAssociationEnd)*/ enum.next();
             Object asc = /*(MAssociation)*/ ModelFacade.getAssociation(myAe);
             Collection conn = ModelFacade.getConnections(asc);
 
@@ -96,9 +96,9 @@ public class CrOppEndVsAttr extends CrUML {
             if (conn == null)
                 continue;
 
-            Iterator ascEnds = conn.iterator();
-            while (ascEnds.hasNext()) {
-                Object ae = /*(MAssociationEnd)*/ ascEnds.next();
+            Iterator enum2 = conn.iterator();
+            while (enum2.hasNext()) {
+                Object ae = /*(MAssociationEnd)*/ enum2.next();
                 if (ModelFacade.getType(ae) == cls)
                     continue;
                 String aeName = ModelFacade.getName(ae);

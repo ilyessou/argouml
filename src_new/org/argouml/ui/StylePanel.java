@@ -48,7 +48,12 @@ import org.tigris.gef.presentation.Fig;
 public class StylePanel extends TabSpawnable implements TabFigTarget,
                 ItemListener, DocumentListener, ListSelectionListener,
                 ActionListener {
-    private static final Logger LOG = Logger.getLogger(StylePanel.class);
+
+    /**
+     * @deprecated by Linus Tolke as of 0.15.4. Use your own logger in your
+     *             class. This will be removed.
+     */
+    protected static Logger cat = Logger.getLogger(StylePanel.class);
 
     protected Fig _target;
 
@@ -75,6 +80,7 @@ public class StylePanel extends TabSpawnable implements TabFigTarget,
      */
     public void refresh(PropertyChangeEvent e) {
 	refresh();
+
     }
 
     /**
@@ -131,7 +137,7 @@ public class StylePanel extends TabSpawnable implements TabFigTarget,
      * @see javax.swing.event.DocumentListener#insertUpdate(javax.swing.event.DocumentEvent)
      */
     public void insertUpdate(DocumentEvent e) {
-	LOG.debug(getClass().getName() + " insert");
+	cat.debug(getClass().getName() + " insert");
     }
 
     /**
@@ -151,6 +157,7 @@ public class StylePanel extends TabSpawnable implements TabFigTarget,
      * @see java.awt.event.ItemListener#itemStateChanged(java.awt.event.ItemEvent)
      */
     public void itemStateChanged(ItemEvent e) {
+	Object src = e.getSource();
     }
 
     /**
@@ -163,7 +170,7 @@ public class StylePanel extends TabSpawnable implements TabFigTarget,
      * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
      */
     public void actionPerformed(ActionEvent ae) {
-	// Object src = ae.getSource();
+	Object src = ae.getSource();
 	//if (src == _config) doConfig();
     }
 
@@ -172,7 +179,7 @@ public class StylePanel extends TabSpawnable implements TabFigTarget,
      *      TargetEvent)
      */
     public void targetAdded(TargetEvent e) {
-        setTarget(e.getNewTarget());
+	setTarget(e.getNewTarget());
     }
 
     /**
@@ -181,7 +188,6 @@ public class StylePanel extends TabSpawnable implements TabFigTarget,
      */
     public void targetRemoved(TargetEvent e) {
 	setTarget(e.getNewTarget());
-
     }
 
     /**
@@ -189,7 +195,6 @@ public class StylePanel extends TabSpawnable implements TabFigTarget,
      */
     public void targetSet(TargetEvent e) {
 	setTarget(e.getNewTarget());
-
     }
 
 } /* end class StylePanel */

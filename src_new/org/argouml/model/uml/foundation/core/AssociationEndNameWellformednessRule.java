@@ -39,16 +39,12 @@ public class AssociationEndNameWellformednessRule
 
     /**
      * Constructor for AssociationEndNameWellformednessRule.
-     * @param key the message key to be looked up 
-     *            to show the message to the user
+     * @param key
      */
     public AssociationEndNameWellformednessRule(String key) {
 	super(key);
     }
 	
-    /**
-     * Constructor for AssociationEndNameWellformednessRule.
-     */
     public AssociationEndNameWellformednessRule() {
 	setUserMessageKey("associationend.name");
     }

@@ -26,7 +26,6 @@ package org.argouml.uml.ui;
 
 import java.awt.event.ActionEvent;
 import java.util.Collection;
-import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Vector;
 
@@ -34,6 +33,7 @@ import org.argouml.kernel.ProjectManager;
 import org.argouml.model.ModelFacade;
 import org.argouml.model.uml.modelmanagement.ModelManagementHelper;
 import org.argouml.ui.ArgoDiagram;
+import org.argouml.ui.ProjectBrowser;
 import org.argouml.ui.targetmanager.TargetManager;
 import org.argouml.uml.diagram.static_structure.ui.UMLClassDiagram;
 import org.argouml.uml.generator.ui.ClassGenerationDialog;
@@ -44,11 +44,18 @@ import org.argouml.uml.generator.ui.ClassGenerationDialog;
 public class ActionGenerateAll extends UMLAction {
 
     ////////////////////////////////////////////////////////////////
-    // constructors
+    // static variables
 
     /**
-     * Constructor.
+     * @deprecated by Linus Tolke as of 0.15.4. Create your own action every
+     * time. This will be removed.
      */
+    public static ActionGenerateAll SINGLETON = new ActionGenerateAll();
+
+
+    ////////////////////////////////////////////////////////////////
+    // constructors
+
     public ActionGenerateAll() {
 	super("action.generate-all-classes", NO_ICON);
     }
@@ -57,10 +64,8 @@ public class ActionGenerateAll extends UMLAction {
     ////////////////////////////////////////////////////////////////
     // main methods
 
-    /**
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-     */
     public void actionPerformed(ActionEvent ae) {
+	ProjectBrowser pb = ProjectBrowser.getInstance();
 	ArgoDiagram activeDiagram =
 	    ProjectManager.getManager().getCurrentProject().getActiveDiagram();
 	if (!(activeDiagram instanceof UMLClassDiagram)) return;
@@ -68,9 +73,9 @@ public class ActionGenerateAll extends UMLAction {
 	UMLClassDiagram d = (UMLClassDiagram) activeDiagram;
 	Vector classes = new Vector();
 	Vector nodes = (Vector) d.getNodes(new Vector());
-	Enumeration elems = nodes.elements();
-	while (elems.hasMoreElements()) {
-	    Object owner = elems.nextElement();
+	java.util.Enumeration enum = nodes.elements();
+	while (enum.hasMoreElements()) {
+	    Object owner = enum.nextElement();
 	    if (!ModelFacade.isAClass(owner)
 		&& !ModelFacade.isAInterface(owner)) {
 
@@ -115,10 +120,8 @@ public class ActionGenerateAll extends UMLAction {
 	cgd.show();
     }
 
-    /**
-     * @see org.argouml.uml.ui.UMLAction#shouldBeEnabled()
-     */
     public boolean shouldBeEnabled() {
+	ProjectBrowser pb = ProjectBrowser.getInstance();
 	ArgoDiagram activeDiagram =
 	    ProjectManager.getManager().getCurrentProject().getActiveDiagram();
 	return super.shouldBeEnabled()

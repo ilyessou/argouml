@@ -38,55 +38,35 @@ import org.apache.log4j.Logger;
  */
 public class UmlException extends Exception {
 
-    private static final Logger LOG = 
+    private static final Logger _cat = 
         Logger.getLogger(UmlException.class);
 
     private Throwable cause = null;
 
-    /**
-     * Constructor
-     */
     public UmlException() {
 	super();
     }
 
-    /**
-     * Constructor 
-     * @param message the message
-     */
     public UmlException(String message) {
 	super(message);
     }
 
-    /**
-     * @param message the message
-     * @param c the cause of the exception
-     */
-    public UmlException(String message, Throwable c) {
+    public UmlException(String message, Throwable cause) {
 	super(message);
-	this.cause = c;
+	this.cause = cause;
     }
 
-    /**
-     * @see java.lang.Throwable#getCause()
-     */
     public Throwable getCause() {
 	return cause;
     }
 
-    /**
-     * @see java.lang.Throwable#printStackTrace()
-     */
     public void printStackTrace() {
 	super.printStackTrace();
 	if (cause != null) {
-	    LOG.error("Caused by:", cause);
+	    _cat.error("Caused by:", cause);
 	}
     }
 
-    /**
-     * @see java.lang.Throwable#printStackTrace(java.io.PrintStream)
-     */
     public void printStackTrace(java.io.PrintStream ps)
     {
 	super.printStackTrace(ps);
@@ -96,9 +76,6 @@ public class UmlException extends Exception {
 	}
     }
 
-    /**
-     * @see java.lang.Throwable#printStackTrace(java.io.PrintWriter)
-     */
     public void printStackTrace(java.io.PrintWriter pw)
     {
 	super.printStackTrace(pw);

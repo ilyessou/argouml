@@ -53,9 +53,9 @@ public class GoMachineDiagram extends AbstractPerspectiveRule{
         if (diagrams == null)
             return null;
 
-        java.util.Enumeration elems = diagrams.elements();
-        while (elems.hasMoreElements()) {
-            Object d = elems.nextElement();
+        java.util.Enumeration enum = diagrams.elements();
+        while (enum.hasMoreElements()) {
+            Object d = enum.nextElement();
             if (d instanceof UMLStateDiagram
 		&& ((UMLStateDiagram) d).getStateMachine() == parent)
                 res.addElement(d);

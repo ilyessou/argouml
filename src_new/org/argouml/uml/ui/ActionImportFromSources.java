@@ -37,25 +37,19 @@ import org.argouml.uml.reveng.Import;
  */
 public class ActionImportFromSources extends UMLAction {
     
-    private static final Logger LOG =
-        Logger.getLogger(ActionImportFromSources.class);
+    protected static Logger cat =
+	Logger.getLogger(org.argouml.uml.ui.ActionImportFromSources.class);
 
     ////////////////////////////////////////////////////////////////
     // static variables
 
-    /**
-     * The singleton.
-     */
     public static ActionImportFromSources SINGLETON =
-        new ActionImportFromSources(); 
+	new ActionImportFromSources(); 
 
 
     ////////////////////////////////////////////////////////////////
     // constructors
 
-    /**
-     *  The constructor.
-     */
     protected ActionImportFromSources() {
         super("action.import-sources");
     }
@@ -64,9 +58,6 @@ public class ActionImportFromSources extends UMLAction {
     ////////////////////////////////////////////////////////////////
     // main methods
 
-    /**
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-     */
     public void actionPerformed(ActionEvent event) {
     	new Import();
     }

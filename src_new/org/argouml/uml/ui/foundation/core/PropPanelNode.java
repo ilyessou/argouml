@@ -37,6 +37,7 @@
 
 package org.argouml.uml.ui.foundation.core;
 
+import java.awt.Color;
 import java.util.Collection;
 
 import javax.swing.JList;
@@ -44,11 +45,11 @@ import javax.swing.JScrollPane;
 
 import org.argouml.i18n.Translator;
 import org.argouml.model.ModelFacade;
-import org.argouml.uml.ui.ActionNavigateContainerElement;
-import org.argouml.uml.ui.ActionRemoveFromModel;
+
 import org.argouml.uml.ui.PropPanelButton;
-import org.argouml.uml.ui.PropPanelButton2;
-import org.argouml.uml.ui.UMLLinkedList;
+import org.argouml.uml.ui.UMLComboBoxNavigator;
+import org.argouml.uml.ui.UMLList;
+import org.argouml.uml.ui.UMLReflectionListModel;
 import org.argouml.util.ConfigLoader;
 
 /**
@@ -68,11 +69,11 @@ public class PropPanelNode extends PropPanelClassifier {
 
         
 
-        // addField(Translator.localize("UMLMenu", "label.stereotype"), new UMLComboBoxNavigator(this, Translator.localize("UMLMenu", "tooltip.nav-stereo"), getStereotypeBox()));
-        addField(Translator.localize("UMLMenu", "label.stereotype"), getStereotypeBox());
+        addField(Translator.localize("UMLMenu", "label.stereotype"), new UMLComboBoxNavigator(this, Translator.localize("UMLMenu", "tooltip.nav-stereo"), getStereotypeBox()));
+
         addField(Translator.localize("UMLMenu", "label.namespace"), getNamespaceComboBox());
 
-        add(_modifiersPanel);
+        addField(Translator.localize("UMLMenu", "label.modifiers"), _modifiersPanel);
         
         addSeperator();
         
@@ -82,13 +83,13 @@ public class PropPanelNode extends PropPanelClassifier {
 
         addSeperator();
 
-        JList resList = new UMLLinkedList(new UMLContainerResidentListModel());
-        addField(Translator.localize("UMLMenu", "label.residents"), new JScrollPane(resList));
+        JList compList = new UMLList(new UMLReflectionListModel(this, "component", true, "getResidents", "setResidents", null, null), true);
+        compList.setForeground(Color.blue);
+        addField(Translator.localize("UMLMenu", "label.components"), new JScrollPane(compList));
 
-        buttonPanel.add(new PropPanelButton2(this, new ActionNavigateContainerElement()));
-                new PropPanelButton(this, buttonPanel, _receptionIcon, Translator.localize("UMLMenu", "button.new-reception"), getActionNewReception());
-        buttonPanel
-        .add(new PropPanelButton2(this, new ActionRemoveFromModel()));   }
+        new PropPanelButton(this, buttonPanel, _navUpIcon, Translator.localize("UMLMenu", "button.go-up"), "navigateUp", null);
+        new PropPanelButton(this, buttonPanel, _deleteIcon, localize("Delete Node"), "removeElement", null);
+    }
 
     public Collection getResidents() {
         Collection components = null;

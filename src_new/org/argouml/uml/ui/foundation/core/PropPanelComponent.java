@@ -26,11 +26,10 @@ package org.argouml.uml.ui.foundation.core;
 
 import org.argouml.i18n.Translator;
 import org.argouml.model.ModelFacade;
-import org.argouml.uml.ui.ActionNavigateNamespace;
-import org.argouml.uml.ui.ActionRemoveFromModel;
 import org.argouml.uml.ui.PropPanelButton;
-import org.argouml.uml.ui.PropPanelButton2;
+
 import org.argouml.util.ConfigLoader;
+import org.argouml.uml.ui.UMLComboBoxNavigator;
 
 /**
  * PropPanel for a UML component.
@@ -49,10 +48,9 @@ public class PropPanelComponent extends PropPanelClassifier {
 	Class mclass = (Class)ModelFacade.COMPONENT;
 
 	addField(Translator.localize("UMLMenu", "label.name"), getNameTextField());
-	// addField(Translator.localize("UMLMenu", "label.stereotype"), new UMLComboBoxNavigator(this, Translator.localize("UMLMenu", "tooltip.nav-stereo"), getStereotypeBox()));
-	addField(Translator.localize("UMLMenu", "label.stereotype"), getStereotypeBox());
+	addField(Translator.localize("UMLMenu", "label.stereotype"), new UMLComboBoxNavigator(this, Translator.localize("UMLMenu", "tooltip.nav-stereo"), getStereotypeBox()));
 	addField(Translator.localize("UMLMenu", "label.namespace"), getNamespaceComboBox());
-	add(_modifiersPanel);
+	addField(Translator.localize("UMLMenu", "label.modifiers"), _modifiersPanel);
 
 	addSeperator();
 
@@ -64,10 +62,9 @@ public class PropPanelComponent extends PropPanelClassifier {
 	addField(Translator.localize("UMLMenu", "label.client-dependencies"), getClientDependencyScroll());
 	addField(Translator.localize("UMLMenu", "label.supplier-dependencies"), getSupplierDependencyScroll());
 
-        buttonPanel.add(new PropPanelButton2(this, new ActionNavigateNamespace()));
-	new PropPanelButton(this, buttonPanel, _receptionIcon, Translator.localize("UMLMenu", "button.new-reception"), getActionNewReception());
-	buttonPanel
-        .add(new PropPanelButton2(this, new ActionRemoveFromModel()));
+	new PropPanelButton(this, buttonPanel, _navUpIcon, Translator.localize("UMLMenu", "button.go-up"), "navigateUp", null);
+	new PropPanelButton(this, buttonPanel, _deleteIcon, Translator.localize("UMLMenu", "button.delete-class"), "removeElement", null);
+
 
 	//    addCaption(Translator.localize("UMLMenu", "label.name"),1,0,0);
 	//    addField(getNameTextField(),1,0,0);
