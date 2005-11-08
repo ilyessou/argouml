@@ -1,0 +1,13 @@
+ArgoUML-*.tar.gz
+ArgoUML-*.zip
+ArgoUML-*.tgz
+.classpath
+.project
+.checkclipse
+argouml.log
+.classpath.full
+bin
+DIST
+.fbwarnings
+.fbprefs
+.settings
