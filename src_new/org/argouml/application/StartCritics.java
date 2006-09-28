@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -25,23 +25,19 @@
 package org.argouml.application;
 
 import org.apache.log4j.Logger;
-import org.argouml.application.api.Argo;
-import org.argouml.application.api.Configuration;
+
 import org.argouml.application.helpers.ResourceLoaderWrapper;
 import org.argouml.cognitive.Designer;
 import org.argouml.kernel.Project;
 import org.argouml.kernel.ProjectManager;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
+import org.argouml.model.uml.UmlModelEventPump;
 import org.argouml.uml.cognitive.critics.ChildGenUML;
+import org.argouml.uml.cognitive.critics.CrUML;
 
-/**
- * StartCritics is a thread which helps to start the critiquing thread.
+/** StartCritics is a thread which helps to start the critiquing thread
  */
 public class StartCritics implements Runnable {
-    /**
-     * Logger.
-     */
+    /** logger */
     private static final Logger LOG = Logger.getLogger(StartCritics.class);
 
     /**
@@ -53,36 +49,29 @@ public class StartCritics implements Runnable {
         org.argouml.uml.cognitive.checklist.Init.init();
         Project p = ProjectManager.getManager().getCurrentProject();
         // set the icon for this poster
-        dsgr.setClarifier(ResourceLoaderWrapper.lookupIconResource("PostItD0"));
-        dsgr.setDesignerName(Configuration.getString(Argo.KEY_USER_FULLNAME));
-        Configuration.addListener(Argo.KEY_USER_FULLNAME, dsgr); //MVW
+        dsgr.setClarifier(ResourceLoaderWrapper.getResourceLoaderWrapper().
+            lookupIconResource("PostItD0"));
         dsgr.spawnCritiquer(p);
         dsgr.setChildGenerator(new ChildGenUML());
         java.util.Enumeration models = (p.getUserDefinedModels()).elements();
         while (models.hasMoreElements()) {
-            Object o = models.nextElement();
-            Model.getPump().addModelEventListener(dsgr, o);
+            Object o = models.nextElement();    
+            // UmlModelEventPump.getPump()
+	    // .removeModelEventListener(dsgr, (MModel)o);
+            UmlModelEventPump.getPump().addModelEventListener(dsgr,
+							      o); 
         }
         LOG.info("spawned critiquing thread");
-        dsgr.getDecisionModel().startConsidering(UMLDecision.CLASS_SELECTION);
-        dsgr.getDecisionModel().startConsidering(UMLDecision.BEHAVIOR);
-        dsgr.getDecisionModel().startConsidering(UMLDecision.NAMING);
-        dsgr.getDecisionModel().startConsidering(UMLDecision.STORAGE);
-        dsgr.getDecisionModel().startConsidering(UMLDecision.INHERITANCE);
-        dsgr.getDecisionModel().startConsidering(UMLDecision.CONTAINMENT);
-        dsgr.getDecisionModel()
-                .startConsidering(UMLDecision.PLANNED_EXTENSIONS);
-        dsgr.getDecisionModel().startConsidering(UMLDecision.STATE_MACHINES);
-        dsgr.getDecisionModel().startConsidering(UMLDecision.PATTERNS);
-        dsgr.getDecisionModel().startConsidering(UMLDecision.RELATIONSHIPS);
-        dsgr.getDecisionModel().startConsidering(UMLDecision.INSTANCIATION);
-        dsgr.getDecisionModel().startConsidering(UMLDecision.MODULARITY);
-        dsgr.getDecisionModel().startConsidering(UMLDecision.EXPECTED_USAGE);
-        dsgr.getDecisionModel().startConsidering(UMLDecision.METHODS);
-        dsgr.getDecisionModel().startConsidering(UMLDecision.CODE_GEN);
-        dsgr.getDecisionModel().startConsidering(UMLDecision.STEREOTYPES);
-        Designer.setUserWorking(true);
+
+        // should be in logon wizard?
+        dsgr.startConsidering(CrUML.decINHERITANCE);
+        dsgr.startConsidering(CrUML.decCONTAINMENT);
+        Designer._userWorking = true;
     }
 
 } /* end class StartCritics */
+
+
+
+
 

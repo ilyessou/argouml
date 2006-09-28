@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2001 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -23,133 +23,84 @@
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 package org.argouml.application.helpers;
-
-import java.util.Vector;
-
-import javax.swing.ButtonGroup;
-import javax.swing.JCheckBox;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JRadioButton;
-import javax.swing.JTextField;
-
-import org.argouml.application.api.PluggableSettingsTab;
-import org.argouml.application.api.SettingsTabPanel;
+import org.argouml.application.api.*;
 import org.argouml.i18n.Translator;
 
-/**
- * Helper object for Settings Tabs.
- *
- * @author Thierry Lach
- * @since  0.9.4
- * @deprecated as of 0.21.3 by Linus Tolke. Replace by explicit calls to Swing
- *         and copy the {@link #getTabPanel()} into your class.
- */
-public abstract class SettingsTabHelper extends JPanel
-    implements SettingsTabPanel, PluggableSettingsTab {
+import javax.swing.*;
+import java.util.*;
 
-    /**
-     * Constructor.
+/** Helper object for Settings Tabs
+ *
+ *  @author Thierry Lach
+ *  @since  0.9.4
+ */
+
+public abstract class SettingsTabHelper extends JPanel
+    implements SettingsTabPanel, PluggableSettingsTab 
+{
+
+    /** Default localization key for Settings
+     */
+    public static final String SETTINGS_BUNDLE = "CoreSettings";
+
+    /** String naming the resource bundle to use for localization.
+     */
+    protected String _bundle = "";
+
+    /** Constructor gets passed the localizer bundle name and
+     *  a property change listener.
      */
     public SettingsTabHelper() {
+        _bundle = getTabResourceBundleKey();
     }
 
-    /**
-     * Helper for localization, localizes using the bundle passed in
-     * the constructor.
-     *
-     * @param key the key for the string to localize
-     * @return the localized string
+    /** Helper for localization, localizes using the bundle passed in
+     *  the constructor.
      */
     public String localize(String key) {
-        return Translator.localize(key);
+        return Translator.localize(_bundle, key);
     }
 
-    /**
-     * Create a localized JLabel.
-     *
-     * @param key the key of the text for the label
-     * @return a new label with a localized text for the given key
+    /** Create a localized JLabel.
      */
     protected JLabel createLabel(String key) {
-    	return new JLabel(Translator.localize(key));
+    	return new JLabel(localize(key));
     }
 
-    /**
-     * Create a localized JCheckBox.
-     *
-     * @param key the key for the string to be localized
-     * @return a new checkbox with localized text
+    /** Create a localized JCheckBox.
      */
     protected JCheckBox createCheckBox(String key) {
-    	JCheckBox j = new JCheckBox(Translator.localize(key));
+    	JCheckBox j = new JCheckBox(localize(key));
 	return j;
     }
 
-    /**
-     * Create a localized JRadioButton.
-     *
-     * @param bg the buttongroup
-     * @param key the key for the string to be localized
-     * @param selected true if selected
-     * @return a new radiobutton with localized string
+    /** Create a localized JRadioButton.
      */
-    protected JRadioButton createRadioButton(ButtonGroup bg, String key,
+    protected JRadioButton createRadioButton(ButtonGroup bg, String key, 
 					     boolean selected) {
-	JRadioButton j = new JRadioButton(Translator.localize(key), selected);
+	JRadioButton j = new JRadioButton(localize(key), selected);
 	bg.add(j);
 	return j;
     }
 
-    /**
-     * Create a JTextField.
-     *
-     * @return a new textfield
+    /** Create a JTextField.
      */
     protected JTextField createTextField() {
     	JTextField j = new JTextField();
 	return j;
     }
 
-    /**
-     * @see org.argouml.application.api.ArgoModule#setModuleEnabled(boolean)
-     */
     public void setModuleEnabled(boolean v) { }
-
-    /**
-     * @see org.argouml.application.api.ArgoModule#initializeModule()
-     */
     public boolean initializeModule() { return true; }
-
-    /**
-     * @see org.argouml.application.api.Pluggable#inContext(java.lang.Object[])
-     */
     public boolean inContext(Object[] o) { return true; }
-
-    /**
-     * @see org.argouml.application.api.ArgoModule#isModuleEnabled()
-     */
     public boolean isModuleEnabled() { return true; }
-
-    /**
-     * @see org.argouml.application.api.ArgoModule#getModulePopUpActions(
-     * java.util.Vector, java.lang.Object)
-     */
     public Vector getModulePopUpActions(Vector v, Object o) { return null; }
-
-    /**
-     * @see org.argouml.application.api.ArgoModule#shutdownModule()
-     */
     public boolean shutdownModule() { return true; }
-
-    /**
-     * @see org.argouml.application.api.PluggableSettingsTab#getSettingsTabPanel()
-     */
     public SettingsTabPanel getSettingsTabPanel() { return this; }
-
-    /**
-     * @see org.argouml.application.api.SettingsTabPanel#getTabPanel()
-     */
     public JPanel getTabPanel() { return this; }
+
+    public String getTabResourceBundleKey() {
+        return SETTINGS_BUNDLE;
+    }
 }
 

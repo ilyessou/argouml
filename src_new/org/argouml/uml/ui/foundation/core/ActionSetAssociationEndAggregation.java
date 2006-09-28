@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -26,47 +26,32 @@ package org.argouml.uml.ui.foundation.core;
 
 import java.awt.event.ActionEvent;
 
-import javax.swing.Action;
 import javax.swing.JRadioButton;
 
 import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
+import org.argouml.uml.ui.UMLChangeAction;
 import org.argouml.uml.ui.UMLRadioButtonPanel;
-import org.tigris.gef.undo.UndoableAction;
 
 /**
- *
- * @author jaap.branderhorst@xs4all.nl
+ * 
+ * @author jaap.branderhorst@xs4all.nl	
  * @since Jan 4, 2003
  */
-public class ActionSetAssociationEndAggregation extends UndoableAction {
+public class ActionSetAssociationEndAggregation extends UMLChangeAction {
 
-    private static final ActionSetAssociationEndAggregation SINGLETON =
+    public static final ActionSetAssociationEndAggregation SINGLETON = 
 	new ActionSetAssociationEndAggregation();
 
-    /**
-     * AGGREGATE_COMMAND defines an aggregation kind.
-     */
-    public static final String AGGREGATE_COMMAND = "aggregate";
-
-    /**
-     * COMPOSITE_COMMAND defines an aggregation kind.
-     */
-    public static final String COMPOSITE_COMMAND = "composite";
-
-    /**
-     * NONE_COMMAND defines an aggregation kind.
-     */
-    public static final String NONE_COMMAND = "none";
+    public final static String AGGREGATE_COMMAND = "aggregate";
+    public final static String COMPOSITE_COMMAND = "composite";
+    public final static String NONE_COMMAND = "none";
 
     /**
      * Constructor for ActionSetElementOwnershipSpecification.
      */
     protected ActionSetAssociationEndAggregation() {
-        super(Translator.localize("action.set"), null);
-        // Set the tooltip string:
-        putValue(Action.SHORT_DESCRIPTION, 
-                Translator.localize("action.set"));
+        super(Translator.localize("action.set"), true, NO_ICON);
     }
 
     /**
@@ -77,28 +62,20 @@ public class ActionSetAssociationEndAggregation extends UndoableAction {
         if (e.getSource() instanceof JRadioButton) {
             JRadioButton source = (JRadioButton) e.getSource();
             String actionCommand = source.getActionCommand();
-            Object target = ((UMLRadioButtonPanel) source.getParent())
-                .getTarget();
-            if (Model.getFacade().isAAssociationEnd(target)) {
+            Object target = ((UMLRadioButtonPanel) source.getParent()).getTarget();
+            if (org.argouml.model.ModelFacade.isAAssociationEnd(target)) {
                 Object m = /*(MAssociationEnd)*/ target;
                 Object/*MAggregationKind*/ kind = null;
                 if (actionCommand.equals(AGGREGATE_COMMAND)) {
-                    kind = Model.getAggregationKind().getAggregate();
+                    kind = ModelFacade.AGGREGATE_AGGREGATIONKIND;
                 } else if (actionCommand.equals(COMPOSITE_COMMAND)) {
-                    kind = Model.getAggregationKind().getComposite();
+                    kind = ModelFacade.COMPOSITE_AGGREGATIONKIND;
                 } else {
-                    kind = Model.getAggregationKind().getNone();
+                    kind = ModelFacade.NONE_AGGREGATIONKIND;
                 }
-                Model.getCoreHelper().setAggregation(m, kind);
+                ModelFacade.setAggregation(m, kind);
             }
         }
-    }
-
-    /**
-     * @return Returns the SINGLETON.
-     */
-    public static ActionSetAssociationEndAggregation getInstance() {
-        return SINGLETON;
     }
 
 }

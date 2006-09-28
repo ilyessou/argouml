@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,63 +22,48 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: CrUselessInterface.java
+// Classes: CrUselessInterface
+// Original Author: jrobbins@ics.uci.edu
+
 package org.argouml.uml.cognitive.critics;
 
 import java.util.Iterator;
-
 import org.argouml.cognitive.Designer;
 import org.argouml.cognitive.Goal;
 import org.argouml.cognitive.critics.Critic;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
+import org.argouml.model.ModelFacade;
 
-/**
- * A critic to detect when a class can never have instances (of
- * itself of any subclasses).
- *
- * @author jrobbins
- */
+// Use Model through ModelFacade
+
+/** A critic to detect when a class can never have instances (of
+ *  itself of any subclasses). */
+
 public class CrUselessInterface extends CrUML {
 
-    /**
-     * The constructor.
-     */
     public CrUselessInterface() {
-        setupHeadAndDesc();
-	addSupportedDecision(UMLDecision.INHERITANCE);
-	addSupportedGoal(Goal.getUnspecifiedGoal());
+	setHeadline("Define Class to Implement <ocl>self</ocl>");
+	addSupportedDecision(CrUML.decINHERITANCE);
+	addSupportedGoal(Goal.UNSPEC);
 	setKnowledgeTypes(Critic.KT_COMPLETENESS);
 	addTrigger("realization");
     }
 
-    /**
-     * @see org.argouml.uml.cognitive.critics.CrUML#predicate2(
-     * java.lang.Object, org.argouml.cognitive.Designer)
-     */
     public boolean predicate2(Object dm, Designer dsgr) {
-	if (!Model.getFacade().isAInterface(dm)) {
-            return NO_PROBLEM;
-        }
-
-	if (!Model.getFacade().isPrimaryObject(dm)) {
-            return NO_PROBLEM;
-        }
+	if (!ModelFacade.isAInterface(dm))
+	    return NO_PROBLEM;
+	
+	if (!ModelFacade.isPrimaryObject(dm))
+	    return NO_PROBLEM;
 
 
-	Iterator iter =
-	    Model.getFacade().getSupplierDependencies(dm).iterator();
+	Iterator iter = ModelFacade.getSupplierDependencies(dm).iterator();
 
-	while (iter.hasNext()) {
-	    if (Model.getFacade().isRealize(iter.next())) {
+	while (iter.hasNext())
+	    if (ModelFacade.isRealize(iter.next()))
 		return NO_PROBLEM;
-            }
-        }
 
 	return PROBLEM_FOUND;
     }
 
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = -6586457111453473553L;
 } /* end class CrUselessInterface */

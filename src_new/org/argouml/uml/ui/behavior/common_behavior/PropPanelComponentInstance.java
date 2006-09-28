@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,66 +24,141 @@
 
 package org.argouml.uml.ui.behavior.common_behavior;
 
-import javax.swing.JList;
-import javax.swing.JScrollPane;
+import java.util.Collection;
+import java.util.Iterator;
 
+import org.argouml.model.ModelFacade;
 import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
-import org.argouml.uml.ui.AbstractActionAddModelElement;
-import org.argouml.uml.ui.ActionNavigateContainerElement;
-import org.argouml.uml.ui.UMLLinkedList;
-import org.argouml.uml.ui.UMLMutableLinkedList;
-import org.argouml.uml.ui.foundation.core.UMLContainerResidentListModel;
-import org.argouml.uml.ui.foundation.extension_mechanisms.ActionNewStereotype;
+
+import org.argouml.uml.ui.PropPanelButton;
+import org.argouml.uml.ui.UMLClassifierComboBoxModel;
+import org.argouml.uml.ui.UMLComboBox;
+import org.argouml.uml.ui.UMLComboBoxNavigator;
+import org.argouml.uml.ui.foundation.core.PropPanelModelElement;
 import org.argouml.util.ConfigLoader;
 
-/**
- * The properties panel for a ComponentInstance.
- */
-public class PropPanelComponentInstance extends PropPanelInstance {
+import ru.novosoft.uml.foundation.core.MClassifier;
+import ru.novosoft.uml.foundation.core.MModelElement;
 
-    /**
-     * The serial version.
-     */
-    private static final long serialVersionUID = 7178149693694151459L;
+/**
+ * TODO: this property panel needs refactoring to remove dependency on
+ *       old gui components.
+ */
+public class PropPanelComponentInstance extends PropPanelModelElement {
 
     /**
      * Contructor.
      */
     public PropPanelComponentInstance() {
-        super("Component Instance", lookupIcon("ComponentInstance"),
-                ConfigLoader.getTabPropsOrientation());
+        super("Component Instance",
+	      _componentInstanceIcon,
+	      ConfigLoader.getTabPropsOrientation());
 
-        addField(Translator.localize("label.name"), getNameTextField());
+        Class mclass = (Class) ModelFacade.COMPONENT_INSTANCE;
+
+        Class[] namesToWatch =
+        {
+	    (Class) ModelFacade.STEREOTYPE,
+	    (Class) ModelFacade.NAMESPACE,
+	    (Class) ModelFacade.CLASSIFIER};
+
+        setNameEventListening(namesToWatch);
+
+        addField(Translator.localize("label.name"),
+		 getNameTextField());
+
+        UMLClassifierComboBoxModel classifierModel =
+	    new UMLClassifierComboBoxModel(this,
+					   "isAcceptibleClassifier",
+					   "classifier",
+					   "getClassifier",
+					   "setClassifier",
+					   false,
+					   (Class) ModelFacade.CLASSIFIER,
+					   true);
+        UMLComboBox clsComboBox = new UMLComboBox(classifierModel);
+        addField("Classifier:",
+		 new UMLComboBoxNavigator(this,
+			 Translator.localize("tooltip.nav-class"),
+			 clsComboBox));
+
+        addField(Translator.localize("label.stereotype"), getStereotypeBox());
         addField(Translator.localize("label.namespace"),
-                getNamespaceSelector());
+		 getNamespaceComboBox());
 
-        addSeparator();
-
-        addField(Translator.localize("label.stimili-sent"),
-                getStimuliSenderScroll());
-
-        addField(Translator.localize("label.stimili-received"),
-                getStimuliReceiverScroll());
-
-        JList resList = new UMLLinkedList(new UMLContainerResidentListModel());
-        addField(Translator.localize("label.residents"),
-                new JScrollPane(resList));
-
-        addSeparator();
-        AbstractActionAddModelElement action =
-            new ActionAddInstanceClassifier(
-                    Model.getMetaTypes().getComponent());
-        JScrollPane classifierScroll =
-            new JScrollPane(
-                new UMLMutableLinkedList(new UMLInstanceClassifierListModel(),
-                        action, null, null, true));
-        addField(Translator.localize("label.classifiers"),
-                classifierScroll);
-
-        addAction(new ActionNavigateContainerElement());
-        addAction(new ActionNewStereotype());
-        addAction(getDeleteAction());
+        new PropPanelButton(this,
+			    buttonPanel, _navUpIcon,
+			    Translator.localize("button.go-up"),
+			    "navigateUp", null);
+        new PropPanelButton(this,
+			    buttonPanel, _deleteIcon,
+			    Translator.localize("Delete"),
+			    "removeElement", null);
     }
 
+    /**
+     * Callback method from UMLComboBoxModel.
+     *
+     * Note: UMLComboBoxModel uses reflection to find this one so when 
+     * changing it is not enough that the compiler accepts this. All test
+     * cases must also accept this.
+     * Linus has sofar changed the parameter type back from Object to 
+     * MModelElement twice in order to get it to work again.
+     *
+     * @param classifier The classifier to test.
+     * @return <tt>true</tt> if acceptible.
+     */
+    public boolean isAcceptibleClassifier(MModelElement classifier) {
+        return ModelFacade.isAClassifier(classifier);
+    }
+
+    /**
+     * Callback method from UMLComboBoxModel.
+     *
+     * Note: UMLComboBoxModel uses reflection to find this one so when 
+     * changing it is not enough that the compiler accepts this. All test
+     * cases must also accept this.
+     * Linus has sofar changed the parameter type back from Object to 
+     * MClassifier twice in order to get it to work again.
+     *
+     * @param element The classifier to test.
+     */
+    public void setClassifier(MClassifier element) {
+        Object target = getTarget();
+
+        if (org.argouml.model.ModelFacade.isAInstance(target)) {
+	    Object inst = /*(MInstance)*/ target;
+//            ((MInstance) target).setClassifier((MClassifier) element);
+
+	    // delete all classifiers
+	    Collection col = ModelFacade.getClassifiers(inst);
+	    if (col != null) {
+		Iterator iter = col.iterator();
+		if (iter != null && iter.hasNext()) {
+		    Object classifier = /*(MClassifier)*/ iter.next();
+		    ModelFacade.removeClassifier(inst, classifier);
+		}
+	    }
+	    // add classifier
+	    ModelFacade.addClassifier(inst, element);
+
+        }
+    }
+
+    public Object getClassifier() {
+        Object classifier = null;
+        Object target = getTarget();
+        if (org.argouml.model.ModelFacade.isAInstance(target)) {
+            // at the moment , we only deal with one classifier
+            Collection col = ModelFacade.getClassifiers(target);
+            if (col != null) {
+                Iterator iter = col.iterator();
+                if (iter != null && iter.hasNext()) {
+                    classifier = /*(MClassifier)*/ iter.next();
+                }
+            }
+
+        }
+        return classifier;
+    }
 } /* end class PropPanelComponentInstance */

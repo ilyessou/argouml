@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,82 +22,152 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: StylePanelFigUseCase.java
+// Classes: StylePanelFigUseCase
+// Original Author: mail@jeremybennett.com
+// $Id$
+
+// 12 Apr 2002: Jeremy Bennett (mail@jeremybennett.com). Created to support
+// optional display of extension points.
+
 package org.argouml.uml.diagram.use_case.ui;
 
+import java.awt.FlowLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.event.ItemEvent;
 
 import javax.swing.JCheckBox;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
 
 import org.argouml.ui.StylePanelFigNodeModelElement;
 
 /**
- * A class to provide a style panel for use cases.<p>
- *
+ * <p>
+ * A class to provide a style panel for use cases.
+ * </p>
+ * 
+ * <p>
  * This adds a check box to control the display of he extension point
  * compartment.
- *
- * @author Jeremy Bennett
+ * </p>
  */
 public class StylePanelFigUseCase extends StylePanelFigNodeModelElement {
 
     /**
-     * The check box for toggling the visibility of extension points.
+     * <p>
+     * The check box for extension points.
+     * </p>
      */
-    private JCheckBox epCheckBox = new JCheckBox("Extension Points");
+    protected JCheckBox _epCheckBox = new JCheckBox("Extension Points");
+
+    /**
+     * <p>
+     * The label alongside the check box for extension points.
+     * </p>
+     */
+    protected JLabel _displayLabel = new JLabel("Display: ");
 
     /**
      * Flag to indicate that a refresh is going on.
      */
-    private boolean refreshTransaction = false;
+    private boolean _refreshTransaction = false;
 
     /**
+     * <p>
      * Build a style panel. Just layout the relevant boxes.
+     * </p>
      */
     public StylePanelFigUseCase() {
+
         // Invoke the parent constructor first
+
         super();
 
-        addToDisplayPane(epCheckBox);
+        // Get the layout and its current constraints and set the constraints
+        // that will apply to everything we now add.
+
+        GridBagLayout gb = (GridBagLayout) getLayout();
+        GridBagConstraints c = new GridBagConstraints();
+
+        c.fill = GridBagConstraints.BOTH;
+        c.ipadx = 0;
+        c.ipady = 0;
+
+        // Set constraints for the display label, and then add it.
+
+        c.gridx = 0;
+        c.gridwidth = 1;
+        c.gridy = 0;
+        c.weightx = 0.0;
+
+        gb.setConstraints(_displayLabel, c);
+        add(_displayLabel);
+
+        // Create the check box, set constraints for it, and then add it.
+
+        JPanel pane = new JPanel();
+
+        pane.setLayout(new FlowLayout(FlowLayout.LEFT));
+        pane.add(_epCheckBox);
+
+        c.gridx = 1;
+        c.gridwidth = 1;
+        c.gridy = 0;
+        c.weightx = 0.0;
+
+        gb.setConstraints(pane, c);
+        add(pane);
+
         // By default we don't show the attribute check box. Mark this object
         // as a listener for the check box.
-        epCheckBox.setSelected(false);
-        epCheckBox.addItemListener(this);
+
+        _epCheckBox.setSelected(false);
+        _epCheckBox.addItemListener(this);
     }
 
     /**
+     * <p>
      * Refresh the display. This means setting the check box from the target use
      * case fig.
-     *
-     * @see org.argouml.ui.TabTarget#refresh()
+     * </p>
      */
     public void refresh() {
 
-        refreshTransaction = true;
+        _refreshTransaction = true;
 
         // Invoke the parent refresh first
-
         super.refresh();
 
-        FigUseCase target = (FigUseCase) getTarget();
+	if (getTarget() instanceof FigUseCase) {
+	    FigUseCase target = (FigUseCase) getTarget();
+	    _epCheckBox.setSelected(target.isExtensionPointVisible());
+	}
 
-        epCheckBox.setSelected(target.isExtensionPointVisible());
-
-        refreshTransaction = false;
+        _refreshTransaction = false;
     }
 
     /**
-     * Something has changed, check if its the check box.<p>
-     *
+     * <p>
+     * Something has changed, check if its the check box.
+     * </p>
+     * 
      * @param e
      *            The event that triggeed us.
-     *
-     * @see java.awt.event.ItemListener#itemStateChanged(java.awt.event.ItemEvent)
      */
     public void itemStateChanged(ItemEvent e) {
-        if (!refreshTransaction) {
-            if (e.getSource() == epCheckBox) {
+        if (!_refreshTransaction) {
+            Object src = e.getSource();
+
+            // If it was the check box, reset it, otherwise invoke the parent.
+
+            if (src == _epCheckBox) {
                 FigUseCase target = (FigUseCase) getTarget();
-                target.setExtensionPointVisible(epCheckBox.isSelected());
+
+                target.setExtensionPointVisible(_epCheckBox.isSelected());
+
+                markNeedsSave();
             } else {
                 super.itemStateChanged(e);
             }

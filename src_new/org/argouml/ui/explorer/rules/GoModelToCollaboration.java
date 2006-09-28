@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -30,40 +30,33 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
+import org.argouml.model.uml.modelmanagement.ModelManagementHelper;
 
 /**
- * Rule for Model->Collaboration.
- *
  * @since Oct 1, 2002
  * @author jaap.branderhorst@xs4all.nl
  */
-public class GoModelToCollaboration extends AbstractPerspectiveRule {
+public class GoModelToCollaboration extends AbstractPerspectiveRule{
+
+    public String getRuleName() { return "Model->Collaboration"; }
 
     /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getRuleName()
-     */
-    public String getRuleName() {
-        return Translator.localize ("misc.model.collaboration");
-    }
-
-    /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getChildren(java.lang.Object)
+     * @see org.argouml.ui.AbstractGoRule#getChildren(java.lang.Object)
      */
     public Collection getChildren(Object parent) {
-	if (Model.getFacade().isAModel(parent)) {
-            Collection col =
-                Model.getModelManagementHelper().getAllModelElementsOfKind(
-                        parent,
-                        Model.getMetaTypes().getCollaboration());
+	if (ModelFacade.isAModel(parent)) {
+            Object model = /*(MModel)*/ parent;
+            Collection col = ModelManagementHelper.getHelper()
+		.getAllModelElementsOfKind(model,
+                    (Class)ModelFacade.COLLABORATION);
             List returnList = new ArrayList();
             Iterator it = col.iterator();
             while (it.hasNext()) {
                 Object collab = /*(MCollaboration)*/ it.next();
-                if (Model.getFacade().getRepresentedClassifier(collab) == null
-                    && Model.getFacade().getRepresentedOperation(collab)
-                        == null) {
+                if (ModelFacade.getRepresentedClassifier(collab) == null && 
+                    ModelFacade.getRepresentedOperation(collab) == null) {
+                        
                     returnList.add(collab);
                 }
             }
@@ -72,9 +65,6 @@ public class GoModelToCollaboration extends AbstractPerspectiveRule {
         return null;
     }
 
-    /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getDependencies(java.lang.Object)
-     */
     public Set getDependencies(Object parent) {
 	// TODO: What?
 	return null;

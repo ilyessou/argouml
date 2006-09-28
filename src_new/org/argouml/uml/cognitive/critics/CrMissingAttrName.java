@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,79 +22,66 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+
+// File:CrMissingAttrName.java
+// Classes:CrMissingAttrName
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.cognitive.critics;
+
 
 import javax.swing.Icon;
 
 import org.argouml.cognitive.Designer;
 import org.argouml.cognitive.ToDoItem;
 import org.argouml.cognitive.critics.Critic;
-import org.argouml.cognitive.ui.Wizard;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
+import org.argouml.kernel.Wizard;
+import org.argouml.model.ModelFacade;
 
-/**
- * A critic to detect whether an attribute has a name
- */
+/** A critic to detect whether an attribute has a name
+ **/
 public class CrMissingAttrName extends CrUML {
 
-    /**
-     * The constructor.
-     */
     public CrMissingAttrName() {
-        setupHeadAndDesc();
-	addSupportedDecision(UMLDecision.NAMING);
+	setHeadline("Choose a name");
+	addSupportedDecision(CrUML.decNAMING);
 	setKnowledgeTypes(Critic.KT_SYNTAX);
 	addTrigger("name");
     }
 
-    /**
-     * @see org.argouml.uml.cognitive.critics.CrUML#predicate2(
-     * java.lang.Object, org.argouml.cognitive.Designer)
-     */
     public boolean predicate2(Object dm, Designer dsgr) {
-	if (!(Model.getFacade().isAAttribute(dm))) return NO_PROBLEM;
+	if (!(ModelFacade.isAAttribute(dm))) return NO_PROBLEM;
 	Object attr = /*(MAttribute)*/ dm;
-	String myName = Model.getFacade().getName(attr);
-	if (myName == null
-            || "".equals(myName)) return PROBLEM_FOUND;
+	String myName = ModelFacade.getName(attr);
+	if (myName == null || 
+            "".equals(myName)) return PROBLEM_FOUND;
 	if (myName.length() == 0) return PROBLEM_FOUND;
 	return NO_PROBLEM;
     }
-
-    /**
-     * @see org.argouml.cognitive.Poster#getClarifier()
-     */
+    
     public Icon getClarifier() {
-	return ClAttributeCompartment.getTheInstance();
+	return ClAttributeCompartment.TheInstance;
     }
 
-    /**
-     * @see org.argouml.cognitive.critics.Critic#initWizard(
-     *         org.argouml.cognitive.ui.Wizard)
-     */
     public void initWizard(Wizard w) {
 	if (w instanceof WizMEName) {
-	    ToDoItem item = (ToDoItem) w.getToDoItem();
+	    ToDoItem item = w.getToDoItem();
 	    Object me = /*(MModelElement)*/ item.getOffenders().elementAt(0);
-	    String ins = super.getInstructions();
-	    String sug = super.getDefaultSuggestion();
-	    if (Model.getFacade().isAAttribute(me)) {
+	    String ins = "Set the name of this attribute.";
+	    String sug = "AttributeName";
+	    if (ModelFacade.isAAttribute(me)) {
 		Object a = /*(MAttribute)*/ me;
 		int count = 1;
-		if (Model.getFacade().getOwner(a) != null)
-		    count = Model.getFacade().getFeatures(
-		            Model.getFacade().getOwner(a)).size();
+		if (ModelFacade.getOwner(a) != null)
+		    count = ModelFacade.getFeatures(ModelFacade.getOwner(a)).size();
 		sug = "attr" + (count + 1);
 	    }
 	    ((WizMEName) w).setInstructions(ins);
 	    ((WizMEName) w).setSuggestion(sug);
 	}
     }
-
-    /**
-     * @see org.argouml.cognitive.critics.Critic#getWizardClass(org.argouml.cognitive.ToDoItem)
-     */
     public Class getWizardClass(ToDoItem item) { return WizMEName.class; }
 
 } /* end class CrMissingAttrName */

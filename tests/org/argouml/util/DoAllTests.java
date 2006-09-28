@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 2003-2006 The Regents of the University of California. All
+// Copyright (c) 2003 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -30,15 +30,7 @@ import java.util.*;
 import junit.framework.*;
 import junit.runner.*;
 
-/**
- * A class to run all the tests.
- *
- */
 public class DoAllTests extends TestSuite {
-
-    /**
-     * @return the test suite
-     */
     public static Test suite() {
         TestSuite suite = new TestSuite();
         int count = 0;
@@ -63,7 +55,7 @@ public class DoAllTests extends TestSuite {
                 continue;
             }
             if (!Modifier.isAbstract(candidate.getModifiers())) {
-                suite.addTest(new TestSuite(candidate));
+                suite.addTest(new TestSuite(candidate));            
                 count++;
             }
 

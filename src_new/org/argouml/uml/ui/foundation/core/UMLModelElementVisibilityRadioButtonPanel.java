@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,81 +22,56 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $Id$
 package org.argouml.uml.ui.foundation.core;
 
 import java.util.HashMap;
+import java.util.Map;
 
 import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
 import org.argouml.uml.ui.UMLRadioButtonPanel;
 
 /**
- *
- * @author jaap.branderhorst@xs4all.nl
+ * 
+ * @author jaap.branderhorst@xs4all.nl	
  * @since Jan 4, 2003
  */
-public class UMLModelElementVisibilityRadioButtonPanel
-    extends UMLRadioButtonPanel {
+public class UMLModelElementVisibilityRadioButtonPanel extends UMLRadioButtonPanel {
 
-    /**
-     * The serial version.
-     */
-    private static final long serialVersionUID = -1705561978481456281L;
-    
-    private static HashMap labelTextsAndActionCommands = new HashMap();
+    private static Map labelTextsAndActionCommands = new HashMap();
 
-    // TODO: The buttons should be order of reducing visibility, but
-    // they get ordered by natural order of the keys (hash order?) - tfm
     static {
-        labelTextsAndActionCommands.put(Translator.localize(
-                "label.visibility-public"),
-                ActionSetModelElementVisibility.PUBLIC_COMMAND);
-        labelTextsAndActionCommands.put(Translator.localize(
-                "label.visibility-package"),
-                ActionSetModelElementVisibility.PACKAGE_COMMAND);
-        labelTextsAndActionCommands.put(Translator.localize(
-                "label.visibility-protected"),
-                ActionSetModelElementVisibility.PROTECTED_COMMAND);
-        labelTextsAndActionCommands.put(Translator.localize(
-                "label.visibility-private"),
-                ActionSetModelElementVisibility.PRIVATE_COMMAND);
+        labelTextsAndActionCommands.put(Translator.localize("UMLMenu", "label.visibility-public"), ActionSetModelElementVisibility.PUBLIC_COMMAND);
+        labelTextsAndActionCommands.put(Translator.localize("UMLMenu", "label.visibility-protected"), ActionSetModelElementVisibility.PROTECTED_COMMAND);
+        labelTextsAndActionCommands.put(Translator.localize("UMLMenu", "label.visibility-private"), ActionSetModelElementVisibility.PRIVATE_COMMAND);
     }
 
     /**
      * Constructor for UMLAssociationEndChangeabilityRadioButtonPanel.
-     * @param title the title for the panel
-     * @param horizontal determines the orientation
+     * @param title
+     * @param horizontal
      */
-    public UMLModelElementVisibilityRadioButtonPanel(
-            String title, boolean horizontal) {
-        super(title, labelTextsAndActionCommands, "visibility",
-                ActionSetModelElementVisibility.getInstance(), horizontal);
+    public UMLModelElementVisibilityRadioButtonPanel(String title, boolean horizontal) {
+        super(title, labelTextsAndActionCommands, "visibility", ActionSetModelElementVisibility.SINGLETON, horizontal);
     }
 
     /**
      * @see org.argouml.uml.ui.UMLRadioButtonPanel#buildModel()
      */
     public void buildModel() {
-        if (getTarget() != null) {
+        if (ModelFacade.isAModelElement(getTarget())) {
             Object target = /*(MModelElement)*/ getTarget();
-            Object kind = Model.getFacade().getVisibility(target);
-            if (kind == null
-                    || kind.equals(
-                            Model.getVisibilityKind().getPublic())) {
+            Object kind = ModelFacade.getVisibility(target);
+            if (kind == null || kind.equals(ModelFacade.PUBLIC_VISIBILITYKIND)) {
                 setSelected(ActionSetModelElementVisibility.PUBLIC_COMMAND);
-            } else if (kind.equals(
-                    Model.getVisibilityKind().getPackage())) {
-                setSelected(ActionSetModelElementVisibility.PACKAGE_COMMAND);
-            } else if (kind.equals(
-                    Model.getVisibilityKind().getProtected())) {
-                setSelected(ActionSetModelElementVisibility.PROTECTED_COMMAND);
-            } else if (kind.equals(
-                    Model.getVisibilityKind().getPrivate())) {
+            } else if (kind.equals(ModelFacade.PROTECTED_VISIBILITYKIND)) {
+                setSelected(ActionSetModelElementVisibility.PROTECTED_COMMAND); 
+            } else if (kind.equals(ModelFacade.PRIVATE_VISIBILITYKIND)) {
                 setSelected(ActionSetModelElementVisibility.PRIVATE_COMMAND);
             } else {
                 setSelected(ActionSetModelElementVisibility.PUBLIC_COMMAND);
             }
         }
     }
-
 }

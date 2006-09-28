@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2001 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -25,12 +25,14 @@
 package org.argouml.uml.cognitive.checklist;
 
 import org.apache.log4j.Logger;
+
+
+
 import org.argouml.cognitive.checklist.CheckItem;
-import org.argouml.i18n.Translator;
-import org.argouml.model.InvalidElementException;
-import org.argouml.ocl.CriticOclEvaluator;
+//
+//  slightly different from its GEF counterpart
+//
 import org.argouml.ocl.OCLEvaluator;
-import org.tigris.gef.ocl.ExpansionException;
 import org.tigris.gef.util.Predicate;
 
 /** A special kind of CheckItem that can replace OCL expressions with
@@ -39,34 +41,16 @@ import org.tigris.gef.util.Predicate;
  * @see org.argouml.ocl.OCLEvaluator */
 
 public class UMLCheckItem extends CheckItem {
-    private static final Logger LOG =
+    protected static Logger cat = 
         Logger.getLogger(UMLCheckItem.class);
 
-    /**
-     * The constructor.
-     *
-     * @param c the category
-     * @param d the description
-     */
     public UMLCheckItem(String c, String d) { super(c, d); }
 
-    /**
-     * The constructor.
-     *
-     * @param c the category
-     * @param d the description
-     * @param m the more-info-url
-     * @param p the predicate
-     */
     public UMLCheckItem(String c, String d, String m, Predicate p) {
-        super(c, d, m, p);
+	super(c, d, m, p);
     }
 
 
-    /**
-     * @see org.argouml.cognitive.checklist.CheckItem#expand(java.lang.String,
-     * java.lang.Object)
-     */
     public String expand(String res, Object dm) {
 	int searchPos = 0;
 	int matchPos = res.indexOf(OCLEvaluator.OCL_START, searchPos);
@@ -75,24 +59,14 @@ public class UMLCheckItem extends CheckItem {
 	// first offender
 	while (matchPos != -1) {
 	    int endExpr = res.indexOf(OCLEvaluator.OCL_END, matchPos + 1);
-	    String expr = res.substring(matchPos
-                + OCLEvaluator.OCL_START.length(), endExpr);
-	    String evalStr = null;
-
-	    try {
-	        evalStr = CriticOclEvaluator.getInstance()
-	                            .evalToString(dm, expr);
-	    } catch (ExpansionException e) {
-	        // Really ought to have a CriticException to throw here.
-	        LOG.error("Failed to evaluate critic expression", e);
-	    } catch (InvalidElementException e) {
-                /* The modelelement must have been 
-                 * deleted - ignore this - it will pass. */
-                evalStr = Translator.localize("misc.name.deleted");
-            }
-	    LOG.debug("expr='" + expr + "' = '" + evalStr + "'");
-	    res = res.substring(0, matchPos) + evalStr
-	        + res.substring(endExpr + OCLEvaluator.OCL_END.length());
+	    String expr =
+		res.substring(matchPos + OCLEvaluator.OCL_START.length(),
+			      endExpr);
+	    String evalStr = OCLEvaluator.SINGLETON.evalToString(dm, expr);
+	    cat.debug("expr='" + expr + "' = '" + evalStr + "'");
+	    res = res.substring(0, matchPos) +
+		evalStr +
+		res.substring(endExpr + OCLEvaluator.OCL_END.length());
 	    searchPos = endExpr + 1;
 	    matchPos = res.indexOf(OCLEvaluator.OCL_START, searchPos);
 	}

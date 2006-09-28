@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 2003-2006 The Regents of the University of California. All
+// Copyright (c) 2003-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -30,125 +30,59 @@ import java.util.Properties;
 import javax.swing.Action;
 import javax.swing.ImageIcon;
 
-import org.argouml.application.helpers.ResourceLoaderWrapper;
 import org.argouml.i18n.Translator;
+import org.tigris.gef.base.ModeBroom;
+import org.tigris.gef.base.ModeSelect;
 
 /**
  * Extends GEF CmdSetMode to add additional metadata such as tooltips.
- *
+ * 
  * @author Jeremy Jones
  */
 public class CmdSetMode extends org.tigris.gef.base.CmdSetMode {
 
-    /**
-     * The constructor.
-     *
-     * @param args arguments
-     */
+    private static final String ACTION_PREFIX_KEY = "action.new";
+
     public CmdSetMode(Properties args) {
         super(args);
     }
 
-    /**
-     * The constructor.
-     *
-     * @param modeClass the next global editor mode
-     */
     public CmdSetMode(Class modeClass) {
         super(modeClass);
     }
 
-    /**
-     * The constructor.
-     *
-     * @param modeClass the next global editor mode
-     * @param name the name of the command that is the tooltip text.
-     */
     public CmdSetMode(Class modeClass, String name) {
-        super(modeClass, ResourceLoaderWrapper.getImageBinding(name));
+        super(modeClass, name);
         putToolTip(name);
     }
 
-    /**
-     * The constructor.
-     *
-     * @param modeClass the next global editor mode
-     * @param name the to be localized name of the command
-     * @param tooltipkey The key for the tooltip text.
-     */
-    public CmdSetMode(Class modeClass, String name, String tooltipkey) {
+    public CmdSetMode(Class modeClass, String name, String tooltip) {
         super(modeClass, name);
-        putToolTip(tooltipkey);
+        putToolTip(tooltip);
     }
 
-    /**
-     * The constructor.
-     *
-     * @param modeClass the next global editor mode
-     * @param sticky the global sticky mode boolean allows the user
-     *               to place several nodes rapidly (in succession)
-     */
     public CmdSetMode(Class modeClass, boolean sticky) {
         super(modeClass, sticky);
     }
 
-    /**
-     * The constructor.
-     *
-     * @param modeClass the next global editor mode
-     * @param modeArgs arguments for the new mode
-     */
     public CmdSetMode(Class modeClass, Hashtable modeArgs) {
         super(modeClass, modeArgs);
     }
-
-    /**
-     * The constructor.
-     *
-     * @param modeClass the next global editor mode
-     * @param modeArgs arguments for the new mode
-     * @param name the name of the command that is the tooltip text.
-     */
+    
     public CmdSetMode(Class modeClass, Hashtable modeArgs, String name) {
-    	super(modeClass, ResourceLoaderWrapper.getImageBinding(name));
+    	super(modeClass, name);
     	_modeArgs = modeArgs;
-        putToolTip(name);
     }
 
-    /**
-     * The constructor.
-     *
-     * @param modeClass the next global editor mode
-     * @param arg the name of a new argument for the new mode
-     * @param value the value of a new argument for the new mode
-     */
     public CmdSetMode(Class modeClass, String arg, Object value) {
         super(modeClass, arg, value);
     }
 
-    /**
-     * The constructor.
-     *
-     * @param modeClass the next global editor mode
-     * @param arg the name of a new argument for the new mode
-     * @param value the value of a new argument for the new mode
-     * @param name the name of the command that is the tooltip text.
-     */
     public CmdSetMode(Class modeClass, String arg, Object value, String name) {
-        super(modeClass, arg, value,
-                ResourceLoaderWrapper.getImageBinding(name));
+        super(modeClass, arg, value, name);
         putToolTip(name);
     }
 
-    /**
-     * The constructor.
-     *
-     * @param modeClass the next global editor mode
-     * @param arg the name of a new argument for the new mode
-     * @param value the value of a new argument for the new mode
-     * @param name the name of the command that is the tooltip text.
-     * @param icon the SMALL_ICON for the action
-     */
     public CmdSetMode(
         Class modeClass,
         String arg,
@@ -161,10 +95,17 @@ public class CmdSetMode extends org.tigris.gef.base.CmdSetMode {
 
     /**
      * Adds tooltip text to the Action.
-     *
-     * @param key The key to be localized to become the tooltip.
      */
-    private void putToolTip(String key) {
-        putValue(Action.SHORT_DESCRIPTION, Translator.localize(key));
+    private void putToolTip(String name) {
+        Class desiredModeClass = (Class) getArg("desiredModeClass");
+        if (ModeSelect.class.isAssignableFrom(desiredModeClass)
+            || ModeBroom.class.isAssignableFrom(desiredModeClass)) {
+            putValue(Action.SHORT_DESCRIPTION, Translator.localize(name));
+        }
+        else {
+            putValue(Action.SHORT_DESCRIPTION, 
+		     Translator.localize(ACTION_PREFIX_KEY) + " " 
+		     + Translator.localize(name));
+        }
     }
 }

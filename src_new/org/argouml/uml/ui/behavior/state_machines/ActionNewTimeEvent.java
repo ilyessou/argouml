@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,10 +22,11 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $header$
 package org.argouml.uml.ui.behavior.state_machines;
 
 import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.model.uml.behavioralelements.statemachines.StateMachinesFactory;
 
 /**
  * @since Dec 15, 2002
@@ -33,32 +34,21 @@ import org.argouml.model.Model;
  */
 public class ActionNewTimeEvent extends ActionNewEvent {
 
-    /**
-     * The instance.
-     */
-    private static ActionNewTimeEvent singleton = new ActionNewTimeEvent();
+    public static ActionNewTimeEvent SINGLETON = new ActionNewTimeEvent();
 
     /**
      * Constructor for ActionNewTimeEvent.
      */
     protected ActionNewTimeEvent() {
         super();
-        putValue(NAME, Translator.localize("button.new-timeevent"));
+        putValue(NAME, Translator.localize("UMLMenu", "button.new-timeevent"));
     }
 
     /**
-     * @see org.argouml.uml.ui.behavior.state_machines.ActionNewEvent#createEvent(
-     *         java.lang.Object)
+     * @see org.argouml.uml.ui.behavior.state_machines.ActionNewEvent#createEvent()
      */
-    protected Object createEvent(Object ns) {
-        return Model.getStateMachinesFactory().buildTimeEvent(ns);
-    }
-
-    /**
-     * @return Returns the singleton.
-     */
-    public static ActionNewTimeEvent getSingleton() {
-        return singleton;
+    protected Object createEvent() {
+        return StateMachinesFactory.getFactory().buildTimeEvent();
     }
 
 }

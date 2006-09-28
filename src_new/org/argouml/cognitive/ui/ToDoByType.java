@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -26,26 +26,20 @@ package org.argouml.cognitive.ui;
 
 import java.util.Enumeration;
 import java.util.Vector;
-
 import org.apache.log4j.Logger;
+
 import org.argouml.cognitive.Designer;
 import org.argouml.cognitive.ToDoItem;
+import org.argouml.cognitive.ToDoList;
 import org.argouml.cognitive.ToDoListEvent;
 import org.argouml.cognitive.ToDoListListener;
 
-/**
- * Represents a perspective for ToDo items: grouping by type.
- *
- */
 public class ToDoByType extends ToDoPerspective
-    implements ToDoListListener {
-    private static final Logger LOG =
+    implements ToDoListListener 
+{
+    protected static Logger cat = 
         Logger.getLogger(ToDoByType.class);
 
-    /**
-     * The constructor.
-     *
-     */
     public ToDoByType() {
 	super("combobox.todo-perspective-type");
 	addSubTreeModel(new GoListToTypeToItem());
@@ -55,19 +49,16 @@ public class ToDoByType extends ToDoPerspective
     ////////////////////////////////////////////////////////////////
     // ToDoListListener implementation
 
-    /**
-     * @see org.argouml.cognitive.ToDoListListener#toDoItemsChanged(org.argouml.cognitive.ToDoListEvent)
-     */
     public void toDoItemsChanged(ToDoListEvent tde) {
-	LOG.debug("toDoItemsChanged");
+	cat.debug("toDoItemsChanged");
 	Vector items = tde.getToDoItems();
 	int nItems = items.size();
-	Object[] path = new Object[2];
-	path[0] = Designer.theDesigner().getToDoList();
+	Object path[] = new Object[2];
+	path[0] = Designer.TheDesigner.getToDoList();
 
-	Enumeration elems = KnowledgeTypeNode.getTypes().elements();
-	while (elems.hasMoreElements()) {
-	    KnowledgeTypeNode ktn = (KnowledgeTypeNode) elems.nextElement();
+	Enumeration enum = KnowledgeTypeNode.getTypes().elements();
+	while (enum.hasMoreElements()) {
+	    KnowledgeTypeNode ktn = (KnowledgeTypeNode) enum.nextElement();
 	    String kt = ktn.getName();
 	    path[1] = ktn;
 	    int nMatchingItems = 0;
@@ -77,8 +68,8 @@ public class ToDoByType extends ToDoPerspective
 		nMatchingItems++;
 	    }
 	    if (nMatchingItems == 0) continue;
-	    int[] childIndices = new int[nMatchingItems];
-	    Object[] children = new Object[nMatchingItems];
+	    int childIndices[] = new int[nMatchingItems];
+	    Object children[] = new Object[nMatchingItems];
 	    nMatchingItems = 0;
 	    for (int i = 0; i < nItems; i++) {
 		ToDoItem item = (ToDoItem) items.elementAt(i);
@@ -91,19 +82,16 @@ public class ToDoByType extends ToDoPerspective
 	}
     }
 
-    /**
-     * @see org.argouml.cognitive.ToDoListListener#toDoItemsAdded(org.argouml.cognitive.ToDoListEvent)
-     */
     public void toDoItemsAdded(ToDoListEvent tde) {
-	LOG.debug("toDoItemAdded");
+	cat.debug("toDoItemAdded");
 	Vector items = tde.getToDoItems();
 	int nItems = items.size();
-	Object[] path = new Object[2];
-	path[0] = Designer.theDesigner().getToDoList();
+	Object path[] = new Object[2];
+	path[0] = Designer.TheDesigner.getToDoList();
 
-	Enumeration elems = KnowledgeTypeNode.getTypes().elements();
-	while (elems.hasMoreElements()) {
-	    KnowledgeTypeNode ktn = (KnowledgeTypeNode) elems.nextElement();
+	Enumeration enum = KnowledgeTypeNode.getTypes().elements();
+	while (enum.hasMoreElements()) {
+	    KnowledgeTypeNode ktn = (KnowledgeTypeNode) enum.nextElement();
 	    String kt = ktn.getName();
 	    path[1] = ktn;
 	    int nMatchingItems = 0;
@@ -113,8 +101,8 @@ public class ToDoByType extends ToDoPerspective
 		nMatchingItems++;
 	    }
 	    if (nMatchingItems == 0) continue;
-	    int[] childIndices = new int[nMatchingItems];
-	    Object[] children = new Object[nMatchingItems];
+	    int childIndices[] = new int[nMatchingItems];
+	    Object children[] = new Object[nMatchingItems];
 	    nMatchingItems = 0;
 	    for (int i = 0; i < nItems; i++) {
 		ToDoItem item = (ToDoItem) items.elementAt(i);
@@ -127,19 +115,17 @@ public class ToDoByType extends ToDoPerspective
 	}
     }
 
-    /**
-     * @see org.argouml.cognitive.ToDoListListener#toDoItemsRemoved(org.argouml.cognitive.ToDoListEvent)
-     */
     public void toDoItemsRemoved(ToDoListEvent tde) {
-	LOG.debug("toDoItemRemoved");
+	cat.debug("toDoItemRemoved");
+	ToDoList list = Designer.TheDesigner.getToDoList(); //source?
 	Vector items = tde.getToDoItems();
 	int nItems = items.size();
-	Object[] path = new Object[2];
-	path[0] = Designer.theDesigner().getToDoList();
+	Object path[] = new Object[2];
+	path[0] = Designer.TheDesigner.getToDoList();
 
-	Enumeration elems = KnowledgeTypeNode.getTypes().elements();
-	while (elems.hasMoreElements()) {
-	    KnowledgeTypeNode ktn = (KnowledgeTypeNode) elems.nextElement();
+	Enumeration enum = KnowledgeTypeNode.getTypes().elements();
+	while (enum.hasMoreElements()) {
+	    KnowledgeTypeNode ktn = (KnowledgeTypeNode) enum.nextElement();
 	    boolean anyInKT = false;
 	    String kt = ktn.getName();
 	    for (int i = 0; i < nItems; i++) {
@@ -147,17 +133,18 @@ public class ToDoByType extends ToDoPerspective
 		if (item.containsKnowledgeType(kt)) anyInKT = true;
 	    }
 	    if (!anyInKT) continue;
-	    LOG.debug("toDoItemRemoved updating PriorityNode");
+	    cat.debug("toDoItemRemoved updating PriorityNode");
 	    path[1] = ktn;
 	    //fireTreeNodesChanged(this, path, childIndices, children);
 	    fireTreeStructureChanged(path);
 	}
     }
 
-    /**
-     * @see org.argouml.cognitive.ToDoListListener#toDoListChanged(org.argouml.cognitive.ToDoListEvent)
-     */
     public void toDoListChanged(ToDoListEvent tde) { }
+
+
+  
+  
 
 } /* end class ToDoByType */
 

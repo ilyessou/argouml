@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,6 +22,13 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+
+// File: CrAlreadyRealizes.java
+// Classes: CrAlreadyRealizes.java
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.cognitive.critics;
 
 import java.util.Collection;
@@ -30,49 +37,38 @@ import java.util.Set;
 
 import org.argouml.cognitive.Designer;
 import org.argouml.cognitive.critics.Critic;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
+import org.argouml.model.ModelFacade;
+import org.argouml.model.uml.foundation.core.CoreHelper;
 
-/**
- * Critic to detect whether a class implements unneeded realizations through
- * inheritance.
- *
- * @author jrobbins
+/** Critic to detect whether a class implements unneedded realizations through
+ *  inheritance.
  */
 public class CrAlreadyRealizes extends CrUML {
-
-    /**
-     * Constructor.
+    
+    /** Constructor
      */
     public CrAlreadyRealizes() {
-        setupHeadAndDesc();
-	addSupportedDecision(UMLDecision.INHERITANCE);
+	setHeadline("Remove Unneeded Realizes from <ocl>self</ocl>");
+	addSupportedDecision(CrUML.decINHERITANCE);
 	setKnowledgeTypes(Critic.KT_SEMANTICS, Critic.KT_PRESENTATION);
-	addTrigger("generalization");
+	addTrigger("genealization");
 	addTrigger("realization");
     }
-
-    /**
-     * @see org.argouml.uml.cognitive.critics.CrUML#predicate2(
-     * java.lang.Object, org.argouml.cognitive.Designer)
-     */
+						  
     public boolean predicate2(Object dm, Designer dsgr) {
 	boolean problem = NO_PROBLEM;
-	if (Model.getFacade().isAClass(dm)) {
+	if (ModelFacade.isAClass(dm)) {
 	    Collection col =
-		Model.getCoreHelper().getAllRealizedInterfaces(dm);
+		CoreHelper.getHelper().getAllRealizedInterfaces(dm);
+	    int size = col.size();
 	    Set set = new HashSet();
 	    set.addAll(col);
 	    if (set.size() < col.size()) {
-		problem = PROBLEM_FOUND;
+		problem = PROBLEM_FOUND; 
 	    }
 	}
 	return problem;
     }
 
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = -8264991005828634274L;
 } /* end class CrAlreadyRealizes */
 

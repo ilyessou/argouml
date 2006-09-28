@@ -295,7 +295,7 @@ rowsep="1"
 ><para
 >Or click on the broom button, move your mouse to the diagram pane, right click and hold. Now moving your mouse side ways (or up and down) will align elements.</para
 ><para
->There also is the menu item arrange where you can align or group elements.</para
+>There also is the menu item arrange where you can align, group or nudge (move a little bit) elements.</para
 ></answer
 ></qandaentry
 ><qandaentry
@@ -561,6 +561,16 @@ rowsep="1"
 ><answer
 ><para
 >Probably not possible but if you want to take on the task of writing an XSLT that transposes the ROSE .xmi to Argo .xmi you&#39;d make a lot of friends in a hurry!</para
+></answer
+></qandaentry
+><qandaentry
+><question
+><para
+>When I save in 0.8.1a .xmi files show up in my save directory, are these just as interchangeable as the 0.9.x .xmi files?</para
+></question
+><answer
+><para
+>This depends on the nsuml version you are using (you can find out about this i your startup messages on console). Version 0.4.19 is okay, should be interchangeable.</para
 ></answer
 ></qandaentry
 ><qandaentry

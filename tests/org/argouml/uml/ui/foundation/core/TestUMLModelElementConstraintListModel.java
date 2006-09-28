@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -26,7 +26,14 @@ package org.argouml.uml.ui.foundation.core;
 
 import junit.framework.TestCase;
 
-import org.argouml.model.Model;
+import org.argouml.model.uml.UmlFactory;
+import org.argouml.model.uml.foundation.core.CoreFactory;
+import org.argouml.model.uml.modelmanagement.ModelManagementFactory;
+
+import ru.novosoft.uml.MFactoryImpl;
+import ru.novosoft.uml.foundation.core.MConstraint;
+import ru.novosoft.uml.foundation.core.MModelElement;
+import ru.novosoft.uml.model_management.MModel;
 
 /**
  * @since Oct 27, 2002
@@ -34,26 +41,11 @@ import org.argouml.model.Model;
  */
 public class TestUMLModelElementConstraintListModel extends TestCase {
 
-    /**
-     * The number of elements used in the tests.
-     */
-    private static final int NO_OF_ELEMENTS = 10;
-
-    /**
-     * The element.
-     */
-    private Object elem;
-
-    /**
-     * The model to test.
-     */
+    private MModelElement elem = null;
+    private int oldEventPolicy;
     private UMLModelElementConstraintListModel model;
-
-    /**
-     * The uml model / namespace where the elements reside.
-     */
-    private Object ns;
-
+    private MModel ns;
+    
     /**
      * Constructor for TestUMLModelElementConstraintListModel.
      * @param arg0 is the name of the test case.
@@ -67,11 +59,13 @@ public class TestUMLModelElementConstraintListModel extends TestCase {
      */
     protected void setUp() throws Exception {
         super.setUp();
-        ns = Model.getModelManagementFactory().createModel();
-        elem = Model.getCoreFactory().buildClass(ns);
+        ns = ModelManagementFactory.getFactory().createModel();
+        elem = CoreFactory.getFactory().buildClass(ns);
+        oldEventPolicy = MFactoryImpl.getEventPolicy();
+        MFactoryImpl.setEventPolicy(MFactoryImpl.EVENT_POLICY_IMMEDIATE);        
         model = new UMLModelElementConstraintListModel();
+        elem.addMElementListener(model);
         model.setTarget(elem);
-        Model.getPump().flushModelEvents();
     }
 
     /**
@@ -79,45 +73,41 @@ public class TestUMLModelElementConstraintListModel extends TestCase {
      */
     protected void tearDown() throws Exception {
         super.tearDown();
-        Model.getUmlFactory().delete(elem);
-        Model.getUmlFactory().delete(ns);
+        UmlFactory.getFactory().delete(elem);
+        UmlFactory.getFactory().delete(ns);
+        MFactoryImpl.setEventPolicy(oldEventPolicy);
         model = null;
     }
 
     /**
      * Tests the programmatically adding of multiple elements to the list.
      */
-    public void testAddMultiple() {
-        Object[] constraints = new Object[NO_OF_ELEMENTS];
+    public void testAddMultiple() {  
+        MConstraint[] constraints = new MConstraint[10];
         for (int i = 0; i < constraints.length; i++) {
-            constraints[i] = Model.getCoreFactory().createConstraint();
-            Model.getCoreHelper().addConstraint(elem, constraints[i]);
+            constraints[i] = CoreFactory.getFactory().createConstraint();
+            elem.addConstraint(constraints[i]);
         }
-        Model.getPump().flushModelEvents();
-        assertEquals(NO_OF_ELEMENTS, model.getSize());
-        assertEquals(
-                model.getElementAt(NO_OF_ELEMENTS / 2),
-                constraints[NO_OF_ELEMENTS / 2]);
+        assertEquals(10, model.getSize());
+        assertEquals(model.getElementAt(5), constraints[5]);
         assertEquals(model.getElementAt(0), constraints[0]);
-        assertEquals(
-                model.getElementAt(NO_OF_ELEMENTS - 1),
-                constraints[NO_OF_ELEMENTS - 1]);
+        assertEquals(model.getElementAt(9), constraints[9]);           
     }
-
+    
      /**
-     * Test the removal of several elements from the list.
+     * Test the removal of several elements from the list
      */
     public void testRemoveMultiple() {
-        Object[] constraints = new Object[NO_OF_ELEMENTS];
+        MConstraint[] constraints = new MConstraint[10];
         for (int i = 0; i < constraints.length; i++) {
-            constraints[i] = Model.getCoreFactory().createConstraint();
-            Model.getCoreHelper().addConstraint(elem, constraints[i]);
+            constraints[i] = CoreFactory.getFactory().createConstraint();
+            elem.addConstraint(constraints[i]);
         }
-        for (int i = 0; i < NO_OF_ELEMENTS / 2; i++) {
-            Model.getCoreHelper().removeConstraint(elem, constraints[i]);
+        for (int i = 0; i < 5; i++) {
+            elem.removeConstraint(constraints[i]);
         }
-        Model.getPump().flushModelEvents();
-        assertEquals(NO_OF_ELEMENTS - (NO_OF_ELEMENTS / 2), model.getSize());
-        assertEquals(constraints[NO_OF_ELEMENTS / 2], model.getElementAt(0));
+        assertEquals(5, model.getSize());
+        assertEquals(constraints[5], model.getElementAt(0));
     }
+    
 }

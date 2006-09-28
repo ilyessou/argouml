@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,69 +22,64 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+
+// File: PropPanelState.java
+// Classes: PropPanelState
+// Original Author: your email address here
+// $Id$
+
 package org.argouml.uml.ui.behavior.state_machines;
 
 import javax.swing.JList;
-import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
 
 import org.argouml.i18n.Translator;
-import org.argouml.ui.LookAndFeelMgr;
-import org.argouml.uml.ui.ActionNavigateTransition;
+import org.argouml.model.ModelFacade;
+
+import org.argouml.uml.ui.PropPanelButton;
+import org.argouml.uml.ui.UMLComboBoxNavigator;
 import org.argouml.uml.ui.UMLExpressionBodyField;
-import org.argouml.uml.ui.UMLExpressionExpressionModel;
 import org.argouml.uml.ui.UMLExpressionLanguageField;
-import org.argouml.uml.ui.UMLExpressionModel2;
+import org.argouml.uml.ui.UMLExpressionModel;
 import org.argouml.uml.ui.UMLLinkedList;
 import org.argouml.uml.ui.foundation.core.PropPanelModelElement;
-import org.argouml.uml.ui.foundation.extension_mechanisms.ActionNewStereotype;
 import org.argouml.util.ConfigLoader;
 
 /**
- * A property panel for Guards. 
- * 
+ * A property panel for Guards. Rewrote this class to comply to Bob Tarling's layout
+ * mechanism and to include all valid properties as defined in the UML 1.3 spec.
  * @since Dec 14, 2002
  * @author jaap.branderhorst@xs4all.nl
+ *
+ * TODO: this property panel needs refactoring to remove dependency on
+ *       old gui components
  */
 public class PropPanelGuard extends PropPanelModelElement {
-    
-    /**
-     * The serial version.
-     */
-    private static final long serialVersionUID = 3698249606426850936L;
 
-    /**
-     * Construct a new property panel for a Guard.
-     * 
-     */
+    ////////////////////////////////////////////////////////////////
+    // contructors
     public PropPanelGuard() {
         super("Guard", ConfigLoader.getTabPropsOrientation());
-        
-        addField(Translator.localize("label.name"), getNameTextField());
-        
-        JList transitionList = new UMLLinkedList(
-                new UMLGuardTransitionListModel());
-        transitionList.setVisibleRowCount(1);
-        addField(Translator.localize("label.transition"), new JScrollPane(
-                transitionList));
-        
-        addSeparator();
 
-        JPanel exprPanel = createBorderPanel(Translator
-                .localize("label.expression"));
-        UMLExpressionModel2 expressionModel = new UMLExpressionExpressionModel(
-                this, "expression");
-        JTextArea ebf = new UMLExpressionBodyField(expressionModel, true);
-        ebf.setFont(LookAndFeelMgr.getInstance().getStandardFont());
-        ebf.setRows(1);
-        exprPanel.add(new JScrollPane(ebf));
-        exprPanel.add(new UMLExpressionLanguageField(expressionModel, true));
-        
-        add(exprPanel);
-        addAction(new ActionNavigateTransition());
-        addAction(new ActionNewStereotype());
-        addAction(getDeleteAction());
+        addField(Translator.localize("UMLMenu", "label.name"), getNameTextField());
+        addField(Translator.localize("UMLMenu", "label.stereotype"), new UMLComboBoxNavigator(this, Translator.localize("UMLMenu", "tooltip.nav-stereo"), getStereotypeBox()));
+        addField(Translator.localize("UMLMenu", "label.namespace"), getNamespaceScroll());
+
+        JList transitionList = new UMLLinkedList(new UMLGuardTransitionListModel());
+        addField(Translator.localize("UMLMenu", "label.transition"), new JScrollPane(transitionList));
+
+        addSeperator();
+
+        UMLExpressionModel expressionModel = new UMLExpressionModel(this, (Class)ModelFacade.GUARD, "expression",
+								    (Class)ModelFacade.BOOLEAN_EXPRESSION, "getExpression", "setExpression");
+        addField(Translator.localize("UMLMenu", "label.expression"), new JScrollPane(new UMLExpressionBodyField(expressionModel, true), JScrollPane.VERTICAL_SCROLLBAR_NEVER, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER));
+        addField(Translator.localize("UMLMenu", "label.language"), new UMLExpressionLanguageField(expressionModel, true));
+
+	new PropPanelButton(this, buttonPanel, _navUpIcon, Translator.localize("UMLMenu", "button.go-up"), "navigateUp", null);
+	new PropPanelButton(this, buttonPanel, _deleteIcon, localize("Delete"), "removeElement", null);
+
     }
-    
-} /* end class PropPanelGuard */
+
+} /* end class PropPanelState */
+

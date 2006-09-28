@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,70 +22,68 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+
+// File: CheckManager.java
+// Class: CheckManager
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.cognitive.checklist;
 
 import java.io.Serializable;
 import java.util.Hashtable;
 import java.util.Enumeration;
 
-/**
- * The CheckManager keeps track of which Checklists should be
- * presented for a given design material.  CheckManager also keeps
- * track of which CheckItem's are checked off for a given design
- * element.
- *
- * @author Jason Robbins
+/** The CheckManager keeps track of which Checklists should be
+ *  presented for a given design material.  CheckManager also keeps
+ *  track of which CheckItem's are checked off for a given design
+ *  element.
  */
 public class CheckManager implements Serializable {
 
     ////////////////////////////////////////////////////////////////
     // static variables
 
-    /**
-     * List of checklists.
+    /** List of checklists.
      *
      * Indexed on the object type of the element that this checklist is
      * appropriate for.
      */
-    private static Hashtable lists = new Hashtable();
-
-    /**
-     * List of ChecklistStatus:es.
+    private static Hashtable _Lists = new Hashtable();
+    
+    /** List of ChecklistStatus:es.
      *
      * Indexed on the model element itself.
      * TODO: Should use weak references so that this is forgotten about
      * when the object is removed.
      */
-    private static Hashtable statuses = new Hashtable();
+    private static Hashtable _Statuses = new Hashtable();
 
-    /**
-     * Constructor.
-     */
+    ////////////////////////////////////////////////////////////////
+    // constructor
     public CheckManager() { }
 
     ////////////////////////////////////////////////////////////////
     // static accessors
 
-    /**
-     * Gets the checklist for an element.
+    /** Gets the checklist for an element.
      *
      * @param dm is the element
      * @return a checklist
      */
     public static Checklist getChecklistFor(Object dm) {
         Checklist cl;
-
+        
 	java.lang.Class cls = dm.getClass();
 	while (cls != null) {
 	    cl = (Checklist) lookupChecklist(cls);
-	    if (cl != null) {
-		return cl;
-	    }
+	    if (cl != null) return cl;
 	    cls = cls.getSuperclass();
 	}
 	return null;
     }
-
+    
     /**
      * Find an element in the list.
      *
@@ -96,45 +94,45 @@ public class CheckManager implements Serializable {
      * add the result of the linear search to the hashtable so that the next
      * time we need not do it.
      *
-     * @return Checklist or null if noone exist.
+     * @returns Checklist or null if noone exist.
      * @param cls the class to lookup.
      */
     private static Checklist lookupChecklist(Class cls) {
-        if (lists.contains(cls)) {
-            return (Checklist) lists.get(cls);
-	}
-
+        if (_Lists.contains(cls))
+            return (Checklist) _Lists.get(cls);
+        
         // Now lets search
-        Enumeration enumeration = lists.keys();
-
+        Enumeration enumeration = _Lists.keys();
+        
         while (enumeration.hasMoreElements()) {
-            Object clazz = enumeration.nextElement();
-
+            Class index = (Class) enumeration.nextElement();
+            
             Class[] intfs = cls.getInterfaces();
             for (int i = 0; i < intfs.length; i++) {
-                if (intfs[i].equals(clazz)) {
+                if (intfs[i].equals(index))
+                {
                     // We found it!
-                    Checklist chlist = (Checklist) lists.get(clazz);
-
+                    Checklist chlist = (Checklist) _Lists.get(index);
+                    
                     // Enter the class to speed up the next search.
-                    lists.put(cls, chlist);
+                    _Lists.put(cls, chlist);
                     return chlist;
                 }
             }
         }
-
+        
         return null;
     }
+                    
 
-
-    /**
+    /** 
      * Registers a new list. Used when setting up the checklist stuff.
      *
      * @param dm the class for which the Checklist holds
      * @param cl the Checklist
      */
     public static void register(Object dm, Checklist cl) {
-	lists.put(dm, cl);
+	_Lists.put(dm, cl);
     }
 
     /**
@@ -144,12 +142,12 @@ public class CheckManager implements Serializable {
      *
      * @return ChecklistStatus, a half filled list.
      * @param dm is the object that we retrieve the checklist for
-     */
+     */ 
     public static ChecklistStatus getStatusFor(Object dm) {
-	ChecklistStatus cls = (ChecklistStatus) statuses.get(dm);
+	ChecklistStatus cls = (ChecklistStatus) _Statuses.get(dm);
 	if (cls == null) {
 	    cls = new ChecklistStatus();
-	    statuses.put(dm, cls);
+	    _Statuses.put(dm, cls);
 	}
 	return cls;
     }

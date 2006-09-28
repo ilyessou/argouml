@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 2003-2006 The Regents of the University of California. All
+// Copyright (c) 2003-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -28,33 +28,22 @@ import junit.framework.*;
 
 /**
  * Tests for the StringNamespace class.
- *
+ * 
  * @author mkl
- *
+ *  
  */
 public class TestStringNamespace extends TestCase
 {
-    /**
-     * The constructor.
-     *
-     * @param testName the name of the test
-     */
     public TestStringNamespace(java.lang.String testName)
     {
         super(testName);
     }
 
-    /**
-     * @param args the arguments given on the commandline
-     */
     public static void main(java.lang.String[] args)
     {
         junit.textui.TestRunner.run(suite());
     }
 
-    /**
-     * @return the test suite
-     */
     public static Test suite()
     {
         TestSuite suite = new TestSuite(TestStringNamespace.class);
@@ -62,19 +51,16 @@ public class TestStringNamespace extends TestCase
         return suite;
     }
 
-    /**
-     * Test getCommonNamespace().
-     */
     public void testGetCommonNamespace()
     {
         StringNamespace sns1 =
             new StringNamespace(
-                new String[] {"org", "argouml", "model" },
+                new String[] { "org", "argouml", "model" },
                 Namespace.UML_NS_TOKEN);
 
         StringNamespace sns2 =
             new StringNamespace(
-                new String[] {"org", "argouml", "model" },
+                new String[] { "org", "argouml", "model" },
                 Namespace.UML_NS_TOKEN);
 
         StringNamespace result =
@@ -95,9 +81,6 @@ public class TestStringNamespace extends TestCase
 
     }
 
-    /**
-     * Test parse() with a Java token.
-     */
     public void testParseWithJavaToken()
     {
         StringNamespace sns =
@@ -119,9 +102,6 @@ public class TestStringNamespace extends TestCase
         assertTrue(sns.isEmpty());
     }
 
-    /**
-     * Test parse() with a UML token.
-     */
     public void testParseWithUMLToken()
     {
         StringNamespace sns =
@@ -143,9 +123,6 @@ public class TestStringNamespace extends TestCase
         assertTrue(sns.isEmpty());
     }
 
-    /**
-     * Test parse() with an esoteric token.
-     */
     public void testParseWithEsotericToken()
     {
         StringNamespace sns =
@@ -167,7 +144,7 @@ public class TestStringNamespace extends TestCase
         assertTrue(sns.isEmpty());
     }
 
-    /**
+    /*
      * Class to test for String toString(String)
      */
     public void testToString()

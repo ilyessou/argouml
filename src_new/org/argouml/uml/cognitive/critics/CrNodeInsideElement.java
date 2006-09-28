@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,84 +22,68 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: CrNodeInsideElement.java
+// Classes: CrNodeInsideElement
+// Original Author: 5eichler@informatik.uni-hamburg.de
+// $Id$
+
 package org.argouml.uml.cognitive.critics;
 
 import java.util.Collection;
 import java.util.Iterator;
-
 import org.argouml.cognitive.Designer;
-import org.argouml.cognitive.ListSet;
 import org.argouml.cognitive.ToDoItem;
-import org.argouml.uml.cognitive.UMLDecision;
 import org.argouml.uml.cognitive.UMLToDoItem;
 import org.argouml.uml.diagram.deployment.ui.FigMNode;
 import org.argouml.uml.diagram.deployment.ui.UMLDeploymentDiagram;
+import org.tigris.gef.util.VectorSet;
 
 /**
  * A critic to detect when there are nodes that
  * are inside another element
- *
- * @author 5eichler
- */
+ **/
+
 public class CrNodeInsideElement extends CrUML {
 
-    /**
-     * The constructor.
-     *
-     */
     public CrNodeInsideElement() {
-        setupHeadAndDesc();
-	addSupportedDecision(UMLDecision.PATTERNS);
+	setHeadline("Nodes normally have no enclosers");
+	addSupportedDecision(CrUML.decPATTERNS);
     }
 
-    /**
-     * @see org.argouml.uml.cognitive.critics.CrUML#predicate2(
-     * java.lang.Object, org.argouml.cognitive.Designer)
-     */
     public boolean predicate2(Object dm, Designer dsgr) {
 	if (!(dm instanceof UMLDeploymentDiagram)) return NO_PROBLEM;
 	UMLDeploymentDiagram dd = (UMLDeploymentDiagram) dm;
-	ListSet offs = computeOffenders(dd);
-	if (offs == null) return NO_PROBLEM;
-	return PROBLEM_FOUND;
+	VectorSet offs = computeOffenders(dd); 
+	if (offs == null) return NO_PROBLEM; 
+	return PROBLEM_FOUND; 
     }
 
-    /**
-     * @see org.argouml.cognitive.critics.Critic#toDoItem(
-     * java.lang.Object, org.argouml.cognitive.Designer)
-     */
-    public ToDoItem toDoItem(Object dm, Designer dsgr) {
-	UMLDeploymentDiagram dd = (UMLDeploymentDiagram) dm;
-	ListSet offs = computeOffenders(dd);
-	return new UMLToDoItem(this, offs, dsgr);
-    }
-
-    /**
-     * @see org.argouml.cognitive.Poster#stillValid(
-     * org.argouml.cognitive.ToDoItem, org.argouml.cognitive.Designer)
-     */
-    public boolean stillValid(ToDoItem i, Designer dsgr) {
-	if (!isActive()) return false;
-	ListSet offs = i.getOffenders();
-	UMLDeploymentDiagram dd = (UMLDeploymentDiagram) offs.firstElement();
-	//if (!predicate(dm, dsgr)) return false;
-	ListSet newOffs = computeOffenders(dd);
-	boolean res = offs.equals(newOffs);
-	return res;
-    }
+    public ToDoItem toDoItem(Object dm, Designer dsgr) { 
+	UMLDeploymentDiagram dd = (UMLDeploymentDiagram) dm; 
+	VectorSet offs = computeOffenders(dd); 
+	return new UMLToDoItem(this, offs, dsgr); 
+    } 
+ 
+    public boolean stillValid(ToDoItem i, Designer dsgr) { 
+	if (!isActive()) return false; 
+	VectorSet offs = i.getOffenders(); 
+	UMLDeploymentDiagram dd = (UMLDeploymentDiagram) offs.firstElement(); 
+	//if (!predicate(dm, dsgr)) return false; 
+	VectorSet newOffs = computeOffenders(dd); 
+	boolean res = offs.equals(newOffs); 
+	return res; 
+    } 
 
     /**
      * If there are nodes that have an enclosing Fig
      * the returned vector-set is not null. Then in the vector-set
      * are the UMLDeploymentDiagram and all FigMNodes with an
      * enclosing Fig
-     *
-     * @param dd the diagram to check
-     * @return the set of offenders
-     */
-    public ListSet computeOffenders(UMLDeploymentDiagram dd) {
-	Collection figs = dd.getLayer().getContents();
-	ListSet offs = null;
+     **/
+    public VectorSet computeOffenders(UMLDeploymentDiagram dd) { 
+	Collection figs = dd.getLayer().getContents(null);
+	VectorSet offs = null;
+	int size = figs.size();
         Iterator figIter = figs.iterator();
 	while (figIter.hasNext()) {
 	    Object obj = figIter.next();
@@ -107,14 +91,14 @@ public class CrNodeInsideElement extends CrUML {
 	    FigMNode fn = (FigMNode) obj;
 	    if (fn.getEnclosingFig() != null) {
 		if (offs == null) {
-		    offs = new ListSet();
+		    offs = new VectorSet();
 		    offs.addElement(dd);
 		}
 		offs.addElement(fn);
 	    }
 	}
 	return offs;
-    }
+    } 
 
 } /* end class CrNodeInsideElement.java */
 

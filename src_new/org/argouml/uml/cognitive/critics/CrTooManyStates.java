@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,54 +22,44 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: CrTooManyStates.java
+// Classes: CrTooManyStates
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.cognitive.critics;
 
 import java.util.Collection;
-
 import org.argouml.cognitive.Designer;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
+import org.argouml.model.ModelFacade;
+/** A critic to detect when a class can never have instances (of
+ *  itself of any subclasses). */
 
-/**
- * A critic to detect when a composite state has too
- * many subvertices.
- */
-public class CrTooManyStates extends AbstractCrTooMany {
+public class CrTooManyStates extends CrUML {
 
-    /**
-     * The initial threshold.
-     */
-    private static final int STATES_THRESHOLD = 20;
+    ////////////////////////////////////////////////////////////////
+    // constants
+    public static String THRESHOLD = "Threshold";
 
-    /**
-     * The constructor.
-     */
+    ////////////////////////////////////////////////////////////////
+    // constructor
     public CrTooManyStates() {
-        setupHeadAndDesc();
-	addSupportedDecision(UMLDecision.STATE_MACHINES);
-	setThreshold(STATES_THRESHOLD);
+	setHeadline("Reduce States in machine <ocl>self</ocl>");
+	addSupportedDecision(CrUML.decSTATE_MACHINES);
+	setArg(THRESHOLD, new Integer(20));
 	addTrigger("substate");
     }
 
-    /**
-     * @see org.argouml.uml.cognitive.critics.CrUML#predicate2(
-     * java.lang.Object, org.argouml.cognitive.Designer)
-     */
+    ////////////////////////////////////////////////////////////////
+    // critiquing API
     public boolean predicate2(Object dm, Designer dsgr) {
-	if (!(Model.getFacade().isACompositeState(dm))) {
-            return NO_PROBLEM;
-        }
+	if (!(ModelFacade.isACompositeState(dm))) return NO_PROBLEM;
+	Object cs = /*(MCompositeState)*/ dm;
 
-	Collection subs = Model.getFacade().getSubvertices(dm);
-	if (subs.size() <= getThreshold()) {
-            return NO_PROBLEM;
-        }
+	int threshold = ((Integer) getArg(THRESHOLD)).intValue();
+	Collection subs = ModelFacade.getSubvertices(cs);
+	if (subs.size() <= threshold) return NO_PROBLEM;
 	return PROBLEM_FOUND;
     }
-
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = -7320341818814870066L;
 
 } /* end class CrTooManyStates */

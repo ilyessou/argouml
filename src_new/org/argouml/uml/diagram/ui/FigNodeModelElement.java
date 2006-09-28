@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -21,6 +21,9 @@
 // PROVIDED HEREUNDER IS ON AN "AS IS" BASIS, AND THE UNIVERSITY OF
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+
+// File: FigNodeModelElement.java
+// Classes: FigNodeModelElement
 
 package org.argouml.uml.diagram.ui;
 
@@ -44,60 +47,63 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyVetoException;
 import java.beans.VetoableChangeListener;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
+import java.text.ParseException;
+import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
 import java.util.Vector;
 
-import javax.swing.Action;
 import javax.swing.Icon;
 import javax.swing.JSeparator;
 import javax.swing.SwingUtilities;
 
 import org.apache.log4j.Logger;
 import org.argouml.application.api.ArgoEventListener;
+import org.argouml.application.api.Configuration;
+import org.argouml.application.api.Notation;
+import org.argouml.application.api.NotationContext;
+import org.argouml.application.api.NotationName;
+import org.argouml.application.events.ArgoEvent;
 import org.argouml.application.events.ArgoEventPump;
-import org.argouml.application.events.ArgoEventTypes;
 import org.argouml.application.events.ArgoNotationEvent;
 import org.argouml.application.events.ArgoNotationEventListener;
 import org.argouml.cognitive.Designer;
-import org.argouml.cognitive.Highlightable;
 import org.argouml.cognitive.ItemUID;
 import org.argouml.cognitive.ToDoItem;
 import org.argouml.cognitive.ToDoList;
-import org.argouml.i18n.Translator;
 import org.argouml.kernel.DelayedChangeNotify;
 import org.argouml.kernel.DelayedVChangeListener;
 import org.argouml.kernel.Project;
 import org.argouml.kernel.ProjectManager;
-import org.argouml.kernel.ProjectSettings;
-import org.argouml.model.DeleteInstanceEvent;
-import org.argouml.model.DiElement;
-import org.argouml.model.Model;
-import org.argouml.notation.NotationProviderFactory2;
+import org.argouml.model.ModelFacade;
+import org.argouml.model.uml.UmlFactory;
+import org.argouml.model.uml.UmlModelEventPump;
+import org.argouml.model.uml.foundation.core.CoreHelper;
+import org.argouml.model.uml.modelmanagement.ModelManagementHelper;
 import org.argouml.ui.ActionGoToCritique;
 import org.argouml.ui.ArgoDiagram;
 import org.argouml.ui.ArgoJMenu;
 import org.argouml.ui.Clarifier;
 import org.argouml.ui.ProjectBrowser;
-import org.argouml.ui.targetmanager.TargetManager;
-import org.argouml.uml.notation.NotationProvider;
-import org.argouml.uml.ui.ActionDeleteModelElements;
+import org.argouml.uml.UUIDManager;
+import org.argouml.uml.generator.ParserDisplay;
+import org.argouml.util.Trash;
 import org.tigris.gef.base.Globals;
-import org.tigris.gef.base.Layer;
 import org.tigris.gef.base.Selection;
 import org.tigris.gef.graph.GraphModel;
-import org.tigris.gef.graph.MutableGraphSupport;
 import org.tigris.gef.presentation.Fig;
 import org.tigris.gef.presentation.FigGroup;
 import org.tigris.gef.presentation.FigNode;
 import org.tigris.gef.presentation.FigRect;
 import org.tigris.gef.presentation.FigText;
 
+import ru.novosoft.uml.MElementEvent;
+import ru.novosoft.uml.MElementListener;
+
 /**
  * Abstract class to display diagram icons for UML ModelElements that
- * look like nodes and that have editable names and can be
+ * look like nodes and that have editiable names and can be
  * resized.
  *
  * @author abonner
@@ -110,303 +116,200 @@ public abstract class FigNodeModelElement
         MouseListener,
         KeyListener,
         PropertyChangeListener,
-        PathContainer,
-        ArgoNotationEventListener,
-        Highlightable {
+        MElementListener, // TODO: NSUML interface, how do we rid
+			  // ourselves of this?
+        NotationContext,
+        ArgoNotationEventListener {            
 
-    /**
-     * Logger.
-     */
     private static final Logger LOG =
-        Logger.getLogger(FigNodeModelElement.class);
-
-    private DiElement diElement;
+	Logger.getLogger(FigNodeModelElement.class);
 
     ////////////////////////////////////////////////////////////////
     // constants
 
-    private static final Font LABEL_FONT;
-    private static final Font ITALIC_LABEL_FONT;
+    private NotationName _currentNotationName;
+    public static Font LABEL_FONT;
+    public static Font ITALIC_LABEL_FONT;
+    public final int MARGIN = 2;
 
-    protected NotationProvider notationProviderName;
-    protected HashMap npArguments = new HashMap();
-    
-    /**
-     * True of a subclass of FigNodeModelElement is allowed to be
-     * invisible. This is currently only set true by FigEdgePort
-     * TODO: FigEdgePort should be removed from the FigNodeModelElement
-     * hierarchy and so the need for this removed.
-     */
-    protected boolean invisibleAllowed = false;
-
-    /**
-     * min. 17, used to calculate y pos of FigText items in a compartment
-     */
     protected static final int ROWHEIGHT = 17;
-
-    /**
-     * min. 18, used to calculate y pos of stereotype FigText items
-     * in a compartment
-     */
+    // min. 17, used to calculate y pos of FigText items in a compartment
     protected static final int STEREOHEIGHT = 18;
-
-    /**
-     * Needed for loading. Warning: if false, a too small size might look bad!
-     */
-    private boolean checkSize = true;
-
+    protected boolean checkSize = true;
+    // Needed for loading. Warning: if false, a too small size might look bad!
+    
     /**
      * Offset from the end of the set of popup actions at which new items
      * should be inserted by concrete figures.
-     * See #getPopUpActions()
-     */
-    private static int popupAddOffset;
-
+    **/
+    protected static final int POPUP_ADD_OFFSET = 3;
+    
     // Fields used in paint() for painting shadows
-    private BufferedImage           shadowImage;
-    private int                     cachedWidth = -1;
-    private int                     cachedHeight = -1;
-    private static final LookupOp   SHADOW_LOOKUP_OP;
-    private static final ConvolveOp SHADOW_CONVOLVE_OP;
+    private BufferedImage           _shadowImage = null;
+    private int                     _cachedWidth = -1;
+    private int                     _cachedHeight = -1;
+    private static final LookupOp   _shadowLookupOp;
+    private static final ConvolveOp _shadowConvolveOp;
 
     /**
      * The intensity value of the shadow color (0-255).
-     */
+    **/
     protected static final int SHADOW_COLOR_VALUE = 32;
-
+    
     /**
      * The transparency value of the shadow color (0-255).
-     */
+    **/    
     protected static final int SHADOW_COLOR_ALPHA = 128;
+    
+    protected static final String BUNDLE = "UMLMenu";
 
     static {
         LABEL_FONT =
-        /* TODO: Why is this different from the FigEdgeModelElement?
-         * Should we not use one of the following? 
-         * LookAndFeelMgr.getInstance().getStandardFont();
-         * new javax.swing.plaf.metal.DefaultMetalTheme().getUserTextFont(); */
             new javax.swing.plaf.metal.DefaultMetalTheme().getSubTextFont();
         ITALIC_LABEL_FONT =
             new Font(LABEL_FONT.getFamily(), Font.ITALIC, LABEL_FONT.getSize());
 
-        // Setup image ops used in rendering shadows
+        // Setup image ops used in rendering shadows            
         byte[][] data = new byte[4][256];
         for (int i = 1; i < 256; ++i) {
             data[0][i] = (byte) SHADOW_COLOR_VALUE;
             data[1][i] = (byte) SHADOW_COLOR_VALUE;
             data[2][i] = (byte) SHADOW_COLOR_VALUE;
             data[3][i] = (byte) SHADOW_COLOR_ALPHA;
-        }
+        }        
         float[] blur = new float[9];
         for (int i = 0; i < blur.length; ++i) {
             blur[i] = 1 / 12f;
         }
-        SHADOW_LOOKUP_OP = new LookupOp(new ByteLookupTable(0, data), null);
-        SHADOW_CONVOLVE_OP = new ConvolveOp(new Kernel(3, 3, blur));
+        _shadowLookupOp = new LookupOp(new ByteLookupTable(0, data), null);
+        _shadowConvolveOp = new ConvolveOp(new Kernel(3, 3, blur));            
     }
-
-    /**
-     * Used for #buildModifierPopUp().
-     */
-    protected static final int ROOT = 1;
-
-    /**
-     * Used for #buildModifierPopUp().
-     */
-    protected static final int ABSTRACT = 2;
-
-    /**
-     * Used for #buildModifierPopUp().
-     */
-    protected static final int LEAF = 4;
-
-    /**
-     * Used for #buildModifierPopUp().
-     */
-    protected static final int ACTIVE = 8;
 
     ////////////////////////////////////////////////////////////////
     // instance variables
 
-    private Fig bigPort;
+    /**
+     * @deprecated 0.15.3 visibility will change use getter/setter.
+     * TODO: What is the name of the getter? What is the name of the setter?
+     */
+    protected FigRect _bigPort;
 
     /**
-     * use getNameFig() and setNameFig() to access the Figs.
+     * @deprecated 0.15.3 visibility will change use
+     * getNameFig() and setNameFig() to access the Figs.
      * Use getName() and setName() to just change the text.
      */
-    private FigText nameFig;
+    public FigText _name; // TODO: - public!! Make private!
 
     /**
-     * use getter/setter
+     * @deprecated 0.15.3 visibility will change use getter/setter
      * getStereotypeFig() and setStereoTypeFig() to access the Figs.
      * Use getStereotype() and setStereotype() to change stereotype
      * text.
+     * TODO: How shall the calls
+     * _stereo.setJustificationByName("Center");
+     * _stereo.setAllowsTab(false);
+     * _stereo.setEditable(false);
+     * _stereo.setExpandOnly(true);
+     * center(getStereotypeFig()); where private void center(FigText figText);
+     * be converted?
      */
-    private Fig stereotypeFig;
+    public FigText _stereo; // TODO: - public!! Make private!
 
     /**
-     * EnclosedFigs are the Figs that are enclosed by this figure. Say that
+     * _enclosedFigs are the Figs that are enclosed by this figure. Say that
      * it is a Package then these are the Classes, Interfaces, Packages etc
      * that are on this figure. This is not the same as the figures in the
      * FigGroup that this FigNodeModelElement "is", since these are the
      * figures that make up this high-level primitive figure.
      */
-    private Vector enclosedFigs = new Vector();
+    protected Vector _enclosedFigs = new Vector();
+
+    /** The figure enclosing this figure */
+    protected Fig _encloser = null;
+
+    protected boolean _readyToEdit = true;
+    protected boolean suppressCalcBounds = false;
+    /**
+     * @deprecated 0.15.3 visibility will change use getter/setter
+     */
+    public int _shadowSize =
+        Configuration.getInteger(Notation.KEY_DEFAULT_SHADOW_WIDTH, 1);
+    private ItemUID _id;
 
     /**
-     * The figure enclosing this figure.
+     * A set of object arrays consisting of a sender of events and the
+     * event types this object is interested in. The eventSenders are
+     * a cache to improve performance when this fig is
+     * disabled/enabled as interested listener to the events
+     * maintained in the _eventSenders set.
      */
-    private Fig encloser;
+    private Set _eventSenders = new HashSet();
 
-    private boolean readyToEdit = true;
-    private boolean suppressCalcBounds;
+    ////////////////////////////////////////////////////////////////
+    // constructors
 
-    private int shadowSize;
-
-    private ItemUID itemUid;
-
-    /**
-     * Set the removeFromDiagram to false if this node may not
-     * be removed from the diagram.
-     */
-    private boolean removeFromDiagram = true;
-
-    /**
-     * Set this to force a repaint of the shadow.
-     * Normally repainting only happens
-     * when the outside boundaries change
-     * (for performance reasons (?)).
-     * In some cases this does not
-     * suffice, and you can set this attribute to force the update.
-     */
-    private boolean forceRepaint;
-
-    /**
-     * Flag that indicates if the full namespace path should be shown
-     * in front of the name.
-     */
-    private boolean pathVisible;
-
-    /**
-     * If the contains text to be edited by the user.
-     */
-    private boolean editable = true;
-
-    private Collection listeners = new ArrayList();
-    /**
-     * The main constructor.
-     *
-     */
     public FigNodeModelElement() {
-        // this rectangle marks the whole modelelement figure; everything
+        // this rectangle marks the whole interface figure; everything
         // is inside it:
-        bigPort = new FigRect(10, 10, 0, 0, Color.cyan, Color.cyan);
+        _bigPort = new FigRect(10, 10, 0, 0, Color.cyan, Color.cyan);
 
-        nameFig = new FigSingleLineText(10, 10, 90, 21, true);
-        nameFig.setLineWidth(1);
-        nameFig.setFilled(true);
-        nameFig.setText(placeString());
-        nameFig.setBotMargin(7); // make space for the clarifier
-        nameFig.setRightMargin(4); // margin between text and border
-        nameFig.setLeftMargin(4); 
+        _name = new FigText(10, 10, 90, 21, true);
+        _name.setFont(LABEL_FONT);
+        _name.setTextColor(Color.black);
+        // _name.setFilled(false);
+        _name.setMultiLine(false);
+        _name.setAllowsTab(false);
+        _name.setText(placeString());
 
-        stereotypeFig = new FigStereotypesCompartment(10, 10, 90, 15);
+        _stereo = new FigText(10, 10, 90, 15, true);
+        _stereo.setFont(LABEL_FONT);
+        _stereo.setTextColor(Color.black);
+        _stereo.setFilled(false);
+        _stereo.setLineWidth(0);
+        //_stereo.setLineColor(Color.black);
+        _stereo.setEditable(false);
 
-        readyToEdit = false;
-        ArgoEventPump.addListener(ArgoEventTypes.ANY_NOTATION_EVENT, this);
-        
-        Project p = ProjectManager.getManager().getCurrentProject();
-        ProjectSettings ps = p.getProjectSettings();
-
-        shadowSize = ps.getDefaultShadowWidthValue();
-        /* TODO: how to handle changes in shadowsize 
-         * from the project properties? */
+        _readyToEdit = false;
+        ArgoEventPump.addListener(ArgoEvent.ANY_NOTATION_EVENT, this);
     }
 
-    /**
-     * Partially construct a new FigNode.  This method creates the
-     * name element that holds the name of the model element and adds
-     * itself as a listener.
-     *
-     * @param gm ignored
-     * @param node the owning UML element
-     */
+    /** Partially construct a new FigNode.  This method creates the
+     *  _name element that holds the name of the model element and adds
+     *  itself as a listener. */
     public FigNodeModelElement(GraphModel gm, Object node) {
         this();
         setOwner(node);
-        nameFig.setText(placeString());
-        readyToEdit = false;
-
-        //ArgoEventPump.addListener(ArgoEvent.ANY_NOTATION_EVENT, this);
+        _name.setText(placeString());
+        _readyToEdit = false;
+        ArgoEventPump.addListener(ArgoEvent.ANY_NOTATION_EVENT, this);
     }
 
-    /**
-     * Construct a figure at a specific position for a given model element.
-     * 
-     * @param element ModelElement associated with figure
-     * @param x
-     * @param y
-     */
-    public FigNodeModelElement(Object element, int x, int y) {
-        this();
-        setOwner(element);
-        nameFig.setText(placeString());
-        readyToEdit = false;
-        setLocation(x, y);
-        //ArgoEventPump.addListener(ArgoEvent.ANY_NOTATION_EVENT, this);
+    public void finalize() {
+        ArgoEventPump.removeListener(ArgoEvent.ANY_NOTATION_EVENT, this);
     }
 
-    /**
-     * @see java.lang.Object#finalize()
-     */
-    protected void finalize() throws Throwable {
-        ArgoEventPump.removeListener(ArgoEventTypes.ANY_NOTATION_EVENT, this);
-        super.finalize();
-    }
-
-    /**
-     * After the base clone method has been called determine which child
-     * figs of the clone represent the name, stereotype and port. <p>
-     *
-     * The clone function is used by Copy/Paste operations.
-     *
-     * @see java.lang.Object#clone()
-     */
-    public Object clone() {
-        FigNodeModelElement clone = (FigNodeModelElement) super.clone();
-        Iterator thisIter = this.getFigs().iterator();
-        Iterator cloneIter = clone.getFigs().iterator();
-        while (thisIter.hasNext()) {
-            Fig thisFig = (Fig) thisIter.next();
-            Fig cloneFig = (Fig) cloneIter.next();
-            if (thisFig == getBigPort()) {
-                clone.setBigPort(cloneFig);
-            }
-            if (thisFig == nameFig) {
-                clone.nameFig = (FigSingleLineText) thisFig;
-            }
-            if (thisFig == stereotypeFig) {
-                clone.stereotypeFig = thisFig;
-            }
-        }
-        return clone;
-    }
-// TODO: _enclosedFigs, _encloser and _eventSenders may also need to be cloned
+// TODO: Too close to a release to introduce this now
+// but I think we need this clone method at this level to save
+// duplicated code in ancestors
+// Bob Tarling 28 Jan 2004
+//    public Object clone() {
+//        FigNodeModelElement figClone = (FigNodeModelElement) super.clone();
+//        figClone._bigPort = _bigPort;
+//        figClone._name = _name;
+//        return figClone;
+//    }
+// _enclosedFigs, _encloser and _eventSenders may also need to be cloned
+// must check usage
+//
 
 
-
-    /**
-     * Default Reply text to be shown while placing node in diagram.
-     * Overrule this when the text is not "new [UMLClassName]".
-     *
-     * @return the text to be shown while placing node in diagram
-     */
+    /** Reply text to be shown while placing node in diagram */
     public String placeString() {
-        if (Model.getFacade().isAModelElement(getOwner())) {
-            String placeString = Model.getFacade().getName(getOwner());
+        if (org.argouml.model.ModelFacade.isAModelElement(getOwner())) {
+            String placeString = ModelFacade.getName(getOwner());
             if (placeString == null) {
-                placeString =
-                    "new " + Model.getFacade().getUMLClassName(getOwner());
+                placeString = "new " + ModelFacade.getUMLClassName(getOwner());
             }
             return placeString;
         }
@@ -416,167 +319,79 @@ public abstract class FigNodeModelElement
     ////////////////////////////////////////////////////////////////
     // accessors
 
-    /**
-     * @param id UID
-     */
     public void setItemUID(ItemUID id) {
-        itemUid = id;
+        _id = id;
     }
 
-    /**
-     * @return UID
-     */
     public ItemUID getItemUID() {
-        return itemUid;
+        return _id;
     }
 
     /**
-     * Get the Fig that displays the model element name.
-     *
+     * Get the Fig that displays the model element name
      * @return the name Fig
      */
-    protected FigText getNameFig() {
-        return nameFig;
+    public FigText getNameFig() {
+        return _name;
     }
-    
+
     /**
-     * Get the Rectangle in which the model elements name is displayed
-     * @return bounding box for name
-     */
-    public Rectangle getNameBounds() {
-        return nameFig.getBounds();
-    }
-    
-    /**
-     * Set the Fig that displays the model element name.
-     *
+     * Set the Fig that displays the model element name
      * @param fig the name Fig
      */
     protected void setNameFig(FigText fig) {
-        nameFig = fig;
+        _name = fig;
     }
 
     /**
-     * Get the name of the model element this Fig represents.
-     *
+     * Get the name of the model element this Fig represents
      * @return the name of the model element
      */
     public String getName() {
-        return nameFig.getText();
+        return _name.getText();
     }
 
     /**
-     * Change the name of the model element this Fig represents.
-     *
-     * @param n the name of the model element
+     * Change the name of the model element this Fig represents
+     * @param name the name of the model element
      */
-    public void setName(String n) {
-        nameFig.setText(n);
+    public void setName(String name) {
+        _name.setText(name);
     }
 
-    /**
-     * @see org.tigris.gef.ui.PopupGenerator#getPopUpActions(java.awt.event.MouseEvent)
-     */
     public Vector getPopUpActions(MouseEvent me) {
         Vector popUpActions = super.getPopUpActions(me);
-
-        // popupAddOffset should be equal to the number of items added here:
+        ToDoList list = Designer.TheDesigner.getToDoList();
+        Vector items = (Vector) list.elementsForOffender(getOwner()).clone();
+        if (items != null && items.size() > 0) {
+            ArgoJMenu critiques = new ArgoJMenu(BUNDLE, "menu.popup.critiques");
+            ToDoItem itemUnderMouse = hitClarifier(me.getX(), me.getY());
+            if (itemUnderMouse != null) {
+                critiques.add(new ActionGoToCritique(itemUnderMouse));
+                critiques.addSeparator();
+            }
+            int size = items.size();
+            for (int i = 0; i < size; i++) {
+                ToDoItem item = (ToDoItem) items.elementAt(i);
+                if (item != itemUnderMouse) {
+                    critiques.add(new ActionGoToCritique(item));
+                }
+            }
+            popUpActions.insertElementAt(new JSeparator(), 0);
+            popUpActions.insertElementAt(critiques, 0);
+        }
+        // POPUP_ADD_OFFSET should be equal to the number of items added here:
         popUpActions.addElement(new JSeparator());
-        popupAddOffset = 1;
-        if (removeFromDiagram) {
-            popUpActions.addElement(
-                    ProjectBrowser.getInstance().getRemoveFromDiagramAction());
-            popupAddOffset++;
-        }
-        popUpActions.addElement(new ActionDeleteModelElements());
-        popupAddOffset++;
-
-        /* Check if multiple items are selected: */
-        if (TargetManager.getInstance().getTargets().size() == 1) {
-            ToDoList list = Designer.theDesigner().getToDoList();
-            Vector items =
-                    (Vector) list.elementsForOffender(getOwner()).clone();
-            if (items != null && items.size() > 0) {
-                ArgoJMenu critiques = new ArgoJMenu("menu.popup.critiques");
-                ToDoItem itemUnderMouse = hitClarifier(me.getX(), me.getY());
-                if (itemUnderMouse != null) {
-                    critiques.add(new ActionGoToCritique(itemUnderMouse));
-                    critiques.addSeparator();
-                }
-                int size = items.size();
-                for (int i = 0; i < size; i++) {
-                    ToDoItem item = (ToDoItem) items.elementAt(i);
-                    if (item != itemUnderMouse) {
-                        critiques.add(new ActionGoToCritique(item));
-                    }
-                }
-                popUpActions.insertElementAt(new JSeparator(), 0);
-                popUpActions.insertElementAt(critiques, 0);
-            }
-
-            // Add stereotypes submenu
-            Action[] stereoActions =
-                StereotypeUtility.getApplyStereotypeActions(getOwner());
-            if (stereoActions != null) {
-                popUpActions.insertElementAt(new JSeparator(), 0);
-                ArgoJMenu stereotypes =
-                    new ArgoJMenu("menu.popup.apply-stereotypes");
-                for (int i = 0; i < stereoActions.length; ++i) {
-                    stereotypes.addCheckItem(stereoActions[i]);
-                }
-                popUpActions.insertElementAt(stereotypes, 0);
-            }
-        }
-
+        popUpActions.addElement(ActionProperties.SINGLETON);
+        popUpActions.addElement(ActionDeleteFromDiagram.SINGLETON);
         return popUpActions;
     }
 
-    /**
-     * @return the pop-up menu item for Visibility
-     */
-    protected Object buildVisibilityPopUp() {
-        ArgoJMenu visibilityMenu = new ArgoJMenu("menu.popup.visibility");
+    ////////////////////////////////////////////////////////////////
+    // Fig API
 
-        visibilityMenu.addRadioItem(new ActionVisibilityPublic(getOwner()));
-        visibilityMenu.addRadioItem(new ActionVisibilityPrivate(getOwner()));
-        visibilityMenu.addRadioItem(new ActionVisibilityProtected(getOwner()));
-        visibilityMenu.addRadioItem(new ActionVisibilityPackage(getOwner()));
-        
-        return visibilityMenu;
-    }
-
-    /**
-     * Build a pop-up menu item for the various modifiers.<p>
-     *
-     * This function is designed to be easily extendable with new items.
-     *
-     * @param items bitwise OR of the items: ROOT, ABSTRACT, LEAF, ACTIVE.
-     * @return the menu item
-     */
-    protected Object buildModifierPopUp(int items) {
-        ArgoJMenu modifierMenu = new ArgoJMenu("menu.popup.modifiers");
-
-        if ((items & ABSTRACT) > 0) {
-            modifierMenu.addCheckItem(new ActionModifierAbstract(getOwner()));
-	}
-        if ((items & LEAF) > 0) {
-            modifierMenu.addCheckItem(new ActionModifierLeaf(getOwner()));
-	}
-        if ((items & ROOT) > 0) {
-            modifierMenu.addCheckItem(new ActionModifierRoot(getOwner()));
-	}
-        if ((items & ACTIVE) > 0) {
-            modifierMenu.addCheckItem(new ActionModifierActive(getOwner()));
-	}
-
-        return modifierMenu;
-    }
-
-    /**
-     * @see org.tigris.gef.presentation.Fig#getEnclosingFig()
-     */
     public Fig getEnclosingFig() {
-        return encloser;
+        return _encloser;
     }
 
     /**
@@ -588,86 +403,72 @@ public abstract class FigNodeModelElement
      * be the owning modelelement.
      * @see Fig#setEnclosingFig(Fig)
      */
-    public void setEnclosingFig(Fig newEncloser) {
-	Fig oldEncloser = encloser;
-	super.setEnclosingFig(newEncloser);
-	if (newEncloser != oldEncloser) {
+    public void setEnclosingFig(Fig encloser) {
+	super.setEnclosingFig(encloser);
+	Fig oldEncloser = _encloser;
+	if (encloser != oldEncloser) {
 	    Object owningModelelement = null;
-	    if (newEncloser == null && isVisible()) {
-	        // If we are not visible most likely we're being deleted.
-
+	    if (encloser == null && !isVisible()) {
+		// Most likely we're being deleted.
+	    } else if (encloser == null) {
 		// moved outside another fig onto the diagram canvas
 		Project currentProject =
 		    ProjectManager.getManager().getCurrentProject();
                 ArgoDiagram diagram = currentProject.getActiveDiagram();
-                // TODO: Who said this was about the active diagram?
                 if (diagram instanceof UMLDiagram
 			&& ((UMLDiagram) diagram).getNamespace() != null) {
                     owningModelelement = ((UMLDiagram) diagram).getNamespace();
                 } else {
                     owningModelelement = currentProject.getRoot();
                 }
-	    } else if (newEncloser != null
-                    && Model.getFacade()
-                            .isAModelElement(newEncloser.getOwner())) {
-                owningModelelement = newEncloser.getOwner();
+	    } else {
+		// moved into a fig
+                if (ModelFacade.isABase(encloser.getOwner())) {
+                    owningModelelement = encloser.getOwner();
+                }
             }
             if (owningModelelement != null
 		&& getOwner() != null
-		&& (!Model.getModelManagementHelper()
+		&& (!ModelManagementHelper.getHelper()
 		    .isCyclicOwnership(owningModelelement, getOwner()))
-		&& ((Model.getCoreHelper()
+		&& (!ModelFacade.isANamespace(owningModelelement)
+		    || (CoreHelper.getHelper()
 			.isValidNamespace(getOwner(),
 					  owningModelelement)))) {
-                Model.getCoreHelper().setModelElementContainer(getOwner(),
+                ModelFacade.setModelElementContainer(getOwner(), 
 						     owningModelelement);
-                /* TODO: move the associations to the correct owner (namespace)
-                 * i.e. issue 2151
-                 */
+                // TODO: move the associations to the correct owner (namespace)
             }
         }
-	if (newEncloser != encloser) {
-	    if (encloser instanceof FigNodeModelElement) {
-		((FigNodeModelElement) encloser).removeEnclosedFig(this);
+	if (encloser != _encloser) {
+	    if (_encloser instanceof FigNodeModelElement) {
+		((FigNodeModelElement) _encloser).removeEnclosedFig(this);
             }
-	    if (newEncloser instanceof FigNodeModelElement) {
-		((FigNodeModelElement) newEncloser).addEnclosedFig(this);
+	    if (encloser instanceof FigNodeModelElement) {
+		((FigNodeModelElement) encloser).addEnclosedFig(this);
             }
 	}
-        encloser = newEncloser;
+        _encloser = encloser;
     }
 
-    /**
-     * @param fig The fig to be added
-     */
     public void addEnclosedFig(Fig fig) {
-        enclosedFigs.add(fig);
+        _enclosedFigs.add(fig);
     }
 
-    /**
-     * @param fig The Fig to be removed
-     */
     public void removeEnclosedFig(Fig fig) {
-        enclosedFigs.remove(fig);
+        _enclosedFigs.remove(fig);
     }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#getEnclosedFigs()
-     */
     public Vector getEnclosedFigs() {
-        return enclosedFigs;
+        return _enclosedFigs;
     }
 
-    /**
-     * Update the order of this fig and the order of the
-     * figs that are inside of this fig.
-     *
-     * @param figures in the new order
-     */
+    /** Update the order of this fig and the order of the
+     *    figs that are inside of this fig */
     public void elementOrdering(Vector figures) {
         int size = figures.size();
         getLayer().bringToFront(this);
-        if (size > 0) {
+        if (figures != null && (size > 0)) {
             for (int i = 0; i < size; i++) {
                 Object o = figures.elementAt(i);
                 if (o instanceof FigNodeModelElement
@@ -680,9 +481,6 @@ public abstract class FigNodeModelElement
         }
     }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#makeSelection()
-     */
     public Selection makeSelection() {
         return new SelectionNodeClarifiers(this);
     }
@@ -698,32 +496,23 @@ public abstract class FigNodeModelElement
      * @param g is a Graphics that we paint this object on.
      */
     public void paint(Graphics g) {
-        if (shadowSize > 0
+        if (_shadowSize > 0
 	        && g instanceof Graphics2D) {
             int width = getWidth();
             int height = getHeight();
             int x = getX();
             int y = getY();
 
-            /* Only create a new shadow image if figure size has changed.
-             * Which does not catch all cases:
-             * consider show/hide toggle of a stereotype on a package:
-             * in this case the total size remains, but the notch
-             * at the corner increases/decreases.
-             * Hence also check the "forceRepaint" attribute.
-             */
-            if (width != cachedWidth
-                    || height != cachedHeight
-                    || forceRepaint) {
-                forceRepaint = false;
+            // Only create new shadow image if figure size has changed.
+            if (width != _cachedWidth 
+                    || height != _cachedHeight) {
+                _cachedWidth = width;
+                _cachedHeight = height;
 
-                cachedWidth = width;
-                cachedHeight = height;
-
-                BufferedImage img =
-		    new BufferedImage(width + 100,
-				      height + 100,
-				      BufferedImage.TYPE_INT_ARGB);
+                BufferedImage img = new BufferedImage(
+                    width + 100,
+                    height + 100,
+                    BufferedImage.TYPE_INT_ARGB);
 
                 // Paint figure onto offscreen image
                 Graphics ig = img.getGraphics();
@@ -735,31 +524,29 @@ public abstract class FigNodeModelElement
                 //    figure to the same shadow color.
                 // 2. Apply ConvolveOp which creates blurred effect around
                 //    the edges of the shadow.
-                shadowImage =
-		    SHADOW_CONVOLVE_OP.filter(
-			    SHADOW_LOOKUP_OP.filter(img, null), null);
+                _shadowImage = _shadowConvolveOp.filter(
+                    _shadowLookupOp.filter(img, null), null);
             }
 
             // Paint shadow image onto canvas
             Graphics2D g2d = (Graphics2D) g;
             g2d.drawImage(
-                shadowImage,
+                _shadowImage,
                 null,
-                x + shadowSize - 50,
-                y + shadowSize - 50);
+                x + _shadowSize - 50,
+                y + _shadowSize - 50);
         }
-
+            
         // Paint figure on top of shadow
         super.paint(g);
     }
-
+    
     /**
      * Displays visual indications of pending ToDoItems.
      * Please note that the list of advices (ToDoList) is not the same
      * as the list of element known by the FigNode (_figs). Therefore,
      * it is necessary to check if the graphic item exists before drawing
      * on it. See ClAttributeCompartment for an example.
-     * @param g the graphics device
      * @see org.argouml.uml.cognitive.critics.ClAttributeCompartment
      */
     public void paintClarifiers(Graphics g) {
@@ -796,11 +583,6 @@ public abstract class FigNodeModelElement
         }
     }
 
-    /**
-     * @param x the x of the hit
-     * @param y the y of the hit
-     * @return the todo item of which the clarifier has been hit
-     */
     public ToDoItem hitClarifier(int x, int y) {
         int iconX = getX();
         ToDoList list = Designer.theDesigner().getToDoList();
@@ -857,17 +639,14 @@ public abstract class FigNodeModelElement
         return null;
     }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#getTipString(java.awt.event.MouseEvent)
-     */
     public String getTipString(MouseEvent me) {
         ToDoItem item = hitClarifier(me.getX(), me.getY());
         String tip = "";
-        if (item != null
+        if (item != null 
             && Globals.curEditor().getSelectionManager().containsFig(this)) {
             tip = item.getHeadline() + " ";
         } else if (getOwner() != null) {
-            tip = Model.getFacade().getTipString(getOwner());
+            tip = getOwner().toString();
         } else {
             tip = toString();
         }
@@ -880,9 +659,6 @@ public abstract class FigNodeModelElement
     ////////////////////////////////////////////////////////////////
     // event handlers
 
-    /**
-     * @see java.beans.VetoableChangeListener#vetoableChange(java.beans.PropertyChangeEvent)
-     */
     public void vetoableChange(PropertyChangeEvent pce) {
         LOG.debug("in vetoableChange");
         Object src = pce.getSource();
@@ -897,19 +673,16 @@ public abstract class FigNodeModelElement
         }
     }
 
-    /**
-     * @see org.argouml.kernel.DelayedVChangeListener#delayedVetoableChange(java.beans.PropertyChangeEvent)
-     */
     public void delayedVetoableChange(PropertyChangeEvent pce) {
         LOG.debug("in delayedVetoableChange");
+        // TODO: the src variable is never used. Must check if getSource()
+        // has any side effects before removing entire line
+        Object src = pce.getSource();
         // update any text, colors, fonts, etc.
         renderingChanged();
         endTrans();
     }
 
-    /**
-     * set some new bounds.
-     */
     protected void updateBounds() {
         if (!checkSize) {
             return;
@@ -921,19 +694,12 @@ public abstract class FigNodeModelElement
         setBounds(bbox.x, bbox.y, bbox.width, bbox.height);
     }
 
-    /**
-     * @see java.beans.PropertyChangeListener#propertyChange(java.beans.PropertyChangeEvent)
-     */
     public void propertyChange(PropertyChangeEvent pve) {
         Object src = pve.getSource();
         String pName = pve.getPropertyName();
-        if (pve instanceof DeleteInstanceEvent && src == getOwner()) {
-            removeFromDiagram();
-            return;
-        }
-        // We handle and consume editing events
         if (pName.equals("editing")
                 && Boolean.FALSE.equals(pve.getNewValue())) {
+	    LOG.debug("finished editing");
             try {
                 //parse the text that was edited
                 textEdited((FigText) src);
@@ -949,81 +715,39 @@ public abstract class FigNodeModelElement
 			  + "PropertyVetoException",
 			  ex);
             }
-        } else if (pName.equals("editing")
-                        && Boolean.TRUE.equals(pve.getNewValue())) {
-            textEditStarted((FigText) src);
         } else {
             super.propertyChange(pve);
         }
-        if (Model.getFacade().isAModelElement(src)) {
-            /* If the source of the event is an UML object,
-             * e.g. the owner of this Fig (but not always only the owner
-             * is shown, e.g. for a class, also its attributes are shown),
-             * then the UML model has been changed.
-             */
-            // We catch the exception here so it is handled for all subclasses
-            try {
-                modelChanged(pve);
-            } catch (Exception e) {
-                /* need to catch javax.jmi.reflect.InvalidObjectException */
-                LOG.debug("modelChanged method accessed deleted element ", e);
-            }
-        }
-    }
-
-    /**
-     * This method is called when the user doubleclicked on the text field,
-     * and starts editing. Subclasses should overrule this field to e.g.
-     * supply help to the user about the used format. <p>
-     *
-     * It is also possible to alter the text to be edited
-     * already here, e.g. by adding the stereotype in front of the name,
-     * by adding ["fullyHandleStereotypes", true] in the arguments 
-     * HashMap of the NotationProvider.toString() function, 
-     * but that seems not user-friendly. See issue 3838.
-     *
-     * @param ft the FigText that will be edited and contains the start-text
-     */
-    protected void textEditStarted(FigText ft) {
-        if (ft == getNameFig()) {
-            showHelp(notationProviderName.getParsingHelp());
-            ft.setText(notationProviderName.toString(getOwner(), npArguments));
-        }
-    }
-
-    /**
-     * Utility function to localize the given string with help text,
-     * and show it in the status bar of the ArgoUML window.
-     * This function is used in favour of the inline call
-     * to enable later improvements; e.g. it would be possible to
-     * show a help-balloon. TODO: Work this out.
-     * One matter to possibly improve: show multiple lines.
-     *
-     * @param s the given string to be localized and shown
-     */
-    protected void showHelp(String s) {
-        ProjectBrowser.getInstance().getStatusBar().showStatus(
-                Translator.localize(s));
     }
 
     /**
      * This method is called after the user finishes editing a text
      * field that is in the FigNodeModelElement.  Determine which
      * field and update the model.  This class handles the name,
-     * and the stereotype,
      * subclasses should override to handle other text elements.
-     *
-     * @param ft the FigText that has been edited and contains the new text
-     * @throws PropertyVetoException thrown when new text represents
-     * an unacceptable value
      */
     protected void textEdited(FigText ft) throws PropertyVetoException {
-        if (ft == nameFig) {
+        if (ft == _name) {
             if (getOwner() == null) {
                 return;
             }
-            notationProviderName.parse(getOwner(), ft.getText());
-            ft.setText(notationProviderName.toString(getOwner(), npArguments));
+            try {
+                ParserDisplay.SINGLETON.parseModelElement(getOwner(),
+							  ft.getText().trim());
+                ProjectBrowser.getInstance().getStatusBar().showStatus("");
+                updateNameText();
+            } catch (ParseException pe) {
+                ProjectBrowser.getInstance().getStatusBar()
+		    .showStatus("Error: " + pe + " at " + pe.getErrorOffset());
+                // if there was a problem parsing,
+                // then reset the text in the fig - because the model was not
+                // updated.
+                if (ModelFacade.getName(getOwner()) != null) {
+                    ft.setText(ModelFacade.getName(getOwner()));
+                } else {
+                    ft.setText("");
+                }
+            }
         }
     }
 
@@ -1034,14 +758,12 @@ public abstract class FigNodeModelElement
      * If the user double clicks on any part of this FigNode, pass it
      * down to one of the internal Figs. This allows the user to
      * initiate direct text editing.
-     *
-     * @see java.awt.event.MouseListener#mouseClicked(java.awt.event.MouseEvent)
      */
     public void mouseClicked(MouseEvent me) {
-        if (!readyToEdit) {
-            if (Model.getFacade().isAModelElement(getOwner())) {
-                Model.getCoreHelper().setName(getOwner(), "");
-                readyToEdit = true;
+        if (!_readyToEdit) {
+            if (ModelFacade.isAModelElement(getOwner())) {
+                ModelFacade.setName(getOwner(), "");
+                _readyToEdit = true;
             } else {
                 LOG.debug("not ready to edit name");
                 return;
@@ -1052,20 +774,20 @@ public abstract class FigNodeModelElement
         }
         if (me.getClickCount() >= 2
                 && !(me.isPopupTrigger()
-                        || me.getModifiers() == InputEvent.BUTTON3_MASK)) {
+		|| me.getModifiers() == InputEvent.BUTTON3_MASK)) {
             if (getOwner() == null) {
                 return;
             }
             Rectangle r = new Rectangle(me.getX() - 2, me.getY() - 2, 4, 4);
             Fig f = hitFig(r);
             if (f instanceof MouseListener && f.isVisible()) {
-                ((MouseListener) f).mouseClicked(me);
+		((MouseListener) f).mouseClicked(me);
             } else if (f instanceof FigGroup && f.isVisible()) {
                 //this enables direct text editing for sub figs of a
                 //FigGroup object:
                 Fig f2 = ((FigGroup) f).hitFig(r);
                 if (f2 instanceof MouseListener) {
-                    ((MouseListener) f2).mouseClicked(me);
+		    ((MouseListener) f2).mouseClicked(me);
                 } else {
                     createFeatureIn((FigGroup) f, me);
                 }
@@ -1073,37 +795,11 @@ public abstract class FigNodeModelElement
         }
     }
 
-    /**
-     * @see java.awt.event.KeyListener#keyPressed(java.awt.event.KeyEvent)
-     */
     public void keyPressed(KeyEvent ke) {
-        if (ke.isConsumed() || getOwner() == null) {
-            return;
-        }
-        nameFig.keyPressed(ke);
-    }
-
-    /**
-     * @see java.awt.event.KeyListener#keyReleased(java.awt.event.KeyEvent)
-     */
-    public void keyReleased(KeyEvent ke) {
-        if (ke.isConsumed() || getOwner() == null) {
-            return;
-        }
-        nameFig.keyReleased(ke);
-    }
-
-    /**
-     * @see java.awt.event.KeyListener#keyTyped(java.awt.event.KeyEvent)
-     */
-    public void keyTyped(KeyEvent ke) {
-        if (!editable) {
-            return;
-        }
-        if (!readyToEdit) {
-            if (Model.getFacade().isAModelElement(getOwner())) {
-                Model.getCoreHelper().setName(getOwner(), "");
-                readyToEdit = true;
+        if (!_readyToEdit) {
+            if (ModelFacade.isAModelElement(getOwner())) {
+                ModelFacade.setName(getOwner(), "");
+                _readyToEdit = true;
             } else {
                 LOG.debug("not ready to edit name");
                 return;
@@ -1112,72 +808,77 @@ public abstract class FigNodeModelElement
         if (ke.isConsumed() || getOwner() == null) {
             return;
         }
-        nameFig.keyTyped(ke);
+        _name.keyPressed(ke);
+    }
+
+    /** not used, do nothing. */
+    public void keyReleased(KeyEvent ke) {
+    }
+
+    /** not used, do nothing. */
+    public void keyTyped(KeyEvent ke) {
     }
 
     ////////////////////////////////////////////////////////////////
     // internal methods
 
-    /**
-     * This is called after any part of the UML MModelElement has
-     * changed. This method automatically updates the name FigText.
-     * Subclasses should override and update other parts.
-     *
-     * @param mee the ModelElementEvent that caused the change
+    /** This is called aftern any part of the UML MModelElement has
+     *  changed. This method automatically updates the name FigText.
+     *  Subclasses should override and update other parts.
      */
-    protected void modelChanged(PropertyChangeEvent mee) {
+    protected void modelChanged(MElementEvent mee) {
         if (mee == null) {
             throw new IllegalArgumentException("event may never be null "
-                           + "with modelchanged");
+					       + "with modelchanged");
         }
-        Object owner = getOwner();
-        // If the element has been deleted, the caller will
-        // receive an InvalidElementException that it must handle.
-        if (owner == null) {
+        if (getOwner() == null) {
             return;
         }
-        if ("name".equals(mee.getPropertyName())
-                && mee.getSource() == owner) {
+        if ("name".equals(mee.getName()) && mee.getSource() == getOwner()) {
             updateNameText();
             damage();
         }
-        if ((mee.getSource() == owner
-                && mee.getPropertyName().equals("stereotype"))) {
-            if (mee.getOldValue() != null) {
-                removeElementListener(mee.getOldValue());
-            }
-            if (mee.getNewValue() != null) {
-                addElementListener(mee.getNewValue(), "name");
-            }
+        if ((mee.getSource() == getOwner()
+	     && mee.getName().equals("stereotype"))) {
             updateStereotypeText();
             damage();
         }
     }
 
-
-    /**
-     * Create a new feature in the owner fig.
-     *
-     * must be overridden to make sense
-     * (I didn't want to make it abstract because it might not be required)
-     *
-     * @param fg The fig group to which this applies
-     * @param me The input event that triggered us. In the current
-     *            implementation a mouse double click.
-     */
     protected void createFeatureIn(FigGroup fg, InputEvent me) {
+        // must be overridden to make sense
+        // (I didn't want to make it abstract because it might not be required)
+    }
+
+    public void propertySet(MElementEvent mee) {
+        //if (_group != null) _group.propertySet(mee);        
+        modelChanged(mee);
+    }
+    public void listRoleItemSet(MElementEvent mee) {
+        //if (_group != null) _group.listRoleItemSet(mee);
+        modelChanged(mee);
+    }
+    public void recovered(MElementEvent mee) {
+        //if (_group != null) _group.recovered(mee);
+    }
+    public void removed(MElementEvent mee) {
+        LOG.debug("deleting: " + this + mee);
+        Object o = mee.getSource();
+        if (o == getOwner()) {
+            delete();
+        } else if (isPartlyOwner(o)) {
+            updateBounds();
+            damage();
+            return;
+        }
 
     }
 
-    /**
-     * @param o the given object
-     * @return true if one of my figs has the given object as owner
-     */
     protected boolean isPartlyOwner(Object o) {
         if (o == null || o == getOwner()) {
             return true;
         }
-        Iterator it = getFigs().iterator();
+        Iterator it = getFigs(null).iterator();
         while (it.hasNext()) {
             Fig fig = (Fig) it.next();
             if (isPartlyOwner(fig, o)) {
@@ -1187,11 +888,6 @@ public abstract class FigNodeModelElement
         return false;
     }
 
-    /**
-     * @param fig the given fig (may be a group)
-     * @param o the given object
-     * @return true if one of the given figs has the given object as owner
-     */
     protected boolean isPartlyOwner(Fig fig, Object o) {
         if (o == null) {
             return false;
@@ -1200,7 +896,7 @@ public abstract class FigNodeModelElement
             return true;
         }
         if (fig instanceof FigGroup) {
-            Iterator it = ((FigGroup) fig).getFigs().iterator();
+            Iterator it = ((FigGroup) fig).getFigs(null).iterator();
             while (it.hasNext()) {
                 Fig fig2 = (Fig) it.next();
                 if (isPartlyOwner(fig2, o)) {
@@ -1210,230 +906,132 @@ public abstract class FigNodeModelElement
         }
         return false;
     }
+    public void roleAdded(MElementEvent mee) {
+        //if (_group != null) _group.roleAdded(mee);
+        modelChanged(mee);
+    }
+    public void roleRemoved(MElementEvent mee) {
+        //if (_group != null) _group.roleRemoved(mee);
+        modelChanged(mee);
+    }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#deleteFromModel()
-     */
-    public void deleteFromModel() {
+    public void dispose() {
         Object own = getOwner();
         if (own != null) {
-            ProjectManager.getManager().getCurrentProject().moveToTrash(own);
+            Trash.SINGLETON.addItemFrom(own, null);
+            if (ModelFacade.isAModelElement(own)) {
+                UmlFactory.getFactory().delete(own);
+            }
         }
-        Iterator it = getFigs().iterator();
+        Iterator it = getFigs(null).iterator();
         while (it.hasNext()) {
-            ((Fig) it.next()).deleteFromModel();
+            ((Fig) it.next()).dispose();
         }
-        super.deleteFromModel();
+        super.dispose();
     }
 
-    /**
-     * This method should only be called once for any one Fig instance that
-     * represents a model element (ie not for a FigEdgeNote).
-     * It is called either by the constructor that takes an model element as an
-     * argument or it is called by PGMLStackParser after it has created the Fig
-     * by use of the empty constructor.
-     * The assigned model element (owner) must not change during the lifetime
-     * of the Fig.
-     * TODO: It is planned to refactor so that there is only one Fig
-     * constructor. When this is achieved this method can refactored out.
-     * 
-     * @param owner the model element that this Fig represents.
-     * @throws IllegalArgumentException if the owner given is not a model
-     * element
-     * @see org.tigris.gef.presentation.Fig#setOwner(java.lang.Object)
-     */
-    public void setOwner(Object owner) {
-        if (owner == null) {
-            throw new IllegalArgumentException("An owner must be supplied");
+    public void setOwner(Object own) {
+        // TODO: the oldOwner variable is never used. Must check if
+        // getOwner() has any side effects before removing entire line
+        Object oldOwner = getOwner();
+        updateListeners(own);
+        super.setOwner(own);
+        if (ModelFacade.isAModelElement(own)
+                && ModelFacade.getUUID(own) == null) {
+            ModelFacade.setUUID(own, UUIDManager.getInstance().getNewUUID());
         }
-        if (getOwner() != null) {
-            throw new IllegalStateException(
-                    "The owner cannot be changed once set");
+        _readyToEdit = true;
+        if (own != null) {
+            renderingChanged();
         }
-        if (!Model.getFacade().isAModelElement(owner)) {
-            throw new IllegalArgumentException(
-                    "The owner must be a model element - got a "
-                    + owner.getClass().getName());
-        }
-        super.setOwner(owner);
-        initNotationProviders(owner);
-        readyToEdit = true;
-        renderingChanged();
         updateBounds();
-        bindPort(owner, bigPort);
-        updateListeners(null, owner);
-    }
-
-    /**
-     * Create the NotationProviders.
-     * 
-     * @param own the current owner
-     */
-    protected void initNotationProviders(Object own) {
-        if (Model.getFacade().isAModelElement(own)) {
-            notationProviderName =
-                NotationProviderFactory2.getInstance().getNotationProvider(
-                        NotationProviderFactory2.TYPE_NAME, own);
-            npArguments.put("pathVisible", Boolean.valueOf(isPathVisible()));
-        }
+        bindPort(own, _bigPort);
     }
 
     /**
      * Updates the text of the sterotype FigText. Override in subclasses to get
      * wanted behaviour.
+     *
+     * TODO: remove all 'misuses' of the stereotype figtexts (like in
+     * FigInterface)
      */
     protected void updateStereotypeText() {
+        Object stereotype = null;
         if (getOwner() == null) {
-            LOG.warn("Owner of [" + this.toString() + "/" + this.getClass()
-                    + "] is null.");
+            LOG.warn("Owner of [" + this.toString() + "/"
+		     + this.getClass() + "] is null.");
             LOG.warn("I return...");
-            return;
+	    return;
         }
-
-        Object modelElement = getOwner();
-        stereotypeFig.setOwner(modelElement);
-        if (modelElement != null) {
-            ((FigStereotypesCompartment) stereotypeFig).populate();
+        if (ModelFacade.getStereotypes(getOwner()).size() > 0) {
+            stereotype =
+		ModelFacade.getStereotypes(getOwner()).iterator().next();
         }
+        _stereo.setText(Notation.generate(this, stereotype));
     }
 
     /**
      * Updates the text of the name FigText.
      */
     protected void updateNameText() {
-        if (readyToEdit) {
-            if (getOwner() == null) {
+        if (_readyToEdit) {
+            if (getOwner() == null)
                 return;
-            }
-            if (notationProviderName != null) {
-                nameFig.setText(notationProviderName.toString(
-                        getOwner(), npArguments));
-                updateBounds();
-            }
+            String nameStr =
+                Notation.generate(this, ModelFacade.getName(getOwner()));
+            _name.setText(nameStr);
+            updateBounds();
         }
-    }
-
-    /**
-     * @see org.argouml.uml.diagram.ui.PathContainer#isPathVisible()
-     */
-    public boolean isPathVisible() {
-        return pathVisible;
-    }
-
-    /**
-     * @see org.argouml.uml.diagram.ui.PathContainer#setPathVisible(boolean)
-     */
-    public void setPathVisible(boolean visible) {
-        if (pathVisible == visible) {
-            return;
-        }
-        MutableGraphSupport.enableSaveAction();
-        pathVisible = visible;
-        if (notationProviderName != null) {
-            npArguments.put("pathVisible", Boolean.valueOf(visible));
-        }
-        if (readyToEdit) {
-            renderingChanged();
-            damage();
-        }
-    }
-
-    /**
-     * USED BY PGML.tee.
-     * @return the class name and bounds together with compartment
-     * visibility.
-     */
-    public String classNameAndBounds() {
-        return getClass().getName()
-            + "[" + getX() + ", " + getY() + ", "
-            + getWidth() + ", " + getHeight() + "]"
-            + "pathVisible=" + isPathVisible() + ";";
     }
 
     /**
      * Implementations of this method should register/unregister the fig for all
-     * (model)events. For FigNodeModelElement only the fig itself is registered
+     * (model)events. For FigNodeModelElement only the fig itself is registred
      * as listening to events fired by the owner itself. But for, for example,
      * FigClass the fig must also register for events fired by the operations
-     * and attributes of the owner. <p>
-     * 
-     * An explanation of the original 
-     * purpose of this method is given in issue 1321.<p>
-     * 
-     * This function is used in UMLDiagram, which removes all listeners 
-     * to all Figs when a diagram is not displayed, and restore them
-     * when it becomes visible again. <p>
-     * 
-     * In this case, it is imperative that indeed ALL listeners are 
-     * updated, since they are ALL removed by 
-     * the call to removeElementListener. <p>
-     * 
-     * Additionally, this function may be used by the modelChanged()
-     * function.<p>
-     * 
-     * In this case, it is also imperative that 
-     * all listeners get removed / added.
-     * 
-     * @param newOwner null, or the owner of this. 
-     *          The former means that listeners have to be removed, 
-     *          the latter that they have to be set.
-     *          TODO: Should this not be boolean, to clarify?
-     * @param oldOwner the previous owner
+     * and attributes of the owner.
+     * @param newOwner
      */
-    protected void updateListeners(Object oldOwner, Object newOwner) {
-        if (oldOwner == newOwner) {
-            LOG.warn("Listners being added and removed from the same owner");
-        }
+    protected void updateListeners(Object newOwner) {
+        Object oldOwner = getOwner();
         if (oldOwner != null) {
-            removeElementListener(oldOwner);
+            UmlModelEventPump.getPump().removeModelEventListener(this,
+								 oldOwner);
         }
         if (newOwner != null) {
-            addElementListener(newOwner);
+            UmlModelEventPump.getPump().addModelEventListener(this, newOwner);
         }
 
     }
 
     /**
-     * @see org.argouml.application.events.ArgoNotationEventListener#notationChanged(org.argouml.application.events.ArgoNotationEvent)
+     * Returns the notation name for this fig. First start to
+     * implement notations on a per fig basis.
+     * @see org.argouml.application.api.NotationContext#getContextNotation()
      */
+    public NotationName getContextNotation() {
+        return _currentNotationName;
+    }
+
     public void notationChanged(ArgoNotationEvent event) {
-        if (getOwner() == null) return;
-        initNotationProviders(getOwner());
-        try {
-            renderingChanged();
-        } catch (Exception e) {
-            LOG.error("Exception", e);
-        }
+        PropertyChangeEvent changeEvent =
+	    (PropertyChangeEvent) event.getSource();
+        _currentNotationName =
+	    Notation.findNotation((String) changeEvent.getNewValue());
+        renderingChanged();
     }
 
-    /**
-     * @see org.argouml.application.events.ArgoNotationEventListener#notationAdded(org.argouml.application.events.ArgoNotationEvent)
-     */
     public void notationAdded(ArgoNotationEvent event) {
     }
-
-    /**
-     * @see org.argouml.application.events.ArgoNotationEventListener#notationRemoved(org.argouml.application.events.ArgoNotationEvent)
-     */
     public void notationRemoved(ArgoNotationEvent event) {
     }
-
-    /**
-     * @see org.argouml.application.events.ArgoNotationEventListener#notationProviderAdded(org.argouml.application.events.ArgoNotationEvent)
-     */
     public void notationProviderAdded(ArgoNotationEvent event) {
     }
-
-    /**
-     * @see org.argouml.application.events.ArgoNotationEventListener#notationProviderRemoved(org.argouml.application.events.ArgoNotationEvent)
-     */
     public void notationProviderRemoved(ArgoNotationEvent event) {
     }
 
     /**
-     * Rerenders the fig. <p>
-     * 
-     * This functionality was originally
+     * Rerenders the fig if needed. This functionality was originally
      * the functionality of modelChanged but modelChanged takes the
      * event now into account.
      */
@@ -1444,9 +1042,6 @@ public abstract class FigNodeModelElement
         damage();
     }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#calcBounds()
-     */
     public void calcBounds() {
         if (suppressCalcBounds) {
             return;
@@ -1454,87 +1049,100 @@ public abstract class FigNodeModelElement
         super.calcBounds();
     }
 
-    /**
-     * The setter for checkSize.
-     *
-     * @param flag the new value
-     */
     public void enableSizeChecking(boolean flag) {
         checkSize = flag;
     }
 
     /**
-     * @param size the new shadow size
-     * TODO: Move the shadow stuff into GEF
+     * Returns the new size of the FigGroup (either attributes or
+     * operations) after calculation new bounds for all sub-figs,
+     * considering their minimal sizes; FigGroup need not be
+     * displayed; no update event is fired.
      */
+    protected Dimension getUpdatedSize(
+				       FigGroup fg,
+				       int x,
+				       int y,
+				       int w,
+				       int h) {
+        int newW = w;
+        int n = fg.getFigs(null).size() - 1;
+        int newH = checkSize ? Math.max(h, ROWHEIGHT * Math.max(1, n) + 2) : h;
+        int step = (n > 0) ? (newH - 1) / n : 0;
+        // width step between FigText objects int maxA =
+        //Toolkit.getDefaultToolkit().getFontMetrics(LABEL_FONT).getMaxAscent();
+
+        //set new bounds for all included figs
+        Enumeration figs = fg.elements();
+        Fig bigPort = (Fig) figs.nextElement();
+        Fig fi;
+        int fw, yy = y;
+        while (figs.hasMoreElements()) {
+            fi = (Fig) figs.nextElement();
+            fw = fi.getMinimumSize().width;
+            if (!checkSize && fw > newW - 2)
+                fw = newW - 2;
+            fi.setBounds(x + 1, yy + 1, fw, Math.min(ROWHEIGHT, step) - 2);
+            if (checkSize && newW < fw + 2)
+                newW = fw + 2;
+            yy += step;
+        }
+        bigPort.setBounds(x, y, newW, newH);
+        // rectangle containing all following FigText objects
+        fg.calcBounds();
+        return new Dimension(newW, newH);
+    }
+
     public void setShadowSize(int size) {
-        if (size == shadowSize) {
-            return;
-        }
-        MutableGraphSupport.enableSaveAction();
-        shadowSize = size;
+        _shadowSize = size;
     }
 
-    /**
-     * @deprecated do not use. Delete as soon as its single reference is gone.
-     * @param size
-     */
-    protected void setShadowSizeFriend(int size) {
-        if (size == shadowSize) {
-            return;
-        }
-        shadowSize = size;
-    }
-
-    /**
-     * @return the current shadow size
-     */
     public int getShadowSize() {
-        return shadowSize;
+        return _shadowSize;
     }
-
     /**
      * Necessary since GEF contains some errors regarding the hit subject.
      * @see org.tigris.gef.presentation.Fig#hit(Rectangle)
      */
     public boolean hit(Rectangle r) {
         int cornersHit = countCornersContained(r.x, r.y, r.width, r.height);
-        if (_filled) {
+        if (_filled)
             return cornersHit > 0 || intersects(r);
-        }
-        return (cornersHit > 0 && cornersHit < 4) || intersects(r);
+        else
+            return (cornersHit > 0 && cornersHit < 4) || intersects(r);
     }
 
     /**
-     * @see org.tigris.gef.presentation.Fig#removeFromDiagram()
+     * @see org.tigris.gef.presentation.Fig#delete()
      */
-    public final void removeFromDiagram() {
-        Fig delegate = getRemoveDelegate();
-        if (delegate instanceof FigNodeModelElement) {
-            ((FigNodeModelElement) delegate).removeFromDiagramImpl();
-        } else if (delegate instanceof FigEdgeModelElement) {
-            ((FigEdgeModelElement) delegate).removeFromDiagramImpl();
-        } else if (delegate != null) {
-            removeFromDiagramImpl();
+    public void delete() {
+        if (this instanceof ArgoEventListener) {
+            ArgoEventPump.removeListener(this);
         }
-    }
-    
-    /**
-     * Subclasses should override this to redirect a remove request from
-     * one Fig to another.
-     * e.g. FigClassAssociationClass uses this to delegate the remove to
-     * its attached FigAssociationClass.
-     * @return the fig that handles the remove request
-     */
-    protected Fig getRemoveDelegate() {
-        return this;
-    }
-    
-    protected void removeFromDiagramImpl() {
-        ArgoEventPump.removeListener(this);
-        removeAllElementListeners();
-        shadowSize = 0;
-        super.removeFromDiagram();
+
+        Object own = getOwner();
+        if (org.argouml.model.ModelFacade.isAClassifier(own)) {
+            Iterator it = ModelFacade.getFeatures(own).iterator();
+            while (it.hasNext()) {
+                Object feature = it.next();
+                if (ModelFacade.isAOperation(feature)) {
+                    Iterator it2 =
+			ModelFacade.getParameters(feature).iterator();
+                    while (it2.hasNext()) {
+                        UmlModelEventPump.getPump().removeModelEventListener(
+                                                        	    this,
+                                                                    it2.next());
+                    }
+                }
+                UmlModelEventPump.getPump().removeModelEventListener(
+								     this,
+								     feature);
+            }
+        }
+        if (ModelFacade.isABase(own)) {
+            UmlModelEventPump.getPump().removeModelEventListener(this, own);
+        }
+        super.delete();
     }
 
     /**
@@ -1548,10 +1156,13 @@ public abstract class FigNodeModelElement
     /**
      * @see org.tigris.gef.presentation.Fig#postLoad()
      */
-    public void postLoad() {
-        ArgoEventPump.removeListener(this);
-        ArgoEventPump.addListener(this);
-        Iterator it = getFigs().iterator();
+    public void postLoad() {       
+        super.postLoad();
+        if (this instanceof ArgoEventListener) {
+            ArgoEventPump.removeListener(this);
+            ArgoEventPump.addListener(this);
+        }
+        Iterator it = getFigs(null).iterator();
         while (it.hasNext()) {
             Fig fig = (Fig) it.next();
             if (fig instanceof ArgoEventListener) {
@@ -1565,253 +1176,76 @@ public abstract class FigNodeModelElement
     }
 
     /**
-     * Get the Fig containing the stereotype.
+     * Overridden to notify project that save is needed when figure is moved.
+     */
+    public void superTranslate(int dx, int dy) {
+        super.superTranslate(dx, dy);
+        Project p = ProjectManager.getManager().getCurrentProject();
+        if (p != null) {      
+            p.setNeedsSave(true);
+        }
+    }
+
+    /**
+     * Overridden to notify project that save is needed when figure is resized.
+     */
+    public void setHandleBox(int x, int y, int w, int h) {
+        super.setHandleBox(x, y, w, h);
+        Project p = ProjectManager.getManager().getCurrentProject();
+        if (p != null) {      
+            p.setNeedsSave(true);
+        }
+    }
+    
+    
+
+    /**
+     * Adds a fig to this FigNodeModelElement and removes it from the
+     * group it belonged to if any.  Correction to the GEF
+     * implementation that does not handle the double association
+     * correctly.<p>
      *
+     * @see FigGroup#addFig(Fig)
+     * TODO: remove this once GEF0.10 is in place and tested
+     */
+    public void addFig(Fig f) {
+        Fig group = f.getGroup();
+        if (group != null) {
+            ((FigGroup) group).removeFig(f);
+        }
+        super.addFig(f);
+    }
+
+    /**
+     * Set the Fig containing the stereotype
+     * @param fig the stereotype Fig
+     */
+    protected void setStereotypeFig(Fig fig) {
+        _stereo = (FigText) fig;
+    }
+
+    /**
+     * Get the Fig containing the stereotype
      * @return the stereotype Fig
      */
     protected Fig getStereotypeFig() {
-        return stereotypeFig;
+        return _stereo;
     }
 
     /**
-     * @return Returns the lABEL_FONT.
+     * Set the text describing the stereotype
+     * @param stereotype the stereotype text
      */
-    public static Font getLabelFont() {
-        return LABEL_FONT;
+    public void setStereotype(String stereotype) {
+        _stereo.setText(stereotype);
     }
 
     /**
-     * @return Returns the iTALIC_LABEL_FONT.
+     * Get the text describing the stereotype
+     * @return the stereotype text
      */
-    public static Font getItalicLabelFont() {
-        return ITALIC_LABEL_FONT;
+    public String getStereotype() {
+        return _stereo.getText();
     }
-
-    /**
-     * @param bp The _bigPort to set.
-     */
-    protected void setBigPort(Fig bp) {
-        this.bigPort = bp;
-    }
-
-    /**
-     * @return the fig which is the port where edges connect to this node
-     */
-    public Fig getBigPort() {
-        return bigPort;
-    }
-
-    /**
-     * @return Returns the checkSize.
-     */
-    protected boolean isCheckSize() {
-        return checkSize;
-    }
-
-    /**
-     * @see org.tigris.gef.presentation.FigNode#isDragConnectable()
-     */
-    public boolean isDragConnectable() {
-        return false;
-    }
-
-    /**
-     * @param e The _encloser to set.
-     */
-    protected void setEncloser(Fig e) {
-        this.encloser = e;
-    }
-
-    /**
-     * @return Returns the _encloser.
-     */
-    protected Fig getEncloser() {
-        return encloser;
-    }
-    /**
-     * @return Returns the ReadyToEdit.
-     */
-    protected boolean isReadyToEdit() {
-        return readyToEdit;
-    }
-
-    /**
-     * @param v if ready to edit
-     */
-    protected void setReadyToEdit(boolean v) {
-        readyToEdit = v;
-    }
-
-    /**
-     * @param scb The suppressCalcBounds to set.
-     */
-    protected void setSuppressCalcBounds(boolean scb) {
-        this.suppressCalcBounds = scb;
-    }
-    
-    public void setVisible(boolean visible) {
-        if (!visible && !invisibleAllowed) {
-            throw new IllegalArgumentException(
-                    "Visibility of a FigNode should never be false");
-        }
-    }
-
-    /**
-     * @see org.tigris.gef.presentation.Fig#setLayer(org.tigris.gef.base.Layer)
-     */
-    public void setLayer(Layer lay) {
-        super.setLayer(lay);
-    }
-
-    /**
-     * To redraw each element correctly when changing its location
-     * with X and U additions.
-     *
-     * @param xInc the increment in the x direction
-     * @param yInc the increment in the y direction
-     */
-    public void displace (int xInc, int yInc) {
-        Vector figsVector;
-        Rectangle rFig = getBounds();
-        setLocation(rFig.x + xInc, rFig.y + yInc);
-        figsVector = ((Vector) getEnclosedFigs().clone());
-        if (!figsVector.isEmpty()) {
-            for (int i = 0; i < figsVector.size(); i++) {
-                ((FigNodeModelElement) figsVector.elementAt(i))
-                            .displace(xInc, yInc);
-            }
-        }
-    }
-
-
-    /**
-     * @param allowed true if the function RemoveFromDiagram is allowed
-     */
-    protected void allowRemoveFromDiagram(boolean allowed) {
-        this.removeFromDiagram = allowed;
-    }
-
-    /**
-     * Force painting the shadow.
-     */
-    public void forceRepaintShadow() {
-        forceRepaint = true;
-    }
-
-    public void setDiElement(DiElement element) {
-        this.diElement = element;
-    }
-
-    public DiElement getDiElement() {
-        return diElement;
-    }
-
-    /**
-     * @return Returns the popupAddOffset.
-     */
-    protected static int getPopupAddOffset() {
-        return popupAddOffset;
-    }
-
-    /**
-     * Determine if this node can be edited.
-     * @return editable state
-     */
-    public boolean isEditable() {
-        return editable;
-    }
-
-    /**
-     * By default a node is directly editable by simply selecting
-     * that node and starting to type.
-     * Should a subclass of FigNodeModelElement not desire this behaviour
-     * then it should call setEditable(false) in its constructor.
-     * 
-     * @param canEdit new state, false = editing disabled.
-     */
-    protected void setEditable(boolean canEdit) {
-        this.editable = canEdit;
-    }
-
-    /**
-     * Add an element listener and remember the registration.
-     * 
-     * @param element
-     *            element to listen for changes on
-     * @see org.argouml.model.ModelEventPump#addModelEventListener(PropertyChangeListener, Object, String)
-     */
-    protected void addElementListener(Object element) {
-        listeners.add(new Object[] {element, null});
-        Model.getPump().addModelEventListener(this, element);
-    }
-    
-    /**
-     * Add a listener for a given property name and remember the registration.
-     * 
-     * @param element
-     *            element to listen for changes on
-     * @param property
-     *            name of property to listen for changes of
-     * @see org.argouml.model.ModelEventPump#addModelEventListener(PropertyChangeListener,
-     *      Object, String)
-     */
-    protected void addElementListener(Object element, String property) {
-        listeners.add(new Object[] {element, property});
-        Model.getPump().addModelEventListener(this, element, property);
-    }
-
-    /**
-     * Add a listener for an array of property names and remember the
-     * registration.
-     * 
-     * @param element
-     *            element to listen for changes on
-     * @param property
-     *            array of property names (Strings) to listen for changes of
-     * @see org.argouml.model.ModelEventPump#addModelEventListener(PropertyChangeListener,
-     *      Object, String)
-     */
-    protected void addElementListener(Object element, String[] property) {
-        listeners.add(new Object[] {element, property});
-        Model.getPump().addModelEventListener(this, element, property);
-    }
-    
-    /**
-     * Remove an element listener and remember the registration.
-     * 
-     * @param element
-     *            element to listen for changes on
-     * @see org.argouml.model.ModelEventPump#addModelEventListener(PropertyChangeListener, Object, String)
-     */
-    protected void removeElementListener(Object element) {
-        listeners.remove(new Object[] {element, null});
-        Model.getPump().removeModelEventListener(this, element);
-    }
-    
-    /**
-     * Unregister all listeners registered through addElementListener
-     * @see #addElementListener(Object, String)
-     */
-    protected void removeAllElementListeners() {
-        for (Iterator iter = listeners.iterator(); iter.hasNext();) {
-            Object[] l = (Object[]) iter.next();
-            Object property = l[1];
-            if (property == null) {
-                Model.getPump().removeModelEventListener(this, l[0]);
-            } else if (property instanceof String[]) {
-                Model.getPump().removeModelEventListener(this, l[0],
-                        (String[]) property);
-            } else if (property instanceof String) {
-                Model.getPump().removeModelEventListener(this, l[0],
-                        (String) property);
-            } else {
-                throw new RuntimeException(
-                        "Internal error in removeAllElementListeners");
-            }
-        }
-        listeners.clear();
-    }
-
-
-
 } /* end class FigNodeModelElement */
+

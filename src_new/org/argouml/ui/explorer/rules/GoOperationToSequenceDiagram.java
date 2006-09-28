@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -30,34 +30,32 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import org.argouml.i18n.Translator;
 import org.argouml.kernel.Project;
 import org.argouml.kernel.ProjectManager;
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
 import org.argouml.ui.ArgoDiagram;
 import org.argouml.uml.diagram.sequence.SequenceDiagramGraphModel;
 import org.argouml.uml.diagram.sequence.ui.UMLSequenceDiagram;
 
 /**
- * Rule for Operation->Sequence diagram.
  * Go rule from represented operation to sequence diagram representing it
  * @author : jaap.branderhorst@xs4all.nl
  */
 public class GoOperationToSequenceDiagram extends AbstractPerspectiveRule {
 
-    /**
+    /** 
      * @see org.argouml.ui.explorer.rules.PerspectiveRule#getRuleName()
      */
     public String getRuleName() {
-        return Translator.localize ("misc.operation.sequence-diagram");
+        return "Operation->Sequence diagram";
     }
 
     /**
      * @see org.argouml.ui.explorer.rules.PerspectiveRule#getChildren(java.lang.Object)
      */
     public Collection getChildren(Object parent) {
-        if (Model.getFacade().isAOperation(parent)) {
-            Collection col = Model.getFacade().getCollaborations(parent);
+        if (ModelFacade.isAOperation(parent)) {
+            Collection col = ModelFacade.getCollaborations(parent);
             List ret = new ArrayList();
             Project p = ProjectManager.getManager().getCurrentProject();
             Iterator it = p.getDiagrams().iterator();
@@ -79,9 +77,6 @@ public class GoOperationToSequenceDiagram extends AbstractPerspectiveRule {
         return null;
     }
 
-    /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getDependencies(java.lang.Object)
-     */
     public Set getDependencies(Object parent) {
         // TODO: What?
 	return null;

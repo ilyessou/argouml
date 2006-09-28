@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,45 +22,35 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+
+// File: PropPanelFinalState.java
+// Classes: PropPanelFinalState
+// Original Author: 5heyden
+// $Id:
+
 package org.argouml.uml.ui.behavior.state_machines;
 
 import org.argouml.i18n.Translator;
+
+import org.argouml.uml.ui.UMLComboBoxNavigator;
 import org.argouml.util.ConfigLoader;
 
-/**
- * The properties panel for a FinalState.
- *
- * @author 5heyden
- */
-public class PropPanelFinalState extends AbstractPropPanelState {
+public class PropPanelFinalState extends PropPanelState {
 
-    /**
-     * The serial version.
-     */
-    private static final long serialVersionUID = 4111793068615402073L;
-
-    /**
-     * Construct a new property panel for a Final State.
-     */
     public PropPanelFinalState() {
-        super("Final State", lookupIcon("FinalState"),
-                ConfigLoader.getTabPropsOrientation());
+        super("Final State", _finalStateIcon, ConfigLoader.getTabPropsOrientation());
 
-        addField(Translator.localize("label.name"),
-                getNameTextField());
-        addField(Translator.localize("label.container"),
-                getContainerScroll());
-        addField(Translator.localize("label.entry"),
-                getEntryScroll());
-        addField(Translator.localize("label.do-activity"),
-                getDoScroll());
+        addField(Translator.localize("UMLMenu", "label.name"), getNameTextField());
+        addField(Translator.localize("UMLMenu", "label.stereotype"), new UMLComboBoxNavigator(this, Translator.localize("UMLMenu", "tooltip.nav-stereo"), getStereotypeBox()));
+        addField(Translator.localize("UMLMenu", "label.container"), containerScroll);
+        addField(Translator.localize("UMLMenu", "label.entry"), entryScroll);
+        // TODO: maybe we should add a doactivity
 
-        addSeparator();
+        addSeperator();
 
-        addField(Translator.localize("label.incoming"),
-                getIncomingScroll());
-        addField(Translator.localize("label.internal-transitions"),
-                getInternalTransitionsScroll());
+        addField(Translator.localize("UMLMenu", "label.incoming"), incomingScroll);
+        addField(Translator.localize("UMLMenu", "label.internal-transitions"), internalTransitionsScroll);
 
     }
 

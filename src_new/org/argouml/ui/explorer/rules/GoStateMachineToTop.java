@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -27,44 +27,25 @@ package org.argouml.ui.explorer.rules;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
-import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
 
-/**
- * Rule for Statemachine->Top State.
- *
- */
 public class GoStateMachineToTop extends AbstractPerspectiveRule {
 
-    /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getRuleName()
-     */
-    public String getRuleName() {
-        return Translator.localize ("misc.state-machine.top-state");
-    }
+    public String getRuleName() { return "Statemachine->Top State"; }
 
-    /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getChildren(
-     *         java.lang.Object)
-     */
-    public Collection getChildren(Object parent) {
-	if (Model.getFacade().isAStateMachine(parent)) {
-            List list = new ArrayList();
-            list.add(Model.getFacade().getTop(parent));
+    public Collection getChildren(Object parent) { 
+	if (ModelFacade.isAStateMachine(parent)) {
+            ArrayList list = new ArrayList();
+            list.add(ModelFacade.getTop(parent));
 	    return list;
 	}
 	return null;
     }
-
-    /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getDependencies(
-     *         java.lang.Object)
-     */
+  
     public Set getDependencies(Object parent) {
-        if (Model.getFacade().isAStateMachine(parent)) {
+        if (ModelFacade.isAStateMachine(parent)) {
 	    Set set = new HashSet();
 	    set.add(parent);
 	    return set;

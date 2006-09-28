@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -28,41 +28,42 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.log4j.Logger;
 import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
 
 /**
- * Rule for Use Case->Extension Point.
  * Provides a rule to display extension points in the navigation pane.<p>
  *
  * @author  16 Apr 2002. Jeremy Bennett (mail@jeremybennett.com).
  */
 public class GoUseCaseToExtensionPoint extends AbstractPerspectiveRule {
     /**
-     * Give a name to this rule.<p>
-     *
-     * @return  The name of the rule ("<code>Use Case->Extension
-     *          Point</code>").
+     * @deprecated by Linus Tolke as of 0.16. Will be private.
      */
-    public String getRuleName() {
-        return Translator.localize ("misc.use-case.extension-point");
-    }
+    protected static Logger cat =
+	Logger.getLogger(GoUseCaseToExtensionPoint.class);
 
     /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getChildren(java.lang.Object)
+     * <p>Give a name to this rule.</p>
+     *
+     * @return  The name of the rule ("<code>Use Case->Extension
+     *          Point</code>"). 
      */
-    public Collection getChildren(Object parent) {
-        if (Model.getFacade().isAUseCase(parent)) {
-            return Model.getFacade().getExtensionPoints(parent);
+
+    public String getRuleName() {
+        return Translator.localize ("Tree", "Use Case->Extension Point");
+    }
+
+    public Collection getChildren(Object parent) { 
+        if (ModelFacade.isAUseCase(parent)) {
+            return ModelFacade.getExtensionPoints(parent);
         }
         return null;
     }
 
-    /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getDependencies(java.lang.Object)
-     */
     public Set getDependencies(Object parent) {
-        if (Model.getFacade().isAUseCase(parent)) {
+        if (ModelFacade.isAUseCase(parent)) {
 	    Set set = new HashSet();
 	    set.add(parent);
 	    return set;

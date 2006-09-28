@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -26,29 +26,25 @@ package org.argouml.uml.ui.foundation.core;
 
 import java.awt.event.ActionEvent;
 
-import javax.swing.Action;
-
 import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
+import org.argouml.model.uml.modelmanagement.ModelManagementHelper;
+import org.argouml.uml.ui.UMLChangeAction;
 import org.argouml.uml.ui.UMLComboBox2;
-import org.tigris.gef.undo.UndoableAction;
 /**
  * @since Nov 3, 2002
  * @author jaap.branderhorst@xs4all.nl
  */
-public class ActionSetStructuralFeatureType extends UndoableAction {
+public class ActionSetStructuralFeatureType extends UMLChangeAction {
 
-    private static final ActionSetStructuralFeatureType SINGLETON =
+    public static final ActionSetStructuralFeatureType SINGLETON =
         new ActionSetStructuralFeatureType();
 
     /**
      * Constructor for ActionSetStructuralFeatureType.
      */
     protected ActionSetStructuralFeatureType() {
-        super(Translator.localize("Set"), null);
-        // Set the tooltip string:
-        putValue(Action.SHORT_DESCRIPTION, 
-                Translator.localize("Set"));
+        super(Translator.localize("Set"), true, NO_ICON);
     }
 
     /**
@@ -63,32 +59,25 @@ public class ActionSetStructuralFeatureType extends UndoableAction {
         if (source instanceof UMLComboBox2) {
             UMLComboBox2 box = (UMLComboBox2) source;
             Object o = box.getTarget();
-            if (Model.getFacade().isAStructuralFeature(o)) {
+            if (org.argouml.model.ModelFacade.isAStructuralFeature(o)) {
                 attr = /*(MAttribute)*/ o;
-                oldClassifier = Model.getFacade().getType(attr);
+                oldClassifier = ModelFacade.getType(attr);
             }
             o = box.getSelectedItem();
-            if (Model.getFacade().isAClassifier(o)) {
+            if (org.argouml.model.ModelFacade.isAClassifier(o)) {
                 newClassifier = /*(MClassifier)*/ o;
             }
         }
         if (newClassifier != oldClassifier && attr != null) {
             if (newClassifier != null) {
-                newClassifier = /*(MClassifier)*/ Model
-                    .getModelManagementHelper().getCorrespondingElement(
+                newClassifier =
+                    /*(MClassifier)*/ ModelManagementHelper.getHelper().getCorrespondingElement(
                                     newClassifier,
-                                    Model.getFacade().getModel(attr));
+                                    ModelFacade.getModel(attr));
             }
 
-            Model.getCoreHelper().setType(attr, newClassifier);
+            ModelFacade.setType(attr, newClassifier);
         }
-    }
-
-    /**
-     * @return Returns the sINGLETON.
-     */
-    public static ActionSetStructuralFeatureType getInstance() {
-        return SINGLETON;
     }
 
 }

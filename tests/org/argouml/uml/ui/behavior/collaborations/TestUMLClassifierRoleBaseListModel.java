@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,8 +24,13 @@
 
 package org.argouml.uml.ui.behavior.collaborations;
 
-import org.argouml.model.Model;
+import org.argouml.model.uml.behavioralelements.collaborations.CollaborationsFactory;
+import org.argouml.model.uml.foundation.core.CoreFactory;
 import org.argouml.uml.ui.AbstractUMLModelElementListModel2Test;
+
+import ru.novosoft.uml.MBase;
+import ru.novosoft.uml.behavior.collaborations.MClassifierRole;
+import ru.novosoft.uml.foundation.core.MClassifier;
 
 /**
  * @since Oct 27, 2002
@@ -47,34 +52,34 @@ public class TestUMLClassifierRoleBaseListModel
      * @see org.argouml.uml.ui.AbstractUMLModelElementListModel2Test#buildElement()
      */
     protected void buildElement() {
-        setElem(Model.getCollaborationsFactory().createClassifierRole());
+        elem = CollaborationsFactory.getFactory().createClassifierRole();
     }
 
     /**
-     * @see org.argouml.uml.ui.AbstractUMLModelElementListModel2Test#buildModel()
+     * @see org.argouml.uml.ui.AbstractUMLModelElementListModel2Test#buildModel(org.argouml.uml.ui.UMLUserInterfaceContainer)
      */
     protected void buildModel() {
-        setModel(new UMLClassifierRoleBaseListModel());
+        model = new UMLClassifierRoleBaseListModel();
     }
 
     /**
      * @see org.argouml.uml.ui.AbstractUMLModelElementListModel2Test#fillModel()
      */
-    protected Object[] fillModel() {
-        Object[] bases = new Object[10];
-        for (int i = 0; i < bases.length; i++) {
-            bases[i] = Model.getCoreFactory().createClass();
-            Model.getCollaborationsHelper().addBase(getElem(), bases[i]);
+    protected MBase[] fillModel() {
+        MClassifier[] bases = new MClassifier[10];
+        for (int i = 0; i < 10; i++) {
+            bases[i] = CoreFactory.getFactory().createClass();
+            ((MClassifierRole) elem).addBase(bases[i]);
         }
         return bases;
     }
 
     /**
-     * @see org.argouml.uml.ui.AbstractUMLModelElementListModel2Test#removeHalfModel(Object[])
+     * @see org.argouml.uml.ui.AbstractUMLModelElementListModel2Test#removeHalfModel(ru.novosoft.uml.MBase)
      */
-    protected void removeHalfModel(Object[] elements) {
+    protected void removeHalfModel(MBase[] elements) {
         for (int i = 0; i < 5; i++) {
-            Model.getCollaborationsHelper().removeBase(getElem(), elements[i]);
+            ((MClassifierRole) elem).removeBase((MClassifier) elements[i]);
         }
     }
 

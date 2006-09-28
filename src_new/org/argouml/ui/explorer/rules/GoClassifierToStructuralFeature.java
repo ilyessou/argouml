@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -29,36 +29,23 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
 
-/**
- * Rule for Class->Attribute.
- *
- */
 public class GoClassifierToStructuralFeature extends AbstractPerspectiveRule {
 
-    /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getRuleName()
-     */
     public String getRuleName() {
-	return Translator.localize ("misc.class.attribute");
+	return Translator.localize ("Tree", "misc.class.attribute");
     }
 
-    /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getChildren(java.lang.Object)
-     */
     public Collection getChildren(Object parent) {
-	if (Model.getFacade().isAClassifier(parent)) {
-	    return Model.getFacade().getStructuralFeatures(parent);
+	if (ModelFacade.isAClassifier(parent)) {
+	    return ModelFacade.getStructuralFeatures(parent);
 	}
 	return null;
     }
 
-    /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getDependencies(java.lang.Object)
-     */
     public Set getDependencies(Object parent) {
-        if (Model.getFacade().isAClassifier(parent)) {
+        if (ModelFacade.isAClassifier(parent)) {
 	    Set set = new HashSet();
 	    set.add(parent);
 	    return set;

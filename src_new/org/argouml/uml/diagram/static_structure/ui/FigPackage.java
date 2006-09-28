@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,16 +22,18 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: FigPackage.java
+// Classes: FigPackage
+// Original Author: agauthie@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.diagram.static_structure.ui;
 
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyVetoException;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Vector;
@@ -39,116 +41,101 @@ import java.util.Vector;
 import javax.swing.JOptionPane;
 
 import org.apache.log4j.Logger;
-import org.argouml.application.helpers.ResourceLoaderWrapper;
-import org.argouml.i18n.Translator;
+import org.argouml.application.api.Notation;
 import org.argouml.kernel.Project;
 import org.argouml.kernel.ProjectManager;
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
 import org.argouml.ui.ArgoDiagram;
 import org.argouml.ui.ArgoJMenu;
-import org.argouml.ui.explorer.ExplorerEventAdaptor;
 import org.argouml.ui.targetmanager.TargetManager;
-import org.argouml.uml.diagram.DiagramFactory;
 import org.argouml.uml.diagram.ui.FigNodeModelElement;
-import org.argouml.uml.diagram.ui.FigStereotypesCompartment;
-import org.argouml.uml.diagram.ui.StereotypeContainer;
 import org.argouml.uml.diagram.ui.UMLDiagram;
-import org.argouml.uml.diagram.ui.VisibilityContainer;
-import org.tigris.gef.base.Editor;
-import org.tigris.gef.base.Geometry;
+import org.argouml.uml.diagram.ui.ActionModifier;
+import org.argouml.uml.ui.UMLAction;
 import org.tigris.gef.base.Globals;
 import org.tigris.gef.graph.GraphModel;
-import org.tigris.gef.presentation.Fig;
 import org.tigris.gef.presentation.FigRect;
 import org.tigris.gef.presentation.FigText;
-import org.tigris.gef.undo.UndoableAction;
 
-/**
- * Class to display graphics for a UML package in a class diagram.
- * <p>
- * 
- * The "tab" of the Package Fig is build of 2 pieces: 
- * the stereotypes at the top, and the name below it. 
- * Both are not transparent, and have a line border. 
- * And there is a blinder for the line in the middle.
- */
-public class FigPackage extends FigNodeModelElement
-    implements StereotypeContainer, VisibilityContainer {
+/** Class to display graphics for a UML package in a class diagram. */
+
+public class FigPackage extends FigNodeModelElement {
     /**
-     * Logger.
+     * @deprecated by Linus Tolke as of 0.15.4. Use your own logger in your
+     * class. This will be removed.
      */
+    protected static Logger cat = Logger.getLogger(FigPackage.class);
+
     private static final Logger LOG = Logger.getLogger(FigPackage.class);
 
     ////////////////////////////////////////////////////////////////
     // constants
 
-    private static final int MIN_HEIGHT = 21;
-
-    private int width = 140;
-    private int height = 100;
-    private int indentX = 50;
-    //private int indentY = 20;
-    private int textH = 20;
-
-    /**
-     * The total height of the tab.
-     */
-    private int tabHeight = 20;
+    public final int MARGIN = 2;
+    public int x = 0;
+    public int y = 0;
+    public int width = 140;
+    public int height = 100;
+    public int indentX = 50;
+    public int indentY = 20;
+    public int textH = 20;
+    protected int _radius = 20;
 
     ////////////////////////////////////////////////////////////////
     // instance variables
 
-    private FigText body;
+    FigText _body;
 
     /**
-     * Flag that indicates if the stereotype should be shown even if
+     * Flags that indicates if the stereotype should be shown even if
      * it is specified or not.
      */
-    private boolean stereotypeVisible = true;
+    protected boolean _showStereotype = true;
 
     /**
-     * Flag that indicates if the visibility should be shown in front
-     * of the name.
+     * <p>A rectangle to blank out the line that would otherwise appear at the
+     *   bottom of the stereotype text box.</p>
      */
-    private boolean visibilityVisible;
+
+    protected FigRect _stereoLineBlinder;
 
     /**
-     * A rectangle to blank out the line that would otherwise appear at the
-     * bottom of the stereotype text box.
+     * <p>Flag to indicate that we have just been created. This is to fix the
+     *   problem with loading classes that have stereotypes already
+     *   defined.</p>
      */
-    private FigRect stereoLineBlinder;
 
-    /**
-     * The main constructor.
-     *
-     * @param node the UML package
-     * @param x the x coordinate of the location
-     * @param y the y coordinate of the location
-     */
-    public FigPackage(Object node, int x, int y) {
-        setBigPort(
-            new PackagePortFigRect(0, 0, width, height, indentX, tabHeight));
+    private boolean _newlyCreated = false;
+
+    ////////////////////////////////////////////////////////////////
+    // constructors
+
+    public FigPackage() {
+        Color handleColor = Globals.getPrefs().getHandleColor();
+        _bigPort = new FigRect(x, y, width, height, null, null);
 
         //
         // Create a Body that reacts to double-clicks and jumps to a diagram.
         //
-        body = new FigPackageFigText(0, textH, width, height - textH);
+        _body = new FigPackageFigText(x, y + textH, width, height - textH);
 
-        body.setEditable(false);
+        _body.setEditable(false);
 
-        getNameFig().setBounds(0, 0, width - indentX, textH + 2);
+        getNameFig().setBounds(x, y, width - indentX, textH + 2);
         getNameFig().setJustification(FigText.JUSTIFY_LEFT);
 
-        getBigPort().setFilled(false);
-        getBigPort().setLineWidth(0);
+        _bigPort.setFilled(false);
+        _bigPort.setLineWidth(0);
 
         // Set properties of the stereotype box. Make it 1 pixel higher than
         // before, so it overlaps the name box, and the blanking takes out both
         // lines. Initially not set to be displayed, but this will be changed
         // when we try to render it, if we find we have a stereotype.
 
+        _stereo.setExpandOnly(true);
         getStereotypeFig().setFilled(true);
         getStereotypeFig().setLineWidth(1);
+        _stereo.setEditable(false);
         getStereotypeFig().setHeight(STEREOHEIGHT + 1);
         getStereotypeFig().setVisible(false);
 
@@ -157,155 +144,111 @@ public class FigPackage extends FigNodeModelElement
         // thickness, so the rectangle does not need to be filled. Whether to
         // display is linked to whether to display the stereotype.
 
-        // TODO: Do we really still need this? - Bob
-        stereoLineBlinder =
+        _stereoLineBlinder =
             new FigRect(11, 10 + STEREOHEIGHT, 58, 2, Color.white, Color.white);
-        stereoLineBlinder.setLineWidth(1);
-        stereoLineBlinder.setVisible(false);
+        _stereoLineBlinder.setLineWidth(1);
+        _stereoLineBlinder.setVisible(false);
+
+        // Mark this as newly created. This is to get round the problem with
+        // creating figs for loaded classes that had stereotypes. They are
+        // saved with their dimensions INCLUDING the stereotype, but since we
+        // pretend the stereotype is not visible, we add height the first time
+        // we render such a class. This is a complete fudge, and really we
+        // ought to address how class objects with stereotypes are saved. But
+        // that will be hard work.
+
+        _newlyCreated = true;
 
         // add Figs to the FigNode in back-to-front order
-        addFig(getBigPort());
+        addFig(_bigPort);
         addFig(getStereotypeFig());
         addFig(getNameFig());
-        addFig(stereoLineBlinder);
-        addFig(body);
+        addFig(_stereoLineBlinder);
+        addFig(_body);
 
         setBlinkPorts(false); //make port invisble unless mouse enters
-        
-        setLocation(x, y);
-        
-        // TODO: Why do we need to do this? - Bob
         Rectangle r = getBounds();
         setBounds(r.x, r.y, r.width, r.height);
-        
         updateEdges();
-
-        Project p = ProjectManager.getManager().getCurrentProject();
-        visibilityVisible = p.getProjectSettings().getShowVisibilityValue();
-        setOwner(node);
     }
 
-    /**
-     * Contructor that hooks the fig into the UML element.
-     *
-     * @param gm ignored
-     * @param node the UML element
-     */
     public FigPackage(GraphModel gm, Object node) {
-        this(node, 0, 0);
+        this();
+        setOwner(node);
+
+        // If this figure is created for an existing package node in the
+        // metamodel, set the figure's name according to this node. This is
+        // used when the user click's on 'add to diagram' in the navpane.
+        // Don't know if this should rather be done in one of the super
+        // classes, since similar code is used in FigClass.java etc.
+        // Andreas Rueckert <a_rueckert@gmx.net>
+        if (ModelFacade.isAPackage(node)
+	        && ModelFacade.getName(node) != null) {
+            getNameFig().setText(ModelFacade.getName(node));
+	}
     }
 
-    /**
-     * @see org.argouml.uml.diagram.ui.FigNodeModelElement#initNotationProviders(java.lang.Object)
-     */
-    protected void initNotationProviders(Object own) {
-        super.initNotationProviders(own);
-        if (Model.getFacade().isAPackage(own)) {
-            npArguments.put("visibilityVisible",
-                    Boolean.valueOf(isVisibilityVisible()));
-        }
-    }
-
-    /**
-     * @see org.argouml.uml.diagram.ui.FigNodeModelElement#placeString()
-     */
     public String placeString() {
         return "new Package";
     }
 
-    /**
-     * @see java.lang.Object#clone()
-     */
     public Object clone() {
         FigPackage figClone = (FigPackage) super.clone();
-        Iterator thisIter = this.getFigs().iterator();
-        while (thisIter.hasNext()) {
-            Fig thisFig = (Fig) thisIter.next();
-            if (thisFig == stereoLineBlinder) {
-                figClone.stereoLineBlinder = (FigRect) thisFig;
-            }
-            if (thisFig == body) {
-                figClone.body = (FigText) thisFig;
-            }
-        }
+        Iterator it = figClone.getFigs(null).iterator();
+        figClone._bigPort = (FigRect) it.next();
+        figClone.setStereotypeFig((FigText) it.next());
+        figClone.setNameFig((FigText) it.next());
+        figClone._stereoLineBlinder = (FigRect) it.next();
+        figClone._body = (FigText) it.next();
         return figClone;
     }
 
     ////////////////////////////////////////////////////////////////
     // Fig accessors
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#setLineColor(java.awt.Color)
-     */
     public void setLineColor(Color col) {
         super.setLineColor(col);
         getStereotypeFig().setLineColor(col);
         getNameFig().setLineColor(col);
-        body.setLineColor(col);
-        stereoLineBlinder.setLineColor(stereoLineBlinder.getFillColor());
+        _body.setLineColor(col);
+        _stereoLineBlinder.setLineColor(_stereoLineBlinder.getFillColor());
     }
-
-    /**
-     * @see org.tigris.gef.presentation.Fig#getLineColor()
-     */
     public Color getLineColor() {
-        return body.getLineColor();
+        return _body.getLineColor();
     }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#setFillColor(java.awt.Color)
-     */
     public void setFillColor(Color col) {
         super.setFillColor(col);
         getStereotypeFig().setFillColor(col);
         getNameFig().setFillColor(col);
-        body.setFillColor(col);
-        stereoLineBlinder.setLineColor(col);
+        _body.setFillColor(col);
+        _stereoLineBlinder.setLineColor(col);
     }
-
-    /**
-     * @see org.tigris.gef.presentation.Fig#getFillColor()
-     */
     public Color getFillColor() {
-        return body.getFillColor();
+        return _body.getFillColor();
     }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#setFilled(boolean)
-     */
     public void setFilled(boolean f) {
         getStereotypeFig().setFilled(f);
         getNameFig().setFilled(f);
-        body.setFilled(f);
+        _body.setFilled(f);
     }
-
-    /**
-     * @see org.tigris.gef.presentation.Fig#getFilled()
-     */
     public boolean getFilled() {
-        return body.getFilled();
+        return _body.getFilled();
     }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#setLineWidth(int)
-     */
     public void setLineWidth(int w) {
+        getStereotypeFig().setLineWidth(w);
         getNameFig().setLineWidth(w);
-        body.setLineWidth(w);
+        _body.setLineWidth(w);
     }
-
-    /**
-     * @see org.tigris.gef.presentation.Fig#getLineWidth()
-     */
     public int getLineWidth() {
-        return body.getLineWidth();
+        return _body.getLineWidth();
     }
 
     ////////////////////////////////////////////////////////////////
 
     /**
-     * @see org.argouml.uml.diagram.ui.FigNodeModelElement#renderingChanged()
-     *
      * Called to update the graphics.
      */
     public void renderingChanged() {
@@ -313,100 +256,74 @@ public class FigPackage extends FigNodeModelElement
         updateStereotypeText();
     }
 
-    /**
-     * @see org.argouml.uml.diagram.ui.FigNodeModelElement#updateStereotypeText()
-     */
     protected void updateStereotypeText() {
-        Object modelElement = getOwner();
+        Object me = /*(MModelElement)*/ getOwner();
 
-        if (modelElement == null) {
+        if (me == null) {
             return;
         }
 
         Rectangle rect = getBounds();
 
+        Object stereo = null;
+        if (ModelFacade.getStereotypes(me).size() > 0) {
+            stereo = ModelFacade.getStereotypes(me).iterator().next();
+        }
+
         /* check if stereotype is defined */
-        if (Model.getFacade().getStereotypes(modelElement).isEmpty()) {
+        if ((stereo == null)
+                || (ModelFacade.getName(stereo) == null)
+                || (ModelFacade.getName(stereo).length() == 0)) {
             if (getStereotypeFig().isVisible()) {
-                stereoLineBlinder.setVisible(false);
+                _stereoLineBlinder.setVisible(false);
                 getStereotypeFig().setVisible(false);
+                //                rect.y      += STEREOHEIGHT;
+                //                rect.height -= STEREOHEIGHT;
             }
         } else {
             /* we got stereotype */
-            getStereotypeFig().setOwner(getOwner());
-            ((FigStereotypesCompartment) getStereotypeFig()).populate();
-            if (!stereotypeVisible) {
-                stereoLineBlinder.setVisible(false);
+            setStereotype(Notation.generateStereotype(this, stereo));
+
+            if (!_showStereotype) {
+                _stereoLineBlinder.setVisible(false);
                 getStereotypeFig().setVisible(false);
             } else if (!getStereotypeFig().isVisible()) {
-                if (stereotypeVisible) {
-                    stereoLineBlinder.setVisible(true);
+                if (_showStereotype) {
+                    _stereoLineBlinder.setVisible(true);
                     getStereotypeFig().setVisible(true);
+
+                    // Only adjust the stereotype height if we are not
+                    // newly created. This gets round the problem of
+                    // loading classes with stereotypes defined, which
+                    // have the height already including the
+                    // stereotype.
+
+                    if (!_newlyCreated) {
+                        // rect.y -= STEREOHEIGHT; rect.height +=
+                        // STEREOHEIGHT;
+                    }
                 }
             }
         }
 
-        forceRepaintShadow();
+        // Whatever happened we are no longer newly created, so clear the
+        // flag. Then set the bounds for the rectangle we have defined.
+
+        _newlyCreated = false;
         setBounds(rect.x, rect.y, rect.width, rect.height);
     }
-
-    /**
-     * USED BY PGML.tee.
-     * @return the class name and bounds together with compartment
-     * visibility.
-     */
-    public String classNameAndBounds() {
-        return super.classNameAndBounds()
-                + "stereotypeVisible=" + isStereotypeVisible()
-                + ";"
-                + "visibilityVisible=" + isVisibilityVisible();
-    }
-
 
     ////////////////////////////////////////////////////////////////
     // user interaction methods
 
-    /**
-     * Handles changes of the model.
-     * If the visibility is changed via the properties panel, then
-     * the display of it on the diagram has to follow the change.
-     *
-     * @see org.argouml.uml.diagram.ui.FigNodeModelElement#modelChanged(java.beans.PropertyChangeEvent)
-     */
-    protected void modelChanged(PropertyChangeEvent mee) {
-        super.modelChanged(mee);
-        boolean damage = false;
-        // visibility
-        if (mee == null
-                || Model.getFacade().isAPackage(mee.getSource())
-                || (mee.getSource() == getOwner()
-                && mee.getPropertyName().equals("visibility"))) {
-            renderingChanged();
-            damage = true;
-        }
-        if (mee != null && Model.getFacade().getStereotypes(getOwner())
-                .contains(mee.getSource())) {
-            updateStereotypeText();
-            damage = true;
-        }
-        if (damage) {
-            damage();
-        }
-    }
 
     ////////////////////////////////////////////////////////////////
     // accessor methods
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#getUseTrapRect()
-     */
     public boolean getUseTrapRect() {
         return true;
     }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#getMinimumSize()
-     */
     public Dimension getMinimumSize() {
         // Use "aSize" to build up the minimum size. Start with the size of the
         // name compartment and build up.
@@ -414,11 +331,16 @@ public class FigPackage extends FigNodeModelElement
         Dimension aSize = getNameFig().getMinimumSize();
 
         int w = aSize.width + indentX;
-        if (aSize.height < MIN_HEIGHT) {
-            aSize.height = MIN_HEIGHT;
+        int h = aSize.height + height - textH;
+
+        // Ensure that the minimum height of the name compartment is at least
+        // 21 pixels (hardcoded).
+
+        if (aSize.height < 21) {
+            aSize.height = 21;
         }
 
-        int minWidth = Math.max(0, w + 1 + getShadowSize());
+        int minWidth = Math.max(0, w + 1 + _shadowSize);
         if (aSize.width < minWidth) {
             aSize.width = minWidth;
         }
@@ -439,29 +361,28 @@ public class FigPackage extends FigNodeModelElement
     }
 
     /**
-     * Sets the bounds, but the size will be at least the one returned by
-     * {@link #getMinimumSize()}.<p>
+     * <p>Sets the bounds, but the size will be at least the one returned by
+     *   {@link #getMinimumSize()}.</p>
      *
-     * If the required height is bigger, then the additional height is
-     * equally distributed among all figs (i.e. compartments), such that the
-     * cumulated height of all visible figs equals the demanded height<p>.
+     * <p>If the required height is bigger, then the additional height is
+     *   equally distributed among all figs (i.e. compartments), such that the
+     *   cumulated height of all visible figs equals the demanded height<p>.
      *
-     * Some of this has "magic numbers" hardcoded in. In particular there is
-     * a knowledge that the minimum height of a name compartment is 21
-     * pixels. This height is needed to be able to display the "Clarifier"
-     * inside the name compartment.
+     * <p>Some of this has "magic numbers" hardcoded in. In particular there is
+     *   a knowledge that the minimum height of a name compartment is 21
+     *   pixels.</p>
      *
-     * @param xa  Desired X coordinate of upper left corner
+     * @param x  Desired X coordinate of upper left corner
      *
-     * @param ya  Desired Y coordinate of upper left corner
+     * @param y  Desired Y coordinate of upper left corner
      *
      * @param w  Desired width of the FigClass
      *
      * @param h  Desired height of the FigClass
      */
-    protected void setBoundsImpl(int xa, int ya, int w, int h) {
+    public void setBounds(int x, int y, int w, int h) {
         // Save our old boundaries (needed later), and get minimum size
-        // info. "aSize" will be used to maintain a running calculation of our
+        // info. "aSize will be used to maintain a running calculation of our
         // size at various points.
 
         Rectangle oldBounds = getBounds();
@@ -483,49 +404,42 @@ public class FigPackage extends FigNodeModelElement
         // pixels hardcoded!). Add in the shared extra, plus in this case the
         // correction.
 
-        int minHeight = getNameFig().getMinimumSize().height;
+        int height = getNameFig().getMinimumSize().height;
 
-        if (minHeight < MIN_HEIGHT) {
-            minHeight = MIN_HEIGHT;
+        if (height < 21) {
+            height = 21;
         }
 
         // Now sort out the stereotype display. If the stereotype is displayed,
         // move the upper boundary of the name compartment up and set new
-        // bounds for the name and the stereotype compartments and the
+        // bounds for the name and the stereotype compatments and the
         // stereoLineBlinder that blanks out the line between the two
 
-        int currentY = ya;
+        int currentY = y;
 
-        Dimension stereoMin = getStereotypeFig().getMinimumSize();
         if (getStereotypeFig().isVisible()) {
-            currentY += stereoMin.height;
+            currentY += STEREOHEIGHT;
         }
 
-        getStereotypeFig().setBounds(xa, ya,
-                newW - indentX, stereoMin.height + 1);
-        int nameWidth = newW - indentX;
-        if (nameWidth < stereoMin.width + 1) {
-            nameWidth = stereoMin.width + 2;
-        }
-        stereoLineBlinder.setBounds(
-                xa + 1,
-                ya + stereoMin.height,
-                nameWidth - 2,
-                2);
-        getNameFig().setBounds(xa, currentY, nameWidth + 1, minHeight);
+        getNameFig().setBounds(x, currentY, newW - indentX, height);
+        getStereotypeFig().setBounds(x, y, newW - indentX, STEREOHEIGHT + 1);
+        _stereoLineBlinder.setBounds(
+				     x + 1,
+				     y + STEREOHEIGHT,
+				     newW - 2 - indentX,
+				     2);
 
         // Advance currentY to where the start of the body box is,
         // remembering that it overlaps the next box by 1 pixel. Calculate the
         // size of the attribute box, and update the Y pointer past it if it is
         // displayed.
 
-        currentY += minHeight - 1; // -1 for 1 pixel overlap
-        body.setBounds(xa, currentY, newW, newH + ya - currentY);
+        currentY += height - 1; // -1 for 1 pixel overlap
+        _body.setBounds(x, currentY, newW, newH + y - currentY);
 
-        tabHeight = currentY - ya;
         // set bounds of big box
 
-        getBigPort().setBounds(xa, ya, newW, newH);
+        _bigPort.setBounds(x, y, newW, newH);
 
         // Now force calculation of the bounds of the figure, update the edges
         // and trigger anyone who's listening to see if the "bounds" property
@@ -545,122 +459,59 @@ public class FigPackage extends FigNodeModelElement
      */
     public Vector getPopUpActions(MouseEvent me) {
         Vector popUpActions = super.getPopUpActions(me);
+        Object mpackage = /*(MPackage)*/ getOwner();
 
-        // Show ...
-        ArgoJMenu showMenu = new ArgoJMenu("menu.popup.show");
-        /* Only show the menuitems if they make sense: */
-        Editor ce = Globals.curEditor();
-        Vector figs = ce.getSelectionManager().getFigs();
-        Iterator i = figs.iterator();
-        boolean sOn = false;
-        boolean sOff = false;
-        boolean vOn = false;
-        boolean vOff = false;
-        while (i.hasNext()) {
-            Fig f = (Fig) i.next();
-            if (f instanceof StereotypeContainer) {
-                boolean v = ((StereotypeContainer) f).isStereotypeVisible();
-                if (v) {
-                    sOn = true;
-                } else {
-                    sOff = true;
-                }
-                v = ((VisibilityContainer) f).isVisibilityVisible();
-                if (v) {
-                    vOn = true;
-                } else {
-                    vOff = true;
-                }
-            }
-        }
+        ArgoJMenu modifierMenu = new ArgoJMenu(BUNDLE, "menu.popup.modifiers");
 
-        if (sOn) {
-            showMenu.add(new HideStereotypeAction());
-        }
+        modifierMenu.addCheckItem(new ActionModifier("Abstract",
+						     "isAbstract",
+						     "isAbstract",
+						     "setAbstract",
+						     mpackage));
+        modifierMenu.addCheckItem(new ActionModifier("Leaf",
+						     "isLeaf", "isLeaf",
+						     "setLeaf", mpackage));
+        modifierMenu.addCheckItem(new ActionModifier("Root",
+						     "isRoot", "isRoot",
+						     "setRoot", mpackage));
 
-        if (sOff) {
-            showMenu.add(new ShowStereotypeAction());
-        }
+        popUpActions.insertElementAt(modifierMenu,
+            popUpActions.size() - POPUP_ADD_OFFSET);
 
-        if (vOn) {
-            showMenu.add(new HideVisibilityAction());
-        }
+        ArgoJMenu showMenu = new ArgoJMenu(BUNDLE, "menu.popup.show");
 
-        if (vOff) {
-            showMenu.add(new ShowVisibilityAction());
+        if (!_showStereotype) {
+            showMenu.add(new UMLAction("Show Stereotype", UMLAction.NO_ICON)
+	    {
+		public void actionPerformed(ActionEvent ae) {
+		    _showStereotype = true;
+		    renderingChanged();
+		    damage();
+		}
+	    });
+        } else {
+            showMenu.add(new UMLAction("Hide Stereotype", UMLAction.NO_ICON)
+	    {
+		public void actionPerformed(ActionEvent ae) {
+		    _showStereotype = false;
+		    renderingChanged();
+		    damage();
+		}
+	    });
         }
 
         popUpActions.insertElementAt(showMenu,
-            popUpActions.size() - getPopupAddOffset());
-
-        // Modifier ...
-        popUpActions.insertElementAt(buildModifierPopUp(ABSTRACT | LEAF | ROOT),
-                popUpActions.size() - getPopupAddOffset());
-
-        // Visibility ...
-        popUpActions.insertElementAt(buildVisibilityPopUp(),
-                popUpActions.size() - getPopupAddOffset());
+            popUpActions.size() - POPUP_ADD_OFFSET);
 
         return popUpActions;
     }
 
-    /**
-     * Change the visibility of the stereotypes of all Figs.
-     *
-     * @param value true if it needs to become visible
-     */
-    private void doStereotype(boolean value) {
-        Editor ce = Globals.curEditor();
-        Vector figs = ce.getSelectionManager().getFigs();
-        Iterator i = figs.iterator();
-        while (i.hasNext()) {
-            Fig f = (Fig) i.next();
-            if (f instanceof StereotypeContainer) {
-                ((StereotypeContainer) f).setStereotypeVisible(value);
-            }
-            if (f instanceof FigNodeModelElement) {
-                ((FigNodeModelElement) f).forceRepaintShadow();
-                ((FigNodeModelElement) f).renderingChanged();
-            }
-            f.damage();
-        }
-    }
-
-    /**
-     * Change the visibility of the Visibility of all Figs.
-     *
-     * @param value true if it needs to become visible
-     */
-    private void doVisibility(boolean value) {
-        Editor ce = Globals.curEditor();
-        Vector figs = ce.getSelectionManager().getFigs();
-        Iterator i = figs.iterator();
-        while (i.hasNext()) {
-            Fig f = (Fig) i.next();
-            if (f instanceof VisibilityContainer) {
-                ((VisibilityContainer) f).setVisibilityVisible(value);
-            }
-            f.damage();
-        }
-    }
 
     class FigPackageFigText extends FigText {
-        /**
-	 * The constructor.
-         *
-	 * @param xa
-	 * @param ya
-	 * @param w
-	 * @param h
-	 */
-	public FigPackageFigText(int xa, int ya, int w, int h) {
-	    super(xa, ya, w, h);
+	public FigPackageFigText(int x, int y, int w, int h) {
+	    super(x, y, w, h);
 	}
 
-	/**
-	 * @see java.awt.event.MouseListener#mouseClicked(
-         *         java.awt.event.MouseEvent)
-	 */
 	public void mouseClicked(MouseEvent me) {
 
 	    String lsDefaultName = "main";
@@ -691,7 +542,7 @@ public class FigPackage extends FigNodeModelElement
 			    if (lDiagram.getName() != null
 				&& lDiagram.getName().startsWith(
 				        lsDefaultName)) {
-			        me.consume();
+				me.consume();
 				super.mouseClicked(me);
 				TargetManager.getInstance().setTarget(lDiagram);
 				return;
@@ -699,335 +550,59 @@ public class FigPackage extends FigNodeModelElement
 			}
 		    } /*while*/
 
-		    /* If we get here then we didn't get the
-		     * default diagram.
-                     */
+		    /* if we get here then we didnt get the
+		     * default diagram*/
 		    if (lFirst != null) {
 			me.consume();
 			super.mouseClicked(me);
 
 			TargetManager.getInstance().setTarget(lFirst);
 			return;
-		    }
+		    } else {
+			/* try to create a new class diagram */
+			me.consume();
+			super.mouseClicked(me);
+			try {
+			    String nameSpace;
+			    if (lNS != null
+				    && ModelFacade.getName(lNS) != null)
+				nameSpace = ModelFacade.getName(lNS);
+			    else
+				nameSpace = "(anon)";
 
-		    /* Try to create a new class diagram.
-                     */
-		    me.consume();
-		    super.mouseClicked(me);
-		    try {
-		        createClassDiagram(lNS, lsDefaultName, lP);
-		    } catch (Exception ex) {
-		        LOG.error(ex);
-		    }
+			    String dialogText =
+				"Add new class diagram to "
+				+ nameSpace
+				+ "?";
+			    int option =
+				JOptionPane.showConfirmDialog(
+					null,
+					dialogText,
+					"Add new class diagram?",
+					JOptionPane.YES_NO_OPTION);
+			    if (option == JOptionPane.YES_OPTION) {
+				ArgoDiagram lNew =
+				    new UMLClassDiagram(lNS);
+				String diagramName =
+				    lsDefaultName + "_" + lNew.getName();
 
-		    return;
+				lP.addMember(lNew);
+
+				TargetManager.getInstance().setTarget(lNew);
+				/* change prefix */
+				lNew.setName(diagramName);
+			    }
+			} catch (Exception ex) {
+			    LOG.error(ex);
+			}
+
+			return;
+		    } /*if new*/
 
 		} /*if package */
 	    } /* if doubleclicks */
 	    super.mouseClicked(me);
 	}
-
-        /**
-         * The UID.
-         */
-        private static final long serialVersionUID = -1355316218065323634L;
-    }
-
-    private void createClassDiagram(
-            Object namespace,
-            String defaultName,
-            Project project) throws PropertyVetoException {
-
-        String namespaceDescr;
-        if (namespace != null
-                && Model.getFacade().getName(namespace) != null) {
-            namespaceDescr = Model.getFacade().getName(namespace);
-        } else {
-            namespaceDescr = Translator.localize("misc.name.anon");
-        }
-
-        String dialogText = "Add new class diagram to " + namespaceDescr + "?";
-        int option =
-            JOptionPane.showConfirmDialog(
-                null,
-                dialogText,
-                "Add new class diagram?",
-                JOptionPane.YES_NO_OPTION);
-
-        if (option == JOptionPane.YES_OPTION) {
-
-            ArgoDiagram classDiagram =
-                DiagramFactory.getInstance().
-                    createDiagram(UMLClassDiagram.class, namespace, null);
-
-            String diagramName = defaultName + "_" + classDiagram.getName();
-
-            project.addMember(classDiagram);
-
-            TargetManager.getInstance().setTarget(classDiagram);
-            /* change prefix */
-            classDiagram.setName(diagramName);
-            ExplorerEventAdaptor.getInstance().structureChanged();
-        }
-    }
-
-    /**
-     * @see org.argouml.uml.diagram.ui.StereotypeContainer#isStereotypeVisible()
-     */
-    public boolean isStereotypeVisible() {
-        return stereotypeVisible;
-    }
-
-    /**
-     * @see org.argouml.uml.diagram.ui.StereotypeContainer#setStereotypeVisible(boolean)
-     */
-    public void setStereotypeVisible(boolean isVisible) {
-        stereotypeVisible = isVisible;
-        renderingChanged();
-        damage();
-    }
-
-    /**
-     * @see org.argouml.uml.diagram.ui.VisibilityContainer#isVisibilityVisible()
-     */
-    public boolean isVisibilityVisible() {
-        return visibilityVisible;
-    }
-
-    /**
-     * @see org.argouml.uml.diagram.ui.VisibilityContainer#setVisibilityVisible(boolean)
-     */
-    public void setVisibilityVisible(boolean isVisible) {
-        visibilityVisible = isVisible;
-        if (notationProviderName != null) {
-            npArguments.put("visibilityVisible",
-                    Boolean.valueOf(isVisible));
-        }
-        renderingChanged();
-        damage();
-    }
-
-    /**
-     * @see org.argouml.uml.diagram.ui.FigNodeModelElement#textEditStarted(org.tigris.gef.presentation.FigText)
-     */
-    protected void textEditStarted(FigText ft) {
-
-        /* The following 2 lines should be retained for reference.
-         * They represent the better way of editing on the diagram, which
-         * 1. would work for different notations, and
-         * 2. would indicate to the user that he can edit more aspects
-         * of the modelelement than the name alone.
-         * But: it is different behaviour, which I (MVW)
-         * do not know if it is acceptable.
-         */
-
-//        String s = GeneratorDisplay.getInstance().generate(getOwner());
-//        ft.setText(s);
-
-        if (ft == getNameFig()) {
-            showHelp("parsing.help.fig-package");
-        }
-    }
-
-    /**
-     * @see org.tigris.gef.presentation.Fig#getClosestPoint(java.awt.Point)
-     */
-    public Point getClosestPoint(Point anotherPt) {
-        Rectangle r = getBounds();
-        int[] xs = {
-            r.x, r.x + r.width - indentX, r.x + r.width - indentX,
-            r.x + r.width,   r.x + r.width,  r.x,            r.x,
-        };
-        int[] ys = {
-            r.y, r.y,                     r.y + tabHeight,
-            r.y + tabHeight, r.y + r.height, r.y + r.height, r.y,
-        };
-        Point p =
-            Geometry.ptClosestTo(
-                xs,
-                ys,
-                7,
-                anotherPt);
-        return p;
-    }
-
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = 3617092272529451041L;
-
-    private class HideStereotypeAction extends UndoableAction {
-        /**
-         * The key for the action name.
-         */
-        private static final String ACTION_KEY =
-            "menu.popup.show.hide-stereotype";
-
-        /**
-         * Constructor.
-         */
-        HideStereotypeAction() {
-            super(Translator.localize(ACTION_KEY),
-                    ResourceLoaderWrapper.lookupIcon(ACTION_KEY));
-        }
-        /**
-         * @see java.awt.event.ActionListener#actionPerformed(
-         *         java.awt.event.ActionEvent)
-         */
-        public void actionPerformed(ActionEvent ae) {
-            super.actionPerformed(ae);
-            doStereotype(false);
-        }
-
-        /**
-         * The UID.
-         */
-        private static final long serialVersionUID =
-            1999499813643610674L;
-    }
-
-    private class ShowStereotypeAction extends UndoableAction {
-        /**
-         * The key for the action name.
-         */
-        private static final String ACTION_KEY =
-            "menu.popup.show.show-stereotype";
-
-        /**
-         * Constructor.
-         */
-        ShowStereotypeAction() {
-            super(Translator.localize(ACTION_KEY),
-                    ResourceLoaderWrapper.lookupIcon(ACTION_KEY));
-        }
-        /**
-         * @see java.awt.event.ActionListener#actionPerformed(
-         *         java.awt.event.ActionEvent)
-         */
-        public void actionPerformed(ActionEvent ae) {
-            super.actionPerformed(ae);
-            doStereotype(true);
-        }
-
-        /**
-         * The UID.
-         */
-        private static final long serialVersionUID =
-            -4327161642276705610L;
-    }
-
-    private class HideVisibilityAction extends UndoableAction {
-        /**
-         * The key for the action name.
-         */
-        private static final String ACTION_KEY =
-            "menu.popup.show.hide-visibility";
-
-        /**
-         * Constructor.
-         */
-        HideVisibilityAction() {
-            super(Translator.localize(ACTION_KEY),
-                    ResourceLoaderWrapper.lookupIcon(ACTION_KEY));
-        }
-        /**
-         * @see java.awt.event.ActionListener#actionPerformed(
-         *         java.awt.event.ActionEvent)
-         */
-        public void actionPerformed(ActionEvent ae) {
-            super.actionPerformed(ae);
-            doVisibility(false);
-        }
-
-        /**
-         * The UID.
-         */
-        private static final long serialVersionUID =
-            8574809709777267866L;
-    }
-
-    private class ShowVisibilityAction extends UndoableAction {
-        /**
-         * The key for the action name.
-         */
-        private static final String ACTION_KEY =
-            "menu.popup.show.show-visibility";
-
-        /**
-         * Constructor.
-         */
-        ShowVisibilityAction() {
-            super(Translator.localize(ACTION_KEY),
-                    ResourceLoaderWrapper.lookupIcon(ACTION_KEY));
-        }
-        /**
-         * @see java.awt.event.ActionListener#actionPerformed(
-         *         java.awt.event.ActionEvent)
-         */
-        public void actionPerformed(ActionEvent ae) {
-            super.actionPerformed(ae);
-            doVisibility(true);
-        }
-
-        /**
-         * The UID.
-         */
-        private static final long serialVersionUID =
-            7722093402948975834L;
-    }
+    };
 
 } /* end class FigPackage */
-
-/**
- * The bigport needs to overrule the getClosestPoint,
- * because it is the port of this FigNode.
- *
- * @author mvw@tigris.org
- */
-class PackagePortFigRect extends FigRect {
-    private int indentX;
-    private int tabHeight;
-
-    /**
-     * The constructor.
-     *
-     * @param x The x.
-     * @param y The y.
-     * @param w The width.
-     * @param h The height.
-     * @param ix The indent.
-     * @param th The tab height.
-     */
-    public PackagePortFigRect(int x, int y, int w, int h, int ix, int th) {
-        super(x, y, w, h, null, null);
-        this.indentX = ix;
-        tabHeight = th;
-    }
-
-    /**
-     * @see org.tigris.gef.presentation.Fig#getClosestPoint(java.awt.Point)
-     */
-    public Point getClosestPoint(Point anotherPt) {
-        Rectangle r = getBounds();
-        int[] xs = {
-            r.x, r.x + r.width - indentX, r.x + r.width - indentX,
-            r.x + r.width,   r.x + r.width,  r.x,            r.x,
-        };
-        int[] ys = {
-            r.y, r.y,                     r.y + tabHeight,
-            r.y + tabHeight, r.y + r.height, r.y + r.height, r.y,
-        };
-        Point p =
-            Geometry.ptClosestTo(
-                xs,
-                ys,
-                7,
-                anotherPt);
-        return p;
-    }
-
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = -7083102131363598065L;
-}

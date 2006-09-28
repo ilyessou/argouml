@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -25,99 +25,77 @@
 package org.argouml.uml.ui.foundation.core;
 
 import javax.swing.ImageIcon;
+import javax.swing.JList;
 import javax.swing.JScrollPane;
+import org.argouml.model.ModelFacade;
 
-import org.argouml.model.Model;
+import org.argouml.model.uml.foundation.core.CoreFactory;
+import org.argouml.model.uml.modelmanagement.ModelManagementFactory;
+import org.argouml.swingext.Orientation;
 import org.argouml.ui.targetmanager.TargetManager;
-import org.argouml.uml.ui.ScrollList;
-import org.tigris.swidgets.Orientation;
+import org.argouml.uml.ui.UMLLinkedList;
 
-/**
- * The abstract properties panel for a Namespace.
- *
- */
 public abstract class PropPanelNamespace extends PropPanelModelElement {
 
-    private JScrollPane ownedElementsScroll;
+    private JScrollPane _ownedElementsScroll;
+    
+    private static UMLNamespaceOwnedElementListModel ownedElementListModel = new UMLNamespaceOwnedElementListModel();
 
-    private static UMLNamespaceOwnedElementListModel ownedElementListModel =
-        new UMLNamespaceOwnedElementListModel();
+    ////////////////////////////////////////////////////////////////
+    // contructors
 
-    /**
-     * The constructor.
-     *
-     * @param panelName the name of the panel to be shown at the top
-     * @param icon the icon to be shown next to the name
-     * @param orientation the orientation of the panel
-     */
-    public PropPanelNamespace(String panelName, ImageIcon icon,
-            Orientation orientation) {
+    public PropPanelNamespace(String panelName, ImageIcon icon, Orientation orientation) {
         super(panelName, icon, orientation);
     }
-
-    /**
-     * The constructor.
-     *
-     * @param title the name of the panel to be shown at the top
-     * @param orientation the orientation of the panel
-     */
+    
     public PropPanelNamespace(String title, Orientation orientation) {
     	super(title, orientation);
     }
 
 
-    /**
-     * Create a class.
-     */
     public void addClass() {
         Object target = getTarget();
-        if (Model.getFacade().isANamespace(target)) {
+        if (org.argouml.model.ModelFacade.isANamespace(target)) {
             Object ns = /*(MNamespace)*/ target;
-            Object ownedElem = Model.getCoreFactory().buildClass();
-            Model.getCoreHelper().addOwnedElement(ns, ownedElem);
+            Object ownedElem = CoreFactory.getFactory().buildClass();
+            ModelFacade.addOwnedElement(ns, ownedElem);
             TargetManager.getInstance().setTarget(ownedElem);
         }
     }
 
-    /**
-     * Create a new interface.
-     */
     public void addInterface() {
         Object target = getTarget();
-        if (Model.getFacade().isANamespace(target)) {
+        if (org.argouml.model.ModelFacade.isANamespace(target)) {
             Object ns = /*(MNamespace)*/ target;
-            Object ownedElem = Model.getCoreFactory().createInterface();
-            Model.getCoreHelper().addOwnedElement(ns, ownedElem);
+            Object ownedElem = CoreFactory.getFactory().createInterface();
+            ModelFacade.addOwnedElement(ns, ownedElem);
             TargetManager.getInstance().setTarget(ownedElem);
         }
     }
 
-    /**
-     * Create a new package within the namespace.
-     */
     public void addPackage() {
         Object target = getTarget();
-        if (Model.getFacade().isANamespace(target)) {
+        if (org.argouml.model.ModelFacade.isANamespace(target)) {
             Object ns = /*(MNamespace)*/ target;
-            Object ownedElem = Model.getModelManagementFactory()
-                .createPackage();
-            Model.getCoreHelper().addOwnedElement(ns, ownedElem);
+            Object ownedElem = ModelManagementFactory.getFactory().createPackage();
+            ModelFacade.addOwnedElement(ns, ownedElem);
             TargetManager.getInstance().setTarget(ownedElem);
         }
     }
-
-
+    
+    
 
     /**
      * Returns the ownedElementsScroll.
      * @return JScrollPane
      */
     public JScrollPane getOwnedElementsScroll() {
-        if (ownedElementsScroll == null) {
-            ownedElementsScroll = new ScrollList(ownedElementListModel);
+        if (_ownedElementsScroll == null) {
+	    JList ownedElementsList  = new UMLLinkedList(ownedElementListModel);
+            _ownedElementsScroll = new JScrollPane(ownedElementsList); 
         }
-        return ownedElementsScroll;
-
+        return _ownedElementsScroll;
+        
     }
 
 } /* end class PropPanelClass */

@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -26,19 +26,15 @@ package org.argouml.uml.ui.behavior.common_behavior;
 
 
 /**
- * The properties panel for a TerminateAction.
- *
  * TODO: this property panel needs refactoring to remove dependency on
  *       old gui components.
  */
 public class PropPanelTerminateAction extends PropPanelAction {
 
-    /**
-     * The constructor.
-     *
-     */
+    ////////////////////////////////////////////////////////////////
+    // contructors
     public PropPanelTerminateAction() {
-        super("TerminateAction", lookupIcon("TerminateAction"));
+        super("TerminateAction", _callActionIcon);
     }
 
-}
+} 

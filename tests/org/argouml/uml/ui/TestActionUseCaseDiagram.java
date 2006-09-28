@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,18 +24,14 @@
 
 package org.argouml.uml.ui;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.argouml.model.Model;
-
 /**
- * Test for {@link ActionUseCaseDiagram}.
- * @author jaap.branderhorst@xs4all.nl
+ * Test for actionusecasediagram.
+ * @author jaap.branderhorst@xs4all.nl	
  * @since Jan 9, 2003
  */
 public class TestActionUseCaseDiagram
-    extends AbstractTestActionAddDiagram {
+    extends GUITestActionUseCaseDiagram
+{
 
     /**
      * Constructor
@@ -46,36 +42,23 @@ public class TestActionUseCaseDiagram
     }
 
     /**
-     * @see org.argouml.uml.ui.AbstractTestActionAddDiagram#getAction()
+     * Disable the test that doesn't work without head.
      */
-    protected ActionAddDiagram getAction() {
-        return new ActionUseCaseDiagram();
-    }
+    public void testCreateDiagram() { }
 
     /**
-     * @see org.argouml.uml.ui.AbstractTestActionAddDiagram#getNamespace()
+     * Disable the test that doesn't work without head.
      */
-    protected Object getNamespace() {
-        return Model.getModelManagementFactory().createPackage();
-    }
+    public void testDifferentNames() { }
 
     /**
-     * @see AbstractTestActionAddDiagram#getValidNamespaceClasses()
+     * Disable the test that doesn't work without head.
      */
-    protected List getValidNamespaceClasses() {
-        List rl = new ArrayList();
-        rl.add(Model.getMetaTypes().getPackage());
-        /*
-         * This needs to be a concrete metatype, so we can't use
-         * the general, but abstract, Classifier.  Replace with its
-         * concrete subtypes.
-         */
-        rl.add(Model.getMetaTypes().getUMLClass());
-        rl.add(Model.getMetaTypes().getInterface());
-        rl.add(Model.getMetaTypes().getDataType());
-        rl.add(Model.getMetaTypes().getNode());
-        rl.add(Model.getMetaTypes().getComponent());
-        return rl;
-    }
+    // public void testValidTestNamespace() { }
+
+    /**
+     * Disable the test that doesn't work without head.
+     */
+    // public void testValidNamespaces() { }
 
 }

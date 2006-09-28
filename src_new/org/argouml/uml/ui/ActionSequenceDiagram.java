@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,30 +24,76 @@
 
 package org.argouml.uml.ui;
 
-import org.argouml.uml.diagram.DiagramFactory;
+import java.awt.event.ActionEvent;
+
+import org.argouml.kernel.ProjectManager;
+import org.argouml.model.ModelFacade;
+import org.argouml.model.uml.UmlFactory;
+import org.argouml.ui.explorer.ExplorerEventAdaptor;
+import org.argouml.ui.targetmanager.TargetManager;
 import org.argouml.uml.diagram.sequence.ui.UMLSequenceDiagram;
-import org.argouml.uml.diagram.ui.UMLDiagram;
 
-/**
- * Action to add a new sequence diagram.
+/** 
+ * Action to add a new sequence diagram.<p>
+ *
+ * Fully rebuild starting 1-8-2003<p>
+ *
+ * This action is subclassed from UMLChangeAction and not
+ * ActionAddDiagram since the namespace stuff in ActionAddDiagram
+ * should be refactored out.<p>
+ *
+ * @author jaap.branderhorst@xs4all.nl
  */
-public final class ActionSequenceDiagram extends ActionNewDiagram {
+public class ActionSequenceDiagram extends UMLChangeAction {
 
-    /**
-     * Constructor.
-     */
-    public ActionSequenceDiagram() {
-        super("action.sequence-diagram");
+    ////////////////////////////////////////////////////////////////
+    // static variables
+
+    public static ActionSequenceDiagram SINGLETON = new ActionSequenceDiagram();
+
+    ////////////////////////////////////////////////////////////////
+    // constructors
+
+    private ActionSequenceDiagram() {
+        super("action.sequence-diagram", true, true);
     }
 
     /**
-     * @see org.argouml.uml.ui.ActionNewDiagram#createDiagram()
+     * @see java.awt.event.ActionListener#actionPerformed(ActionEvent)
      */
-    public UMLDiagram createDiagram() {
-        return (UMLDiagram) DiagramFactory.getInstance().createDiagram(
-                UMLSequenceDiagram.class,
-                createCollaboration(),
-                null);
+    public void actionPerformed(ActionEvent e) {
+        super.actionPerformed(e);
+        Object target = TargetManager.getInstance().getModelTarget();
+        Object owner = null;
+        if (ModelFacade.isAClassifier(target)) {
+            owner = ModelFacade.getNamespace(target);
+        } else if (ModelFacade.isAOperation(target)) {
+            owner = ModelFacade.getNamespace(target);
+        }
+        Object collaboration =
+            UmlFactory.getFactory().getCollaborations().buildCollaboration(
+                owner,
+                target);
+        UMLSequenceDiagram diagram = new UMLSequenceDiagram(collaboration);
+        ProjectManager.getManager().getCurrentProject().addMember(diagram);
+        TargetManager.getInstance().setTarget(diagram);
+	ExplorerEventAdaptor.getInstance().modelElementChanged(owner);
     }
+
+    /**
+     * @see org.argouml.uml.ui.UMLAction#shouldBeEnabled()
+     */
+    public boolean shouldBeEnabled() {
+        // TODO: Once the sequence diagrams are working again, they should
+        //       be re-enabled.
+	//        Object target = TargetManager.getInstance().getModelTarget();
+	//        if (ModelFacade.isAClassifier(target)
+	//            || ModelFacade.isAOperation(target)) {
+	//            return true;
+	//        }
+
+        return false;
+    }
+
 
 } /* end class ActionSequenceDiagram */

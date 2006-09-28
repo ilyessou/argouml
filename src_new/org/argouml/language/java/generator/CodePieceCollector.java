@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,13 +22,19 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+/*
+  taken from:
+  JavaRE - Code generation and reverse engineering for UML and Java
+  Author: Marcus Andersson andersson@users.sourceforge.net
+*/
+
+
 package org.argouml.language.java.generator;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
@@ -40,15 +46,9 @@ import org.argouml.application.api.Argo;
 import org.argouml.application.api.Configuration;
 
 /**
- * This class collects pieces of code when a source file is parsed,
- * and then updates the file with new code from the model.
- *
- * taken from:
- *
- * JavaRE - Code generation and reverse engineering for UML and Java.
- *
- * @author Marcus Andersson andersson@users.sourceforge.net
- */
+   This class collects pieces of code when a source file is parsed,
+   and then updates the file with new code from the model.
+*/
 public class CodePieceCollector {
     /** Code pieces the parser found. */
     private Vector codePieces;
@@ -66,7 +66,8 @@ public class CodePieceCollector {
 
        @param codePiece A named code piece found in the code.
     */
-    public void add(NamedCodePiece codePiece) {
+    public void add(NamedCodePiece codePiece)
+    {
 	int index = 0;
 
 	// Insert in sorted order
@@ -88,15 +89,13 @@ public class CodePieceCollector {
      * @param source The source file.
      * @param destination The destination file.
      * @param mNamespace The package the source belongs to.
-     * @throws IOException if we cannot write or read from the files.
      */
     public void filter(File source,
                        File destination,
-                       Object/*MNamespace*/ mNamespace) throws IOException {
+                       Object/*MNamespace*/ mNamespace) throws Exception {
 	String encoding = null;
-	if (Configuration.getString(Argo.KEY_INPUT_SOURCE_ENCODING) == null
-	    || Configuration.getString(Argo.KEY_INPUT_SOURCE_ENCODING)
-	    	.trim().equals("")) {
+	if (Configuration.getString(Argo.KEY_INPUT_SOURCE_ENCODING) == null 
+	    || Configuration.getString(Argo.KEY_INPUT_SOURCE_ENCODING).trim().equals("")) {
 	    encoding = System.getProperty("file.encoding");
 	} else {
 	    encoding = Configuration.getString(Argo.KEY_INPUT_SOURCE_ENCODING);
@@ -113,7 +112,7 @@ public class CodePieceCollector {
 	Stack parseStateStack = new Stack();
 	parseStateStack.push(new ParseState(mNamespace));
 
-	for (Iterator i = codePieces.iterator(); i.hasNext();) {
+	for (Iterator i = codePieces.iterator(); i.hasNext(); ) {
 	    NamedCodePiece cp = (NamedCodePiece) i.next();
 	    // copy until code piece
 	    while (line < cp.getStartLine()) {

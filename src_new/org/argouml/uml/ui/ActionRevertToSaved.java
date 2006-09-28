@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -25,16 +25,13 @@
 package org.argouml.uml.ui;
 
 import java.awt.event.ActionEvent;
-import java.io.File;
 import java.text.MessageFormat;
 
-import javax.swing.AbstractAction;
 import javax.swing.JOptionPane;
 
 import org.argouml.i18n.Translator;
 import org.argouml.kernel.Project;
 import org.argouml.kernel.ProjectManager;
-import org.argouml.ui.ArgoFrame;
 import org.argouml.ui.ProjectBrowser;
 
 /**
@@ -42,53 +39,70 @@ import org.argouml.ui.ProjectBrowser;
  *
  * @see ActionOpenProject
  */
-public class ActionRevertToSaved extends AbstractAction {
+public class ActionRevertToSaved extends UMLAction {
+
+    ////////////////////////////////////////////////////////////////
+    // static variables
+
+    /**
+     * @deprecated by Linus Tolke as of 0.15.4. Create your own action every
+     * time. This will be removed.
+     */
+    public static ActionRevertToSaved SINGLETON = new ActionRevertToSaved();
 
     ////////////////////////////////////////////////////////////////
     // constructors
 
-    /**
-     * Constructor.
-     */
     public ActionRevertToSaved() {
-        super(Translator.localize("action.revert-to-saved"));
+        super("action.revert-to-saved");
     }
 
     ////////////////////////////////////////////////////////////////
     // main methods
 
-    /**
+    /** 
      * Performs the action.
      *
      * @param e an event
      */
     public void actionPerformed(ActionEvent e) {
+        ProjectBrowser pb = ProjectBrowser.getInstance();
         Project p = ProjectManager.getManager().getCurrentProject();
-
-        if (p == null 
-                || !ProjectBrowser.getInstance().getSaveAction().isEnabled()) {
+        
+        if (p == null || !p.needsSave()) {
             return;
         }
-
+        
         String message =
             MessageFormat.format(
                     Translator.localize(
+                       "Actions",
                        "optionpane.revert-to-saved-confirm"),
 		    new Object[] {
-			p.getName(),
+			p.getName()
 		    });
 
         int response =
             JOptionPane.showConfirmDialog(
-                  ArgoFrame.getInstance(),
+                  pb,
                   message,
-                  Translator.localize(
+				  Translator.localize(
+                      "Actions", 
                       "optionpane.revert-to-saved-confirm-title"),
                   JOptionPane.YES_NO_OPTION);
 
-        if (response == JOptionPane.YES_OPTION) {
-            ProjectBrowser.getInstance().loadProjectWithProgressMonitor(
-                    new File(p.getURI()), true);
+        if (response == JOptionPane.YES_OPTION) {        
+            new ActionOpenProject().loadProject(p.getURL());
         }
+    }
+    
+    /**
+     * Overridden to return true only if project has pending changes.
+     */
+    public boolean shouldBeEnabled() {
+        super.shouldBeEnabled();
+        ProjectBrowser pb = ProjectBrowser.getInstance();
+        Project p = ProjectManager.getManager().getCurrentProject();
+        return (p != null && p.needsSave() && p.getURL() != null);
     }
 }

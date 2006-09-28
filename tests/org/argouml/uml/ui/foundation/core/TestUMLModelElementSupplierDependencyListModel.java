@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,10 +22,15 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $header$
 package org.argouml.uml.ui.foundation.core;
 
-import org.argouml.model.Model;
+import org.argouml.model.uml.foundation.core.CoreFactory;
 import org.argouml.uml.ui.AbstractUMLModelElementListModel2Test;
+
+import ru.novosoft.uml.MBase;
+import ru.novosoft.uml.foundation.core.MDependency;
+import ru.novosoft.uml.foundation.core.MModelElement;
 
 /**
  * @since Oct 30, 2002
@@ -35,28 +40,7 @@ public class TestUMLModelElementSupplierDependencyListModel
     extends AbstractUMLModelElementListModel2Test {
 
     /**
-     * The number of elements used in the tests.
-     */
-    private static final int NO_OF_ELEMENTS = 10;
-
-    /**
-     * The object that the dependency is going from. A class.
-     */
-    private Object from;
-
-    /**
-     * The object that the dependency is going to. A class.
-     */
-    private Object to;
-
-    /**
-     * The namespace of the elements.
-     */
-    private Object namespace;
-
-    /**
      * Constructor for TestUMLModelElementSupplierDependencyListModel.
-     *
      * @param arg0 is the name of the test case.
      */
     public TestUMLModelElementSupplierDependencyListModel(String arg0) {
@@ -64,61 +48,37 @@ public class TestUMLModelElementSupplierDependencyListModel
     }
 
     /**
-     * @see junit.framework.TestCase#setUp()
-     */
-    public void setUp() throws Exception {
-        super.setUp();
-
-        namespace = Model.getModelManagementFactory().createPackage();
-        from = Model.getCoreFactory().buildClass("from", namespace);
-        to = Model.getCoreFactory().buildClass("to", namespace);
-    }
-
-    /**
-     * @see junit.framework.TestCase#tearDown()
-     */
-    public void tearDown() throws Exception {
-        Model.getUmlFactory().delete(from);
-        Model.getUmlFactory().delete(to);
-        Model.getUmlFactory().delete(namespace);
-
-        super.tearDown();
-    }
-
-    /**
      * @see org.argouml.uml.ui.AbstractUMLModelElementListModel2Test#buildElement()
      */
     protected void buildElement() {
-        setElem(Model.getCoreFactory().createClass());
+        elem = CoreFactory.getFactory().createClass();
     }
 
     /**
-     * @see org.argouml.uml.ui.AbstractUMLModelElementListModel2Test#buildModel()
+     * @see org.argouml.uml.ui.AbstractUMLModelElementListModel2Test#buildModel(org.argouml.uml.ui.UMLUserInterfaceContainer)
      */
     protected void buildModel() {
-        setModel(new UMLModelElementSupplierDependencyListModel());
+        model = new UMLModelElementSupplierDependencyListModel();
     }
 
     /**
      * @see org.argouml.uml.ui.AbstractUMLModelElementListModel2Test#fillModel()
      */
-    protected Object[] fillModel() {
-        Object[] ext = new Object[NO_OF_ELEMENTS];
-        for (int i = 0; i < NO_OF_ELEMENTS; i++) {
-            ext[i] = Model.getCoreFactory().buildDependency(from, to);
-            Model.getCoreHelper().addSupplierDependency(getElem(), ext[i]);
+    protected MBase[] fillModel() {
+        MDependency[] ext = new MDependency[10];
+        for (int i = 0; i < 10; i++) {
+            ext[i] = CoreFactory.getFactory().createDependency();
+            ((MModelElement) elem).addSupplierDependency(ext[i]);
         }
         return ext;
     }
 
     /**
-     * @see org.argouml.uml.ui.AbstractUMLModelElementListModel2Test#removeHalfModel(Object[])
+     * @see org.argouml.uml.ui.AbstractUMLModelElementListModel2Test#removeHalfModel(ru.novosoft.uml.MBase)
      */
-    protected void removeHalfModel(Object[] elements) {
-        for (int i = 0; i < NO_OF_ELEMENTS / 2; i++) {
-            Model.getCoreHelper().removeSupplierDependency(
-                    getElem(),
-                    elements[i]);
+    protected void removeHalfModel(MBase[] elements) {
+        for (int i = 0; i < 5; i++) {
+            ((MModelElement) elem).removeSupplierDependency((MDependency) elements[i]);
         }
     }
 

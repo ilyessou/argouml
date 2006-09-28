@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,19 +24,13 @@
 
 package org.argouml.i18n;
 
-import java.util.ArrayList;
-import java.text.MessageFormat;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
+import java.io.InputStream;
+import java.io.IOException;
+import java.text.MessageFormat;				
 import java.util.Locale;
-import java.util.Map;
-import java.util.MissingResourceException;
-import java.util.ResourceBundle;
+import java.util.Properties;
 
 import org.apache.log4j.Logger;
-import org.argouml.application.api.Argo;
-import org.argouml.application.api.Configuration;
 import org.tigris.gef.util.Localizer;
 
 /**
@@ -45,60 +39,31 @@ import org.tigris.gef.util.Localizer;
  *
  * @author Jean-Hugues de Raigniac
  */
-public final class Translator {
-    /**
-     * Logger.
-     */
+public class Translator {
+    /** logger */
     private static final Logger LOG = Logger.getLogger(Translator.class);
 
-    /**
-     * Where we search for bundles.
-     */
-    private static final String BUNDLES_PATH = "org.argouml.i18n";
+    /** Binding between new key names and old ones needed by gef. */
+    private static Properties images = null;
 
-    /**
-     * Store bundles for current Locale.
-     */
-    private static Map bundles;
-
-    /**
-     * Store of ClassLoaders where we could find the bundles.
-     */
-    private static List classLoaders = new ArrayList();
-
-    /**
-     * Used to make this class self-initialising when needed.
-     */
-    private static boolean initialized;
-
-    /**
-     * Used to keep track of the system default locale
-     */
-    private static Locale systemDefaultLocale;
-    
-    /**
-     * This class should only be used in a static constant so make
-     * the constructor private.
-     */
-    private Translator() {
-    }
+    /** Property file containing the bindings. */
+    private static String propertiesFile = "images.properties";
 
     /**
      * Default Locale is set and resources Bundles are loaded.
      */
     public static void init () {
-        initialized = true;
-        loadDefaultLocale();
-        
-        String s = Configuration.getString(Argo.KEY_LOCALE);
-        if ((!"".equals(s)) && (s != null)) {
-            setLocale(s);
-        } else {
-            setLocale(new Locale(
-                    System.getProperty("user.language", "en"),
-                    System.getProperty("user.country", "")));
-        }
 
+        Locale.setDefault(new Locale(System.getProperty("user.language", "en"),
+				     System.getProperty("user.country", "")));
+
+        /** bundle default Locale, different from user default Locale */
+        org.workingfrog.i18n.util.Translator.init();
+        org.workingfrog.i18n.util.Translator.setDefaultLocale(
+		new Locale("en", ""));
+        org.workingfrog.i18n.util.Translator.setBundlesPath("org.argouml.i18n");
+        org.workingfrog.i18n.util.Translator.setLogLevel("none");
+  
         Localizer.addResource("GefBase",
 			      "org.tigris.gef.base.BaseResourceBundle");
         Localizer.addResource(
@@ -109,46 +74,13 @@ public final class Translator {
     }
 
     /**
-     * For Locale selection.<p>
-     *
-     * TODO: Detect the available locales from the available files.
+     * For Locale selection.
      *
      * @return Locales used in ArgoUML
      */
     public static Locale[] getLocales() {
-        return new Locale[] {
-            Locale.ENGLISH,
-            Locale.FRENCH,
-            new Locale("es", ""),
-            Locale.GERMAN,
-            Locale.ITALIAN,
-            new Locale("nb", ""),
-            new Locale("pt", ""),
-            new Locale("ru", ""),
-            Locale.CHINESE,
-            Locale.UK,
-        };
-    }
-
-    /**
-     * Change the current Locale. The string with the name follows
-     * this BNF format: <p>
-     *     language [ "_" country ]
-     *
-     * @param name the name of the new locale
-     */
-    public static void setLocale(String name) {
-        if (!initialized) {
-            init();
-        }
-        String language = name;
-        String country = "";
-        int i = name.indexOf("_");
-        if ((i > 0) && (name.length() > i + 1)) {
-            language = name.substring(0, i);
-            country = name.substring(i + 1);
-        }
-        setLocale(new Locale(language, country));
+        return org.workingfrog.i18n.util.Translator.getLocales(
+		new Translator());
     }
 
     /**
@@ -157,157 +89,94 @@ public final class Translator {
      * @param locale the new Locale
      */
     public static void setLocale(Locale locale) {
-        Locale.setDefault(locale);
-        bundles = new HashMap();
+        org.workingfrog.i18n.util.Translator.setLocale(locale);
     }
 
-    /**
-     * Returns the system default locale (indipendent from the selected
-     * configuration)
-     * 
-     * @return the system default locale
-     */
-    public static Locale getSystemDefaultLocale() {
-        return systemDefaultLocale;
-    }
-    
-    private static void loadDefaultLocale() {
-        // let's try to load the locale with language and country parameters
-        systemDefaultLocale = new Locale(Locale.getDefault().getLanguage(), 
-                Locale.getDefault().getCountry());
-        if (!isLocaleAvailable(systemDefaultLocale)) {
-            // the country parameter wasn't found. retrying to load the locale 
-            // without it
-            systemDefaultLocale = new Locale(Locale.getDefault().getLanguage());
-            if (!isLocaleAvailable(systemDefaultLocale)) {
-                // the default locale is not present. so the default is english
-                systemDefaultLocale = Locale.ENGLISH;
-            }
-        }
-    }
-    
-    private static boolean isLocaleAvailable(Locale locale) {
-        Locale[] availableLocales = getLocales();
-        for (int i = 0; i < availableLocales.length; i++) {
-            if (systemDefaultLocale.equals(availableLocales[i])) {
-                return true;
-            }
-        }
-        return false;
-    }
-    
-    /**
-     * Add another class loader that the resource bundle could be located
-     * through.
+    /**   
+     * Loads image bindings from a File.
      *
-     * @param cl The classloader to add.
+     * @param file the properties file
+     * @return the properties in file
      */
-    public static void addClassLoader(ClassLoader cl) {
-	classLoaders.add(cl);
-    }
+    private static Properties loadImageBindings(String file) {
 
+        InputStream inputStream = null;
+        Properties properties = new Properties();
 
-    /**
-     * Loads the bundle (if not already loaded).
-     *
-     * @param name The name of the bundle to load.
-     */
-    private static void loadBundle(String name) {
-        if (bundles.containsKey(name)) {
-            return;
-        }
-        String resource = BUNDLES_PATH + "." + name;
-        ResourceBundle bundle = null;
         try {
-            LOG.debug("Loading " + resource);
-            bundle = ResourceBundle.getBundle(resource, Locale.getDefault());
-        } catch (MissingResourceException e1) {
-            LOG.debug("Resource " + resource
-		      + " not found in the default class loader.");
-
-	    Iterator iter = classLoaders.iterator();
-	    while (iter.hasNext()) {
-		ClassLoader cl = (ClassLoader) iter.next();
-		try {
-		    LOG.debug("Loading " + resource + " from " + cl);
-		    bundle =
-			ResourceBundle.getBundle(resource,
-						 Locale.getDefault(),
-						 cl);
-		    break;
-		} catch (MissingResourceException e2) {
-		    LOG.debug("Resource " + resource + " not found in " + cl);
-		}
-	    }
+            inputStream = Translator.class.getResourceAsStream(propertiesFile);
+            properties.load(inputStream);
+            inputStream.close();
+        } catch (IOException ex) {
+            LOG.fatal("Unable to load properties from file: " + file, ex);
+            System.exit(1);
         }
 
-        bundles.put(name, bundle);
+        return properties;
     }
 
-    /**
-     * Calculate the name from the key.
+    /**   
+     * Provide a "gef compliant" image file name.
      *
-     * @param key The key to look up.
-     * @return The name of the file or <code>null</code> if not possible.
+     * @param name the new i18n key
+     * @return the old i18n key
      */
-    private static String getName(String key) {
-        if (key == null) {
-            return null;
+    public static String getImageBinding(String name) {
+
+        String binding = null;
+
+        if (images == null) {
+            images = loadImageBindings(propertiesFile);
         }
 
-        int indexOfDot = key.indexOf(".");
-        if (indexOfDot > 0) {
-            return key.substring(0, indexOfDot);
+        binding = images.getProperty(name);
+
+        if (binding == null) {
+            return name;
+        } else {
+            return binding;
         }
-        return null;
     }
 
-
-    /**
-     * Synonym for messageFormat to encourage developers to convert
-     * existing uses of localize() + string concatentation to use
-     * this method instead.
-     * @see org.argouml.i18n.Translator#messageFormat(String, Object[])
-     */
-    public static String localize(String key, Object[] args) {
-        return messageFormat(key, args);
-    }
-
-    /**
-     * The main function of this class that localizes strings.
+    /** 
+     * Helper for localization to eliminate the need to import
+     * the gef util library. 
      *
-     * @param key The key to localize.
-     * @return The localized String.
+     * @param bundle a binding to a bundle of i18n resources
+     * @param key the key to loacalize
+     * @return the translation
+     */
+    public static String localize(String bundle, String key) {
+        String gefValue = org.tigris.gef.util.Localizer.localize(bundle, key);
+        return org.workingfrog.i18n.util.Translator.localize(key, gefValue);
+    }
+
+    /**
+     * Helper for those that don't want to give the bundle.
+     *
+     * @param key to localize
+     * @return the translation
      */
     public static String localize(String key) {
-        if (!initialized) {
-            init();
-        }
+	return localize("DUMMYBUNDLE", key);
+    }
 
-        if (key == null) {
-            throw new IllegalArgumentException("null");
-        }
-
-        String name = getName(key);
-        if (name == null) {
-            return Localizer.localize("UMLMenu", key);
-        }
-
-        loadBundle(name);
-
-        ResourceBundle bundle = (ResourceBundle) bundles.get(name);
-        if (bundle == null) {
-            LOG.debug("Bundle (" + name + ") for resource "
-                    + key + " not found.");
-            return key;
-        }
-
-        try {
-            return bundle.getString(key);
-        } catch (MissingResourceException e) {
-            LOG.debug("Resource " + key + " not found.");
-            return key;
-        }
+    /**
+     * Generates an localized String with arguments.<p>
+     *
+     * The localized string is a pattern to be processed by
+     * {@link MessageFormat}.
+     *
+     * @param bundle a binding to a bundle of i18n resources
+     * @param key the key to localize
+     * @param args the args as Objects, inserted in the localized String
+     * @return the localized String with inserted arguments
+     */
+    public static String messageFormat(String bundle, 
+				       String key, Object[] args)
+    {
+    	MessageFormat msgFmt = new MessageFormat(localize(bundle, key));
+	return msgFmt.format(args);
     }
 
     /**
@@ -320,7 +189,8 @@ public final class Translator {
      * @param args the args as Objects, inserted in the localized String
      * @return the localized String with inserted arguments
      */
-    public static String messageFormat(String key, Object[] args) {
+    public static String messageFormat(String key, Object[] args)
+    {
         return new MessageFormat(localize(key)).format(args);
     }
 }

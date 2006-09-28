@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -26,13 +26,13 @@ package org.argouml.uml.cognitive.critics;
 
 import java.util.Iterator;
 import java.util.Vector;
-
 import javax.swing.JPanel;
-
 import org.apache.log4j.Logger;
+
 import org.argouml.cognitive.ui.WizStepChoice;
-import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.kernel.Wizard;
+import org.argouml.model.ModelFacade;
+import org.tigris.gef.util.VectorSet;
 
 /**
  * A non-modal wizard to assist the user in changing aggregation of an
@@ -44,36 +44,42 @@ import org.argouml.model.Model;
  * <em>Note</em>. This only applies to binary associations. A separate
  * wizard is needed for 3-way (or more) associations.<p>
  *
- * @see "ArgoUML User Manual: Two Aggregate ends (roles) in binary Association"
+ * @see <a href="http://argouml.tigris.org/documentation/printablehtml/manual/argouml.html/#s2.ref.critics_multiple_agg">
+ * ArgoUML User Manual: Two Aggregate ends (roles) in binary Association
+ * </a>
  * @author jrobbins@ics.uci.edu
  */
-public class WizAssocComposite extends UMLWizard {
+public class WizAssocComposite extends Wizard {
     /**
-     * Logger.
+     * @deprecated by Linus Tolke as of 0.15.4. Use your own logger in your
+     * class. This will be removed.
      */
-    private static final Logger LOG =
+    protected static Logger cat =
 	Logger.getLogger(WizAssocComposite.class);
+    
 
     /**
      * The initial instructions on the Step 1 screen. May be set to a
-     * different string through {@link #setInstructions(String)}.<p>
+     * different string through the {@link #setInstructions} method.<p>
      */
-    private String instructions = 
-        Translator.localize("critics.WizAssocComposite-ins");
+
+    private String _instructions =
+        "Please select one of the following aggregation options:";
 
 
     /**
      * Contains the {@link WizStepChoice} that is used to get the user's
      * desired options. Not created until we get to that step.<p>
      */
-    private WizStepChoice step1Choice = null;
+    private WizStepChoice _step1Choice = null;
 
 
     /**
-     * The Association {@link WizStepChoice} that triggered the
+     * The {@link ru.novosoft.uml.foundation.core.MAssociation
+     * MAssociation} {@link WizStepChoice} that triggered the
      * critic. Null until set when it is first needed.<p>
      */
-    private Object triggerAssociation = null;
+    private Object _triggerAsc = null;
 
 
     /**
@@ -83,29 +89,47 @@ public class WizAssocComposite extends UMLWizard {
 
 
     /**
-     * Tries to identify the Association that triggered the critic.<p>
+     * Returns the number of steps in this wizard.<p>
+     *
+     * @return  The number of steps (excluding the initial explanation) in this
+     *          wizard (1).
+     *
+     * @see Wizard
+     */
+    public int getNumSteps() { return 1; }
+
+
+    /**
+     * Tries to identify the {@link
+     * ru.novosoft.uml.foundation.core.MAssociation MAssociation} that
+     * triggered the critic.<p>
      *
      * The first time it is called, it will initialise the trigger
      * from the ToDoItem. If there, it is assumed to be the first
      * trigger of the ToDoItem and to be an association. If found, the
-     * value is stored in the private field {@link #triggerAssociation}.<p>
+     * value is stored in the private field {@link #_triggerAsc}.<p>
      *
      * On all subsequent calls, if a non-null value is found in {@link
-     * #triggerAssociation} that is returned.<p>
+     * #_triggerAsc} that is returned.<p>
      *
-     * @return  the Association that triggered the critic, or <code>null</code>
+     * @return  the {@link ru.novosoft.uml.foundation.core.MAssociation
+     *          MAssociation} that triggered the critic, or <code>null</code>
      *          if there was none.
      */
-    private Object getTriggerAssociation() {
+    private Object _getTriggerAsc() {
 
         // If we don't have it, find the trigger. If this fails it will keep
         // its default value of null
 
-        if ((triggerAssociation == null) && (getToDoItem() != null)) {
-            triggerAssociation = getModelElement();
+        if ((_triggerAsc == null) && (_item != null)) {
+            VectorSet offs = _item.getOffenders();
+
+            if (offs.size() >= 1) {
+                _triggerAsc = /*(MAssociation)*/ offs.elementAt(0);
+            }
         }
 
-        return triggerAssociation;
+        return _triggerAsc;
     }
 
 
@@ -125,14 +149,14 @@ public class WizAssocComposite extends UMLWizard {
      * @return  A {@link Vector} of the options or <code>null</code> if the
      *          association that triggered the critic is no longer there.
      */
-    private Vector buildOptions() {
+    private Vector _buildOptions() {
 
         // The association that triggered the critic. Its just possible the
         // association is no longer there, in which case we return null
 
-        Object asc = getTriggerAssociation();
+        Object asc = _getTriggerAsc();
 
-        if (asc == null) {
+        if ( asc == null ) {
             return null;
         }
 
@@ -143,51 +167,42 @@ public class WizAssocComposite extends UMLWizard {
         // Get the ends from the association (we know there are two), and the
         // types associated with them.
 
-        Iterator iter = Model.getFacade().getConnections(asc).iterator();
+        Iterator iter = ModelFacade.getConnections(asc).iterator();
 
-        Object ae0 = iter.next();
-        Object ae1 = iter.next();
+        Object ae0 = /*(MAssociationEnd)*/ iter.next();
+        Object ae1 = /*(MAssociationEnd)*/ iter.next();
 
-        Object cls0 = Model.getFacade().getType(ae0);
-        Object cls1 = Model.getFacade().getType(ae1);
+        Object cls0 = ModelFacade.getType(ae0);
+        Object cls1 = ModelFacade.getType(ae1);
 
         // Get the names of the two ends. If there are none (i.e they are
         // currently anonymous), use the ArgoUML convention of "(anon)" for the
         // names
 
-        String start = Translator.localize("misc.name.anon");
-        String end   = Translator.localize("misc.name.anon");
+        String start = "(anon)";
+        String end   = "(anon)";
 
         if ((cls0 != null)
-                && (Model.getFacade().getName(cls0) != null)
-                && (!(Model.getFacade().getName(cls0).equals("")))) {
-            start = Model.getFacade().getName(cls0);
+                && (ModelFacade.getName(cls0) != null)
+                && (!(ModelFacade.getName(cls0).equals("")))) {
+            start = ModelFacade.getName(cls0);
         }
 
         if ((cls1 != null)
-                && (Model.getFacade().getName(cls1) != null)
-                && (!(Model.getFacade().getName(cls1).equals("")))) {
-            end = Model.getFacade().getName(cls1);
+                && (ModelFacade.getName(cls1) != null)
+                && (!(ModelFacade.getName(cls1).equals("")))) {
+            end = ModelFacade.getName(cls1);
         }
 
         // Now create the five options
 
-        res.addElement (start 
-                + Translator.localize("critics.WizAssocComposite-option1") 
-                + end);
-        res.addElement (start 
-                + Translator.localize("critics.WizAssocComposite-option2") 
-                + end);
+        res.addElement (start + " is a composite aggregation of " + end);
+        res.addElement (start + " is a shared aggregation of " + end);
 
-        res.addElement (end 
-                + Translator.localize("critics.WizAssocComposite-option1") 
-                + start);
-        res.addElement (end 
-                + Translator.localize("critics.WizAssocComposite-option2") 
-                + start);
+        res.addElement (end + " is a composite aggregation of " + start);
+        res.addElement (end + " is a shared aggregation of " + start);
 
-        res.addElement(Translator.localize(
-                "critics.WizAssocComposite-option3"));
+        res.addElement ("No aggregation");
 
         return res;
     }
@@ -195,12 +210,8 @@ public class WizAssocComposite extends UMLWizard {
     /**
      * Set the initial instruction string for the choice. May be
      * called by the creator of the wizard to override the default.<p>
-     *
-     * @param s The new instructions.
      */
-    public void setInstructions(String s) {
-        instructions = s;
-    }
+    public void setInstructions(String s) { _instructions = s; }
 
 
     /**
@@ -220,7 +231,7 @@ public class WizAssocComposite extends UMLWizard {
      * @return          The created {@link JPanel} or <code>null</code> if no
      *                  options were available.
      *
-     * @see org.argouml.cognitive.ui.Wizard
+     * @see Wizard
      */
     public JPanel makePanel(int newStep) {
 
@@ -231,19 +242,17 @@ public class WizAssocComposite extends UMLWizard {
             // First step. Create the panel if not already done and options are
             // available. Otherwise it retains its default value of null.
 
-            if (step1Choice == null) {
-                Vector opts = buildOptions();
+            if (_step1Choice == null) {
+                Vector opts = _buildOptions();
 
                 if (opts != null) {
-                    step1Choice =
-                        new WizStepChoice(this, instructions, opts);
-                    step1Choice.setTarget(getToDoItem());
+                    _step1Choice = new WizStepChoice(this, _instructions,
+                                                     opts);
+                    _step1Choice.setTarget(_item);
                 }
             }
 
-            return step1Choice;
-
-        default:
+            return _step1Choice;
         }
 
         // Default (any other step) is to return nothing
@@ -271,7 +280,7 @@ public class WizAssocComposite extends UMLWizard {
      * @param  oldStep  The index of the step just completed (0 for the first
      *                  information panel)
      *
-     * @see org.argouml.cognitive.ui.Wizard
+     * @see Wizard
      */
     public void doAction(int oldStep) {
 
@@ -285,12 +294,12 @@ public class WizAssocComposite extends UMLWizard {
 
             int choice = -1;
 
-            if (step1Choice != null) {
-                choice = step1Choice.getSelectedIndex();
+            if (_step1Choice != null) {
+                choice = _step1Choice.getSelectedIndex();
             }
 
             if (choice == -1) {
-                LOG.warn("WizAssocComposite: nothing selected, "
+                cat.warn("WizAssocComposite: nothing selected, "
 			 + "should not get here");
                 return;
             }
@@ -304,11 +313,10 @@ public class WizAssocComposite extends UMLWizard {
                 // Set the appropriate aggregation on each end
 
                 Iterator iter =
-		    Model.getFacade().getConnections(getTriggerAssociation())
-		    	.iterator();
+		    ModelFacade.getConnections(_getTriggerAsc()).iterator();
 
-                Object ae0 = iter.next();
-                Object ae1 = iter.next();
+                Object ae0 = /*(MAssociationEnd)*/ iter.next();
+                Object ae1 = /*(MAssociationEnd)*/ iter.next();
 
                 switch (choice) {
 
@@ -316,79 +324,75 @@ public class WizAssocComposite extends UMLWizard {
 
                     // Start is a composite aggregation of end
 
-                    Model.getCoreHelper().setAggregation(
+                    ModelFacade.setAggregation(
 			    ae0,
-			    Model.getAggregationKind().getComposite());
-                    Model.getCoreHelper().setAggregation(
+			    ModelFacade.COMPOSITE_AGGREGATIONKIND);
+                    ModelFacade.setAggregation(
 			    ae1,
-			    Model.getAggregationKind().getNone());
+			    ModelFacade.NONE_AGGREGATIONKIND);
                     break;
 
                 case 1:
 
                     // Start is a shared aggregation of end
 
-                    Model.getCoreHelper().setAggregation(
+                    ModelFacade.setAggregation(
 			    ae0,
-			    Model.getAggregationKind().getAggregate());
-                    Model.getCoreHelper().setAggregation(
+			    ModelFacade.AGGREGATE_AGGREGATIONKIND);
+                    ModelFacade.setAggregation(
 			    ae1,
-			    Model.getAggregationKind().getNone());
+			    ModelFacade.NONE_AGGREGATIONKIND);
                     break;
 
                 case 2:
 
                     // End is a composite aggregation of start
 
-                    Model.getCoreHelper().setAggregation(
+                    ModelFacade.setAggregation(
 			    ae0,
-			    Model.getAggregationKind().getNone());
-                    Model.getCoreHelper().setAggregation(
+			    ModelFacade.NONE_AGGREGATIONKIND);
+                    ModelFacade.setAggregation(
 			    ae1,
-			    Model.getAggregationKind().getComposite());
+			    ModelFacade.COMPOSITE_AGGREGATIONKIND);
                     break;
 
                 case 3:
 
                     // End is a shared aggregation of start
-                    Model.getCoreHelper().setAggregation(
+                    ModelFacade.setAggregation(
 			    ae0,
-			    Model.getAggregationKind().getNone());
-                    Model.getCoreHelper().setAggregation(
+			    ModelFacade.NONE_AGGREGATIONKIND);
+                    ModelFacade.setAggregation(
 			    ae1,
-			    Model.getAggregationKind().getAggregate());
+			    ModelFacade.AGGREGATE_AGGREGATIONKIND);
                     break;
 
                 case 4:
 
                     // No aggregation
-                    Model.getCoreHelper().setAggregation(
+                    ModelFacade.setAggregation(
 			    ae0,
-			    Model.getAggregationKind().getNone());
-                    Model.getCoreHelper().setAggregation(
+			    ModelFacade.NONE_AGGREGATIONKIND);
+                    ModelFacade.setAggregation(
 			    ae1,
-			    Model.getAggregationKind().getNone());
+			    ModelFacade.NONE_AGGREGATIONKIND);
                     break;
-
-                default:
                 }
-            } catch (Exception pve) {
+            }
+            catch (Exception pve) {
 
                 // Someone took our association away.
 
-                LOG.error("WizAssocComposite: could not set "
-			  + "aggregation.", pve);
+                cat.error("WizAssocComposite: could not set "
+			  + "aggregation.", pve); 
             }
-
-        default:
         }
     }
 
     /**
      * Determine if we have sufficient information to finish.<p>
      *
-     * We can't finish if our parent {@link org.argouml.cognitive.ui.Wizard}
-     * can't finish.<p>
+     * We can't finish if our parent {@link Wizard} can't finish.<p>
      *
      * We can finish if we're on step 0.<p>
      *
@@ -397,7 +401,7 @@ public class WizAssocComposite extends UMLWizard {
      * @return  <code>true</code> if we can finish, otherwise
      *          <code>false</code>.
      *
-     * @see org.argouml.cognitive.ui.Wizard
+     * @see Wizard
      */
 
     public boolean canFinish() {
@@ -410,15 +414,15 @@ public class WizAssocComposite extends UMLWizard {
 
         // Can finish if it's step 0
 
-        if (getStep() == 0) {
+        if (_step == 0) {
             return true;
         }
 
         // Can finish if we're on step1 and have actually made a choice
 
-        if ((getStep() == 1)
-	    && (step1Choice != null)
-	    && (step1Choice.getSelectedIndex() != -1)) {
+        if ((_step == 1)
+	    && (_step1Choice != null)
+	    && (_step1Choice.getSelectedIndex() != -1)) {
             return true;
         }
 

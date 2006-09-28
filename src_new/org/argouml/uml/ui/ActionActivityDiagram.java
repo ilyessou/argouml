@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2003 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,65 +24,63 @@
 
 package org.argouml.uml.ui;
 
-import org.argouml.kernel.Project;
-import org.argouml.kernel.ProjectManager;
-import org.argouml.model.Model;
+import org.apache.log4j.Logger;
+import org.argouml.model.ModelFacade;
+import org.argouml.model.uml.behavioralelements.activitygraphs.ActivityGraphsFactory;
 import org.argouml.ui.targetmanager.TargetManager;
-import org.argouml.uml.diagram.DiagramFactory;
 import org.argouml.uml.diagram.activity.ui.UMLActivityDiagram;
 import org.argouml.uml.diagram.ui.UMLDiagram;
 
-/**
- * Action to trigger creation of a new activity diagram.<p>
- * 
- * An ActivityGraph specifies the dynamics of<ul>
- * <li> a Package, or
- * <li> a Classifier (including UseCase), or
- * <li> a BehavioralFeature.
- * </ul>
- * 
- * @author michiel
+/** Action to trigger creation of a new activity diagram.
+ *  @stereotype singleton
  */
-public class ActionActivityDiagram extends ActionNewDiagram {
+public class ActionActivityDiagram extends ActionStateDiagram {
+
+    public static ActionActivityDiagram SINGLETON = new ActionActivityDiagram();
 
     /**
-     * Constructor.
+     * @deprecated since V0.15.5. Make your own logger instead.
      */
-    public ActionActivityDiagram() {
+    protected static Logger cat =
+	Logger.getLogger(org.argouml.uml.ui.ActionActivityDiagram.class);
+
+    /**
+     * Constructor
+     *
+     */
+    private ActionActivityDiagram() {
         super("action.activity-diagram");
     }
 
     /**
-     * Create the diagram.
+     * @see org.argouml.uml.ui.ActionAddDiagram#createDiagram(Object)
      */
-    protected UMLDiagram createDiagram() {
-        Project p = ProjectManager.getManager().getCurrentProject();
+    public UMLDiagram createDiagram(Object ns) {
         Object target = TargetManager.getInstance().getModelTarget();
-        Object graph = null;
-        Object namespace = p.getRoot(); // the root model
-        if (Model.getActivityGraphsHelper().isAddingActivityGraphAllowed(
-                target)) {
-            /* The target is a valid context */
-            graph = Model.getActivityGraphsFactory().buildActivityGraph(target);
-        } else {
-            graph = Model.getActivityGraphsFactory().createActivityGraph();
-            if (Model.getFacade().isANamespace(target)) {
-                namespace = target;
-            }
-            Model.getCoreHelper().setNamespace(graph, namespace);
-            Model.getStateMachinesFactory()
-                .buildCompositeStateOnStateMachine(graph);
-        }
-
-        return (UMLDiagram) DiagramFactory.getInstance().createDiagram(
-                UMLActivityDiagram.class,
-                Model.getFacade().getNamespace(graph),
-                graph);
+        Object/*MActivityGraph*/ graph =
+	    ActivityGraphsFactory.getFactory().buildActivityGraph(target);
+        /*if (org.argouml.model.ModelFacade.isABehavioralFeature(target)) {
+            ns = ModelFacade.getNamespace(target); 
+            // this fails always, see issue 1817
+        }*/
+        UMLActivityDiagram d = new UMLActivityDiagram(ns, graph);
+        return d;
     }
 
     /**
-     * The UID.
+     * @see org.argouml.uml.ui.UMLAction#shouldBeEnabled()
      */
-    private static final long serialVersionUID = -28844322376391273L;
+    public boolean shouldBeEnabled() {
+        return super.shouldBeEnabled()
+	    || org.argouml.model.ModelFacade.isAPackage(TargetManager
+                .getInstance().getModelTarget());
+    }
+
+    /**
+     * @see org.argouml.uml.ui.ActionAddDiagram#isValidNamespace(Object)
+     */
+    public boolean isValidNamespace(Object handle) {
+        return super.isValidNamespace(handle) || ModelFacade.isAPackage(handle);
+    }
 
 } /* end class ActionActivityDiagram */

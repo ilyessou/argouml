@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,36 +22,31 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $header$
 package org.argouml.uml.ui.foundation.core;
 
 import java.awt.event.ActionEvent;
 
-import javax.swing.Action;
-
 import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
+import org.argouml.uml.ui.UMLChangeAction;
 import org.argouml.uml.ui.UMLCheckBox2;
-import org.tigris.gef.undo.UndoableAction;
 
 /**
  * @since Nov 6, 2002
  * @author jaap.branderhorst@xs4all.nl
  */
-public class ActionSetFeatureOwnerScope extends UndoableAction {
+public class ActionSetFeatureOwnerScope extends UMLChangeAction {
 
-    private static final ActionSetFeatureOwnerScope SINGLETON =
-        new ActionSetFeatureOwnerScope();
+    public static final ActionSetFeatureOwnerScope SINGLETON = new ActionSetFeatureOwnerScope();
 
     /**
      * Constructor for ActionSetElementOwnershipSpecification.
      */
     protected ActionSetFeatureOwnerScope() {
-        super(Translator.localize("Set"), null);
-        // Set the tooltip string:
-        putValue(Action.SHORT_DESCRIPTION, 
-                Translator.localize("Set"));
+        super(Translator.localize("Set"), true, NO_ICON);
     }
-
+    
     /**
      * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
      */
@@ -60,24 +55,15 @@ public class ActionSetFeatureOwnerScope extends UndoableAction {
         if (e.getSource() instanceof UMLCheckBox2) {
             UMLCheckBox2 source = (UMLCheckBox2) e.getSource();
             Object target = source.getTarget();
-            if (Model.getFacade().isAFeature(target)) {
+            if (org.argouml.model.ModelFacade.isAFeature(target)) {
                 Object m = /*(MFeature)*/ target;
                 if (source.isSelected()) {
-                    Model.getCoreHelper().setOwnerScope(m,
-                            Model.getScopeKind().getClassifier());
+                    ModelFacade.setOwnerScope(m, ModelFacade.CLASSIFIER_SCOPEKIND);
                 } else {
-                    Model.getCoreHelper().setOwnerScope(m,
-                            Model.getScopeKind().getInstance());
+                    ModelFacade.setOwnerScope(m, ModelFacade.INSTANCE_SCOPEKIND);
                 }
             }
         }
-    }
-
-    /**
-     * @return Returns the SINGLETON.
-     */
-    public static ActionSetFeatureOwnerScope getInstance() {
-        return SINGLETON;
     }
 
 }

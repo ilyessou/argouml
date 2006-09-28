@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -27,110 +27,78 @@ package org.argouml.uml.cognitive.critics;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Graphics;
-import java.awt.Rectangle;
-
 import org.argouml.cognitive.ToDoItem;
 import org.argouml.ui.Clarifier;
 import org.argouml.uml.diagram.ui.FigEdgeModelElement;
 import org.argouml.uml.diagram.ui.FigNodeModelElement;
 import org.tigris.gef.presentation.Fig;
+import org.tigris.gef.presentation.FigText;
 
 
 
-/**
- * The clarifier (the red wavy line) for the classname.
- * It actually works for any modelelement with a name.
- *
- */
 public class ClClassName implements Clarifier {
-    private static ClClassName theInstance = new ClClassName();
-    private static final int WAVE_LENGTH = 4;
-    private static final int WAVE_HEIGHT = 2;
+    public static ClClassName TheInstance = new ClClassName();
+    public static int WAVE_LENGTH = 4;
+    public static int WAVE_HEIGHT = 2;
 
-    private Fig fig;
+    ////////////////////////////////////////////////////////////////
+    // instance variables
+    Fig _fig;
 
-    /**
-     * @see org.argouml.ui.Clarifier#setFig(org.tigris.gef.presentation.Fig)
-     */
-    public void setFig(Fig f) { fig = f; }
-
-    /**
-     * @see org.argouml.ui.Clarifier#setToDoItem(org.argouml.cognitive.ToDoItem)
-     */
+    public void setFig(Fig f) { _fig = f; }
     public void setToDoItem(ToDoItem i) { }
 
-    /**
-     * @see javax.swing.Icon#paintIcon(java.awt.Component, java.awt.Graphics,
-     * int, int)
-     */
     public void paintIcon(Component c, Graphics g, int x, int y) {
-        Rectangle rect = null;
-        if (fig instanceof FigNodeModelElement) {
-            FigNodeModelElement fnme = (FigNodeModelElement) fig;
-            rect = fnme.getNameBounds();
-        } else if (fig instanceof FigEdgeModelElement) {
-            FigEdgeModelElement feme = (FigEdgeModelElement) fig;
-            rect = feme.getNameBounds();
-        }
-        if (rect != null) {
-            int left  = rect.x + 6;
-            int height = rect.y + rect.height - 4;
-            int right = rect.x + rect.width - 6;
-            g.setColor(Color.red);
-            int i = left;
-            while (true) {
-        	g.drawLine(i, height, i + WAVE_LENGTH, height + WAVE_HEIGHT);
-        	i += WAVE_LENGTH;
-        	if (i >= right) break;
-        	g.drawLine(i, height + WAVE_HEIGHT, i + WAVE_LENGTH, height);
-        	i += WAVE_LENGTH;
-        	if (i >= right) break;
-        	g.drawLine(i, height, i + WAVE_LENGTH,
-        		   height + WAVE_HEIGHT / 2);
-        	i += WAVE_LENGTH;
-        	if (i >= right) break;
-        	g.drawLine(i, height + WAVE_HEIGHT / 2, i + WAVE_LENGTH,
-        		   height);
-        	i += WAVE_LENGTH;
-        	if (i >= right) break;
-            }
-            fig = null;
-        }
+	FigText ft = null;
+	if (_fig instanceof FigNodeModelElement) {
+	    FigNodeModelElement fnme = (FigNodeModelElement) _fig;
+	    ft = fnme.getNameFig();
+	}
+	if (_fig instanceof FigEdgeModelElement) {
+	    FigEdgeModelElement feme = (FigEdgeModelElement) _fig;
+	    ft = feme.getNameFig();
+	}
+	if (ft != null) {
+	    int left  = ft.getX() + 6;
+	    int height = ft.getY() + ft.getHeight() - 4;
+	    int right = ft.getX() + ft.getWidth() - 6;
+	    g.setColor(Color.red);
+	    int i = left;
+	    while (true) {
+		g.drawLine(i, height, i + WAVE_LENGTH, height + WAVE_HEIGHT);
+		i += WAVE_LENGTH;
+		if (i >= right) break;
+		g.drawLine(i, height + WAVE_HEIGHT, i + WAVE_LENGTH, height);
+		i += WAVE_LENGTH;
+		if (i >= right) break;
+		g.drawLine(i, height, i + WAVE_LENGTH,
+			   height + WAVE_HEIGHT / 2);
+		i += WAVE_LENGTH;
+		if (i >= right) break;
+		g.drawLine(i, height + WAVE_HEIGHT / 2, i + WAVE_LENGTH,
+			   height);
+		i += WAVE_LENGTH;
+		if (i >= right) break;
+	    }
+	    _fig = null;
+	}
     }
 
-    /**
-     * @see javax.swing.Icon#getIconWidth()
-     */
     public int getIconWidth() { return 0; }
-
-    /**
-     * @see javax.swing.Icon#getIconHeight()
-     */
     public int getIconHeight() { return 0; }
 
-    /**
-     * @see org.argouml.ui.Clarifier#hit(int, int)
-     */
     public boolean hit(int x, int y) {
-        Rectangle rect = null;
-        if (fig instanceof FigNodeModelElement) {
-            FigNodeModelElement fnme = (FigNodeModelElement) fig;
-            rect = fnme.getNameBounds();
-        } else if (fig instanceof FigEdgeModelElement) {
-            FigEdgeModelElement feme = (FigEdgeModelElement) fig;
-            rect = feme.getNameBounds();
-        }
-        fig = null;
-        return (rect != null) && rect.contains(x, y);
-    }
-    
-    
-
-    /**
-     * @return Returns the theInstance.
-     */
-    public static ClClassName getTheInstance() {
-        return theInstance;
+	FigText ft = null;
+	if (_fig instanceof FigNodeModelElement) {
+	    FigNodeModelElement fnme = (FigNodeModelElement) _fig;
+	    ft = fnme.getNameFig();
+	}
+	if (_fig instanceof FigEdgeModelElement) {
+	    FigEdgeModelElement feme = (FigEdgeModelElement) _fig;
+	    ft = feme.getNameFig();
+	}
+	_fig = null;
+	return (ft != null) && ft.contains(x, y);
     }
 
 } /* end class ClClassName */

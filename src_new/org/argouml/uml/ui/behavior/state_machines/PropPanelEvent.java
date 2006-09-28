@@ -1,16 +1,16 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
-// and this paragraph appear in all copies. This software program and
+// and this paragraph appear in all copies.  This software program and
 // documentation are copyrighted by The Regents of the University of
 // California. The software program and documentation are supplied "AS
 // IS", without any accompanying services from The Regents. The Regents
 // does not warrant that the operation of the program will be
 // uninterrupted or error-free. The end-user understands that the program
 // was developed for research purposes and is advised not to rely
-// exclusively on the program for any reason. IN NO EVENT SHALL THE
+// exclusively on the program for any reason.  IN NO EVENT SHALL THE
 // UNIVERSITY OF CALIFORNIA BE LIABLE TO ANY PARTY FOR DIRECT, INDIRECT,
 // SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, INCLUDING LOST PROFITS,
 // ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN IF
@@ -22,6 +22,11 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: PropPanelEvent.java
+// Classes: PropPanelEvent
+// Original Author: oliver.heyden@gentleware.de
+// $Id: 
+
 package org.argouml.uml.ui.behavior.state_machines;
 
 import javax.swing.ImageIcon;
@@ -29,74 +34,75 @@ import javax.swing.JList;
 import javax.swing.JScrollPane;
 
 import org.argouml.i18n.Translator;
-import org.argouml.uml.ui.ActionNavigateContainerElement;
+import org.argouml.model.uml.foundation.core.CoreFactory;
+import org.argouml.swingext.Orientation;
+import org.argouml.ui.targetmanager.TargetManager;
+import org.argouml.uml.ui.PropPanelButton;
 import org.argouml.uml.ui.UMLLinkedList;
-import org.argouml.uml.ui.UMLMutableLinkedList;
-import org.argouml.uml.ui.foundation.core.ActionNewParameter;
+import org.argouml.uml.ui.UMLComboBoxNavigator;
 import org.argouml.uml.ui.foundation.core.PropPanelModelElement;
-import org.argouml.uml.ui.foundation.extension_mechanisms.ActionNewStereotype;
-import org.tigris.swidgets.Orientation;
 
-/**
- * The properties panel for an Event.
- *
- * @author oliver.heyden
- */
 public abstract class PropPanelEvent extends PropPanelModelElement {
 
-    private JScrollPane paramScroll;
-
-    private UMLEventParameterListModel paramListModel;
+    protected JScrollPane paramScroll;
+    protected UMLEventParameterListModel paramListModel;
 
     /**
      * Constructor for PropPanelEvent.
-     *
-     * @param name the name string of the properties panel
-     * @param icon the icon to be shown next to the name
-     * @param orientation the orientation
+     * @param name
+     * @param icon
+     * @param orientation
      */
-    public PropPanelEvent(String name, ImageIcon icon,
-            Orientation orientation) {
+    public PropPanelEvent(
+        String name,
+        ImageIcon icon,
+        Orientation orientation) {
         super(name, icon, orientation);
         initialize();
     }
 
-    /**
-     * Initialize the panel with all fields and stuff.
-     */
-    protected void initialize() {
-
+    public void initialize() {
+        paramListModel = new UMLEventParameterListModel();
+        JList paramList =
+            new UMLLinkedList(paramListModel);
         paramScroll = getParameterScroll();
+        new PropPanelButton(
+            this,
+            buttonPanel,
+            _navUpIcon,
+			Translator.localize("UMLMenu", "button.go-up"),
+            "navigateUp",
+            null);        
+        new PropPanelButton(
+            this,
+            buttonPanel,
+            _parameterIcon,
+			Translator.localize("UMLMenu", "button.new-parameter"),
+            "buttonAddParameter",
+            null);
 
-        addField(Translator.localize("label.name"),
-                getNameTextField());
-        addField(Translator.localize("label.namespace"),
-                getNamespaceScroll());
+        addField(Translator.localize("UMLMenu", "label.name"), getNameTextField());
+        addField(Translator.localize("UMLMenu", "label.stereotype"), new UMLComboBoxNavigator(this, Translator.localize("UMLMenu", "tooltip.nav-stereo"), getStereotypeBox()));
+        addField(Translator.localize("UMLMenu", "label.namespace"), getNamespaceScroll());
+        addField(Translator.localize("UMLMenu", "label.parameters"), getParameterScroll());
 
-        addSeparator();
-        addField(Translator.localize("label.parameters"),
-                getParameterScroll());
-        JList transitionList = new UMLLinkedList(
-                new UMLEventTransitionListModel());
-        transitionList.setVisibleRowCount(2);
-        addField(Translator.localize("label.transition"),
-                new JScrollPane(transitionList));
-
-        addSeparator();
-
-        addAction(new ActionNavigateContainerElement());
-        addAction(new ActionNewStereotype());
+        addSeperator();
+        
+        new PropPanelButton(this, buttonPanel, _deleteIcon, localize("Delete"), 
+                "removeElement", null);
     }
 
-
     /**
-     * @return the parameter scroll
+     * Adds a parameter to the event and navigates towards it.
      */
+    public void buttonAddParameter() {
+        Object param = CoreFactory.getFactory().buildParameter(getTarget());
+        TargetManager.getInstance().setTarget(param);
+    }
+
     protected JScrollPane getParameterScroll() {
         if (paramScroll == null) {
-            paramListModel = new UMLEventParameterListModel();
-            JList paramList = new UMLMutableLinkedList(paramListModel,
-                    new ActionNewParameter());
+            JList paramList = new UMLLinkedList(paramListModel);
             paramList.setVisibleRowCount(3);
             paramScroll = new JScrollPane(paramList);
         }

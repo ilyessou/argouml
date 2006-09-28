@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,37 +22,150 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: FigShallowHistoryState.java
+// Classes: FigShallowHistoryState
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.diagram.state.ui;
 
-import org.tigris.gef.graph.GraphModel;
+import java.awt.Color;
+import java.awt.Rectangle;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
+import java.util.Iterator;
 
-/** Class to display graphics for a UML ShallowHistoryState in a diagram.
- *
- * @author jrobbins
- */
-public class FigShallowHistoryState extends FigHistoryState {
+import org.tigris.gef.graph.GraphModel;
+import org.tigris.gef.presentation.FigCircle;
+import org.tigris.gef.presentation.FigText;
+
+/** Class to display graphics for a UML MState in a diagram. */
+
+public class FigShallowHistoryState extends FigStateVertex {
+
+    ////////////////////////////////////////////////////////////////
+    // constants
+
+    public final int MARGIN = 2;
+
+    public int x = 0;
+
+    public int y = 0;
+
+    public int width = 24;
+
+    public int height = 24;
+
+    ////////////////////////////////////////////////////////////////
+    // instance variables
+
+    /** The main label on this icon. */
+    FigText _name;
 
     /**
-     * Main constructor
+     * UML does not really use ports, so just define one big one so that users
+     * can drag edges to or from any point in the icon.
      */
+
+    FigCircle _bigPort;
+
+    // add other Figs here aes needed
+
+    FigCircle _head;
+
+    ////////////////////////////////////////////////////////////////
+    // constructors
+
     public FigShallowHistoryState() {
-        super();
+        _bigPort = new FigCircle(x, y, width, height, Color.cyan, Color.cyan);
+        _head = new FigCircle(x, y, width, height, Color.black, Color.white);
+        _name = new FigText(x, y, width - 10, height - 10);
+        _name.setText("H");
+        _name.setTextColor(Color.black);
+        _name.setFilled(false);
+        _name.setLineWidth(0);
+
+        // add Figs to the FigNode in back-to-front order
+        addFig(_bigPort);
+        addFig(_head);
+        addFig(_name);
+
+        setBlinkPorts(false); //make port invisble unless mouse enters
+        Rectangle r = getBounds();
     }
 
-    /**
-     * @see org.argouml.uml.diagram.state.ui.FigHistoryState#getH()
-     */
-    public String getH() {
+    public String placeString() {
         return "H";
     }
 
-    /**
-     * The constructor which links the Fig into the existing UML element
-     * @param gm ignored
-     * @param node the UML element
-     */
     public FigShallowHistoryState(GraphModel gm, Object node) {
-        super(gm, node);
+        this();
+        setOwner(node);
     }
+
+    public Object clone() {
+        FigShallowHistoryState figClone = (FigShallowHistoryState) super
+                .clone();
+        Iterator it = figClone.getFigs(null).iterator();
+        figClone._bigPort = (FigCircle) it.next();
+        figClone._head = (FigCircle) it.next();
+        figClone._name = (FigText) it.next();
+        return figClone;
+    }
+
+    ////////////////////////////////////////////////////////////////
+    // Fig accessors
+
+    public void setOwner(Object node) {
+        super.setOwner(node);
+        bindPort(node, _bigPort);
+    }
+
+    /** History states are fixed size. */
+    public boolean isResizable() {
+        return false;
+    }
+
+    public void setLineColor(Color col) {
+        _head.setLineColor(col);
+    }
+
+    public Color getLineColor() {
+        return _head.getLineColor();
+    }
+
+    public void setFillColor(Color col) {
+        _head.setFillColor(col);
+    }
+
+    public Color getFillColor() {
+        return _head.getFillColor();
+    }
+
+    public void setFilled(boolean f) {
+    }
+
+    public boolean getFilled() {
+        return true;
+    }
+
+    public void setLineWidth(int w) {
+        _head.setLineWidth(w);
+    }
+
+    public int getLineWidth() {
+        return _head.getLineWidth();
+    }
+
+    ////////////////////////////////////////////////////////////////
+    // Event handlers
+
+    public void mouseClicked(MouseEvent me) {
+    }
+
+    public void keyPressed(KeyEvent ke) {
+    }
+
+    static final long serialVersionUID = 6572261327347541373L;
 
 } /* end class FigShallowHistoryState */

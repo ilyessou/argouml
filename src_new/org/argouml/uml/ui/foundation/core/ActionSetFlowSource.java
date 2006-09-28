@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -28,31 +28,25 @@ package org.argouml.uml.ui.foundation.core;
 import java.awt.event.ActionEvent;
 import java.util.Vector;
 
-import javax.swing.Action;
-
 import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
+import org.argouml.uml.ui.UMLChangeAction;
 import org.argouml.uml.ui.UMLComboBox2;
-import org.tigris.gef.undo.UndoableAction;
 /**
  * @since Oct 12, 2002
  * @author jaap.branderhorst@xs4all.nl
  * @stereotype singleton
  */
-public class ActionSetFlowSource extends UndoableAction {
+public class ActionSetFlowSource extends UMLChangeAction {
 
-    private static final ActionSetFlowSource SINGLETON =
-        new ActionSetFlowSource();
+    public static final ActionSetFlowSource SINGLETON = new ActionSetFlowSource();
 
     /**
      * Constructor for ActionSetElementOwnershipSpecification.
      */
     protected ActionSetFlowSource() {
-        super(Translator.localize("Set"), null);
-        // Set the tooltip string:
-        putValue(Action.SHORT_DESCRIPTION, 
-                Translator.localize("Set"));
-    }
+        super(Translator.localize("Set"), true, NO_ICON);
+    }   
 
     /**
      * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
@@ -62,29 +56,21 @@ public class ActionSetFlowSource extends UndoableAction {
         if (e.getSource() instanceof UMLComboBox2) {
             UMLComboBox2 source = (UMLComboBox2) e.getSource();
             Object target = source.getTarget();
-            if (Model.getFacade().isAFlow(target)) {
+            if (ModelFacade.isAFlow(target)) {
                 Object flow = /*(MFlow)*/ target;
                 Object old = null;
-                if (!Model.getFacade().getSources(flow).isEmpty()) {
-                    old = /*(MModelElement)*/
-                        Model.getFacade().getSources(flow).toArray()[0];
+                if (!ModelFacade.getSources(flow).isEmpty()) {
+                    old = /*(MModelElement)*/ ModelFacade.getSources(flow).toArray()[0];
                 }
                 if (old != source.getSelectedItem()) {
                     if (source.getSelectedItem() != null) {
                         Vector sources = new Vector();
                         sources.add(source.getSelectedItem());
-                        Model.getCoreHelper().setSources(flow, sources);
+                        ModelFacade.setSources(flow, sources);
                     }
                 }
             }
         }
-    }
-
-    /**
-     * @return Returns the SINGLETON.
-     */
-    public static ActionSetFlowSource getInstance() {
-        return SINGLETON;
     }
 
 }

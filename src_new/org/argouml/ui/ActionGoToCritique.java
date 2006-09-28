@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,45 +22,31 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+// File: ActionGoToCritique.java
+// Classes: ActionGoToCritique
 // Original Author: agauthie
+// $Id$
 
 package org.argouml.ui;
 
 import java.awt.event.ActionEvent;
 
-import javax.swing.Action;
-
 import org.argouml.cognitive.ToDoItem;
-import org.argouml.i18n.Translator;
-import org.tigris.gef.undo.UndoableAction;
+import org.argouml.uml.ui.UMLAction;
 
-/**
- * Action to display the todo pane.
- *
- */
-public class ActionGoToCritique extends UndoableAction {
-    private ToDoItem item = null;
+public class ActionGoToCritique extends UMLAction {
+    ToDoItem _item = null;
 
-    /**
-     * Constructor.
-     *
-     * @param theItem The item that we go to.
-     */
-    public ActionGoToCritique(ToDoItem theItem) {
-        super(Translator.localize(theItem.getHeadline()), 
-	            null);
-        // Set the tooltip string:
-        putValue(Action.SHORT_DESCRIPTION, 
-                Translator.localize(theItem.getHeadline()));
-	item = theItem;
+    public ActionGoToCritique(ToDoItem item) {
+	super(item.getHeadline(), NO_ICON);
+	_item = item;
     }
 
-    /**
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-     */
     public void actionPerformed(ActionEvent ae) {
-    	super.actionPerformed(ae);
-	ProjectBrowser.getInstance().getTodoPane().selectItem(item);
+	ProjectBrowser.getInstance().getTodoPane().selectItem(_item);
     }
+
+    public boolean shouldBeEnabled() { return true; }
 
 } /* end class ActionGoToCritique */

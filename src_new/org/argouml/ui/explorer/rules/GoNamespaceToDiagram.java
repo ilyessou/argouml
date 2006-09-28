@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -33,48 +33,45 @@ import java.util.Set;
 import org.argouml.i18n.Translator;
 import org.argouml.kernel.Project;
 import org.argouml.kernel.ProjectManager;
-import org.argouml.model.Model;
-import org.argouml.uml.diagram.activity.ui.UMLActivityDiagram;
+import org.argouml.model.ModelFacade;
 import org.argouml.uml.diagram.sequence.ui.UMLSequenceDiagram;
 import org.argouml.uml.diagram.state.ui.UMLStateDiagram;
 import org.argouml.uml.diagram.ui.UMLDiagram;
 
 /**
- * Rule for Package->Diagram.
- * Shows the diagrams as children of their namespace.
- *
- * @author jaap.branderhorst@xs4all.nl
+ * Shows the diagrams as children of their namespace. 
+ * 
+ * @author jaap.branderhorst@xs4all.nl	
  * @since Dec 30, 2002
  */
 public class GoNamespaceToDiagram extends AbstractPerspectiveRule {
 
-    /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getRuleName()
-     */
     public String getRuleName() {
-        return Translator.localize("misc.package.diagram");
+        return Translator.localize("Tree", "misc.package.diagram");
     }
 
-    /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getChildren(java.lang.Object)
-     */
-    public Collection getChildren(Object namespace) {
-        if (Model.getFacade().isANamespace(namespace)) {
+    public Collection getChildren(Object parent) {
+        if (ModelFacade.isANamespace(parent)) {
             List returnList = new ArrayList();
+            Object namespace = parent; //MNamespace
             Project proj = ProjectManager.getManager().getCurrentProject();
             Iterator it = proj.getDiagrams().iterator();
             while (it.hasNext()) {
                 UMLDiagram diagram = (UMLDiagram) it.next();
-                // Sequence diagrams are not shown as children of the
+                if (diagram instanceof UMLStateDiagram) {
+                    UMLStateDiagram stateDiagram = (UMLStateDiagram) diagram;
+                    Object stateMachine = stateDiagram.getStateMachine();
+                    Object context = ModelFacade.getContext(stateMachine);
+                    if (ModelFacade.isABehavioralFeature(context)) {
+                    	continue;
+                    }
+                }       
+                // sequence diagrams are not shown as children of the
                 // collaboration that they show but as children of the
-                // classifier/operation the collaboration represents.
-                // Statediagrams and activitydiagrams are shown as children
-                // of the statemachine or activitygraph they belong to.
-                if (diagram instanceof UMLStateDiagram
-                        || diagram instanceof UMLActivityDiagram
-                        || diagram instanceof UMLSequenceDiagram) {
-                    continue;
-                }
+                // classifier/operation the collaboration represents
+                if (diagram instanceof UMLSequenceDiagram) {
+                	continue;
+                }         
                 if (diagram.getNamespace() == namespace) {
                     returnList.add(diagram);
                 }
@@ -84,9 +81,6 @@ public class GoNamespaceToDiagram extends AbstractPerspectiveRule {
         return null;
     }
 
-    /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getDependencies(java.lang.Object)
-     */
     public Set getDependencies(Object parent) {
         // TODO: What?
 	return null;

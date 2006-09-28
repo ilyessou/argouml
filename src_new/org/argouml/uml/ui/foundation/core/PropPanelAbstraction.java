@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -25,39 +25,34 @@
 package org.argouml.uml.ui.foundation.core;
 
 import org.argouml.i18n.Translator;
-import org.argouml.uml.ui.ActionNavigateNamespace;
+
+import org.argouml.uml.ui.PropPanelButton;
+import org.argouml.uml.ui.UMLComboBoxNavigator;
 import org.argouml.util.ConfigLoader;
 
-/**
- * The properties panel for a Abstraction.
- */
 public class PropPanelAbstraction extends PropPanelDependency {
 
-    /**
-     * The serial version.
-     */
-    private static final long serialVersionUID = 595724551744206773L;
+  ////////////////////////////////////////////////////////////////
+  // constructors
 
-    /**
-     * Construct a new property panel for an Abstraction.
-     */
     public PropPanelAbstraction() {
         super("Abstraction", ConfigLoader.getTabPropsOrientation());
 
-        addField(Translator.localize("label.name"),
-                getNameTextField());
-        addField(Translator.localize("label.namespace"),
-                getNamespaceSelector());
+        addField(Translator.localize("UMLMenu", "label.name"), getNameTextField());
+        addField(Translator.localize("UMLMenu", "label.stereotype"), new UMLComboBoxNavigator(this, Translator.localize("UMLMenu", "tooltip.nav-stereo"), getStereotypeBox()));
+        addField(Translator.localize("UMLMenu", "label.namespace"), getNamespaceComboBox());
 
-        addSeparator();
+        addSeperator();
 
-        addField(Translator.localize("label.suppliers"),
-                getSupplierScroll());
-        addField(Translator.localize("label.clients"),
-                getClientScroll());
+        addField(Translator.localize("UMLMenu", "label.suppliers"), _supplierScroll);
+        addField(Translator.localize("UMLMenu", "label.clients"), _clientScroll);
 
-        addAction(new ActionNavigateNamespace());
-        addAction(getDeleteAction());
+        // TODO: add Mapping
+        new PropPanelButton(this, buttonPanel, _navUpIcon, Translator.localize("UMLMenu", "button.go-up"), "navigateUp", null);
+        // new PropPanelButton(this, buttonPanel, _navBackIcon, Translator.localize("UMLMenu", "button.go-back"), "navigateBackAction", "isNavigateBackEnabled");
+        // new PropPanelButton(this, buttonPanel, _navForwardIcon, Translator.localize("UMLMenu", "button.go-forward"), "navigateForwardAction", "isNavigateForwardEnabled");
+        new PropPanelButton(this, buttonPanel, _deleteIcon, Translator.localize("UMLMenu", "button.delete-association"), "removeElement", null);
+
     }
 
 } /* end class PropPanelAbstraction */

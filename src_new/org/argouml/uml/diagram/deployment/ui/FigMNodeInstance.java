@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -26,23 +26,18 @@ package org.argouml.uml.diagram.deployment.ui;
 
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.MouseEvent;
-import java.beans.PropertyChangeEvent;
 import java.beans.PropertyVetoException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Vector;
 
-import org.argouml.model.AssociationChangeEvent;
-import org.argouml.model.AttributeChangeEvent;
-import org.argouml.model.Model;
-import org.argouml.notation.NotationProviderFactory2;
+import org.argouml.application.api.Notation;
+import org.argouml.model.ModelFacade;
 import org.argouml.uml.diagram.ui.FigEdgeModelElement;
 import org.argouml.uml.diagram.ui.FigNodeModelElement;
-import org.argouml.uml.notation.NotationProvider;
-import org.tigris.gef.base.Geometry;
+import org.argouml.uml.generator.ParserDisplay;
 import org.tigris.gef.base.Selection;
 import org.tigris.gef.graph.GraphModel;
 import org.tigris.gef.presentation.Fig;
@@ -53,165 +48,100 @@ import org.tigris.gef.presentation.FigText;
 /**
  * Class to display graphics for a UML NodeInstance in a diagram.<p>
  *
- * @author 5eichler@informatik.uni-hamburg.de
+ * @author 5eichler@informatik.uni-hamburg.de 
  */
 public class FigMNodeInstance extends FigNodeModelElement {
 
-    private int d = 20;
     ////////////////////////////////////////////////////////////////
     // instance variables
 
-    private FigCube cover;
+    protected FigCube _cover;
+    protected FigRect _test;
 
-    private int x = 10;
-    private int y = 10;
-    private int width = 200;
-    private int height = 180;
-    
-    private NotationProvider notationProvider;
-    
     ////////////////////////////////////////////////////////////////
     // constructors
 
-    /**
-     * Main constructor - used for file loading.
-     */
     public FigMNodeInstance() {
-        setBigPort(new CubePortFigRect(x, y - d, width + d, height + d, d));
-        getBigPort().setFilled(false);
-        getBigPort().setLineWidth(0);
-        cover = new FigCube(x, y, width, height, Color.black, Color.white);
-        d = 20;
-        //d = cover.getDepth();
+        _bigPort = new FigRect(10, 10, 200, 180);
+        _cover = new FigCube(10, 10, 200, 180, Color.black, Color.white);
+        _test = new FigRect(10, 10, 1, 1, Color.black, Color.white);
 
         getNameFig().setLineWidth(0);
         getNameFig().setFilled(false);
         getNameFig().setJustification(0);
         getNameFig().setUnderline(true);
 
-        addFig(getBigPort());
-        addFig(cover);
+        addFig(_bigPort);
+        addFig(_cover);
         addFig(getStereotypeFig());
         addFig(getNameFig());
+        addFig(_test);
+
     }
 
-    /**
-     * Constructor which hooks the new Fig into an existing UML element.
-     *
-     * @param gm ignored
-     * @param node the UML element
-     */
     public FigMNodeInstance(GraphModel gm, Object node) {
         this();
         setOwner(node);
-        if (Model.getFacade().isAClassifier(node)
-                && (Model.getFacade().getName(node) != null)) {
-            getNameFig().setText(Model.getFacade().getName(node));
-        }
+        if (ModelFacade.isAClassifier(node)
+	        && (ModelFacade.getName(node) != null)) {
+            getNameFig().setText(ModelFacade.getName(node));
+	}
     }
 
-    /**
-     * @see org.argouml.uml.diagram.ui.FigNodeModelElement#initNotationProviders(java.lang.Object)
-     */
-    protected void initNotationProviders(Object own) {
-        super.initNotationProviders(own);
-        if (Model.getFacade().isANodeInstance(own)) {
-            notationProvider = 
-                NotationProviderFactory2.getInstance().getNotationProvider(
-                    NotationProviderFactory2.TYPE_NODEINSTANCE, own);
-        }
-    }
-
-    /**
-     * @see org.argouml.uml.diagram.ui.FigNodeModelElement#placeString()
-     */
     public String placeString() {
         return "new NodeInstance";
     }
 
-    /**
-     * @see java.lang.Object#clone()
-     */
     public Object clone() {
         FigMNodeInstance figClone = (FigMNodeInstance) super.clone();
-        Iterator it = figClone.getFigs().iterator();
-        figClone.setBigPort((FigRect) it.next());
-        figClone.cover = (FigCube) it.next();
-        it.next();
+        Iterator it = figClone.getFigs(null).iterator();
+        figClone._bigPort = (FigRect) it.next();
+        figClone._cover = (FigCube) it.next();
+        figClone.setStereotypeFig((FigText) it.next());
         figClone.setNameFig((FigText) it.next());
+        figClone._test = (FigRect) it.next();
         return figClone;
     }
 
     ////////////////////////////////////////////////////////////////
     // acessors
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#setLineColor(java.awt.Color)
-     */
     public void setLineColor(Color c) {
-        cover.setLineColor(c);
+        //     super.setLineColor(c);
+        _cover.setLineColor(c);
+        getStereotypeFig().setFilled(false);
+        getStereotypeFig().setLineWidth(0);
+        getNameFig().setFilled(false);
+        getNameFig().setLineWidth(0);
+        _test.setLineColor(c);
     }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#setLineWidth(int)
-     */
-    public void setLineWidth(int w) {
-        cover.setLineWidth(w);
-    }
-
-    /**
-     * @see org.tigris.gef.presentation.Fig#getFilled()
-     */
-    public boolean getFilled() {
-        return cover.getFilled();
-    }
-
-    /**
-     * @see org.tigris.gef.presentation.Fig#setFilled(boolean)
-     */
-    public void setFilled(boolean f) {
-        cover.setFilled(f);
-    }
-
-    /**
-     * @see org.tigris.gef.presentation.Fig#makeSelection()
-     */
     public Selection makeSelection() {
         return new SelectionNodeInstance(this);
     }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#getMinimumSize()
-     */
     public Dimension getMinimumSize() {
         Dimension stereoDim = getStereotypeFig().getMinimumSize();
         Dimension nameDim = getNameFig().getMinimumSize();
         int w = Math.max(stereoDim.width, nameDim.width + 1) + 20;
         int h = stereoDim.height + nameDim.height + 20;
-        w = Math.max(3 * d, w); // so it still looks like a cube
-        h = Math.max(3 * d, h);
         return new Dimension(w, h);
     }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#setBounds(int, int, int, int)
-     */
-    protected void setBoundsImpl(int x, int y, int w, int h) {
+    public void setBounds(int x, int y, int w, int h) {
         if (getNameFig() == null) {
             return;
-        }
+	}
 
         Rectangle oldBounds = getBounds();
-        getBigPort().setBounds(x, y, w, h);
-        cover.setBounds(x, y + d, w - d, h - d);
+        _bigPort.setBounds(x, y, w, h);
+        _cover.setBounds(x, y, w, h);
 
         Dimension stereoDim = getStereotypeFig().getMinimumSize();
         Dimension nameDim = getNameFig().getMinimumSize();
-        getNameFig().setBounds(
-                x + 4, y + d + stereoDim.height + 1,
-                w - d - 8, nameDim.height);
-        getStereotypeFig().setBounds(x + 1, y + d + 1,
-                w - d - 2, stereoDim.height);
+        getNameFig().setBounds(x + 1, y + stereoDim.height + 1,
+			       w - 1, nameDim.height);
+        getStereotypeFig().setBounds(x + 1, y + 1, w - 2, stereoDim.height);
         _x = x;
         _y = y;
         _w = w;
@@ -220,53 +150,38 @@ public class FigMNodeInstance extends FigNodeModelElement {
         updateEdges();
     }
 
-    /**
-     * @see org.argouml.uml.diagram.ui.FigNodeModelElement#updateStereotypeText()
-     */
     protected void updateStereotypeText() {
-        getStereotypeFig().setOwner(getOwner());
+        Object me = /*(MModelElement)*/ getOwner();
+        if (me == null)
+            return;
+	Object stereo = null;
+	if (ModelFacade.getStereotypes(me).size() > 0) {
+            stereo = ModelFacade.getStereotypes(me).iterator().next();
+        }
+        if (stereo == null
+                || ModelFacade.getName(stereo) == null
+                || ModelFacade.getName(stereo).length() == 0) {
+            setStereotype("");
+	} else {
+            setStereotype(Notation.generateStereotype(this, stereo));
+        }
     }
 
     ////////////////////////////////////////////////////////////////
     // user interaction methods
 
-    /**
-     * @see java.awt.event.MouseListener#mouseClicked(java.awt.event.MouseEvent)
-     */
     public void mouseClicked(MouseEvent me) {
         super.mouseClicked(me);
         setLineColor(Color.black);
     }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#setEnclosingFig(org.tigris.gef.presentation.Fig)
-     */
     public void setEnclosingFig(Fig encloser) {
-        if (getOwner() != null) {
-            Object nod = /*(MNodeInstance)*/ getOwner();
-            if (encloser != null) {
-                Object comp = /*(MComponentInstance)*/ encloser.getOwner();
-                if (Model.getFacade().isAComponentInstance(comp)) {
-                    if (Model.getFacade().getComponentInstance(nod) != comp) {
-                        Model.getCommonBehaviorHelper()
-                                .setComponentInstance(nod, comp);
-                        super.setEnclosingFig(encloser);
-                    }
-                } else if (Model.getFacade().isANode(comp)) {
-                    super.setEnclosingFig(encloser);
-                }
-            } else if (encloser == null) {
-                if (Model.getFacade().getComponentInstance(nod) != null) {
-                    Model.getCommonBehaviorHelper()
-                            .setComponentInstance(nod, null);
-                    super.setEnclosingFig(encloser);
-                }
-            }
-        }
+        super.setEnclosingFig(encloser);
+        Vector figures = getEnclosedFigs();
 
         if (getLayer() != null) {
             // elementOrdering(figures);
-            Collection contents = new ArrayList(getLayer().getContents());
+            Collection contents = getLayer().getContents(null);
             Iterator it = contents.iterator();
             while (it.hasNext()) {
                 Object o = it.next();
@@ -278,110 +193,57 @@ public class FigMNodeInstance extends FigNodeModelElement {
         }
     }
 
-    /**
-     * @see org.argouml.uml.diagram.ui.FigNodeModelElement#textEdited(org.tigris.gef.presentation.FigText)
-     */
     protected void textEdited(FigText ft) throws PropertyVetoException {
+        // super.textEdited(ft);
+        Object noi = /*(MNodeInstance)*/ getOwner();
         if (ft == getNameFig()) {
-            notationProvider.parse(getOwner(), ft.getText());
-            ft.setText(notationProvider.toString(getOwner(), null));
+            String s = ft.getText().trim();
+            // why ever...
+            //       if (s.length()>0) {
+            //         s = s.substring(0, (s.length() - 1));
+            //      }
+            ParserDisplay.SINGLETON.parseNodeInstance(noi, s);
         }
     }
 
-    /**
-     * @see org.argouml.uml.diagram.ui.FigNodeModelElement#textEditStarted(org.tigris.gef.presentation.FigText)
-     */
-    protected void textEditStarted(FigText ft) {
-        if (ft == getNameFig()) {
-            showHelp(notationProvider.getParsingHelp());
-        }
-    }
-
-    /**
-     * @see org.tigris.gef.presentation.Fig#getUseTrapRect()
-     */
     public boolean getUseTrapRect() {
         return true;
     }
 
-    /**
-     * The UID.
-     */
     static final long serialVersionUID = 8822005566372687713L;
-
-    /**
-     * @see org.argouml.uml.diagram.ui.FigNodeModelElement#modelChanged(java.beans.PropertyChangeEvent)
-     */
-    protected void modelChanged(PropertyChangeEvent mee) {
-        super.modelChanged(mee);
-        if (mee instanceof AssociationChangeEvent 
-                || mee instanceof AttributeChangeEvent) {
-            renderingChanged();
-            updateListeners(getOwner(), getOwner());
-            damage();
-        }
-    }
-
-    /**
-     * @see org.argouml.uml.diagram.ui.FigNodeModelElement#updateListeners(java.lang.Object)
-     */
-    protected void updateListeners(Object oldOwner, Object newOwner) {
-        if (oldOwner != null) {
-            removeAllElementListeners();
-        }
-        if (newOwner != null) {
-            // add the listeners to the newOwner
-            addElementListener(newOwner);
-            Collection c = Model.getFacade().getStereotypes(newOwner);
-            Iterator i = c.iterator();
-            while (i.hasNext()) {
-                Object st = i.next();
-                addElementListener(st, "name");
-            }
-            c = Model.getFacade().getClassifiers(newOwner);
-            i = c.iterator();
-            while (i.hasNext()) {
-                Object st = i.next();
-                addElementListener(st, "name");
-            }
-        }
-    }
 
     /**
      * @see org.argouml.uml.diagram.ui.FigNodeModelElement#updateNameText()
      */
     protected void updateNameText() {
-        if (isReadyToEdit()) {
-            getNameFig().setText(notationProvider.toString(getOwner(), null));
+        Object noi = /*(MNodeInstance)*/ getOwner();
+        if (noi == null)
+            return;
+        String nameStr = "";
+        if (ModelFacade.getName(noi) != null) {
+            nameStr = ModelFacade.getName(noi).trim();
         }
+        // construct bases string (comma separated)
+        String baseStr = "";
+        Collection col = ModelFacade.getClassifiers(noi);
+        if (col != null && col.size() > 0) {
+            Iterator it = col.iterator();
+            baseStr = ModelFacade.getName(it.next());
+            while (it.hasNext()) {
+                baseStr += ", " + ModelFacade.getName(it.next());
+            }
+        }
+
+        if (_readyToEdit) {
+            if (nameStr == "" && baseStr == "") {
+                getNameFig().setText("");
+	    } else {
+                getNameFig().setText(nameStr.trim() + " : " + baseStr);
+	    }
+        }
+        Dimension nameMin = getNameFig().getMinimumSize();
         Rectangle r = getBounds();
         setBounds(r.x, r.y, r.width, r.height);
     }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#getClosestPoint(java.awt.Point)
-     */
-    public Point getClosestPoint(Point anotherPt) {
-        Rectangle r = getBounds();
-        int[] xs = {
-            r.x,
-            r.x + d,
-            r.x + r.width,
-            r.x + r.width,
-            r.x + r.width - d,
-            r.x,
-            r.x,
-        };
-        int[] ys = {
-            r.y + d,
-            r.y,
-            r.y,
-            r.y + r.height - d,
-            r.y + r.height,
-            r.y + r.height,
-            r.y + d,
-        };
-        Point p = Geometry.ptClosestTo(xs, ys, 7, anotherPt);
-        return p;
-    }
 } /* end class FigMNodeInstance */

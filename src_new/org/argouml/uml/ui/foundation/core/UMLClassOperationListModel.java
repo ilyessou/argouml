@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,20 +24,16 @@
 
 package org.argouml.uml.ui.foundation.core;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.argouml.model.Model;
-import org.argouml.uml.ui.UMLModelElementOrderedListModel2;
+import org.argouml.uml.ui.UMLModelElementListModel2;
+import org.argouml.model.ModelFacade;
 
 /**
  *
  * @author jaap.branderhorst@xs4all.nl, alexb
  * @since Mar 22, 2003
  */
-public class UMLClassOperationListModel
-    extends UMLModelElementOrderedListModel2 {
-
+public class UMLClassOperationListModel extends UMLModelElementListModel2 {
+   
     /**
      * Constructor for UMLClassifierFeatureListModel.
      */
@@ -49,8 +45,8 @@ public class UMLClassOperationListModel
      * @see org.argouml.uml.ui.UMLModelElementListModel2#buildModelList()
      */
     protected void buildModelList() {
-        if (getTarget() != null) {
-            setAllElements(Model.getFacade().getOperations(getTarget()));
+        if (ModelFacade.isAClassifier(getTarget())) {
+            setAllElements(ModelFacade.getOperations(getTarget()));
         }
     }
 
@@ -58,25 +54,8 @@ public class UMLClassOperationListModel
      * @see org.argouml.uml.ui.UMLModelElementListModel2#isValidElement(Object)
      */
     protected boolean isValidElement(Object/*MBase*/ element) {
-        return (Model.getFacade().getOperations(getTarget()).contains(element));
+        return ModelFacade.isAClassifier(getTarget())
+		&& ModelFacade.getOperations(getTarget()).contains(element);
     }
 
-    /**
-     * @see org.argouml.uml.ui.UMLModelElementOrderedListModel2#moveDown(int)
-     */
-    protected void moveDown(int index1) {
-        int index2 = index1 + 1;
-        Object clss = getTarget();
-        List c = new ArrayList(Model.getFacade().getOperations(clss));
-        Object mem1 = c.get(index1);
-        Object mem2 = c.get(index2);
-        List cc = new ArrayList(c);
-        cc.remove(mem1);
-        cc.remove(mem2);
-        Model.getCoreHelper().setOperations(clss, cc);
-        c.set(index1, mem2);
-        c.set(index2, mem1);
-        Model.getCoreHelper().setOperations(clss, c);
-        buildModelList();
-    }
 }

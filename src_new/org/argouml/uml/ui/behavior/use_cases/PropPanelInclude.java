@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,17 +22,21 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: PropPanelInclude.java
+// Classes: PropPanelInclude
+// Original Author: mail@jeremybennett.com
+
 package org.argouml.uml.ui.behavior.use_cases;
 
-import javax.swing.JList;
-import javax.swing.JScrollPane;
+import javax.swing.JComboBox;
 
 import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
-import org.argouml.uml.ui.ActionNavigateNamespace;
-import org.argouml.uml.ui.UMLLinkedList;
+import org.argouml.model.ModelFacade;
+
+import org.argouml.uml.ui.PropPanelButton;
+import org.argouml.uml.ui.UMLComboBox2;
+import org.argouml.uml.ui.UMLComboBoxNavigator;
 import org.argouml.uml.ui.foundation.core.PropPanelModelElement;
-import org.argouml.uml.ui.foundation.extension_mechanisms.ActionNewStereotype;
 import org.argouml.util.ConfigLoader;
 
 /**
@@ -42,98 +46,157 @@ import org.argouml.util.ConfigLoader;
  * semantic meaning of its own, we derive directly from
  * PropPanelModelElement (as other children of Relationship do).<p>
  *
- * @author Jeremy Bennett
  */
 public class PropPanelInclude extends PropPanelModelElement {
 
-    /**
-     * The serial version.
-     */
-    private static final long serialVersionUID = -8235207258195445477L;
-
 
     /**
-     * Construct a property panel for Include model elements.
+     * Constructor. Builds up the various fields required.
      */
     public PropPanelInclude() {
-        super("Include",
-                lookupIcon("Include"),
-                ConfigLoader.getTabPropsOrientation());
+        super("Include", ConfigLoader.getTabPropsOrientation());
 
-        addField(Translator.localize("label.name"),
+        addField(Translator.localize("UMLMenu", "label.name"),
 		 getNameTextField());
-        addField(Translator.localize("label.namespace"),
+        addField(Translator.localize("UMLMenu", "label.stereotype"),
+		 new UMLComboBoxNavigator(this,
+					  Translator.localize(
+					      "UMLMenu",
+					      "tooltip.nav-stereo"),
+					  getStereotypeBox()));
+        addField(Translator.localize("UMLMenu", "label.namespace"),
 		 getNamespaceScroll());
 
-        addSeparator();
+        addSeperator();
 
-        JList baseBox =
-	    new UMLLinkedList(new UMLIncludeBaseListModel());
-        addField(Translator.localize("label.usecase-base"),
-		 getSingleRowScroll(baseBox));
+        JComboBox baseBox =
+	    new UMLComboBox2(new UMLIncludeBaseComboBoxModel(),
+			     ActionSetIncludeBase.SINGLETON);
+        addField(Translator.localize("UMLMenu", "label.usecase-base"),
+		 baseBox);
 
-        JList additionBox =
-	    new UMLLinkedList(new UMLIncludeAdditionListModel());
-        addField(Translator.localize("label.addition"),
-		 getSingleRowScroll(additionBox));
+        JComboBox additionBox =
+	    new UMLComboBox2(new UMLIncludeAdditionComboBoxModel(),
+			     ActionSetIncludeAddition.SINGLETON);
+        addField(Translator.localize("UMLMenu", "label.addition"),
+		 additionBox);
 
-        // Add the toolbar buttons:
-        addAction(new ActionNavigateNamespace());
-        addAction(new ActionNewStereotype());
-        addAction(getDeleteAction());
+   /*
+        // TODO:
+        // FIXME - Why is this code commented out - is there work to do here - Bob Tarling
+    *
+        // The addition use case (reuse earlier variables). Note that because
+        // of the NSUML bug we look for the "base" event, rather than the
+        // "addition" event" here.
+
+        addSeperator();
+
+        model = new UMLComboBoxModel(this, "isAcceptableUseCase",
+                                     "base", "getAddition",
+                                     "setAddition", true, MUseCase.class,
+                                     true);
+        box   = new UMLComboBox(model);
+        nav   = new UMLComboBoxNavigator(this, "NavUseCase", box);
+
+        addCaption("Addition:", 1, 1, 0);
+        addField(nav, 1, 1, 0);
+*/
+        // Add the toolbar. Just the four basic buttons for now.
+
+        new PropPanelButton(this, buttonPanel, _navUpIcon,
+			    Translator.localize("UMLMenu", "button.go-up"),
+			    "navigateNamespace",
+			    null);
+        new PropPanelButton(this, buttonPanel, _deleteIcon,
+                            localize("Delete"), "removeElement", null);
     }
 
-    /**
-     * @param list the list to wrap in a scrollpane.
-     * @return a scrollpane with a single row
-     */
-    protected JScrollPane getSingleRowScroll(JList list) {
-        list.setVisibleRowCount(1);
-        JScrollPane scroll = new JScrollPane(list);
-
-        return scroll;
-    }
 
     /**
      * Get the current base use case of the include relationship.<p>
-     * @return The UseCase that is the base of this include relationship or
-     * <code>null</code> if there is none.
+     *
+     * <em>Note</em>. There is a bug in NSUML, where the "include" and
+     * "include2" associations of a use case are back to front, i.e
+     * "include" is used as the opposite end of "addition" to point to
+     * an including use case, rather than an included use case.  Fixed
+     * within the include relationship, rather than the use case, by
+     * reversing the use of access functions for the "base" and
+     * "addition" associations in the code.<p>
+     *
+     * @return The {@link ru.novosoft.uml.behavior.use_cases.MUseCase}
+     * that is the base of this include relationship or
+     * <code>null</code> if there is none. Returned as type {@link
+     * ru.novosoft.uml.behavior.use_cases.MUseCase} to fit in with the
+     * type specified for the {@link org.argouml.uml.ui.UMLComboBoxModel}.
      */
     public Object getBase() {
         Object base   = null;
         Object      target = getTarget();
 
-        if (Model.getFacade().isAInclude(target)) {
-            base = Model.getFacade().getBase(target);
+        // Note that because of the NSUML bug, we must use getAddition() rather
+        // than getBase() to get the base use case.
+
+        if (ModelFacade.isAInclude(target)) {
+            base = ModelFacade.getAddition(target);
         }
         return base;
     }
 
     /**
      * Set the base use case of the include relationship.<p>
-     * @param base The UseCase to set as the base of this include relationship.
+     *
+     * <em>Note</em>. There is a bug in NSUML, where the "include" and
+     * "include2" associations of a use case are back to front, i.e
+     * "include" is used as the opposite end of "addition" to point to
+     * an including use case, rather than an included use case.  Fixed
+     * within the include relationship, rather than the use case, by
+     * reversing the use of access functions for the "base" and
+     * "addition" associations in the code.<p>
+     *
+     * @param base The {@link
+     * ru.novosoft.uml.behavior.use_cases.MUseCase} to set as the base
+     * of this include relationship. Supplied as type {@link
+     * ru.novosoft.uml.behavior.use_cases.MUseCase} to fit in with the
+     * type specified for the {@link org.argouml.uml.ui.UMLComboBoxModel}.
      */
     public void setBase(Object/*MUseCase*/ base) {
         Object target = getTarget();
 
-        if (Model.getFacade().isAInclude(target)) {
-            Model.getUseCasesHelper().setBase(target, base);
+        // Note that because of the NSUML bug, we must use setAddition() rather
+        // than setBase() to set the base use case.
+
+        if (ModelFacade.isAInclude(target)) {
+            ModelFacade.setAddition(target, base);
         }
     }
+
 
     /**
      * Get the current addition use case of the include relationship.<p>
      *
+     * <em>Note</em>. There is a bug in NSUML, where the "include" and
+     * "include2" associations of a use case are back to front, i.e
+     * "include" is used as the opposite end of "addition" to point to
+     * an including use case, rather than an included use case.  Fixed
+     * within the include relationship, rather than the use case, by
+     * reversing the use of access functions for the "base" and
+     * "addition" associations in the code.<p>
      *
-     * @return The UseCase that is the addition of this include
-     * relationship or <code>null</code> if there is none.
+     * @return The {@link ru.novosoft.uml.behavior.use_cases.MUseCase}
+     * that is the addition of this include relationship or
+     * <code>null</code> if there is none. Returned as type {@link
+     * ru.novosoft.uml.behavior.use_cases.MUseCase} to fit in with the
+     * type specified for the {@link org.argouml.uml.ui.UMLComboBoxModel}.
      */
     public Object getAddition() {
         Object addition   = null;
         Object target = getTarget();
 
-        if (Model.getFacade().isAInclude(target)) {
-            addition = Model.getFacade().getAddition(target);
+        // Note that because of the NSUML bug, we must use getBase() rather
+        // than getAddition() to get the addition use case.
+
+        if (ModelFacade.isAInclude(target)) {
+            addition = ModelFacade.getBase(target);
         }
 
         return addition;
@@ -142,15 +205,28 @@ public class PropPanelInclude extends PropPanelModelElement {
     /**
      * Set the addition use case of the include relationship.<p>
      *
+     * <em>Note</em>. There is a bug in NSUML, where the "include" and
+     * "include2" associations of a use case are back to front, i.e
+     * "include" is used as the opposite end of "addition" to point to
+     * an including use case, rather than an included use case.  Fixed
+     * within the include relationship, rather than the use case, by
+     * reversing the use of access functions for the "base" and
+     * "addition" associations in the code.<p>
      *
-     * @param addition The UseCase to set as the addition of this
-     * include relationship.
+     * @param addition The {@link
+     * ru.novosoft.uml.behavior.use_cases.MUseCase} to set as the
+     * addition of this include relationship. Supplied as type {@link
+     * ru.novosoft.uml.behavior.use_cases.MUseCase} to fit in with the
+     * type specified for the {@link org.argouml.uml.ui.UMLComboBoxModel}.
      */
     public void setAddition(Object/*MUseCase*/ addition) {
         Object target = getTarget();
 
-        if (Model.getFacade().isAInclude(target)) {
-            Model.getUseCasesHelper().setAddition(target, addition);
+        // Note that because of the NSUML bug, we must use setBase() rather
+        // than setAddition() to set the addition use case.
+
+        if (ModelFacade.isAInclude(target)) {
+            ModelFacade.setBase(target, addition);
         }
     }
 
@@ -164,14 +240,15 @@ public class PropPanelInclude extends PropPanelModelElement {
      * temporarily, for example while reversing a relationship. It is
      * up to a critic to track this.<p>
      *
-     * @param modElem the ModelElement to test.
+     * @param modElem the {@link
+     * ru.novosoft.uml.foundation.core.MModelElement} to test.
      *
      * @return <code>true</code> if modElem is a use case,
      * <code>false</code> otherwise.
      */
     public boolean isAcceptableUseCase(Object/*MModelElement*/ modElem) {
 
-        return Model.getFacade().isAUseCase(modElem);
+        return ModelFacade.isAUseCase(modElem);
     }
 
 

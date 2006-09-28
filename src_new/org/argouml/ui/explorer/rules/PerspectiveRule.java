@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -35,28 +35,22 @@ import java.util.Set;
  * @author  alexb
  */
 public interface PerspectiveRule {
-
+    
     /**
-     * @return the name of the rule, like "from->to".
+     * @return the name of the rule, like "from -> to".
      */
-    String getRuleName();
-
+    public String getRuleName();
+    
     /**
-     * Gets a collection of 'child' objects for the given 'parent' object in the
-     * uml model, which creates the tree structure.
-     *
-     * @param parent the given parent
-     * @return the children
+     * gets a collection of 'child' objects for any 'parent' object in the
+     * uml model, this creates the tree structure.
      */
-    Collection getChildren(Object parent);
-
+    public Collection getChildren(Object parent);
+    
     /**
-     * Gets a collection of objects for any 'parent' object in the
+     * gets a collection of objects for any 'parent' object in the
      * uml model for which the tree structure must be recreated when
      * they are changed.
-     *
-     * @param parent the parent
-     * @return the dependent objects
      */
-    Set getDependencies(Object parent);
+    public Set getDependencies(Object parent);
 }

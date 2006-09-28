@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2005 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -34,8 +34,7 @@ import org.argouml.application.api.PluggableMenu;
 import org.argouml.ui.ProjectBrowser;
 import org.argouml.uml.ui.UMLAction;
 
-/**
- * Plugin for synchronizing Java sources (RTE).
+/** Plugin for synchronizing Java sources (RTE).
  *
  *  @author Thomas Neustupny
  *  @since  0.11.3
@@ -51,25 +50,17 @@ public class ActionSynchronize extends UMLAction implements PluggableMenu
 
     /**
      * Opens the synchronization dialog and fills it with 'differences'
-     *
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
      */
     public void actionPerformed(ActionEvent event) {
 	//Argo.log.info("User clicked on '" + event.getActionCommand() + "'");
-	SynchronizeDialog syndia =
-	    new SynchronizeDialog(ProjectBrowser.getInstance(), true);
-	syndia.setVisible(true);
+	SynchronizeDialog syndia = new SynchronizeDialog(ProjectBrowser.getInstance(), true);
+	syndia.show();
     }
 
-    /**
-     * @see org.argouml.application.api.ArgoModule#setModuleEnabled(boolean)
-     */
     public void setModuleEnabled(boolean v) { }
 
     /**
      * Initialize module
-     *
-     * @see org.argouml.application.api.ArgoModule#initializeModule()
      */
     public boolean initializeModule() {
 	//Argo.log.info ("+--------------------------+");
@@ -78,19 +69,12 @@ public class ActionSynchronize extends UMLAction implements PluggableMenu
 	return true;
     }
 
-    /**
-     * @see org.argouml.application.api.PluggableMenu#buildContext(
-     * javax.swing.JMenuItem, java.lang.String)
-     */
     public Object[] buildContext(JMenuItem a, String b) {
 	return new Object[] {
 	    a, b
 	};
     }
 
-    /**
-     * @see org.argouml.application.api.Pluggable#inContext(java.lang.Object[])
-     */
     public boolean inContext(Object[] o) {
 	if (o.length < 2) return false;
 	// We are in context for any JMenuItem.
@@ -100,67 +84,25 @@ public class ActionSynchronize extends UMLAction implements PluggableMenu
 	return false;
     }
 
-    /**
-     * @see org.argouml.application.api.ArgoModule#isModuleEnabled()
-     */
     public boolean isModuleEnabled() { return true; }
-
-    /**
-     * @see org.argouml.application.api.ArgoModule#getModulePopUpActions(
-     * java.util.Vector, java.lang.Object)
-     */
     public Vector getModulePopUpActions(Vector v, Object o) { return null; }
-
-    /**
-     * @see org.argouml.application.api.ArgoModule#shutdownModule()
-     */
     public boolean shutdownModule() { return true; }
-
-    /**
-     * @see org.argouml.application.api.ArgoModule#getModuleName()
-     */
     public String getModuleName() { return "ActionSynchronize"; }
-
-    /**
-     * @see org.argouml.application.api.ArgoModule#getModuleDescription()
-     */
-    public String getModuleDescription() {
-        return "Menu Item for Synchronizing Model and Java Code";
-    }
-
-    /**
-     * @see org.argouml.application.api.ArgoModule#getModuleAuthor()
-     */
+    public String getModuleDescription() { return "Menu Item for Synchronizing Model and Java Code"; }
     public String getModuleAuthor() { return "Thomas Neustupny"; }
-
-    /**
-     * @see org.argouml.application.api.ArgoModule#getModuleVersion()
-     */
     public String getModuleVersion() { return "0.11.3"; }
-
-    /**
-     * @see org.argouml.application.api.ArgoModule#getModuleKey()
-     */
     public String getModuleKey() { return "module.language.java.rte"; }
 
-    /**
-     * @param mi parent menu item
-     * @param s menu item name
-     * @return the new menu item
-     */
     public JMenuItem getMenuItem(JMenuItem mi, String s) {
 	return getMenuItem(buildContext(mi, s));
     }
 
-    /**
-     * @see org.argouml.application.api.PluggableMenu#getMenuItem(java.lang.Object[])
-     */
     public JMenuItem getMenuItem(Object [] context) {
 	if (!inContext(context)) {
 	    return null;
 	}
-	JMenuItem item = new JMenuItem("Synchronize model/code...");
-	item.addActionListener(this);
-	return item;
+	JMenuItem _menuItem = new JMenuItem("Synchronize model/code...");
+	_menuItem.addActionListener(this);
+	return _menuItem;
     }
 }

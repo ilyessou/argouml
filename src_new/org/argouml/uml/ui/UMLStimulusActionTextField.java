@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -23,59 +23,53 @@
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 package org.argouml.uml.ui;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-
-import javax.swing.JTextField;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
+import javax.swing.event.*;
+import javax.swing.*;
+import ru.novosoft.uml.MElementEvent;
 
 /**
  * TODO: this class should be moved to package
  * org.argouml.uml.ui.behavior.common_behavior
  */
-public class UMLStimulusActionTextField extends JTextField
-    implements DocumentListener, UMLUserInterfaceComponent, PropertyChangeListener {
+public class UMLStimulusActionTextField extends JTextField implements DocumentListener, UMLUserInterfaceComponent {
 
-    private UMLUserInterfaceContainer theContainer;
-    private UMLStimulusActionTextProperty theProperty;
-
-    /**
-     * Creates new BooleanChangeListener.
-     *
-     * @param container the container of UML user interface components
-     * @param property the property
-     */
-    public UMLStimulusActionTextField(UMLUserInterfaceContainer container,
-            UMLStimulusActionTextProperty property) {
-        theContainer = container;
-        theProperty = property;
+    private UMLUserInterfaceContainer _container;
+    private UMLStimulusActionTextProperty _property;
+    
+    /** Creates new BooleanChangeListener */
+    public UMLStimulusActionTextField(UMLUserInterfaceContainer container, UMLStimulusActionTextProperty property) {
+        _container = container;
+        _property = property;
         getDocument().addDocumentListener(this);
         update();
     }
 
-    /**
-     * @see org.argouml.uml.ui.UMLUserInterfaceComponent#targetChanged()
-     */
     public void targetChanged() {
-        theProperty.targetChanged();
+        _property.targetChanged();
         update();
     }
 
-    /**
-     * @see org.argouml.uml.ui.UMLUserInterfaceComponent#targetReasserted()
-     */
     public void targetReasserted() {
     }
-
-    public void propertyChange(PropertyChangeEvent event) {
-        if (theProperty.isAffected(event)) {
+    
+    public void roleAdded(final MElementEvent p1) {
+    }
+    public void recovered(final MElementEvent p1) {
+    }
+    public void roleRemoved(final MElementEvent p1) {
+    }
+    public void listRoleItemSet(final MElementEvent p1) {
+    }
+    public void removed(final MElementEvent p1) {
+    }
+    public void propertySet(final MElementEvent event) {	
+        if (_property.isAffected(event)) {
             //
             //   check the possibility that this is a promiscuous event
             Object eventSource = event.getSource();
-            Object target = theContainer.getTarget();
+            Object target = _container.getTarget();
             //
-            //    if event source is unknown or
+            //    if event source is unknown or 
             //       the event source is the container's target
             //          then update the field
             if (eventSource == null || eventSource == target) {
@@ -83,12 +77,12 @@ public class UMLStimulusActionTextField extends JTextField
             }
         }
     }
-
+    
     private void update() {
-
+	
         String oldText = getText();
-
-        String newText = theProperty.getProperty(theContainer);
+	
+        String newText = _property.getProperty(_container);
 
         if (oldText == null || newText == null || !oldText.equals(newText)) {
             if (oldText != newText) {
@@ -96,35 +90,23 @@ public class UMLStimulusActionTextField extends JTextField
             }
         }
     }
-
-    /**
-     * @see javax.swing.event.DocumentListener#changedUpdate(javax.swing.event.DocumentEvent)
-     */
     public void changedUpdate(final DocumentEvent p1) {
 
-        theProperty.setProperty(theContainer, getText());
+        _property.setProperty(_container, getText());
     }
-
-    /**
-     * @see javax.swing.event.DocumentListener#removeUpdate(javax.swing.event.DocumentEvent)
-     */
     public void removeUpdate(final DocumentEvent p1) {
 
-        theProperty.setProperty(theContainer, getText());
+        _property.setProperty(_container, getText());
     }
-
-    /**
-     * @see javax.swing.event.DocumentListener#insertUpdate(javax.swing.event.DocumentEvent)
-     */
     public void insertUpdate(final DocumentEvent p1) {
-
-
-        theProperty.setProperty(theContainer, getText());
-
+	
+	
+        _property.setProperty(_container, getText());
+	
     }
 
 
-
+  
 
 
 }

@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2003 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,148 +24,146 @@
 
 package org.argouml.ui;
 
-import java.awt.FlowLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.event.FocusListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.KeyListener;
 
-import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
-import javax.swing.JPanel;
+import javax.swing.text.Document;
 
 import org.argouml.i18n.Translator;
 import org.argouml.uml.diagram.ui.FigNodeModelElement;
-import org.argouml.uml.diagram.ui.PathContainer;
 import org.tigris.gef.ui.ColorRenderer;
 
 /**
  * Stylepanel which provides base style information for modelelements, e.g.
  * shadow width.
- *
+ * 
  */
-public class StylePanelFigNodeModelElement
-    extends StylePanelFig
-    implements ItemListener, FocusListener, KeyListener {
+public class StylePanelFigNodeModelElement extends StylePanelFig implements
+        ItemListener, FocusListener, KeyListener {
 
-    /**
-     * Flag to indicate that a refresh is going on.
-     */
-    private boolean refreshTransaction;
+    protected JLabel _shadowLabel = new JLabel(Translator
+            .localize("label.stylepane.shadow")
+            + ": ");
 
-    private JLabel shadowLabel =
-        new JLabel(Translator.localize("label.stylepane.shadow") + ": ");
+    protected JComboBox _shadowField = new ShadowComboBox();
 
-    /* TODO: i18n */
-    private JLabel displayLabel = new JLabel("Display: ");
-
-    private JCheckBox pathCheckBox = new JCheckBox("Path");
-
-    private JComboBox shadowField = new ShadowComboBox();
-
-    private JPanel displayPane;
-
-    /**
-     * The constructor.
-     *
-     */
     public StylePanelFigNodeModelElement() {
-        super();
-        shadowField.addItemListener(this);
+        super("Fig Appearance");
+        initChoices();
+        GridBagLayout gb = (GridBagLayout) getLayout();
+        GridBagConstraints c = new GridBagConstraints();
+        c.fill = GridBagConstraints.BOTH;
+        c.ipadx = 0;
+        c.ipady = 0;
 
-        getFillField().setRenderer(new ColorRenderer());
-        getLineField().setRenderer(new ColorRenderer());
+        Document bboxDoc = _bboxField.getDocument();
+        bboxDoc.addDocumentListener(this);
+        _bboxField.addKeyListener(this);
+        _bboxField.addFocusListener(this);
+        _fillField.addItemListener(this);
+        _lineField.addItemListener(this);
+        _shadowField.addItemListener(this);
 
-        shadowLabel.setLabelFor(shadowField);
-        add(shadowLabel);
-        add(shadowField);
+        _fillField.setRenderer(new ColorRenderer());
+        _lineField.setRenderer(new ColorRenderer());
 
-        displayPane = new JPanel();
-        displayPane.setLayout(new FlowLayout(FlowLayout.LEFT));
-        addToDisplayPane(pathCheckBox);
+        c.gridx = 0;
+        c.gridwidth = 1;
+        c.gridy = 1;
+        c.weightx = 0.0;
+        gb.setConstraints(_bboxLabel, c);
+        add(_bboxLabel);
+        c.gridy = 2;
+        gb.setConstraints(_fillLabel, c);
+        add(_fillLabel);
+        c.gridy = 3;
+        gb.setConstraints(_lineLabel, c);
+        add(_lineLabel);
+        c.gridy = 4;
+        gb.setConstraints(_shadowLabel, c);
+        add(_shadowLabel);
 
-        displayLabel.setLabelFor(displayPane);
-        add(displayPane, 0); // add in front of the others
-        add(displayLabel, 0); // add the label in front of the "pane"
+        c.weightx = 1.0;
+        c.gridx = 1;
+        c.gridy = 1;
+        gb.setConstraints(_bboxField, c);
+        add(_bboxField);
+        c.gridy = 2;
+        gb.setConstraints(_fillField, c);
+        add(_fillField);
+        c.gridy = 3;
+        gb.setConstraints(_lineField, c);
+        add(_lineField);
+        c.gridy = 4;
+        gb.setConstraints(_shadowField, c);
+        add(_shadowField);
 
-        //This instead of the label ???
-        //displayPane.setBorder(new TitledBorder(
-        //    Translator.localize("Display: ")));
+        c.weightx = 0.0;
+        c.gridx = 2;
+        c.gridy = 1;
+        gb.setConstraints(_spacer, c);
+        add(_spacer);
 
-        pathCheckBox.addItemListener(this);
-    }
+        c.gridx = 3;
+        c.gridy = 10;
+        gb.setConstraints(_spacer2, c);
+        add(_spacer2);
 
-    /**
-     * Add a given checkbox to the panel.
-     * 
-     * @param cb the given checkbox
-     */
-    public void addToDisplayPane(JCheckBox cb) {
-        displayPane.add(cb);
+        c.weightx = 1.0;
+        c.gridx = 4;
+        c.gridy = 10;
+        gb.setConstraints(_spacer3, c);
+        add(_spacer3);
     }
 
     /**
      * @see org.argouml.ui.TabTarget#refresh()
      */
     public void refresh() {
-        refreshTransaction = true;
+
         // Let the parent do its refresh.
+
         super.refresh();
-        PathContainer pc = (PathContainer) getPanelTarget();
-        pathCheckBox.setSelected(pc.isPathVisible());
-        refreshTransaction = false;
 
         // Change the shadow size if appropriate
-        if (getPanelTarget() instanceof FigNodeModelElement) {
+        if (_target instanceof FigNodeModelElement) {
 
-            int shadowSize =
-                ((FigNodeModelElement) getPanelTarget()).getShadowSize();
+            int shadowSize = ((FigNodeModelElement) _target).getShadowSize();
 
             if (shadowSize > 0) {
-                shadowField.setSelectedIndex(shadowSize);
+                _shadowField.setSelectedIndex(shadowSize);
             } else {
-                shadowField.setSelectedIndex(0);
+                _shadowField.setSelectedIndex(0);
             }
         }
         // lets redraw the box
         setTargetBBox();
     }
 
-    /**
-     * Handle changes in the shadowfield.
-     */
     public void setTargetShadow() {
-        int i = shadowField.getSelectedIndex();
-        if (getPanelTarget() == null
-                || !(getPanelTarget() instanceof FigNodeModelElement)) {
-            return;
-        }
-        FigNodeModelElement nodeTarget = (FigNodeModelElement) getPanelTarget();
+        int i = _shadowField.getSelectedIndex();
+        if (_target == null || !(_target instanceof FigNodeModelElement))
+                return;
+        FigNodeModelElement nodeTarget = (FigNodeModelElement) _target;
+        int oldShadowSize = nodeTarget.getShadowSize();
         nodeTarget.setShadowSize(i);
-        getPanelTarget().endTrans();
-    }
-
-    /**
-     * @see java.awt.event.ItemListener#itemStateChanged(java.awt.event.ItemEvent)
-     */
-    public void itemStateChanged(ItemEvent e) {
-        if (!refreshTransaction) {
-            Object src = e.getSource();
-            if (src == shadowField) {
-                setTargetShadow();
-            } else if (src == pathCheckBox) {
-                PathContainer pc = (PathContainer) getPanelTarget();
-                pc.setPathVisible(pathCheckBox.isSelected());
-            } else {
-                super.itemStateChanged(e);
-            }
+        _target.endTrans();
+        if (i != oldShadowSize) {
+            markNeedsSave();
         }
     }
 
+    public void itemStateChanged(ItemEvent e) {
+        super.itemStateChanged(e);
+        Object src = e.getSource();
+        if (src == _shadowField) setTargetShadow();
 
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = 2976511918225030560L;
+    }
+
 } /* end class StylePanelFigNodeModelElement */

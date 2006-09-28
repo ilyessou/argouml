@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,49 +24,37 @@
 
 package org.argouml.uml.ui;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.argouml.model.Model;
-
 /**
- * Test for {@link ActionClassDiagram}.
+ * Test for ActionClassDiagram.
  * @author JBranderhorst
  */
-public class TestActionClassDiagram extends AbstractTestActionAddDiagram {
+public class TestActionClassDiagram extends GUITestActionClassDiagram {
 
     /**
-     * Constructor for GUITestActionClassDiagram.
-     * @param arg0 the name of the test case.
+     * Constructor for TestActionClassDiagram.
+     * @param arg0 name of test case.
      */
     public TestActionClassDiagram(String arg0) {
 	super(arg0);
     }
 
     /**
-     * @see org.argouml.uml.ui.AbstractTestActionAddDiagram#getAction()
+     * Disable the test that doesn't work without head.
      */
-    protected ActionAddDiagram getAction() {
-	return new ActionClassDiagram();
-    }
+    public void testCreateDiagram() { }
 
     /**
-     * @see org.argouml.uml.ui.AbstractTestActionAddDiagram#getNamespace()
+     * Disable the test that doesn't work without head.
      */
-    protected Object getNamespace() {
-    	// Return a package to use as the Namespace.
-	return Model.getModelManagementFactory().createPackage();
-    }
+    public void testDifferentNames() { }
 
     /**
-     * @see org.argouml.uml.ui.
-     * AbstractTestActionAddDiagram#getValidNamespaceClasses()
+     * Disable the test that doesn't work without head.
      */
-    protected List getValidNamespaceClasses() {
-	List returnList = new ArrayList();
-	returnList.add(Model.getMetaTypes().getPackage());
-	returnList.add(Model.getMetaTypes().getModel());
-	return returnList;
-    }
+    // public void testValidTestNamespace() { }
 
+    /**
+     * Disable the test that doesn't work without head.
+     */
+    // public void testValidNamespaces() { }
 }

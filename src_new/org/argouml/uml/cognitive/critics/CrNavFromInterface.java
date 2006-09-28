@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,14 +22,18 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: CrNavFromInterface.java
+// Classes: CrNavFromInterface.java
+
 package org.argouml.uml.cognitive.critics;
 
 import java.util.Iterator;
-
 import org.argouml.cognitive.Designer;
 import org.argouml.cognitive.critics.Critic;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
+import org.argouml.model.ModelFacade;
+
+
+// Use Model through ModelFacade
 
 /**
  * A critic to detect navigation from an Interface to a Class in an
@@ -40,10 +44,7 @@ import org.argouml.uml.cognitive.UMLDecision;
  * The critic will trigger whenever an association between an
  * interface and a class is navigable <em>from</em> the interface.<p>
  *
- * See <a href=
- * "http://argouml.tigris.org/documentation/printablehtml/manual/argouml.html/
- * #s2.ref.critics_nav_from_interface">
- * ArgoUML User Manual: N</a>
+ * @see <a href="http://argouml.tigris.org/documentation/printablehtml/manual/argouml.html/#s2.ref.critics_nav_from_interface">ArgoUML User Manual: N</a>
  * @author jrobbins@ics.uci.edu
  */
 public class CrNavFromInterface extends CrUML {
@@ -57,11 +58,15 @@ public class CrNavFromInterface extends CrUML {
      * type (SYNTAX). Adds trigger "end_navigable".<p>
      */
     public CrNavFromInterface() {
-        setupHeadAndDesc();
+
+        // Set the resource label, which will get the headline and description
+        // appropriate for the locale
+
+        setResource("CrNavFromInterface");
 
         // Specify design issue category and knowledge type
 
-        addSupportedDecision(UMLDecision.RELATIONSHIPS);
+        addSupportedDecision(CrUML.decRELATIONSHIPS);
         setKnowledgeTypes(Critic.KT_SYNTAX);
 
         // This may not actually make any difference at present (the code
@@ -82,7 +87,7 @@ public class CrNavFromInterface extends CrUML {
      *
      * As a consequence, we also don't need to check for associations with
      * ClassifierRoles.<p>
-     *
+     * 
      * Iterate over all the AssociationEnds. We only have a problem if:<p>
      * <ol>
      *   <li>There is an end connected to an Interface; and
@@ -93,34 +98,34 @@ public class CrNavFromInterface extends CrUML {
      * @param  dsgr  the designer creating the model. Not used, this is for
      *               future development of ArgoUML
      * @return       {@link #PROBLEM_FOUND PROBLEM_FOUND} if the critic is
-     *               triggered, otherwise {@link #NO_PROBLEM NO_PROBLEM}.
-     */
+     *               triggered, otherwise {@link #NO_PROBLEM NO_PROBLEM}.  */
+    
     public boolean predicate2(Object dm, Designer dsgr) {
 
         // Only look at Associations
 
-        if (!(Model.getFacade().isAAssociation(dm))) {
+        if (!(ModelFacade.isAAssociation(dm))) {
             return NO_PROBLEM;
         }
 
-        if (Model.getFacade().isAAssociationRole(dm)) {
+        if (ModelFacade.isAAssociationRole(dm)) {
             return NO_PROBLEM;
         }
 
         // Iterate over all the AssociationEnds. We only have a problem if 1)
         // there is an end connected to an Interface and 2) an end other than
-        // that end is navigable.
+        // that end is navigable. 
 
-        Iterator assocEnds = Model.getFacade().getConnections(dm).iterator();
+        Iterator enum = ModelFacade.getConnections(dm).iterator();
 
         boolean haveInterfaceEnd  = false;  // End at an Interface?
         boolean otherEndNavigable = false;  // Navigable other end?
 
-        while (assocEnds.hasNext()) {
+        while (enum.hasNext()) {
 
             // The next AssociationEnd
 
-            Object ae = assocEnds.next();
+            Object ae = enum.next();
 
             // If its an interface we have an interface end, otherwise its
             // something else and we should see if it is navigable. We don't
@@ -128,11 +133,12 @@ public class CrNavFromInterface extends CrUML {
             // ClassifierRole, since we have effectively eliminated that
             // possiblity in rejecting AssociationRoles above.
 
-	    Object type = Model.getFacade().getType(ae);
+	    Object type = ModelFacade.getType(ae);
 
-            if (Model.getFacade().isAInterface(type)) {
+            if (ModelFacade.isAInterface(type)) {
                 haveInterfaceEnd = true;
-            } else if (Model.getFacade().isNavigable(ae)) {
+            }
+	    else if (ModelFacade.isNavigable(ae)) {
                 otherEndNavigable = true;
             }
 
@@ -148,9 +154,5 @@ public class CrNavFromInterface extends CrUML {
         return NO_PROBLEM;
     }
 
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = 2660051106458704056L;
 } /* end class CrNavFromInterface */
 

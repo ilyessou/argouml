@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2003 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,39 +24,35 @@
 
 package org.argouml.uml.ui;
 
-import javax.swing.Action;
 import javax.swing.ComboBoxModel;
-
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
 
 /**
- * A searchable combobox. Searchable means that the user only has to type the
+ * A searchable combobox. Searchable means that the user has only to type the
  * starting of a modelelement name to select that modelelement. The first
  * modelelement that conforms to the typed text is selected.
- * @author jaap.branderhorst@xs4all.nl
+ * @author jaap.branderhorst@xs4all.nl	
  * @since Jan 5, 2003
  */
 public class UMLSearchableComboBox extends UMLEditableComboBox {
 
     /**
      * Constructor for UMLSearchableComboBox.
-     * @param model the model
-     * @param selectAction the action for selection
-     * @param showIcon true if we show an icon in the list
+     * @param model
+     * @param selectAction
+     * @param showIcon
      */
-    public UMLSearchableComboBox(UMLComboBoxModel2 model,
-            Action selectAction, boolean showIcon) {
+    public UMLSearchableComboBox(UMLComboBoxModel2 model, UMLAction selectAction, boolean showIcon) {
         super(model, selectAction, showIcon);
     }
 
     /**
      * Constructor for UMLSearchableComboBox.
-     * @param arg0 the model
-     * @param selectAction the action for selection
+     * @param arg0
+     * @param selectAction
      */
-    public UMLSearchableComboBox(UMLComboBoxModel2 arg0,
-            Action selectAction) {
-        this(arg0, selectAction, true);
+    public UMLSearchableComboBox(UMLComboBoxModel2 arg0, UMLAction selectAction) {
+        this(arg0, selectAction, false);
     }
 
     /**
@@ -74,29 +70,28 @@ public class UMLSearchableComboBox extends UMLEditableComboBox {
             setSelectedItem(element);
         }
     }
-
+    
     /**
      * Does the actual searching. Returns the item found or null if there is no
      * item found.
-     * @param item the string entered by the user
-     * @return Object the found object from the list, or null if none found
+     * @param item
+     * @return Object
      */
     protected Object search(Object item) {
         String text = (String) item;
         ComboBoxModel model = getModel();
         for (int i = 0; i < model.getSize(); i++) {
             Object element = model.getElementAt(i);
-            if (Model.getFacade().isAModelElement(element)) {
+            if (org.argouml.model.ModelFacade.isABase(element)) {
                 if (getRenderer() instanceof UMLListCellRenderer2) {
-                    String labelText = ((UMLListCellRenderer2) getRenderer())
-                        .makeText(element);
-                    if (labelText != null && labelText.startsWith(text)) {
+                    String labelText = ((UMLListCellRenderer2) getRenderer()).makeText(element);
+                    if (labelText != null && labelText.startsWith(text)) {                        
                         return element;
                     }
                 }
-                if (Model.getFacade().isAModelElement(element)) {
+                if (org.argouml.model.ModelFacade.isAModelElement(element)) {
                     Object/*MModelElement*/ elem = element;
-                    String name = Model.getFacade().getName(elem);
+                    String name = ModelFacade.getName(elem);
                     if (name != null && name.startsWith(text)) {
                         return element;
                     }

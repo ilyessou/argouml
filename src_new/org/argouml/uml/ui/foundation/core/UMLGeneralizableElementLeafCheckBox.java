@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,13 +24,14 @@
 
 package org.argouml.uml.ui.foundation.core;
 
+
 import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
 import org.argouml.uml.ui.UMLCheckBox2;
 
 /**
- *
- * @author jaap.branderhorst@xs4all.nl
+ * 
+ * @author jaap.branderhorst@xs4all.nl	
  * @since Jan 27, 2003
  */
 public class UMLGeneralizableElementLeafCheckBox extends UMLCheckBox2 {
@@ -39,18 +40,15 @@ public class UMLGeneralizableElementLeafCheckBox extends UMLCheckBox2 {
      * Constructor for UMLGeneralizableElementLeafCheckBox.
      */
     public UMLGeneralizableElementLeafCheckBox() {
-        super(Translator.localize("checkbox.leaf-lc"),
-                ActionSetGeneralizableElementLeaf.getInstance(), "isLeaf");
+        super(Translator.localize("UMLMenu", "label.leaf"), ActionSetGeneralizableElementLeaf.SINGLETON, "isLeaf");
     }
 
     /**
      * @see org.argouml.uml.ui.UMLCheckBox2#buildModel()
      */
     public void buildModel() {
-        if (getTarget() != null) {
-            setSelected(Model.getFacade().isLeaf(getTarget()));
-        }
+        if (ModelFacade.isAGeneralizableElement(getTarget())) {
+            setSelected(ModelFacade.isLeaf(getTarget()));
+	}
     }
-
-
 }

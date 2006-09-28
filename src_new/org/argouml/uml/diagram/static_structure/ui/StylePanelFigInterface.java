@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,75 +24,101 @@
 
 package org.argouml.uml.diagram.static_structure.ui;
 
+import java.awt.FlowLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.event.ItemEvent;
 
 import javax.swing.JCheckBox;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.event.DocumentEvent;
 
 import org.argouml.ui.StylePanelFigNodeModelElement;
 
 /**
  * Stylepanel which adds an operation checkbox and depends on FigInterface.
  * @see FigInterface
- *
+ * 
  * @author mkl
  *
  */
 public class StylePanelFigInterface extends StylePanelFigNodeModelElement {
 
-    private JCheckBox operCheckBox = new JCheckBox("Operations");
+    protected JCheckBox _operCheckBox = new JCheckBox("Operations");
+
+    protected JLabel _displayLabel = new JLabel("Display: ");
 
     /**
      * Flag to indicate that a refresh is going on.
      */
-    private boolean refreshTransaction;
+    private boolean _refreshTransaction = false;
 
-    /**
-     * The constructor.
-     */
     public StylePanelFigInterface() {
         super();
+        GridBagLayout gb = (GridBagLayout) getLayout();
+        GridBagConstraints c = new GridBagConstraints();
+        c.fill = GridBagConstraints.BOTH;
+        c.ipadx = 0;
+        c.ipady = 0;
 
-        addToDisplayPane(operCheckBox);
-        operCheckBox.setSelected(false);
-        operCheckBox.addItemListener(this);
+        c.gridx = 0;
+        c.gridwidth = 1;
+        c.gridy = 0;
+        c.weightx = 0.0;
+        gb.setConstraints(_displayLabel, c);
+        add(_displayLabel);
+
+        c.gridx = 1;
+        c.gridwidth = 1;
+        c.gridy = 0;
+        c.weightx = 0.0;
+        JPanel pane = new JPanel();
+        pane.setLayout(new FlowLayout(FlowLayout.LEFT));
+        pane.add(_operCheckBox);
+        gb.setConstraints(pane, c);
+        add(pane);
+
+        _operCheckBox.setSelected(false);
+        _operCheckBox.addItemListener(this);
     }
 
     ////////////////////////////////////////////////////////////////
     // accessors
 
-    /**
-     * @see org.argouml.ui.TabTarget#refresh()
-     */
     public void refresh() {
-        refreshTransaction = true;
-        super.refresh();
-        FigInterface ti = (FigInterface) getPanelTarget();
-        operCheckBox.setSelected(ti.isOperationsVisible());
-        refreshTransaction = false;
+	_refreshTransaction = true;
+	super.refresh();
+	if (_target instanceof FigInterface) {
+	    FigInterface ti = (FigInterface) _target;
+	    _operCheckBox.setSelected(ti.isOperationVisible());
+	}
+        _refreshTransaction = false;
     }
 
     ////////////////////////////////////////////////////////////////
     // event handling
 
-    /**
-     * @see java.awt.event.ItemListener#itemStateChanged(java.awt.event.ItemEvent)
-     */
+    public void insertUpdate(DocumentEvent e) {
+        super.insertUpdate(e);
+    }
+
+    public void removeUpdate(DocumentEvent e) {
+        insertUpdate(e);
+    }
+
     public void itemStateChanged(ItemEvent e) {
-        if (!refreshTransaction) {
+        if (!_refreshTransaction) {
             Object src = e.getSource();
 
-            if (src == operCheckBox) {
-                ((FigInterface) getPanelTarget())
-                    .setOperationsVisible(operCheckBox.isSelected());
-            } else {
+            if (src == _operCheckBox) {
+                ((FigInterface) _target).setOperationVisible(_operCheckBox
+                        .isSelected());
+                markNeedsSave();
+            } else
                 super.itemStateChanged(e);
-            }
         }
     }
 
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = -5908351031706234211L;
 } /* end class StylePanelFigInterface */
 

@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2003 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -21,6 +21,9 @@
 // PROVIDED HEREUNDER IS ON AN "AS IS" BASIS, AND THE UNIVERSITY OF
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+// File: CrUtilityViolated.java
+// Classes: CrUtilityViolated
+// Original Author: jrobbins@ics.uci.edu
 
 package org.argouml.uml.cognitive.critics;
 
@@ -29,68 +32,57 @@ import java.util.Collection;
 import java.util.Iterator;
 
 import org.argouml.cognitive.Designer;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
+import org.argouml.model.ModelFacade;
+import org.argouml.model.uml.foundation.core.CoreHelper;
 
-/**
- * A critic to detect when a class can never have instances (of
- * itself of any subclasses). This is done by checking that there
- * are no instance operations or attributes in the class itself
- * or in any of the realized interfaces or inherited classes.
- *
- * @author jrobbins
+/** A critic to detect when a class can never have instances (of
+ *  itself of any subclasses). This is done by checking that there
+ *  are no instance operations or attributes in the class itself
+ *  or in any of the realized interfaces or inherited classes.
  */
 public class CrUtilityViolated extends CrUML {
-
-    /**
-     * The constructor.
-     */
+    
     public CrUtilityViolated() {
-        setupHeadAndDesc();
-        addSupportedDecision(UMLDecision.STORAGE);
-        addSupportedDecision(UMLDecision.STEREOTYPES);
-        addSupportedDecision(UMLDecision.CLASS_SELECTION);
+        setHeadline("Remove instance variables from Utility Class");
+        addSupportedDecision(CrUML.decSTORAGE);
+        addSupportedDecision(CrUML.decSTEREOTYPES);
+        addSupportedDecision(CrUML.decCLASS_SELECTION);
         addTrigger("stereotype");
         addTrigger("behavioralFeature");
     }
-
-    /**
-     * @see org.argouml.uml.cognitive.critics.CrUML#predicate2(
-     * java.lang.Object, org.argouml.cognitive.Designer)
-     */
+    
     public boolean predicate2(Object dm, Designer dsgr) {
-        // we could check for base class of the stereotype but the
+        // we could check for base class of the stereotype but the 
 	// condition normally covers it all.
-        if (!(Model.getFacade().isAClassifier(dm))) {
-            return NO_PROBLEM;
-        }
-	if (!(Model.getFacade().isUtility(dm))) {
+        if (!(ModelFacade.isAClassifier(dm)))
 	    return NO_PROBLEM;
-	}
+	if (!(ModelFacade.isUtility(dm)))
+	    return NO_PROBLEM;
 
 	Collection classesToCheck = new ArrayList();
-	classesToCheck.addAll(Model.getCoreHelper().getSupertypes(dm));
+	classesToCheck.addAll(CoreHelper.getHelper().getSupertypes(dm));
 	classesToCheck.addAll(
-	    Model.getCoreHelper().getAllRealizedInterfaces(dm));
+	    CoreHelper.getHelper().getAllRealizedInterfaces(dm));
 	classesToCheck.add(dm);
 	Iterator it = classesToCheck.iterator();
 	while (it.hasNext()) {
 	    Object o = it.next();
-	    if (!Model.getFacade().isAInterface(o)) {
-		Iterator it2 = Model.getFacade().getAttributes(o).iterator();
+	    if (!ModelFacade.isAInterface(o)) {
+		Iterator it2 = ModelFacade.getAttributes(o).iterator();
 		while (it2.hasNext()) {
-		    if (Model.getFacade().isInstanceScope(it2.next())) {
+		    if (ModelFacade.isInstanceScope(it2.next())) {
 			return PROBLEM_FOUND;
 		    }
 		}
 	    }
-	    Iterator it2 = Model.getFacade().getOperations(o).iterator();
+	    Iterator it2 = ModelFacade.getOperations(o).iterator();
 	    while (it2.hasNext()) {
-		if (Model.getFacade().isInstanceScope(it2.next())) {
+		if (ModelFacade.isInstanceScope(it2.next())) {
 		    return PROBLEM_FOUND;
 		}
 	    }
 	}
         return NO_PROBLEM;
     }
+    
 } /* end class CrUtilityViolated */

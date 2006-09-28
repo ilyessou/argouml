@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -30,7 +30,6 @@ import java.awt.Font;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JToolBar;
-import javax.swing.SwingConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
@@ -40,192 +39,135 @@ import org.argouml.ui.targetmanager.TargetManager;
 import org.argouml.uml.ui.TabModelTarget;
 import org.tigris.toolbar.ToolBar;
 
-/**
- * A tab that contains textual information.
+/** A tab that contains textual information.
  */
 public class TabText
-    extends AbstractArgoJPanel
+    extends TabSpawnable
     implements TabModelTarget, DocumentListener {
     ////////////////////////////////////////////////////////////////
     // instance variables
-    private Object target;
-    private JTextArea textArea = new JTextArea();
-    private boolean parseChanges = true;
-    private boolean enabled;
-
-    /**
-     * The optional toolbar. Contains <code>null</code> if no toolbar
-     * was requested.
+    protected Object _target;
+    protected JTextArea _text = new JTextArea();
+    protected boolean _parseChanges = true;
+    protected boolean _shouldBeEnabled = false;
+    /** The optional toolbar.
+     *  Contains null if no toolbar was requested.
      */
-    private JToolBar toolbar;
-
-    /**
-     * Logger.
-     */
-    private static final Logger LOG = Logger.getLogger(TabText.class);
+    protected JToolBar _toolbar = null;
+    protected Logger cat = Logger.getLogger(TabText.class);
 
     ////////////////////////////////////////////////////////////////
     // constructor
 
-    /**
-     * Create a text tab without a toolbar.
-     *
-     * @param title the title of the tab
+    /** Create a text tab without a toolbar.
      */
     public TabText(String title) {
         this(title, false);
     }
 
-    /**
-     * Create a text tab and optionally request a toolbar.
-     * @since ARGO0.9.4
-     *
-     * @param title the title
-     * @param withToolbar true if a toolbar is needed
+    /** Create a text tab and optionally request a toolbar.
+     *  @since ARGO0.9.4
      */
     public TabText(String title, boolean withToolbar) {
         super(title);
         setLayout(new BorderLayout());
-        textArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
-        textArea.setTabSize(4);
-        add(new JScrollPane(textArea), BorderLayout.CENTER);
-        textArea.getDocument().addDocumentListener(this);
+        _text.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        _text.setTabSize(4);
+        add(new JScrollPane(_text), BorderLayout.CENTER);
+        _text.getDocument().addDocumentListener(this);
 
         // If a toolbar was requested, create an empty one.
         if (withToolbar) {
-            toolbar = new ToolBar();
-            toolbar.setOrientation(SwingConstants.HORIZONTAL);
-            add(toolbar, BorderLayout.NORTH);
+            _toolbar = new ToolBar();
+            _toolbar.putClientProperty("JToolBar.isRollover",  Boolean.TRUE);
+            _toolbar.setOrientation(JToolBar.HORIZONTAL);
+            add(_toolbar, BorderLayout.NORTH);
         }
     }
 
     ////////////////////////////////////////////////////////////////
     // accessors
 
-    private void doGenerateText() {
-        parseChanges = false;
-        if (getTarget() == null) {
-            textArea.setEnabled(false);
-            textArea.setText("Nothing selected");
-            enabled = false;
-        } else {
-            textArea.setEnabled(true);
-	    if (isVisible()) {
-		String generatedText = genText(getTarget());
-		if (generatedText != null) {
-		    textArea.setText(generatedText);
-		    enabled = true;
-		    textArea.setCaretPosition(0);
-		} else {
-		    textArea.setEnabled(false);
-		    textArea.setText("N/A");
-		    enabled = false;
-		}
-	    }
-        }
-        parseChanges = true;
-    }
-
-    /**
-     * @see org.argouml.ui.TabTarget#setTarget(java.lang.Object)
-     */
     public void setTarget(Object t) {
-        target = t;
-	doGenerateText();
+        _parseChanges = false;
+        _target = t;
+        if (t == null) {
+            _text.setEnabled(false);
+            _text.setText("Nothing selected");
+            _shouldBeEnabled = false;
+        } else {
+            _text.setEnabled(true);
+            String generatedText = genText(t);
+            if (generatedText != null) {
+                _text.setText(generatedText);
+                _shouldBeEnabled = true;
+                _text.setCaretPosition(0);
+            } else {
+                _text.setEnabled(false);
+                _text.setText("N/A");
+                _shouldBeEnabled = false;
+            }
+        }
+        _parseChanges = true;
     }
 
     /**
      * Returns the target of this tab.
-     *
-     * @see org.argouml.ui.TabTarget#getTarget()
      */
     public Object getTarget() {
-        return target;
+        return _target;
     }
 
-    /**
-     * Refresh the text of the tab.
-     *
-     * @see org.argouml.ui.TabTarget#refresh()
-     */
     public void refresh() {
-        Object t = TargetManager.getInstance().getTarget();
-        setTarget(t);
+        Object target = TargetManager.getInstance().getTarget();
+        setTarget(target);
     }
 
     /**
-     * This tab pane is enabled if there is a target,
-     * i.e. the target must not be null.
-     *
-     * @see org.argouml.ui.TabTarget#shouldBeEnabled(java.lang.Object)
+     * the target must not be null.
      */
-    public boolean shouldBeEnabled(Object t) {
-        return (t != null);
+    public boolean shouldBeEnabled(Object target) {
+        return (target != null);
     }
 
-    /**
-     * The target has changed, so let's generate some text to be shown.
-     *
-     * @param t the object to be "generated" = make a string of it
-     * @return the generated text
-     */
-    protected String genText(Object t) {
-        return t == null ? "Nothing selected" : t.toString();
+    protected String genText(Object target) {
+        return target == null ? "Nothing selected" : target.toString();
     }
 
-    /**
-     * The user has edited the text in the textfield, so let's parse it now,
-     * and update the model.
-     *
-     * @param s the string to parse
-     */
     protected void parseText(String s) {
-        if (s == null) {
+        if (s == null)
             s = "(null)";
-        }
-        LOG.debug("parsing text:" + s);
+        cat.debug("parsing text:" + s); // THN
     }
 
     ////////////////////////////////////////////////////////////////
     // event handlers
-
-    /**
-     * @see javax.swing.event.DocumentListener#insertUpdate(javax.swing.event.DocumentEvent)
-     */
     public void insertUpdate(DocumentEvent e) {
-        if (parseChanges) {
-            parseText(textArea.getText());
-        }
+        if (_parseChanges)
+            parseText(_text.getText());
     }
 
-    /**
-     * @see javax.swing.event.DocumentListener#removeUpdate(javax.swing.event.DocumentEvent)
-     */
     public void removeUpdate(DocumentEvent e) {
-        if (parseChanges) {
-            parseText(textArea.getText());
-        }
+        if (_parseChanges)
+            parseText(_text.getText());
     }
 
-    /**
-     * @see javax.swing.event.DocumentListener#changedUpdate(javax.swing.event.DocumentEvent)
-     */
     public void changedUpdate(DocumentEvent e) {
-        if (parseChanges) {
-            parseText(textArea.getText());
-        }
+        if (_parseChanges)
+            parseText(_text.getText());
     }
 
     /**
-     * @see org.argouml.ui.targetmanager.TargetListener#targetAdded(org.argouml.ui.targetmanager.TargetEvent)
+     * @see
+     * org.argouml.ui.targetmanager.TargetListener#targetAdded(org.argouml.ui.targetmanager.TargetEvent)
      */
     public void targetAdded(TargetEvent e) {
         setTarget(e.getNewTarget());
-
     }
 
     /**
-     * @see org.argouml.ui.targetmanager.TargetListener#targetRemoved(org.argouml.ui.targetmanager.TargetEvent)
+     * @see
+     * org.argouml.ui.targetmanager.TargetListener#targetRemoved(org.argouml.ui.targetmanager.TargetEvent)
      */
     public void targetRemoved(TargetEvent e) {
         // how to handle empty target lists?
@@ -235,47 +177,13 @@ public class TabText
     }
 
     /**
-     * @see org.argouml.ui.targetmanager.TargetListener#targetSet(org.argouml.ui.targetmanager.TargetEvent)
+     * @see
+     * org.argouml.ui.targetmanager.TargetListener#targetSet(org.argouml.ui.targetmanager.TargetEvent)
      */
     public void targetSet(TargetEvent e) {
+        // how to handle empty target lists?
+        // probably the TabText should only show an empty pane in that case
         setTarget(e.getNewTarget());
-
     }
 
-    /**
-     * @return Returns the toolbar.
-     */
-    protected JToolBar getToolbar() {
-        return toolbar;
-    }
-
-    /**
-     * @param s true if we are enabled
-     */
-    protected void setShouldBeEnabled(boolean s) {
-        this.enabled = s;
-    }
-
-    /**
-     * @return returns true if enabled
-     */
-    protected boolean shouldBeEnabled() {
-        return enabled;
-    }
-
-    /**
-     * Generates the text whenever this panel becomes visible.
-     * @see java.awt.Component#setVisible(boolean)
-     */
-    public void setVisible(boolean visible) {
-	super.setVisible(visible);
-	if (visible) {
-	    doGenerateText();
-	}
-    }
-
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = -1484647093166393888L;
 } /* end class TabText */

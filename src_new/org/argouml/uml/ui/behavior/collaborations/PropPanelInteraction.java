@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -28,53 +28,59 @@ import javax.swing.JList;
 import javax.swing.JScrollPane;
 
 import org.argouml.i18n.Translator;
-import org.argouml.uml.ui.ActionNavigateContext;
+import org.argouml.model.ModelFacade;
+
+import org.argouml.ui.targetmanager.TargetManager;
+import org.argouml.uml.ui.PropPanelButton;
 import org.argouml.uml.ui.UMLLinkedList;
 import org.argouml.uml.ui.foundation.core.PropPanelModelElement;
-import org.argouml.uml.ui.foundation.extension_mechanisms.ActionNewStereotype;
 import org.argouml.util.ConfigLoader;
 
 /**
  * Proppanel for interactions.
- *
  * @author jaap.branderhorst@xs4all.nl
  */
 public class PropPanelInteraction extends PropPanelModelElement {
 
-    /**
-     * The serial version.
-     */
-    private static final long serialVersionUID = 8965284617441796326L;
-
-    /**
-     * Construct a property panel for an Interaction.
-     */
     public PropPanelInteraction() {
         super("Interaction", ConfigLoader.getTabPropsOrientation());
 
-    	addField(Translator.localize("label.name"),
-                getNameTextField());
-        addField(Translator.localize("label.namespace"),
+    	addField(Translator.localize("UMLMenu", "label.name"), getNameTextField());
+    	addField(Translator.localize("UMLMenu", "label.stereotype"),
+		 getStereotypeBox());
+        addField(Translator.localize("UMLMenu", "label.namespace"),
 		 getNamespaceScroll());
 
         JList contextList =
 	    new UMLLinkedList(new UMLInteractionContextListModel());
         contextList.setVisibleRowCount(1);
         JScrollPane contextScroll = new JScrollPane(contextList);
-        addField(Translator.localize("label.context"),
-                contextScroll);
+        addField(Translator.localize("UMLMenu", "label.context"), contextScroll);
 
-        addSeparator();
+        addSeperator();
 
         JList messagesList =
 	    new UMLLinkedList(new UMLInteractionMessagesListModel());
       	JScrollPane messagesScroll = new JScrollPane(messagesList);
-        addField(Translator.localize("label.messages"),
-                messagesScroll);
+        addField(Translator.localize("UMLMenu", "label.messages"), messagesScroll);
 
-        addAction(new ActionNavigateContext());
-        addAction(new ActionNewStereotype());
-        addAction(getDeleteAction());
+    	new PropPanelButton(this, buttonPanel, _navUpIcon,
+    	        Translator.localize("UMLMenu", "button.go-up"),
+			    "navigateUp",
+			    null);
+        new PropPanelButton(this, buttonPanel, _deleteIcon,
+                Translator.localize("UMLMenu", "button.delete-attribute"),
+			    "removeElement",
+			    null);
+
+    }
+
+    /**
+     * Navigates to the owning collaboration
+     * @see org.argouml.uml.ui.foundation.core.PropPanelModelElement#navigateUp()
+     */
+    public void navigateUp() {
+        TargetManager.getInstance().setTarget(ModelFacade.getContext(getTarget()));
     }
 
 }

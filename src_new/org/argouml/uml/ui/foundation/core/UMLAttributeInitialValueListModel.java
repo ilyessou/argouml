@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,7 +24,7 @@
 
 package org.argouml.uml.ui.foundation.core;
 
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
 import org.argouml.uml.ui.UMLModelElementListModel2;
 
 /**
@@ -45,9 +45,9 @@ public class UMLAttributeInitialValueListModel
      * @see org.argouml.uml.ui.UMLModelElementListModel2#buildModelList()
      */
     protected void buildModelList() {
-	if (getTarget() != null) {
+	if (ModelFacade.isAAttribute(getTarget())) {
 	    removeAllElements();
-	    addElement(Model.getFacade().getInitialValue(getTarget()));
+	    addElement(ModelFacade.getInitialValue(getTarget()));
 	}
     }
 
@@ -55,7 +55,8 @@ public class UMLAttributeInitialValueListModel
      * @see org.argouml.uml.ui.UMLModelElementListModel2#isValidElement(Object)
      */
     protected boolean isValidElement(Object/*MBase*/ element) {
-	return Model.getFacade().getInitialValue(getTarget()) == element;
+	return ModelFacade.isAAttribute(getTarget())
+		&& ModelFacade.getInitialValue(getTarget()) == element;
     }
 
 }

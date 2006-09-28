@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,159 +22,169 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: PropPanelStimulus.java
+// Classes: PropPanelStimulus
+// Original Author: agauthie@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.ui.behavior.common_behavior;
 
-import javax.swing.JList;
+import java.awt.Color;
+
+import javax.swing.ImageIcon;
 import javax.swing.JScrollPane;
 
+import org.argouml.application.helpers.ResourceLoaderWrapper;
 import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
-import org.argouml.uml.ui.ActionNavigateNamespace;
-import org.argouml.uml.ui.UMLLinkedList;
+import org.argouml.model.ModelFacade;
+import org.argouml.model.uml.UmlFactory;
+import org.argouml.ui.targetmanager.TargetManager;
+import org.argouml.uml.ui.PropPanelButton;
+import org.argouml.uml.ui.UMLList;
+import org.argouml.uml.ui.UMLReflectionListModel;
 import org.argouml.uml.ui.UMLStimulusActionTextField;
 import org.argouml.uml.ui.UMLStimulusActionTextProperty;
 import org.argouml.uml.ui.foundation.core.PropPanelModelElement;
-import org.argouml.uml.ui.foundation.extension_mechanisms.ActionNewStereotype;
 import org.argouml.util.ConfigLoader;
 
+import ru.novosoft.uml.MElementEvent;
+
 /**
- * The properties panel for a Stimulus.
- *
- * @author agauthie
+ * TODO: this property panel needs refactoring to remove dependency on
+ *       old gui components.
  */
 public class PropPanelStimulus extends PropPanelModelElement {
 
-    /**
-     * The serial version.
-     */
-    private static final long serialVersionUID = 81659498358156000L;
+    protected static ImageIcon _stimulusIcon = ResourceLoaderWrapper.getResourceLoaderWrapper().lookupIconResource("Stimulus");
 
-    /**
-     * Construct a new property panel for a Stimulus.
-     */
     public PropPanelStimulus() {
-        super("Stimulus Properties", lookupIcon("Stimulus"),
-                ConfigLoader.getTabPropsOrientation());
+        super("Stimulus Properties", _stimulusIcon, ConfigLoader.getTabPropsOrientation());
 
-        addField(Translator.localize("label.name"),
-                getNameTextField());
-        addField(Translator.localize("label.action"),
-                new UMLStimulusActionTextField(this,
-                        new UMLStimulusActionTextProperty("name")));
+        Class[] namesToWatch = {
+	    (Class) ModelFacade.ACTION
+	};
+        setNameEventListening(namesToWatch);
 
-        JList senderList = new UMLLinkedList(new UMLStimulusSenderListModel());
-	senderList.setVisibleRowCount(1);
-	JScrollPane senderScroll = new JScrollPane(senderList);
-	addField(Translator.localize("label.sender"), senderScroll);
+        Class mclass = (Class)ModelFacade.STIMULUS;
 
-        JList receiverList =
-	    new UMLLinkedList(new UMLStimulusReceiverListModel());
-	receiverList.setVisibleRowCount(1);
-	JScrollPane receiverScroll = new JScrollPane(receiverList);
-	addField(Translator.localize("label.receiver"),
-            receiverScroll);
+        addField(Translator.localize("UMLMenu", "label.name"), getNameTextField());
+        addField("Action:", new UMLStimulusActionTextField(this, new UMLStimulusActionTextProperty("name")));
+        addField(Translator.localize("UMLMenu", "label.stereotype"), getStereotypeBox());
 
-        addField(Translator.localize("label.namespace"),
-                getNamespaceSelector());
+        UMLList senderList = new UMLList(new UMLReflectionListModel(this, "sender", true, "getSender", null, null, null), true);
+        senderList.setForeground(Color.blue);
+        senderList.setVisibleRowCount(1);
+        senderList.setFont(smallFont);
+        JScrollPane senderScroll = new JScrollPane(senderList);
+        addField("Sender:", senderScroll);
 
-        addAction(new ActionNavigateNamespace());
-        addAction(new ActionNewStereotype());
-        addAction(getDeleteAction());
+        UMLList receiverList = new UMLList(new UMLReflectionListModel(this, "receiver", true, "getReceiver", null, null, null), true);
+        receiverList.setForeground(Color.blue);
+        receiverList.setVisibleRowCount(1);
+        receiverList.setFont(smallFont);
+        JScrollPane receiverScroll = new JScrollPane(receiverList);
+        addField(Translator.localize("UMLMenu", "label.receiver"), receiverScroll);
+
+        addLinkField(Translator.localize("UMLMenu", "label.namespace"), getNamespaceComboBox());
+
+        new PropPanelButton(this, buttonPanel, _navUpIcon, Translator.localize("UMLMenu", "button.go-up"), "navigateNamespace", null);
+        new PropPanelButton(this, buttonPanel, _deleteIcon, localize("Delete object"), "removeElement", null);
     }
 
-    /**
-     * @return the sender of this stimulus
-     */
+    public void navigateNamespace() {
+        Object target = getTarget();
+        if (org.argouml.model.ModelFacade.isAModelElement(target)) {
+            Object elem = /*(MModelElement)*/ target;
+            Object ns = ModelFacade.getNamespace(elem);
+            if (ns != null) {
+                TargetManager.getInstance().setTarget(ns);
+            }
+        }
+    }
+
+    public void removed(MElementEvent mee) {
+    }
+
     public Object getSender() {
         Object sender = null;
         Object target = getTarget();
-        if (Model.getFacade().isAStimulus(target)) {
-            sender =  Model.getFacade().getSender(target);
+        if (ModelFacade.isAStimulus(target)) {
+            sender =  ModelFacade.getSender(target);
         }
         return sender;
     }
 
-    /**
-     * @param element the sender of this stimulus
-     */
     public void setSender(Object/*MInstance*/ element) {
         Object target = getTarget();
-        if (Model.getFacade().isAStimulus(target)) {
-            Model.getCollaborationsHelper().setSender(target, element);
+        if (org.argouml.model.ModelFacade.isAStimulus(target)) {
+            ModelFacade.setSender(target, element);
         }
     }
 
 
-    /**
-     * @return the receiver of this stimulus
-     */
     public Object getReceiver() {
         Object receiver = null;
         Object target = getTarget();
-        if (Model.getFacade().isAStimulus(target)) {
-            receiver =  Model.getFacade().getReceiver(target);
+        if (ModelFacade.isAStimulus(target)) {
+            receiver =  ModelFacade.getReceiver(target);
         }
         return receiver;
     }
 
-    /**
-     * @param element the receiver of this stimulus
-     */
     public void setReceiver(Object/*MInstance*/ element) {
         Object target = getTarget();
-        if (Model.getFacade().isAStimulus(target)) {
-            Model.getCommonBehaviorHelper().setReceiver(target, element);
+        if (org.argouml.model.ModelFacade.isAStimulus(target)) {
+            ModelFacade.setReceiver(target, element);
         }
     }
 
-    /**
-     * @param modelelement the given modelelement
-     * @return true if it is acceptable, i.e. it is an association
-     */
-    public boolean isAcceptableAssociation(Object modelelement) {
-        return Model.getFacade().isAAssociation(modelelement);
+    public boolean isAcceptibleAssociation(Object/*MModelElement*/ classifier) {
+        return org.argouml.model.ModelFacade.isAAssociation(classifier);
     }
 
-    /**
-     * @return the association of the link of the stimulus
-     */
     public Object getAssociation() {
         Object association = null;
         Object target = getTarget();
-        if (Model.getFacade().isAStimulus(target)) {
-            Object link = Model.getFacade().getCommunicationLink(target);
+        if (ModelFacade.isAStimulus(target)) {
+            Object link = ModelFacade.getCommunicationLink(target);
             if (link != null) {
-                association = Model.getFacade().getAssociation(link);
+                association = ModelFacade.getAssociation(link);
             }
         }
         return association;
     }
 
-    /**
-     * @param element the association of the link of the stimulus
-     */
     public void setAssociation(Object/*MAssociation*/ element) {
         Object target = getTarget();
-        if (Model.getFacade().isAStimulus(target)) {
+        if (ModelFacade.isAStimulus(target)) {
             Object stimulus = /*(MStimulus)*/ target;
-            Object link = Model.getFacade().getCommunicationLink(stimulus);
+            Object link = ModelFacade.getCommunicationLink(stimulus);
             if (link == null) {
-                link = Model.getCommonBehaviorFactory().createLink();
-                //((MStimulus)stimulus).getFactory().createLink();
+                link = UmlFactory.getFactory().getCommonBehavior().createLink();//((MStimulus)stimulus).getFactory().createLink();
                 if (link != null) {
-                    Model.getCommonBehaviorHelper().addStimulus(link, stimulus);
-                    Model.getCommonBehaviorHelper().setCommunicationLink(
-                            stimulus,
-                            link);
+                    ModelFacade.addStimulus(link, stimulus);
+                    ModelFacade.setCommunicationLink(stimulus, /*(MLink)*/link);
                 }
             }
-            Object oldAssoc = Model.getFacade().getAssociation(link);
+            Object oldAssoc = ModelFacade.getAssociation(link);
             if (oldAssoc != element) {
-                Model.getCoreHelper().setAssociation(link, element);
+                ModelFacade.setAssociation(link, element);
                 //
                 //  TODO: more needs to go here
                 //
             }
         }
     }
+
+    public void removeElement() {
+        Object target = /*(MStimulus)*/ getTarget();
+	Object newTarget = /*(MModelElement)*/ ModelFacade.getNamespace(target);
+
+	UmlFactory.getFactory().delete(target);
+	if (newTarget != null) {
+            TargetManager.getInstance().setTarget(newTarget);
+	}
+
+    }
+
 }

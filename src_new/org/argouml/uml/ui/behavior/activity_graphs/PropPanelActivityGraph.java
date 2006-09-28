@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2003 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,26 +24,18 @@
 
 package org.argouml.uml.ui.behavior.activity_graphs;
 
-import org.argouml.uml.ui.UMLComboBoxModel2;
-import org.argouml.uml.ui.behavior.state_machines.PropPanelStateMachine;
 import org.argouml.util.ConfigLoader;
+import org.argouml.uml.ui.behavior.state_machines.*;
 
 /**
- * PropertyPanel for Activitygraphs. It inherits almost everything from
+ * PropertyPanel for Activitygraphs. Currently it just inherits everything from
  * PropPanelStateMachine.
- * 
  * TODO: implement partitions
  */
 public class PropPanelActivityGraph extends PropPanelStateMachine {
 
-    /**
-     * The constructor.
-     */
     public PropPanelActivityGraph() {
         super("ActivityGraph", ConfigLoader.getTabPropsOrientation());
-    }
-    
-    protected UMLComboBoxModel2 getContextComboBoxModel() {
-        return new UMLActivityGraphContextComboBoxModel();
-    }
+    } 
 }
+

@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,68 +24,47 @@
 
 package org.argouml.uml.ui.model_management;
 
-import javax.swing.ImageIcon;
+import org.argouml.swingext.Orientation;
+import org.argouml.i18n.Translator;
+import org.argouml.model.uml.*;
+import org.argouml.uml.ui.*;
+import org.argouml.uml.ui.foundation.core.*;
+import org.argouml.ui.targetmanager.TargetManager;
+import org.argouml.util.ConfigLoader;
+
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-
-import org.argouml.i18n.Translator;
-import org.argouml.uml.ui.ActionNavigateNamespace;
-import org.argouml.uml.ui.UMLLinkedList;
-import org.argouml.uml.ui.UMLMutableLinkedList;
-import org.argouml.uml.ui.foundation.core.ActionAddDataType;
-import org.argouml.uml.ui.foundation.core.ActionAddEnumeration;
-import org.argouml.uml.ui.foundation.core.PropPanelNamespace;
-import org.argouml.uml.ui.foundation.core.UMLGeneralizableElementAbstractCheckBox;
-import org.argouml.uml.ui.foundation.core.UMLGeneralizableElementGeneralizationListModel;
-import org.argouml.uml.ui.foundation.core.UMLGeneralizableElementLeafCheckBox;
-import org.argouml.uml.ui.foundation.core.UMLGeneralizableElementRootCheckBox;
-import org.argouml.uml.ui.foundation.core.UMLGeneralizableElementSpecializationListModel;
-import org.argouml.uml.ui.foundation.extension_mechanisms.ActionNewStereotype;
-import org.argouml.uml.ui.foundation.extension_mechanisms.ActionNewTagDefinition;
-import org.argouml.util.ConfigLoader;
-import org.tigris.swidgets.Orientation;
+import org.argouml.model.ModelFacade;
 
 
-/**
- * PropPanelPackage defines the Property Panel for Package elements.
+/** PropPanelPackage defines the Property Panel for MPackage elements.
  */
 public class PropPanelPackage extends PropPanelNamespace  {
 
-    /**
-     * The serial version.
-     */
-    private static final long serialVersionUID = -699491324617952412L;
-   
-    private JPanel modifiersPanel;
-    private JScrollPane generalizationScroll;
-    private JScrollPane specializationScroll;
+    protected JPanel _modifiersPanel = new JPanel();
+    protected PropPanelButton _stereotypeButton;
+    protected JScrollPane _generalizationScroll;
+    protected JScrollPane _specializationScroll;
 
-    private static UMLGeneralizableElementGeneralizationListModel
-        generalizationListModel =
-            new UMLGeneralizableElementGeneralizationListModel();
-    private static UMLGeneralizableElementSpecializationListModel
-        specializationListModel =
-            new UMLGeneralizableElementSpecializationListModel();
+    private static UMLGeneralizableElementGeneralizationListModel generalizationListModel =
+        new UMLGeneralizableElementGeneralizationListModel();
+    private static UMLGeneralizableElementSpecializationListModel specializationListModel =
+        new UMLGeneralizableElementSpecializationListModel();
 
-    /**
-     * Construct a default property panel for UML Package elements.
-     */
+    ////////////////////////////////////////////////////////////////
+    // contructors
     public PropPanelPackage() {
-        this("Package", lookupIcon("Package"),
-                ConfigLoader.getTabPropsOrientation());
+        this("Package", ConfigLoader.getTabPropsOrientation());
     }
 
     /**
-     * Construct a property panel for UML Packages with the given parameters.
-     * 
-     * @param title the title for this panel
-     * @param orientation the orientation
-     * @param icon the icon to show next to the title
+     * Constructor for PropPanelPackage.
+     * @param title
+     * @param orientation
      */
-    public PropPanelPackage(String title, ImageIcon icon,
-            Orientation orientation) {
-        super(title, icon, orientation);
+    public PropPanelPackage(String title, Orientation orientation) {
+        super(title, orientation);
         placeElements();
     }
 
@@ -94,74 +73,56 @@ public class PropPanelPackage extends PropPanelNamespace  {
      * should override to place the elements the way they want.
      */
     protected void placeElements() {
-        addField(Translator.localize("label.name"),
-                getNameTextField());
-        addField(Translator.localize("label.namespace"),
-                getNamespaceSelector());
+        addField(Translator.localize("UMLMenu", "label.name"), getNameTextField());
+        addField(Translator.localize("UMLMenu", "label.stereotype"), new UMLComboBoxNavigator(this, Translator.localize("UMLMenu", "tooltip.nav-stereo"), getStereotypeBox()));
+        addField(Translator.localize("UMLMenu", "label.namespace"), getNamespaceComboBox());
 
-        add(getNamespaceVisibilityPanel());
+        addField(Translator.localize("UMLMenu", "label.visibility"), getNamespaceVisibilityPanel());
 
-        add(getModifiersPanel());
+        // TODO: facilitate importedElements.
         
-        addSeparator();
+        _modifiersPanel.add(
+                            new UMLGeneralizableElementAbstractCheckBox());
+        _modifiersPanel.add(
+                            new UMLGeneralizableElementLeafCheckBox());
+        _modifiersPanel.add(
+                            new UMLGeneralizableElementRootCheckBox());
         
-        addField(Translator.localize("label.generalizations"),
-                getGeneralizationScroll());
-        addField(Translator.localize("label.specializations"),
-                getSpecializationScroll());
-        
-        addSeparator();
-        
-        addField(Translator.localize("label.owned-elements"),
-                getOwnedElementsScroll());
+        addField(Translator.localize("UMLMenu", "label.modifiers"), _modifiersPanel);
+        addSeperator();
+        addField(Translator.localize("UMLMenu", "label.generalizations"), getGeneralizationScroll());
+        addField(Translator.localize("UMLMenu", "label.specializations"), getSpecializationScroll());
+        addSeperator();
+        addField(Translator.localize("UMLMenu", "label.owned-elements"), getOwnedElementsScroll());
 
-        JList importList =
-            new UMLMutableLinkedList(new UMLClassifierPackageImportsListModel(),
-                new ActionAddPackageImport(),
-                null,
-                new ActionRemovePackageImport(),
-                true);
-        addField(Translator.localize("label.imported-elements"),
-                new JScrollPane(importList));
-
-        addAction(new ActionNavigateNamespace());
-        addAction(new ActionAddPackage());
-        addAction(new ActionAddDataType());
-        addAction(new ActionAddEnumeration());
-        addAction(new ActionNewStereotype());
-        addAction(new ActionNewTagDefinition());
-        addAction(getDeleteAction());
+        new PropPanelButton(this, buttonPanel, _navUpIcon, Translator.localize("UMLMenu", "button.go-up"), "navigateNamespace", null);
+        new PropPanelButton(this, buttonPanel, _packageIcon, Translator.localize("UMLMenu", "button.new-package"), "addPackage", null);
+        new PropPanelButton(this, buttonPanel, _deleteIcon, Translator.localize("UMLMenu", "button.delete-package"), "removeElement", "isRemovableElement");
     }
 
-    /**
-     * Returns the Modifiers panel.
-     * 
-     * @return a panel with modifiers
-     */
-    public JPanel getModifiersPanel() {
-        if (modifiersPanel == null) {
-            modifiersPanel = createBorderPanel(Translator.localize(
-                "label.modifiers"));
-            modifiersPanel.add(
-                    new UMLGeneralizableElementAbstractCheckBox());
-            modifiersPanel.add(
-                    new UMLGeneralizableElementLeafCheckBox());
-            modifiersPanel.add(
-                    new UMLGeneralizableElementRootCheckBox());
+
+    /** add a package to the current package. */
+    public void addPackage() {
+        Object target = getTarget();
+        if (org.argouml.model.ModelFacade.isAPackage(target)) {
+            Object/*MPackage*/ newPackage =  UmlFactory.getFactory().
+                getModelManagement().createPackage();
+            Object/*MPackage*/ currentPackage = target;
+            ModelFacade.addOwnedElement(currentPackage, newPackage);
+            TargetManager.getInstance().setTarget(newPackage);
         }
-        return modifiersPanel;
     }
-    
+
     /**
      * Returns the generalizationScroll.
      * @return JScrollPane
      */
     public JScrollPane getGeneralizationScroll() {
-        if (generalizationScroll == null) {
+        if (_generalizationScroll == null) {
             JList list = new UMLLinkedList(generalizationListModel);
-            generalizationScroll = new JScrollPane(list);
+            _generalizationScroll = new JScrollPane(list);
         }
-        return generalizationScroll;
+        return _generalizationScroll;
     }
 
     /**
@@ -169,11 +130,12 @@ public class PropPanelPackage extends PropPanelNamespace  {
      * @return JScrollPane
      */
     public JScrollPane getSpecializationScroll() {
-        if (specializationScroll == null) {
+        if (_specializationScroll == null) {
             JList list = new UMLLinkedList(specializationListModel);
-            specializationScroll = new JScrollPane(list);
+            _specializationScroll = new JScrollPane(list);
         }
-        return specializationScroll;
+        return _specializationScroll;
     }
+
 
 } /* end class PropPanelPackage */

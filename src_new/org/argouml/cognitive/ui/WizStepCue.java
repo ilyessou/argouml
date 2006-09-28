@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -29,39 +29,32 @@ import java.awt.GridBagLayout;
 import javax.swing.JLabel;
 import javax.swing.JTextArea;
 import javax.swing.border.EtchedBorder;
+import org.argouml.kernel.Wizard;
+import org.argouml.ui.SpacerPanel;
 
-import org.argouml.swingext.SpacerPanel;
 
-
-/**
- * A non-modal wizard step that shows instructions and prompts
- * the user to enter a string.
+/** A simple non-modal wizard step that shows instructions and prompts
+ *  the user to enter a string. 
  *
  * @see org.argouml.cognitive.critics.Critic
- * @see org.argouml.cognitive.ui.Wizard
+ * @see org.argouml.kernel.Wizard
  */
 
 public class WizStepCue extends WizStep {
-    private JTextArea instructions = new JTextArea();
+    JTextArea _instructions = new JTextArea();
 
-    /**
-     * The constructor.
-     *
-     * @param w the wizard (ignored)
-     * @param cue the instructions (cue)
-     */
     public WizStepCue(Wizard w, String cue) {
 	// store wizard?
-	instructions.setText(cue);
-	instructions.setWrapStyleWord(true);
-	instructions.setEditable(false);
-	instructions.setBorder(null);
-	instructions.setBackground(getMainPanel().getBackground());
+	_instructions.setText(cue);
+	_instructions.setWrapStyleWord(true);
+	_instructions.setEditable(false);
+	_instructions.setBorder(null);
+	_instructions.setBackground(_mainPanel.getBackground());
 
-	getMainPanel().setBorder(new EtchedBorder());
+	_mainPanel.setBorder(new EtchedBorder());
 
 	GridBagLayout gb = new GridBagLayout();
-	getMainPanel().setLayout(gb);
+	_mainPanel.setLayout(gb);
 
 	GridBagConstraints c = new GridBagConstraints();
 	c.ipadx = 3; c.ipady = 3;
@@ -70,14 +63,14 @@ public class WizStepCue extends WizStep {
 
 	JLabel image = new JLabel("");
 	//image.setMargin(new Insets(0, 0, 0, 0));
-	image.setIcon(getWizardIcon());
+	image.setIcon(WIZ_ICON);
 	image.setBorder(null);
 	c.gridx = 0;
 	c.gridheight = GridBagConstraints.REMAINDER;
 	c.gridy = 0;
 	c.anchor = GridBagConstraints.NORTH;
 	gb.setConstraints(image, c);
-	getMainPanel().add(image);
+	_mainPanel.add(image);
 
 	c.weightx = 1.0;
 	c.gridx = 2;
@@ -85,8 +78,8 @@ public class WizStepCue extends WizStep {
 	c.gridwidth = 3;
 	c.gridy = 0;
 	c.fill = GridBagConstraints.HORIZONTAL;
-	gb.setConstraints(instructions, c);
-	getMainPanel().add(instructions);
+	gb.setConstraints(_instructions, c);
+	_mainPanel.add(_instructions);
 
 	c.gridx = 1;
 	c.gridy = 1;
@@ -95,13 +88,10 @@ public class WizStepCue extends WizStep {
 	c.fill = GridBagConstraints.NONE;
 	SpacerPanel spacer2 = new SpacerPanel();
 	gb.setConstraints(spacer2, c);
-	getMainPanel().add(spacer2);
+	_mainPanel.add(spacer2);
     }
 
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = -5886729588114736302L;
+
 } /* end class WizStepCue */
 
 

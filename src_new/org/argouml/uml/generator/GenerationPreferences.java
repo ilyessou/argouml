@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,67 +24,30 @@
 
 package org.argouml.uml.generator;
 
-import org.argouml.application.api.Argo;
-import org.argouml.application.api.Configuration;
+/** Stores preference information entered by the user. */
 
-/**
- * Stores generation preference information entered by the user
- * per project. <p>
- *
- * TODO: The header comment is curently not used - this function
- * is not completely implemented yet. How do we store this in the project?
- * Where should the user enter his header comment?
- */
 public class GenerationPreferences implements java.io.Serializable {
     ////////////////////////////////////////////////////////////////
     // instance variables
-    private String headerComment =
+    protected String _headerComment =
 	"Your copyright and other header comments";
-    private String outputDir;
+    protected String _outputDir = "/home/jrobbins/vtmp/";
 
-    /**
-     * Constructor.
-     */
     public GenerationPreferences() {
-	if (System.getProperty("file.separator").equals("/")) {
-	    outputDir = "/tmp";
-        } else {
-	    //This does not even exist on many systems:
-	    //_outputDir = "c:\\temp";
-            outputDir = System.getProperty("java.io.tmpdir");
-        }
-        outputDir = Configuration.getString(
-                Argo.KEY_MOST_RECENT_EXPORT_DIRECTORY, outputDir);
+	if (System.getProperty("file.separator").equals("/") )
+	    _outputDir = "/tmp";
+	else
+	    //_outputDir = "c:\\temp"; //This does not even exist on many systems!
+            _outputDir = System.getProperty("java.io.tmpdir");
     }
 
     ////////////////////////////////////////////////////////////////
     // accessors
-    /**
-     * @return the output directory name
-     */
-    public String getOutputDir() { return outputDir; }
+    public String getOutputDir() { return _outputDir; }
+    public void setOutputDir(String od) { _outputDir = od; }
 
-    /**
-     * @param od the output directory name
-     */
-    public void setOutputDir(String od) { 
-        outputDir = od;
-        Configuration.setString(Argo.KEY_MOST_RECENT_EXPORT_DIRECTORY, od);
-    }
+    public String getHeaderComment() { return _headerComment; }
+    public void setHeaderComment(String c) { _headerComment = c; }
 
-    /**
-     * @return the header comment string
-     */
-    public String getHeaderComment() { return headerComment; }
-
-    /**
-     * @param c the header comment string
-     */
-    public void setHeaderComment(String c) { headerComment = c; }
-
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = -737447110189956630L;
 } /* end class GenerationPreferences */
 

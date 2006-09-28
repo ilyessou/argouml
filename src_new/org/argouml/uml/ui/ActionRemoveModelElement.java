@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -34,19 +34,15 @@ import org.argouml.kernel.ProjectManager;
  * Action to delete modelelements from the model without navigating
  * to/from them.  Used in UMLMutableList for deletion of modelelements
  * from the list.
- * @see org.argouml.uml.ui.ActionDeleteModelElements
  * @since Oct 2, 2002
  * @author jaap.branderhorst@xs4all.nl
  * @stereotype singleton
  */
 public class ActionRemoveModelElement extends AbstractActionRemoveElement {
-
-    /**
-     * The singleton.
-     */
-    public static final ActionRemoveModelElement SINGLETON =
+    
+    public final static ActionRemoveModelElement SINGLETON =
 	new ActionRemoveModelElement();
-
+    
     /**
      * Constructor for ActionRemoveModelElement.
      */
@@ -60,13 +56,12 @@ public class ActionRemoveModelElement extends AbstractActionRemoveElement {
     public void actionPerformed(ActionEvent e) {
         super.actionPerformed(e);
         Project p = ProjectManager.getManager().getCurrentProject();
-        if (getObjectToRemove() != null
-                && ActionDeleteModelElements.sureRemove(getObjectToRemove()))
-            p.moveToTrash(getObjectToRemove());
+        if (getObjectToRemove() != null && ActionRemoveFromModel.sureRemove(getObjectToRemove()))
+            p.moveToTrash(getTarget());
         setObjectToRemove(null);
     }
 
-
+   
     /**
      * @see javax.swing.Action#isEnabled()
      */

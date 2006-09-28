@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,52 +22,40 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: CrInvalidInitial.java
+// Classes: CrInvalidInitial
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.cognitive.critics;
 
 import java.util.Collection;
-
 import org.argouml.cognitive.Designer;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
+import org.argouml.model.ModelFacade;
 
 
-/**
- * A critic to detect when an initial state has more than one
- * outgoing transitions.  Implements a constraint from the UML
- * 1.1 standard: page 10, MPseudostate [1].
- *
- * @author jrobbins
- */
+/** A critic to detect when an initial state has more than one
+ *  outgoing transitions.  Implements a constraint from the UML
+ *  1.1 standard: page 10, MPseudostate [1]. */
+
 public class CrInvalidInitial extends CrUML {
 
-    /**
-     * The constructor.
-     */
     public CrInvalidInitial() {
-        setupHeadAndDesc();
-	addSupportedDecision(UMLDecision.STATE_MACHINES);
+	setHeadline("Remove Extra Outgoing Transitions");
+	addSupportedDecision(CrUML.decSTATE_MACHINES);
 	addTrigger("outgoing");
     }
 
-    /**
-     * @see org.argouml.uml.cognitive.critics.CrUML#predicate2(
-     * java.lang.Object, org.argouml.cognitive.Designer)
-     */
     public boolean predicate2(Object dm, Designer dsgr) {
-	if (!(Model.getFacade().isAPseudostate(dm))) {
+	if (!(ModelFacade.isAPseudostate(dm))) return NO_PROBLEM;
+	Object k = ModelFacade.getPseudostateKind(dm);
+	if (!ModelFacade.
+	    equalsPseudostateKind(k,
+				  ModelFacade.INITIAL_PSEUDOSTATEKIND))
 	    return NO_PROBLEM;
-	}
-	Object k = Model.getFacade().getPseudostateKind(dm);
-	if (!Model.getFacade().equalsPseudostateKind(
-	        k,
-	        Model.getPseudostateKind().getInitial())) {
-	    return NO_PROBLEM;
-	}
-	Collection outgoing = Model.getFacade().getOutgoings(dm);
+	Collection outgoing = ModelFacade.getOutgoings(dm);
 	int nOutgoing = outgoing == null ? 0 : outgoing.size();
-	if (nOutgoing > 1) {
-	    return PROBLEM_FOUND;
-	}
+	if (nOutgoing > 1) return PROBLEM_FOUND;
 	return NO_PROBLEM;
     }
 

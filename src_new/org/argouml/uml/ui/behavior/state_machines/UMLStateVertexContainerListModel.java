@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,15 +24,14 @@
 
 package org.argouml.uml.ui.behavior.state_machines;
 
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
 import org.argouml.uml.ui.UMLModelElementListModel2;
 
 /**
  * @since Dec 15, 2002
  * @author jaap.branderhorst@xs4all.nl
  */
-public class UMLStateVertexContainerListModel extends UMLModelElementListModel2
-{
+public class UMLStateVertexContainerListModel extends UMLModelElementListModel2 {
 
     /**
      * Constructor for UMLStateVertexIncomingListModel.
@@ -46,13 +45,16 @@ public class UMLStateVertexContainerListModel extends UMLModelElementListModel2
      */
     protected void buildModelList() {
         removeAllElements();
-        addElement(Model.getFacade().getContainer(getTarget()));
+	if (ModelFacade.isAStateVertex(getTarget())) {
+	    addElement(ModelFacade.getContainer(getTarget()));
+	}
     }
 
     /**
      * @see org.argouml.uml.ui.UMLModelElementListModel2#isValidElement(Object)
      */
     protected boolean isValidElement(Object/*MBase*/ element) {
-        return Model.getFacade().getContainer(getTarget()) == element;
+	return ModelFacade.isAStateVertex(getTarget())
+		&& ModelFacade.getContainer(getTarget()) == element;
     }
 }

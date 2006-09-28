@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,7 +24,7 @@
 
 package org.argouml.uml.ui.behavior.state_machines;
 
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
 import org.argouml.uml.ui.UMLModelElementListModel2;
 
 /**
@@ -32,7 +32,7 @@ import org.argouml.uml.ui.UMLModelElementListModel2;
  * @author jaap.branderhorst@xs4all.nl
  */
 public class UMLStateDeferrableEventListModel
-    extends UMLModelElementListModel2 {
+    extends UMLModelElementListModel2 {   
 
     /**
      * Constructor for UMLStateDeferrableEventListModel.
@@ -45,15 +45,17 @@ public class UMLStateDeferrableEventListModel
      * @see org.argouml.uml.ui.UMLModelElementListModel2#buildModelList()
      */
     protected void buildModelList() {
-        setAllElements(Model.getFacade().getDeferrableEvents(getTarget()));
+	removeAllElements();
+	if (ModelFacade.isAState(getTarget())) {
+	    setAllElements(ModelFacade.getDeferrableEvents(getTarget()));
+	}
     }
 
     /**
      * @see org.argouml.uml.ui.UMLModelElementListModel2#isValidElement(Object)
      */
     protected boolean isValidElement(Object/*MBase*/ element) {
-        return Model.getFacade().getDeferrableEvents(getTarget())
-        	.contains(element);
+        return ModelFacade.isAState(getTarget())
+		&& ModelFacade.getDeferrableEvents(getTarget()).contains(element);
     }
-
 }

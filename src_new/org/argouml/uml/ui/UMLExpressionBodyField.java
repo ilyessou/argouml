@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -23,105 +23,101 @@
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 package org.argouml.uml.ui;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-
-import javax.swing.JTextArea;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
+import javax.swing.event.*;
+import javax.swing.*;
 
 import org.apache.log4j.Logger;
-import org.argouml.i18n.Translator;
-import org.argouml.ui.LookAndFeelMgr;
+import org.argouml.model.ModelFacade;
+import ru.novosoft.uml.MElementEvent;
 
 /**
- * This text field shows the body of a UML expression.
- *
+ * @deprecated as of ArgoUml 0.13.5 (10-may-2003), because it depends on
+ * {@link org.argouml.uml.ui.UMLExpressionModel}.
+ * TODO: What is this replaced by?
+ * This class is part of the 'old'(pre 0.13.*) implementation of proppanels
+ * that used reflection a lot.
  */
-public class UMLExpressionBodyField extends JTextArea
-    implements DocumentListener, UMLUserInterfaceComponent, 
-    PropertyChangeListener {
+public class UMLExpressionBodyField
+    extends JTextArea
+    implements DocumentListener, UMLUserInterfaceComponent {
 
     /**
-     * Logger.
+     * @deprecated by Linus Tolke as of 0.15.4. Use your own logger in your
+     * class. This will be removed.
      */
-    private static final Logger LOG =
+    protected static Logger cat = 
         Logger.getLogger(UMLExpressionBodyField.class);
 
-    private UMLExpressionModel2 model;
-    private boolean notifyModel;
-
-    /**
-     * The constructor.
-     *
-     * @param m Expression model, should be shared between
-     * Language and Body fields
-     * @param n Only one of Language and Body fields should
-     * forward events to model
-     */
-    public UMLExpressionBodyField(UMLExpressionModel2 m,
-				  boolean n) {
-        model = m;
-        notifyModel = n;
-        getDocument().addDocumentListener(this);
-        setToolTipText(Translator.localize("label.body.tooltip"));
-        setFont(LookAndFeelMgr.getInstance().getStandardFont());
+    private UMLExpressionModel _model;
+    private boolean _notifyModel;
+    private boolean _isUpdating;
+    
+    public UMLExpressionBodyField(UMLExpressionModel model,
+				  boolean notifyModel) {
+        _model = model;
+        _notifyModel = notifyModel;
+        getDocument().addDocumentListener(this);       
     }
 
-    /**
-     * @see org.argouml.uml.ui.UMLUserInterfaceComponent#targetChanged()
-     */
     public void targetChanged() {
-	LOG.debug("UMLExpressionBodyField: targetChanged");
-	if (notifyModel) {
-	    model.targetChanged();
-	}
+	cat.debug("UMLExpressionBodyField: targetChanged");
+	if (_notifyModel) _model.targetChanged();
         update();
     }
 
-    /**
-     * @see org.argouml.uml.ui.UMLUserInterfaceComponent#targetReasserted()
-     */
     public void targetReasserted() {
     }
-
-    /* TODO: This does not work - no event arrives. */
-    public void propertyChange(PropertyChangeEvent event) {
-        LOG.debug("UMLExpressionBodyField: propertySet" + event);
-        update();
+    
+    public void roleAdded(final MElementEvent p1) {
     }
 
+    public void recovered(final MElementEvent p1) {
+    }
+
+    public void roleRemoved(final MElementEvent p1) {
+    }
+
+    public void listRoleItemSet(final MElementEvent p1) {
+    }
+
+    public void removed(final MElementEvent p1) {
+    }
+
+    public void propertySet(final MElementEvent event) {
+       	cat.debug("UMLExpressionBodyField: propertySet" + event);
+    }
+    
     private void update() {
         String oldText = getText();
-        String newText = model.getBody();
-        LOG.debug("UMLExpressionBodyField: update: " + oldText + " " + newText);
+        Object newText = _model.getBody();
+	cat.debug("UMLExpressionBodyField: update: " + oldText + " " + newText);
 
-        if (oldText == null || newText == null || !oldText.equals(newText)) {
-            if (oldText != newText) {
-                LOG.debug("setNewText!!");
-                setText(newText);
-            }
+	if ((oldText == null || newText == null || !oldText.equals(newText))
+	    && oldText != newText) {
+	    try {
+		_isUpdating = true;
+                setText((String) newText);
+            } finally {
+		_isUpdating = false;
+	    }
         }
     }
 
-    /**
-     * @see javax.swing.event.DocumentListener#changedUpdate(javax.swing.event.DocumentEvent)
-     */
     public void changedUpdate(final DocumentEvent p1) {
-        model.setBody(getText());
+	if (!_isUpdating) {
+	    _model.setBody(getText());
+	}
     }
 
-    /**
-     * @see javax.swing.event.DocumentListener#removeUpdate(javax.swing.event.DocumentEvent)
-     */
     public void removeUpdate(final DocumentEvent p1) {
-        model.setBody(getText());
+	if (!_isUpdating) {
+	    _model.setBody(getText());
+	}
     }
 
-    /**
-     * @see javax.swing.event.DocumentListener#insertUpdate(javax.swing.event.DocumentEvent)
-     */
     public void insertUpdate(final DocumentEvent p1) {
-        model.setBody(getText());
+	if (!_isUpdating) {
+	    _model.setBody(getText());
+	}
     }
 }

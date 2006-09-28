@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -25,91 +25,88 @@
 
 package org.argouml.language.java.generator;
 
-import org.argouml.model.CoreFactory;
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
+import org.argouml.model.uml.foundation.core.CoreFactory;
+import org.argouml.model.uml.UmlFactory;
 
-/**
- * A file of information about the Java language.  This is used to
- * fill in the offered data types in variable and operation
- * declarations.
+/** A file of information about the Java language.  This is used to
+ *  fill in the offered data types in variable and operation
+ *  declarations.
  *
  * In the end, it would be better to have these in XMI files that are
  * loaded at starting time.
 */
+
 public class JavaUML {
 
     // java.lang
 
-    private static final Object STRING_CLASS = getCore().createClass();
+    public static Object/*MClass*/ STRING_CLASS = getCore().createClass();
 
-    private static final Object VOID_TYPE = getCore().createDataType();
-    private static final Object CHAR_TYPE = getCore().createDataType();
-    private static final Object INT_TYPE = getCore().createDataType();
-    private static final Object BOOLEAN_TYPE = getCore().createDataType();
-    private static final Object BYTE_TYPE = getCore().createDataType();
-    private static final Object LONG_TYPE = getCore().createDataType();
-    private static final Object FLOAT_TYPE = getCore().createDataType();
-    private static final Object DOUBLE_TYPE = getCore().createDataType();
+    public static Object/*MDataType*/ VOID_TYPE = getCore().createDataType();
+    public static Object/*MDataType*/ CHAR_TYPE = getCore().createDataType();
+    public static Object/*MDataType*/ INT_TYPE = getCore().createDataType();
+    public static Object/*MDataType*/ BOOLEAN_TYPE = getCore().createDataType();
+    public static Object/*MDataType*/ BYTE_TYPE = getCore().createDataType();
+    public static Object/*MDataType*/ LONG_TYPE = getCore().createDataType();
+    public static Object/*MDataType*/ FLOAT_TYPE = getCore().createDataType();
+    public static Object/*MDataType*/ DOUBLE_TYPE = getCore().createDataType();
 
-    private static final Object CHAR_CLASS = getCore().createClass();
-    private static final Object INT_CLASS = getCore().createClass();
-    private static final Object BOOLEAN_CLASS = getCore().createClass();
-    private static final Object BYTE_CLASS = getCore().createClass();
-    private static final Object LONG_CLASS = getCore().createClass();
-    private static final Object FLOAT_CLASS = getCore().createClass();
-    private static final Object DOUBLE_CLASS = getCore().createClass();
+    public static Object/*MClass*/ CHAR_CLASS = getCore().createClass();
+    public static Object/*MClass*/ INT_CLASS = getCore().createClass();
+    public static Object/*MClass*/ BOOLEAN_CLASS = getCore().createClass();
+    public static Object/*MClass*/ BYTE_CLASS = getCore().createClass();
+    public static Object/*MClass*/ LONG_CLASS = getCore().createClass();
+    public static Object/*MClass*/ FLOAT_CLASS = getCore().createClass();
+    public static Object/*MClass*/ DOUBLE_CLASS = getCore().createClass();
 
 
     // java.awt
-    private static final Object RECTANGLE_CLASS = getCore().createClass();
-    private static final Object POINT_CLASS = getCore().createClass();
-    private static final Object COLOR_CLASS = getCore().createClass();
+    public static Object/*MClass*/ RECTANGLE_CLASS = getCore().createClass();
+    public static Object/*MClass*/ POINT_CLASS = getCore().createClass();
+    public static Object/*MClass*/ COLOR_CLASS = getCore().createClass();
 
 
     // java.util
-    private static final Object VECTOR_CLASS = getCore().createClass();
-    private static final Object HASHTABLE_CLASS = getCore().createClass();
-    private static final Object STACK_CLASS = getCore().createClass();
+    public static Object/*MClass*/ VECTOR_CLASS = getCore().createClass();
+    public static Object/*MClass*/ HASHTABLE_CLASS = getCore().createClass();
+    public static Object/*MClass*/ STACK_CLASS = getCore().createClass();
 
-    /**
-     * Get the CoreFactory.
+    /** Get the CoreFactory
      *
      * @return CoreFactory
      */
     private static CoreFactory getCore() {
-	return Model.getCoreFactory();
+	return UmlFactory.getFactory().getCore();
     }
 
-    /**
-     * This UML Model contains the Java standard elements.
-     */
-    private static Object javastandards =
-	Model.getModelManagementFactory().createModel();
+    public static Object/*MModel*/ javastandards =
+	UmlFactory.getFactory().getModelManagement().createModel();
 
     static {
-        Model.getCoreHelper().setName(STRING_CLASS, "String");
-        Model.getCoreHelper().setName(CHAR_CLASS, "Character");
-        Model.getCoreHelper().setName(INT_CLASS, "Integer");
-        Model.getCoreHelper().setName(BOOLEAN_CLASS, "Boolean");
-        Model.getCoreHelper().setName(BYTE_CLASS, "Byte");
-        Model.getCoreHelper().setName(LONG_CLASS, "Long");
-        Model.getCoreHelper().setName(FLOAT_CLASS, "Float");
-        Model.getCoreHelper().setName(DOUBLE_CLASS, "Double");
-        Model.getCoreHelper().setName(RECTANGLE_CLASS, "Rectangle");
-        Model.getCoreHelper().setName(POINT_CLASS, "Point");
-        Model.getCoreHelper().setName(COLOR_CLASS, "Color");
-        Model.getCoreHelper().setName(VECTOR_CLASS, "Vector");
-        Model.getCoreHelper().setName(HASHTABLE_CLASS, "Hashtable");
-        Model.getCoreHelper().setName(STACK_CLASS, "Stack");
+        ModelFacade.setName(STRING_CLASS, "String");
+        ModelFacade.setName(CHAR_CLASS, "Character");
+        ModelFacade.setName(INT_CLASS, "Integer");
+        ModelFacade.setName(BOOLEAN_CLASS, "Boolean");
+        ModelFacade.setName(BYTE_CLASS, "Byte");
+        ModelFacade.setName(LONG_CLASS, "Long");
+        ModelFacade.setName(FLOAT_CLASS, "Float");
+        ModelFacade.setName(DOUBLE_CLASS, "Double");
+        ModelFacade.setName(RECTANGLE_CLASS, "Rectangle");
+        ModelFacade.setName(POINT_CLASS, "Point");
+        ModelFacade.setName(COLOR_CLASS, "Color");
+        ModelFacade.setName(VECTOR_CLASS, "Vector");
+        ModelFacade.setName(HASHTABLE_CLASS, "Hashtable");
+        ModelFacade.setName(STACK_CLASS, "Stack");
 
-        Model.getCoreHelper().setName(VOID_TYPE, "void");
-        Model.getCoreHelper().setName(CHAR_TYPE, "char");
-        Model.getCoreHelper().setName(INT_TYPE, "int");
-        Model.getCoreHelper().setName(BOOLEAN_TYPE, "boolean");
-        Model.getCoreHelper().setName(BYTE_TYPE, "byte");
-        Model.getCoreHelper().setName(LONG_TYPE, "long");
-        Model.getCoreHelper().setName(FLOAT_TYPE, "float");
-        Model.getCoreHelper().setName(DOUBLE_TYPE, "double");
+        ModelFacade.setName(VOID_TYPE, "void");
+        ModelFacade.setName(CHAR_TYPE, "char");
+        ModelFacade.setName(INT_TYPE, "int");
+        ModelFacade.setName(BOOLEAN_TYPE, "boolean");
+        ModelFacade.setName(BYTE_TYPE, "byte");
+        ModelFacade.setName(LONG_TYPE, "long");
+        ModelFacade.setName(FLOAT_TYPE, "float");
+        ModelFacade.setName(DOUBLE_TYPE, "double");
 
 	//    javastandards.addOwnedElement(STRING_CLASS);
 	//    javastandards.addOwnedElement(CHAR_CLASS);

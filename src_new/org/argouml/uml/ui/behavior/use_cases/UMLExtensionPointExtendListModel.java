@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 2002-2006 The Regents of the University of California. All
+// Copyright (c) 2002-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,7 +24,7 @@
 
 package org.argouml.uml.ui.behavior.use_cases;
 
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
 import org.argouml.uml.ui.UMLModelElementListModel2;
 
 /**
@@ -45,15 +45,19 @@ public class UMLExtensionPointExtendListModel
      * @see org.argouml.uml.ui.UMLModelElementListModel2#buildModelList()
      */
     protected void buildModelList() {
-        setAllElements(Model.getFacade().getExtends(getTarget()));
+	if (!ModelFacade.isAExtensionPoint(getTarget())) {
+	    return;
+	}
+
+        setAllElements(ModelFacade.getExtends(getTarget()));
     }
 
     /**
      * @see org.argouml.uml.ui.UMLModelElementListModel2#isValidElement(Object)
      */
     protected boolean isValidElement(Object/*MBase*/ o) {
-        return Model.getFacade().isAExtend(o)
-            && Model.getFacade().getExtends(getTarget()).contains(o);
+        return ModelFacade.isAExtensionPoint(getTarget())
+		&& ModelFacade.isAExtend(o)
+		&& ModelFacade.getExtends(getTarget()).contains(o);
     }
-
 }

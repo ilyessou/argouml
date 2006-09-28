@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 2003-2006 The Regents of the University of California. All
+// Copyright (c) 2003-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -29,35 +29,30 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.Vector;
 
-import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
 
 /**
- * Rule for navigation from a State to its Exit action.
- *
- * @author jaap.branderhorst@xs4all.nl
+ * 
+ * @author jaap.branderhorst@xs4all.nl	
  * @since Dec 25, 2002
  */
 public class GoStateToExit extends AbstractPerspectiveRule {
 
     /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getChildren(java.lang.Object)
+     * @see org.argouml.ui.AbstractGoRule#getChildren(java.lang.Object)
      */
     public Collection getChildren(Object parent) {
-        if (Model.getFacade().isAState(parent)
-	        && Model.getFacade().getExit(parent) != null) {
+        if (ModelFacade.isAState(parent)
+	        && ModelFacade.getExit(parent) != null) {
             Vector children = new Vector();
-            children.add(Model.getFacade().getExit(parent));
+            children.add(ModelFacade.getExit(parent));
             return children;
         }
         return null;
     }
 
-    /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getDependencies(java.lang.Object)
-     */
     public Set getDependencies(Object parent) {
-        if (Model.getFacade().isAState(parent)) {
+        if (ModelFacade.isAState(parent)) {
 	    Set set = new HashSet();
 	    set.add(parent);
 	    return set;
@@ -66,9 +61,9 @@ public class GoStateToExit extends AbstractPerspectiveRule {
     }
 
     /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getRuleName()
+     * @see org.argouml.ui.AbstractGoRule#getRuleName()
      */
     public String getRuleName() {
-        return Translator.localize ("misc.state.exit");
+        return "State->Exit"; 
     }
 }

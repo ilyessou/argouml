@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -23,82 +23,93 @@
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 package org.argouml.uml.ui;
-import javax.swing.JTextField;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
-
-import org.argouml.i18n.Translator;
-import org.argouml.ui.LookAndFeelMgr;
+import javax.swing.event.*;
+import javax.swing.*;
+import ru.novosoft.uml.MElementEvent;
 
 /**
- * This text field shows the language of a UML expression.
+ * @deprecated as of ArgoUml 0.13.5 (10-may-2003), because it depends on
+ * {@link org.argouml.uml.ui.UMLExpressionModel}.
+ * This class is part of the 'old'(pre 0.13.*) implementation of proppanels
+ * that used reflection a lot.
+ * TODO: What is it replaced by?
  */
 public class UMLExpressionLanguageField
     extends JTextField
-    implements DocumentListener, UMLUserInterfaceComponent
-    {
+    implements DocumentListener, UMLUserInterfaceComponent {
 
-    private UMLExpressionModel2 model;
-    private boolean notifyModel;
+    private UMLExpressionModel _model;
+    private boolean _notifyModel;
+    private boolean _isUpdating;
 
     /**
      * Creates a new field that selects the language for an expression.
      *
-     * @param m Expression model, should be shared between
+     * @param model Expression model, should be shared between
      * Language and Body fields
-     * @param n Only one of Language and Body fields should
+     * @param notifyModel Only one of Language and Body fields should
      * forward events to model
      */
-    public UMLExpressionLanguageField(UMLExpressionModel2 m, boolean n) {
-        model = m;
-        notifyModel = n;
+    public UMLExpressionLanguageField(UMLExpressionModel model,
+				      boolean notifyModel) {
+        _model = model;
+        _notifyModel = notifyModel;
         getDocument().addDocumentListener(this);
-        setToolTipText(Translator.localize("label.language.tooltip"));
-        setFont(LookAndFeelMgr.getInstance().getStandardFont());
     }
 
-    /**
-     * @see org.argouml.uml.ui.UMLUserInterfaceComponent#targetChanged()
-     */
     public void targetChanged() {
-        if (notifyModel) model.targetChanged();
+        if (_notifyModel) _model.targetChanged();
         update();
     }
 
-    /**
-     * @see org.argouml.uml.ui.UMLUserInterfaceComponent#targetReasserted()
-     */
     public void targetReasserted() {
     }
-
+    
+    public void roleAdded(final MElementEvent p1) {
+    }
+    public void recovered(final MElementEvent p1) {
+    }
+    public void roleRemoved(final MElementEvent p1) {
+    }
+    public void listRoleItemSet(final MElementEvent p1) {
+    }
+    public void removed(final MElementEvent p1) {
+    }
+    public void propertySet(final MElementEvent event) {
+        if (_notifyModel && _model.propertySet(event)) {
+            update();
+        }
+    }
+    
     private void update() {
         String oldText = getText();
-        String newText = model.getLanguage();
-        if (oldText == null || newText == null || !oldText.equals(newText)) {
-            if (oldText != newText) {
+        String newText = _model.getLanguage();
+        if ((oldText == null || newText == null || !oldText.equals(newText))
+	    && oldText != newText) {
+	    try {
+		_isUpdating = true;
                 setText(newText);
-            }
+            } finally {
+		_isUpdating = false;
+	    }
         }
     }
 
-    /**
-     * @see javax.swing.event.DocumentListener#changedUpdate(javax.swing.event.DocumentEvent)
-     */
     public void changedUpdate(final DocumentEvent p1) {
-        model.setLanguage(getText());
+	if (!_isUpdating) {
+	    _model.setLanguage(getText());
+	}
     }
 
-    /**
-     * @see javax.swing.event.DocumentListener#removeUpdate(javax.swing.event.DocumentEvent)
-     */
     public void removeUpdate(final DocumentEvent p1) {
-        model.setLanguage(getText());
+	if (!_isUpdating) {
+	    _model.setLanguage(getText());
+	}
     }
 
-    /**
-     * @see javax.swing.event.DocumentListener#insertUpdate(javax.swing.event.DocumentEvent)
-     */
     public void insertUpdate(final DocumentEvent p1) {
-        model.setLanguage(getText());
+	if (!_isUpdating) {
+	    _model.setLanguage(getText());
+	}
     }
 }

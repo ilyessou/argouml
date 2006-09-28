@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -27,8 +27,7 @@ package org.argouml.kernel;
 
 import junit.framework.TestCase;
 
-import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
 
 /**
  * @since Nov 22, 2002
@@ -45,13 +44,9 @@ public class TestProjectManager extends TestCase {
 	super(arg0);
     }
 
-    /**
-     * Test the makeEmptyProject() function.
-     */
     public void testMakeEmptyProject() {
 	Project p = ProjectManager.getManager().makeEmptyProject();
 	assertEquals(2, p.getDiagrams().size());
-        assertEquals(Translator.localize("misc.untitled-model"), 
-                Model.getFacade().getName(p.getModel()));
+        assertEquals("untitledModel", ModelFacade.getName(p.getModel()));
     }
 }

@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 2004-2006 The Regents of the University of California. All
+// Copyright (c) 2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,17 +24,17 @@
 
 package org.argouml.uml.generator;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Vector;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.Vector;
 
-import org.apache.log4j.Logger;
+import org.argouml.application.api.NotationName;
+import org.argouml.application.api.NotationProvider2;
 import org.argouml.application.api.PluggableNotation;
-import org.argouml.kernel.Project;
-import org.argouml.kernel.ProjectManager;
-import org.argouml.kernel.ProjectSettings;
-import org.argouml.model.Model;
-import org.argouml.notation.NotationName;
+import org.argouml.language.helpers.NotationHelper;
+import org.argouml.model.ModelFacade;
 
 /**
  * This class is the abstract super class that defines a code
@@ -46,35 +46,13 @@ import org.argouml.notation.NotationName;
  * pattern</a> in "Design Patterns", and the <a href=
  * "http://www.ccs.neu.edu/research/demeter/">Demeter project</a>.<p>
  *
- * @deprecated This class is deprecated in favour of GeneratorManager and
- * the CodeGenerator interface. <p>
- * Explanation by Daniele Tamino:<p>
- * Why Generator2 is deprecated: Because it was replaced 
- * by CodeGenerator and GeneratorManager. 
- * The Generator2 class kept a list of Generator2 objects, 
- * populated during construction, but that list was 
- * not changeable afterward, and this was incompatible 
- * with the new module loader (see issue 3580 
- * <http://argouml.tigris.org/issues/show_bug.cgi?id=3580>), 
- * so here comes GeneratorManager. 
- * Moreover, there was no reasonable way to display 
- * the generated source correctly in the source pane 
- * using Generator2 or FileGenerator, and for this 
- * the CodeGenerator interface was created (issue 
- * 3546<http://argouml.tigris.org/issues/show_bug.cgi?id=3546> ). <p> 
- * 
- * In ArgoUML V0.21.2 Generator2 was still used 
- * for another purpose, i.e. it implemented 
- * some common methods of the NotationProvider2 interface too, 
- * which went away when the new notation architecture 
- * got more and more completed (issue 1207
- * <http://argouml.tigris.org/issues/show_bug.cgi?id=1207> ).
+ * This is created from the {@link Generator} class and has the exact same
+ * functions.
+ *
  * @since 0.15.6
  */
 public abstract class Generator2
-    implements PluggableNotation {
-
-    private static final Logger LOG = Logger.getLogger(Generator2.class);
+    implements NotationProvider2, PluggableNotation {
 
     private NotationName notationName = null;
 
@@ -83,7 +61,7 @@ public abstract class Generator2
      */
     public static final String INDENT = "  ";
 
-//    private static Map generators = new HashMap();
+    private static Map generators = new HashMap();
 
     /**
      * Access method that finds the correct generator based on a name.
@@ -92,33 +70,17 @@ public abstract class Generator2
      * @return a generator (or <tt>null</tt> if not found).
      */
     public static Generator2 getGenerator(NotationName n) {
-        //return (Generator2) generators.get(n);
-        CodeGenerator fg = GeneratorManager.getInstance()
-                .getGenerator(n.getConfigurationValue());
-        try {
-            return (Generator2) fg;
-        } catch (ClassCastException cce) {
-            return null;
-        }
+        return (Generator2) generators.get(n);
     }
 
     /**
      * Constructor that sets the name of this notation.
      *
-     * @param nn The NotationName object.
+     * @param name The name.
      */
-    public Generator2(NotationName nn) {
-        notationName = nn;
-        String cv = nn.getConfigurationValue();
-        Language lang =
-            GeneratorHelper.makeLanguage(cv, nn.getTitle(), nn.getIcon());
-        try {
-            CodeGenerator wrapper =
-                new FileGeneratorAdapter((FileGenerator) this);
-            GeneratorManager.getInstance().addGenerator(lang, wrapper);
-        } catch (ClassCastException cce) {
-            LOG.warn("Class " + getClass() + " should implement FileGenerator");
-        }
+    public Generator2(NotationName name) {
+        notationName = name;
+        generators.put(notationName, this);
     }
 
     /**
@@ -138,28 +100,25 @@ public abstract class Generator2
         if (o == null) {
             return "";
 	}
-        if (Model.getFacade().isAActionState(o)) {
-            return generateActionState(o);
-        }
-        if (Model.getFacade().isAExtensionPoint(o)) {
+        if (ModelFacade.isAExtensionPoint(o)) {
             return generateExtensionPoint(o);
 	}
-        if (Model.getFacade().isAOperation(o)) {
+        if (ModelFacade.isAOperation(o)) {
             return generateOperation(o, false);
 	}
-        if (Model.getFacade().isAAttribute(o)) {
+        if (ModelFacade.isAAttribute(o)) {
             return generateAttribute(o, false);
 	}
-        if (Model.getFacade().isAParameter(o)) {
+        if (ModelFacade.isAParameter(o)) {
             return generateParameter(o);
 	}
-        if (Model.getFacade().isAPackage(o)) {
+        if (ModelFacade.isAPackage(o)) {
             return generatePackage(o);
 	}
-        if (Model.getFacade().isAClassifier(o)) {
+        if (ModelFacade.isAClassifier(o)) {
             return generateClassifier(o);
 	}
-        if (Model.getFacade().isAExpression(o)) {
+        if (ModelFacade.isAExpression(o)) {
             return generateExpression(o);
 	}
         if (o instanceof String) {
@@ -168,48 +127,48 @@ public abstract class Generator2
         if (o instanceof String) {
             return generateUninterpreted((String) o);
 	}
-        if (Model.getFacade().isAStereotype(o)) {
+        if (ModelFacade.isAStereotype(o)) {
             return generateStereotype(o);
 	}
-        if (Model.getFacade().isATaggedValue(o)) {
+        if (ModelFacade.isATaggedValue(o)) {
             return generateTaggedValue(o);
         }
-        if (Model.getFacade().isAAssociation(o)) {
+        if (ModelFacade.isAAssociation(o)) {
             return generateAssociation(o);
 	}
-        if (Model.getFacade().isAAssociationEnd(o)) {
+        if (ModelFacade.isAAssociationEnd(o)) {
             return generateAssociationEnd(o);
 	}
-        if (Model.getFacade().isAMultiplicity(o)) {
+        if (ModelFacade.isAMultiplicity(o)) {
             return generateMultiplicity(o);
 	}
-        if (Model.getFacade().isAState(o)) {
+        if (ModelFacade.isAState(o)) {
             return generateState(o);
 	}
-        if (Model.getFacade().isATransition(o)) {
+        if (ModelFacade.isATransition(o)) {
             return generateTransition(o);
 	}
-        if (Model.getFacade().isAAction(o)) {
+        if (ModelFacade.isAAction(o)) {
             return generateAction(o);
 	}
-        if (Model.getFacade().isACallAction(o)) {
+        if (ModelFacade.isACallAction(o)) {
             return generateAction(o);
 	}
-        if (Model.getFacade().isAGuard(o)) {
+        if (ModelFacade.isAGuard(o)) {
             return generateGuard(o);
 	}
-        if (Model.getFacade().isAMessage(o)) {
+        if (ModelFacade.isAMessage(o)) {
             return generateMessage(o);
 	}
-        if (Model.getFacade().isAEvent(o)) {
+        if (ModelFacade.isAEvent(o)) {
             return generateEvent(o);
         }
-        if (Model.getFacade().isAVisibilityKind(o)) {
+        if (ModelFacade.isAVisibilityKind(o)) {
             return generateVisibility(o);
 	}
 
-        if (Model.getFacade().isAModelElement(o)) {
-            return generateName(Model.getFacade().getName(o));
+        if (ModelFacade.isAModelElement(o)) {
+            return generateName(ModelFacade.getName(o));
 	}
 
         if (o == null) {
@@ -219,55 +178,105 @@ public abstract class Generator2
         return o.toString();
     }
 
-    public abstract String generateActionState(Object actionState);
-    
+    /**
+     * @see NotationProvider2#generateExtensionPoint(Object)
+     */
     public abstract String generateExtensionPoint(Object op);
 
+    /**
+     * @see NotationProvider2#generateOperation(Object, boolean)
+     */
     public abstract String generateOperation(Object op, boolean documented);
 
+    /**
+     * @see NotationProvider2#generateAttribute(Object, boolean)
+     */
     public abstract String generateAttribute(Object attr, boolean documented);
 
+    /**
+     * @see NotationProvider2#generateParameter(Object)
+     */
     public abstract String generateParameter(Object param);
 
+    /**
+     * @see NotationProvider2#generatePackage(Object)
+     */
     public abstract String generatePackage(Object p);
 
+    /**
+     * @see NotationProvider2#generateClassifier(Object)
+     */
     public abstract String generateClassifier(Object cls);
 
+    /**
+     * @see NotationProvider2#generateTaggedValue(Object)
+     */
     public abstract String generateTaggedValue(Object s);
 
+    /**
+     * @see NotationProvider2#generateAssociation(Object)
+     */
     public abstract String generateAssociation(Object a);
 
+    /**
+     * @see NotationProvider2#generateAssociationEnd(Object)
+     */
     public abstract String generateAssociationEnd(Object ae);
 
+    /**
+     * @see NotationProvider2#generateMultiplicity(Object)
+     */
     public abstract String generateMultiplicity(Object m);
 
-    public abstract String generateObjectFlowState(Object m);
-
+    /**
+     * @see NotationProvider2#generateState(Object)
+     */
     public abstract String generateState(Object m);
 
-    public abstract String generateSubmachine(Object m);
-
+    /**
+     * @see NotationProvider2#generateTransition(Object)
+     */
     public abstract String generateTransition(Object m);
 
+    /**
+     * @see NotationProvider2#generateAction(Object)
+     */
     public abstract String generateAction(Object m);
 
+    /**
+     * @see NotationProvider2#generateGuard(Object)
+     */
     public abstract String generateGuard(Object m);
 
+    /**
+     * @see NotationProvider2#generateMessage(Object)
+     */
     public abstract String generateMessage(Object m);
 
+    /**
+     * @see NotationProvider2#generateEvent(Object)
+     */
     public abstract String generateEvent(Object m);
 
+    /**
+     * @see NotationProvider2#generateVisibility(Object)
+     */
     public abstract String generateVisibility(Object m);
 
+    /**
+     * @see NotationProvider2#generateExpression(Object)
+     */
     public String generateExpression(Object expr) {
-        if (Model.getFacade().isAExpression(expr))
-            return generateUninterpreted(
-                    (String) Model.getFacade().getBody(expr));
-        else if (Model.getFacade().isAConstraint(expr))
-            return generateExpression(Model.getFacade().getBody(expr));
+        if (ModelFacade.isAExpression(expr))
+            return generateUninterpreted((String) ModelFacade.getBody(expr));
+        else if (ModelFacade.isAConstraint(expr))
+            return generateExpression(ModelFacade.getBody(expr));
         return "";
     }
 
+    /**
+     * @see NotationProvider2#generateName(String)
+     */
     public String generateName(String n) {
         return n;
     }
@@ -286,26 +295,29 @@ public abstract class Generator2
         return un;
     }
 
+    /**
+     * @see NotationProvider2#generateClassifierRef(Object)
+     */
     public String generateClassifierRef(Object cls) {
         if (cls == null)
             return "";
-        return Model.getFacade().getName(cls);
+        return ModelFacade.getName(cls);
     }
 
+    /**
+     * @see NotationProvider2#generateStereotype(Object)
+     */
     public String generateStereotype(Object st) {
         if (st == null)
             return "";
-        Project project = 
-            ProjectManager.getManager().getCurrentProject();
-        ProjectSettings ps = project.getProjectSettings();
-        if (Model.getFacade().isAModelElement(st)) {
-            if (Model.getFacade().getName(st) == null)
+        if (ModelFacade.isAModelElement(st)) {
+            if (ModelFacade.getName(st) == null)
                 return ""; // Patch by Jeremy Bennett
-            if (Model.getFacade().getName(st).length() == 0)
+            if (ModelFacade.getName(st).length() == 0)
                 return "";
-            return ps.getLeftGuillemot()
-                + generateName(Model.getFacade().getName(st))
-                + ps.getRightGuillemot();
+            return NotationHelper.getLeftGuillemot()
+            + generateName(ModelFacade.getName(st))
+            + NotationHelper.getRightGuillemot();
         }
         if (st instanceof Collection) {
             Object o;
@@ -317,14 +329,14 @@ public abstract class Generator2
                     sb.append(',');
                 o = iter.next();
                 if (o != null) {
-                    sb.append(generateName(Model.getFacade().getName(o)));
+                    sb.append(generateName(ModelFacade.getName(o)));
                     first = false;
                 }
             }
             if (!first) {
-                return ps.getLeftGuillemot()
+                return NotationHelper.getLeftGuillemot()
 		    + sb.toString()
-		    + ps.getRightGuillemot();
+		    + NotationHelper.getRightGuillemot();
 	    }
         }
         return "";
@@ -358,7 +370,7 @@ public abstract class Generator2
     public void setModuleEnabled(boolean enabled) {
     }
 
-
+    
     /**
      * @see org.argouml.application.api.Pluggable#inContext(Object[])
      */
@@ -378,12 +390,12 @@ public abstract class Generator2
 	    return null;
 	}
 
-        Object taggedValue = Model.getFacade().getTaggedValue(me, "src_path");
+        Object taggedValue = ModelFacade.getTaggedValue(me, "src_path");
         String s;
         if (taggedValue == null) {
 	    return null;
 	}
-        s =  Model.getFacade().getValueOfTag(taggedValue);
+        s =  ModelFacade.getValueOfTag(taggedValue);
         if (s != null) {
             return s.trim();
 	}

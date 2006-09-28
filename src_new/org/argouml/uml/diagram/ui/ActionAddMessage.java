@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2001 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -25,111 +25,76 @@
 package org.argouml.uml.diagram.ui;
 
 import java.awt.event.ActionEvent;
+import org.argouml.model.ModelFacade;
 
-import javax.swing.Action;
-
-import org.argouml.application.helpers.ResourceLoaderWrapper;
-import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.model.uml.UmlFactory;
 import org.argouml.ui.targetmanager.TargetManager;
+import org.argouml.uml.diagram.ui.FigMessage;
+import org.argouml.uml.ui.UMLChangeAction;
 import org.tigris.gef.base.Editor;
 import org.tigris.gef.base.Globals;
 import org.tigris.gef.base.Layer;
 import org.tigris.gef.graph.GraphModel;
 import org.tigris.gef.graph.GraphNodeRenderer;
 import org.tigris.gef.presentation.FigNode;
-import org.tigris.gef.undo.UndoableAction;
 
-/**
- * Action to add a message.
- * @stereotype singleton
+/** Action to add a message.
+ *  @stereotype singleton
  */
-public class ActionAddMessage extends UndoableAction {
+public class ActionAddMessage extends UMLChangeAction {
 
     ////////////////////////////////////////////////////////////////
     // static variables
-
-    private static ActionAddMessage singleton = new ActionAddMessage();
+    
+    public static ActionAddMessage SINGLETON = new ActionAddMessage(); 
 
 
     ////////////////////////////////////////////////////////////////
     // constructors
 
-    /**
-     * The constructor.
-     */
-    private ActionAddMessage() {
-        super(Translator.localize("action.add-message"),
-                ResourceLoaderWrapper.lookupIcon("action.add-message"));
-        // Set the tooltip string:
-        putValue(Action.SHORT_DESCRIPTION, 
-                Translator.localize("action.add-message"));
-    }
+    public ActionAddMessage() { super("action.add-message"); }
 
 
     ////////////////////////////////////////////////////////////////
     // main methods
 
-    /**
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-     */
     public void actionPerformed(ActionEvent ae) {
-        super.actionPerformed(ae);
     	Object target =  TargetManager.getInstance().getModelTarget();
-
-    	if (!(Model.getFacade().isAAssociationRole(target))
-	    && Model.getFacade().isACollaboration(Model.getFacade()
-                .getNamespace(target))) {
-    	    return;
-    	}
-        // So, the target is a MAssociationRole
-    	this.addMessage(target);
+    
+    	
+    	if (!(ModelFacade.isAAssociationRole(target))
+	    && ModelFacade.isACollaboration(ModelFacade.getNamespace(target)))
+	    return;
+    	Object/*MAssociationRole*/ ar = target;
+        this.addMessage(ar);
+        super.actionPerformed(ae);
     }
-
+    
     /**
-     * Add a message to an associationRole: it builds it using the
+     * <p> add a message to an associationRole: it builds it using the
      * Factory method and then it creates the Fig and adds it to the
-     * diagram.
-     *
-     * @param associationrole the associationRole to which the new message
-     *                        must be added
-     */
-    private void addMessage(Object associationrole) {
-        Object collaboration = Model.getFacade().getNamespace(associationrole);
-        Object message =
-            Model.getCollaborationsFactory()
-            	.buildMessage(collaboration, associationrole);
+     * diagram </p>
+     * @param ar the associationRole to which the new message must be added
+     **/
+    public Object/*MMessage*/ addMessage(Object/*MAssociationRole*/ ar) {
+        Object/*MCollaboration*/ collab = ModelFacade.getNamespace(ar);
+        Object/*MMessage*/ msg =
+	    UmlFactory.getFactory().getCollaborations().buildMessage(collab, ar);
+        String nextStr =
+	    "" + ModelFacade.getMessages((ModelFacade.getInteractions(collab).toArray())[0]).size();	
         Editor e = Globals.curEditor();
         GraphModel gm = e.getGraphModel();
         Layer lay = e.getLayerManager().getActiveLayer();
         GraphNodeRenderer gr = e.getGraphNodeRenderer();
-        FigNode figMsg = gr.getFigNodeFor(gm, lay, message, null);
+        FigNode figMsg = gr.getFigNodeFor(gm, lay, msg);
         ((FigMessage) figMsg).addPathItemToFigAssociationRole(lay);
-
-        gm.getNodes().add(message); /*MVW This is not the correct way,
-        * but it allows connecting a CommentEdge to it!
-        * See e.g. ActionAddNote for the correct way.
-        * Testcase:
-        * 1. Select the message.
-        * 2. Click the Comment tool.
-        * */
-
-        TargetManager.getInstance().setTarget(message);
+        e.damageAll();                
+        return msg;
     }
 
-    /**
-     * @see org.tigris.gef.undo.UndoableAction#isEnabled()
-     */
-    public boolean isEnabled() {
+    public boolean shouldBeEnabled() {
 	Object target =  TargetManager.getInstance().getModelTarget();
-	return super.isEnabled()
-	    && Model.getFacade().isAAssociationRole(target);
+	return super.shouldBeEnabled() && ModelFacade.isAAssociationRole(target);
     }
-
-    /**
-     * @return Returns the singleton.
-     */
-    public static ActionAddMessage getSingleton() {
-        return singleton;
-    }
+    
 }  /* end class ActionAddMessage */

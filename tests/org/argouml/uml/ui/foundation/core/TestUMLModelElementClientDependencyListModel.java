@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -26,7 +26,14 @@ package org.argouml.uml.ui.foundation.core;
 
 import junit.framework.TestCase;
 
-import org.argouml.model.Model;
+import org.argouml.model.uml.UmlFactory;
+import org.argouml.model.uml.foundation.core.CoreFactory;
+import org.argouml.model.uml.modelmanagement.ModelManagementFactory;
+
+import ru.novosoft.uml.MFactoryImpl;
+import ru.novosoft.uml.foundation.core.MDependency;
+import ru.novosoft.uml.foundation.core.MModelElement;
+import ru.novosoft.uml.model_management.MModel;
 
 /**
  * @since Oct 26, 2002
@@ -34,26 +41,11 @@ import org.argouml.model.Model;
  */
 public class TestUMLModelElementClientDependencyListModel extends TestCase {
 
-    /**
-     * The number of elements used in the tests.
-     */
-    private static final int NO_OF_ELEMENTS = 10;
-
-    /**
-     * The element.
-     */
-    private Object elem;
-
-    /**
-     * The model that we test.
-     */
+    private MModelElement elem = null;
+    private int oldEventPolicy;
     private UMLModelElementClientDependencyListModel model;
-
-    /**
-     * The uml model / namespace where the element resists.
-     */
-    private Object ns;
-
+    private MModel ns;
+    
     /**
      * Constructor for TestUMLModelElementClientDependencyListModel.
      * @param arg0 is the name of the test case.
@@ -67,11 +59,13 @@ public class TestUMLModelElementClientDependencyListModel extends TestCase {
      */
     protected void setUp() throws Exception {
         super.setUp();
-        ns = Model.getModelManagementFactory().createModel();
-        elem = Model.getCoreFactory().buildClass(ns);
+        ns = ModelManagementFactory.getFactory().createModel();
+        elem = CoreFactory.getFactory().buildClass(ns);
+        oldEventPolicy = MFactoryImpl.getEventPolicy();
+        MFactoryImpl.setEventPolicy(MFactoryImpl.EVENT_POLICY_IMMEDIATE);
         model = new UMLModelElementClientDependencyListModel();
+        elem.addMElementListener(model);
         model.setTarget(elem);
-        Model.getPump().flushModelEvents();
     }
 
     /**
@@ -79,49 +73,42 @@ public class TestUMLModelElementClientDependencyListModel extends TestCase {
      */
     protected void tearDown() throws Exception {
         super.tearDown();
-        Model.getUmlFactory().delete(elem);
-        Model.getUmlFactory().delete(ns);
+        UmlFactory.getFactory().delete(elem);
+        UmlFactory.getFactory().delete(ns);
+        MFactoryImpl.setEventPolicy(oldEventPolicy);
         model = null;
     }
-
+    
     /**
      * Tests the programmatically adding of multiple elements to the list.
      */
-    public void testAddMultiple() {
-        Object[] suppliers = new Object[NO_OF_ELEMENTS];
-        Object[] dependencies = new Object[NO_OF_ELEMENTS];
-        for (int i = 0; i < NO_OF_ELEMENTS; i++) {
-            suppliers[i] = Model.getCoreFactory().buildClass(ns);
-            dependencies[i] =
-                Model.getCoreFactory().buildDependency(elem, suppliers[i]);
+    public void testAddMultiple() {      
+        MModelElement[] suppliers = new MModelElement[10];
+        MDependency[] dependencies = new MDependency[10];
+        for (int i = 0; i < 10; i++) {
+            suppliers[i] = CoreFactory.getFactory().buildClass(ns);
+            dependencies[i] = CoreFactory.getFactory().buildDependency(elem, suppliers[i]);
         }
-        Model.getPump().flushModelEvents();
-        assertEquals(NO_OF_ELEMENTS, model.getSize());
-        assertEquals(
-                model.getElementAt(NO_OF_ELEMENTS / 2),
-                dependencies[NO_OF_ELEMENTS / 2]);
+        assertEquals(10, model.getSize());
+        assertEquals(model.getElementAt(5), dependencies[5]);
         assertEquals(model.getElementAt(0), dependencies[0]);
-        assertEquals(
-                model.getElementAt(NO_OF_ELEMENTS - 1),
-                dependencies[NO_OF_ELEMENTS - 1]);
+        assertEquals(model.getElementAt(9), dependencies[9]);
     }
-
+    
     /**
-     * Test the removal of several elements from the list.
+     * Test the removal of several elements from the list
      */
     public void testRemoveMultiple() {
-        Object[] suppliers = new Object[NO_OF_ELEMENTS];
-        Object[] dependencies = new Object[NO_OF_ELEMENTS];
-        for (int i = 0; i < NO_OF_ELEMENTS; i++) {
-            suppliers[i] = Model.getCoreFactory().buildClass(ns);
-            dependencies[i] =
-                Model.getCoreFactory().buildDependency(elem, suppliers[i]);
+        MModelElement[] suppliers = new MModelElement[10];
+        MDependency[] dependencies = new MDependency[10];
+        for (int i = 0; i < 10; i++) {
+            suppliers[i] = CoreFactory.getFactory().buildClass(ns);
+            dependencies[i] = CoreFactory.getFactory().buildDependency(elem, suppliers[i]);
         }
-        for (int i = 0; i < NO_OF_ELEMENTS / 2; i++) {
-            Model.getCoreHelper().removeClientDependency(elem, dependencies[i]);
+        for (int i = 0; i < 5; i++) {
+            elem.removeClientDependency(dependencies[i]);
         }
-        Model.getPump().flushModelEvents();
-        assertEquals(NO_OF_ELEMENTS - (NO_OF_ELEMENTS / 2), model.getSize());
-        assertEquals(dependencies[NO_OF_ELEMENTS / 2], model.getElementAt(0));
+        assertEquals(5, model.getSize());
+        assertEquals(dependencies[5], model.getElementAt(0));
     }
 }

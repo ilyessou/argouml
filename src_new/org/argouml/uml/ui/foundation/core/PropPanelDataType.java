@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,145 +24,189 @@
 
 package org.argouml.uml.ui.foundation.core;
 
-import java.awt.event.ActionEvent;
+import java.util.Collection;
+import java.util.Iterator;
 
-import javax.swing.Action;
-import javax.swing.ImageIcon;
 import javax.swing.JList;
 import javax.swing.JScrollPane;
 
 import org.argouml.i18n.Translator;
-import org.argouml.kernel.ProjectManager;
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
+import org.argouml.model.uml.UmlFactory;
+import org.argouml.model.uml.foundation.core.CoreFactory;
 import org.argouml.ui.targetmanager.TargetManager;
-import org.argouml.uml.ui.AbstractActionNewModelElement;
-import org.argouml.uml.ui.ActionNavigateContainerElement;
+import org.argouml.uml.ui.PropPanelButton;
+import org.argouml.uml.ui.UMLComboBoxNavigator;
 import org.argouml.uml.ui.UMLLinkedList;
-import org.argouml.uml.ui.foundation.extension_mechanisms.ActionNewStereotype;
 import org.argouml.util.ConfigLoader;
-import org.tigris.swidgets.Orientation;
 
 /**
- * The properties panel for a Datatype.
+ * TODO: this property panel needs refactoring to remove dependency on old gui
+ * components.
  */
 public class PropPanelDataType extends PropPanelClassifier {
 
-    private JScrollPane operationScroll;
+    private JScrollPane _attributeScroll;
 
-    private static UMLClassOperationListModel operationListModel =
-        new UMLClassOperationListModel();
+    private JScrollPane _operationScroll;
 
-    /**
-     * Construct a property panel for UML DataType elements.
-     *
-     * @param title
-     * @param icon
-     * @param orientation
-     */
-    public PropPanelDataType(String title, ImageIcon icon,
-            Orientation orientation) {
-        super(title, icon, orientation);
+    private static UMLClassAttributeListModel attributeListModel = new UMLClassAttributeListModel();
 
-        addField(Translator.localize("label.name"),
+    private static UMLClassOperationListModel operationListModel = new UMLClassOperationListModel();
+
+    ////////////////////////////////////////////////////////////////
+    // contructors
+    public PropPanelDataType() {
+        super("DataType", _dataTypeIcon, ConfigLoader.getTabPropsOrientation());
+
+        Class mclass = (Class) ModelFacade.DATATYPE;
+
+        addField(Translator.localize("UMLMenu", "label.name"),
                 getNameTextField());
-        addField(Translator.localize("label.namespace"),
-                getNamespaceSelector());
-        add(getModifiersPanel());
-        add(getNamespaceVisibilityPanel());
+        addField(Translator.localize("UMLMenu", "label.stereotype"),
+                new UMLComboBoxNavigator(this, Translator.localize("UMLMenu",
+                        "tooltip.nav-stereo"), getStereotypeBox()));
+        addField(Translator.localize("UMLMenu", "label.namespace"),
+                getNamespaceComboBox());
+        addField(Translator.localize("UMLMenu", "label.modifiers"),
+                _modifiersPanel);
+        addField(Translator.localize("UMLMenu", "label.namespace-visibility"),
+                getNamespaceVisibilityPanel());
 
-        addSeparator();
+        addSeperator();
 
-        addField(Translator.localize("label.client-dependencies"),
+        addField(Translator.localize("UMLMenu", "label.client-dependencies"),
                 getClientDependencyScroll());
-        addField(Translator.localize("label.supplier-dependencies"),
+        addField(Translator.localize("UMLMenu", "label.supplier-dependencies"),
                 getSupplierDependencyScroll());
-        addField(Translator.localize("label.generalizations"),
+        addField(Translator.localize("UMLMenu", "label.generalizations"),
                 getGeneralizationScroll());
-        addField(Translator.localize("label.specializations"),
+        addField(Translator.localize("UMLMenu", "label.specializations"),
                 getSpecializationScroll());
 
-        addSeparator();
+        addSeperator();
 
-        addField(Translator.localize("label.operations"),
+        addField(Translator.localize("UMLMenu", "label.operations"),
                 getOperationScroll());
 
-        addAction(new ActionNavigateContainerElement());
-        addAction(new ActionAddDataType());
-        addEnumerationButtons();
-        addAction(new ActionAddQueryOperation());
-        addAction(new ActionNewStereotype());
-        addAction(getDeleteAction());
+        addField(Translator.localize("UMLMenu", "label.literals"),
+                getAttributeScroll());
+
+        new PropPanelButton(this, buttonPanel, _navUpIcon, Translator.localize(
+                "UMLMenu", "button.go-up"), "navigateUp", null);
+        new PropPanelButton(this, buttonPanel, _dataTypeIcon, Translator
+                .localize("UMLMenu", "button.new-datatype"), "newDataType",
+                null);
+        new PropPanelButton(this, buttonPanel, _addAttrIcon, Translator
+                .localize("UMLMenu", "button.new-enumeration-literal"),
+                "addAttribute", null);
+
+        new PropPanelButton(this, buttonPanel, _addOpIcon, Translator.localize(
+                "UMLMenu", "button.new-operation"), "addOperation", null);
+        new PropPanelButton(this, buttonPanel, _deleteIcon,
+                localize("Delete datatype"), "removeElement", null);
     }
 
-    /**
-     * Override this to add more buttons.
-     */
-    protected void addEnumerationButtons() {
-        addAction(new ActionAddEnumeration());
-    }
-
-    /**
-     * The constructor.
-     */
-    public PropPanelDataType() {
-        this("DataType", lookupIcon("DataType"),
-                ConfigLoader.getTabPropsOrientation());
-    }
-
-    private static class ActionAddQueryOperation
-        extends AbstractActionNewModelElement {
-
-        /**
-         * The constructor.
-         */
-        public ActionAddQueryOperation() {
-            super("button.new-operation");
-            putValue(Action.NAME, Translator.localize("button.new-operation"));
-        }
-
-        /**
-         * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-         */
-        public void actionPerformed(ActionEvent e) {
-            Object target = TargetManager.getInstance().getModelTarget();
-            if (Model.getFacade().isAClassifier(target)) {
-                Object model =
-                    ProjectManager.getManager()
-                    	.getCurrentProject().getModel();
-                Object voidType =
-                    ProjectManager.getManager()
-                    	.getCurrentProject().findType("void");
-                Object newOper =
-                    Model.getCoreFactory()
-                    	.buildOperation(target, model, voidType);
-                // due to Well Defined rule [2.5.3.12/1]
-                Model.getCoreHelper().setQuery(newOper, true);
-                TargetManager.getInstance().setTarget(newOper);
-                super.actionPerformed(e);
+    public void addAttribute() {
+        Object target = getTarget();
+        if (org.argouml.model.ModelFacade.isAClassifier(target)) {
+            Object classifier = /* (MClassifier) */target;
+            Object stereo = null;
+            if (ModelFacade.getStereotypes(classifier).size() > 0) {
+                stereo = ModelFacade.getStereotypes(classifier).iterator()
+                        .next();
             }
+            if (stereo == null) {
+                //
+                //  if there is not an enumeration stereotype as
+                //     an immediate child of the model, add one
+                Object model = ModelFacade.getModel(classifier);
+                Object ownedElement;
+                boolean match = false;
+                if (model != null) {
+                    Collection ownedElements = ModelFacade
+                            .getOwnedElements(model);
+                    if (ownedElements != null) {
+                        Iterator iter = ownedElements.iterator();
+                        while (iter.hasNext()) {
+                            ownedElement = iter.next();
+                            if (org.argouml.model.ModelFacade
+                                    .isAStereotype(ownedElement)) {
+                                stereo = /* (MStereotype) */ownedElement;
+                                String stereoName = ModelFacade.getName(stereo);
+                                if (stereoName != null
+                                        && stereoName.equals("enumeration")) {
+                                    match = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (!match) {
+                            stereo = UmlFactory.getFactory()
+                                    .getExtensionMechanisms()
+                                    .createStereotype();
+                            ModelFacade.setName(stereo, "enumeration");
+                            ModelFacade.addOwnedElement(model, stereo);
+                        }
+                        ModelFacade.setStereotype(classifier, stereo);
+                    }
+                }
+            }
+
+            Object attr = CoreFactory.getFactory().buildAttribute(classifier);
+            ModelFacade.setChangeable(attr,false);
+            TargetManager.getInstance().setTarget(attr);
         }
 
-        /**
-         * The UID.
-         */
-        private static final long serialVersionUID = -3393730108010236394L;
+    }
+    
+    public void addOperation() {
+        Object target = getTarget();
+        if (org.argouml.model.ModelFacade.isAClassifier(target)) {
+            Object newOper =
+                UmlFactory.getFactory().getCore().buildOperation(
+                    /*(MClassifier)*/ target);
+            // due to Well Defined rule [2.5.3.12/1]       
+            ModelFacade.setQuery(newOper, true);
+            TargetManager.getInstance().setTarget(newOper);
+        }
     }
 
     /**
      * Returns the operationScroll.
-     *
+     * 
      * @return JScrollPane
      */
     public JScrollPane getOperationScroll() {
-        if (operationScroll == null) {
+        if (_operationScroll == null) {
             JList list = new UMLLinkedList(operationListModel);
-            operationScroll = new JScrollPane(list);
+            _operationScroll = new JScrollPane(list);
         }
-        return operationScroll;
+        return _operationScroll;
     }
 
     /**
-     * The UID.
+     * Returns the attributeScroll.
+     * 
+     * @return JScrollPane
      */
-    private static final long serialVersionUID = -8752986130386737802L;
-}
+    public JScrollPane getAttributeScroll() {
+        if (_attributeScroll == null) {
+            JList list = new UMLLinkedList(attributeListModel);
+            _attributeScroll = new JScrollPane(list);
+        }
+        return _attributeScroll;
+    }
+
+    public void newDataType() {
+        Object target = getTarget();
+        if (ModelFacade.isADataType(target)) {
+            Object dt = /* (MDataType) */target;
+            Object ns = ModelFacade.getNamespace(dt);
+            Object newDt = CoreFactory.getFactory().createDataType();
+            ModelFacade.addOwnedElement(ns, newDt);
+            TargetManager.getInstance().setTarget(newDt);
+        }
+    }
+
+} /* end class PropPanelDataType */

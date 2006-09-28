@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -29,60 +29,53 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.Vector;
 
-import org.argouml.i18n.Translator;
 import org.argouml.kernel.Project;
 import org.argouml.kernel.ProjectManager;
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
 import org.argouml.ui.ArgoDiagram;
 import org.argouml.uml.diagram.state.ui.UMLStateDiagram;
 
 /**
- * The rule for Behavioral Feature->Statechart diagram.
- *
- * @author jaap.branderhorst@xs4all.nl
+ * 
+ * @author jaap.branderhorst@xs4all.nl	
  * @since Dec 30, 2002
  */
 public class GoBehavioralFeatureToStateDiagram extends AbstractPerspectiveRule {
 
     /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getChildren(java.lang.Object)
+     * @see org.argouml.ui.AbstractGoRule#getChildren(java.lang.Object)
      */
     public Collection getChildren(Object parent) {
-
-        if (Model.getFacade().isABehavioralFeature(parent)) {
-            Collection col = Model.getFacade().getBehaviors(parent);
+        
+        if (ModelFacade.isABehavioralFeature(parent)) {
+            Object operation = parent;//MBehavioralFeature
+            Collection col = ModelFacade.getBehaviors(operation);
             Vector ret = new Vector();
             Project p = ProjectManager.getManager().getCurrentProject();
             Vector diagrams = p.getDiagrams();
             Iterator it = diagrams.iterator();
             while (it.hasNext()) {
                 ArgoDiagram diagram = (ArgoDiagram) it.next();
-                if (diagram instanceof UMLStateDiagram
-                    && col.contains(((UMLStateDiagram) diagram)
-                            .getStateMachine())) {
+                if (diagram instanceof UMLStateDiagram &&
+                    col.contains(((UMLStateDiagram) diagram).getStateMachine())) {
                     ret.add(diagram);
                 }
-
+                
             }
             return ret;
         }
         return null;
     }
 
-    /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getDependencies(java.lang.Object)
-     */
     public Set getDependencies(Object parent) {
         // TODO: what?
 	return null;
     }
 
-
     /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getRuleName()
+     * @see org.argouml.ui.AbstractGoRule#getRuleName()
      */
     public String getRuleName() {
-        return Translator.localize (
-                "misc.behavioral-feature.statechart-diagram");
+        return "Behavioral Feature->Statechart diagram";
     }
 }

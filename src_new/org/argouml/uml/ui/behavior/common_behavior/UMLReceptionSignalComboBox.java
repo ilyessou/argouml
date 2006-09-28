@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -25,11 +25,10 @@
 package org.argouml.uml.ui.behavior.common_behavior;
 
 import java.awt.event.ActionEvent;
+import org.argouml.model.ModelFacade;
 
-import org.argouml.model.Model;
 import org.argouml.uml.ui.UMLComboBox2;
 import org.argouml.uml.ui.UMLComboBoxModel2;
-import org.argouml.uml.ui.UMLListCellRenderer2;
 import org.argouml.uml.ui.UMLUserInterfaceContainer;
 
 /**
@@ -39,15 +38,13 @@ public class UMLReceptionSignalComboBox extends UMLComboBox2 {
 
     /**
      * Constructor for UMLSignalComboBox.
-     * @param container the containing UI element
-     * @param arg0 the model
+     * @param container
+     * @param arg0
      */
     public UMLReceptionSignalComboBox(
-            UMLUserInterfaceContainer container,
-            UMLComboBoxModel2 arg0) {
-        // TODO: This super constructor has been deprecated
+        UMLUserInterfaceContainer container,
+        UMLComboBoxModel2 arg0) {
         super(arg0);
-        setRenderer(new UMLListCellRenderer2(true));
     }
 
     /**
@@ -57,8 +54,8 @@ public class UMLReceptionSignalComboBox extends UMLComboBox2 {
         Object o = getModel().getElementAt(getSelectedIndex());
         Object signal = /*(MSignal)*/ o;
         Object reception = /*(MReception)*/ getTarget();
-        if (signal != Model.getFacade().getSignal(reception)) {
-            Model.getCommonBehaviorHelper().setSignal(reception, signal);
+        if (signal != ModelFacade.getSignal(signal)) {
+            ModelFacade.setSignal(reception, signal);
         }
     }
 

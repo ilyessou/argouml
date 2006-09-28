@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -26,25 +26,26 @@ package org.argouml.kernel;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.io.IOException;
+import java.net.URL;
 import java.util.Vector;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
-import javax.swing.Action;
 import javax.swing.event.EventListenerList;
+import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.log4j.Logger;
-import org.argouml.cognitive.Designer;
-import org.argouml.i18n.Translator;
-import org.argouml.model.MementoCreationObserver;
-import org.argouml.model.Model;
-import org.argouml.model.ModelMemento;
+import org.argouml.application.Main;
+import org.argouml.cognitive.ProjectMemberTodoList;
+import org.argouml.model.uml.UmlHelper;
 import org.argouml.ui.ArgoDiagram;
-import org.argouml.uml.cognitive.ProjectMemberTodoList;
-import org.argouml.uml.diagram.DiagramFactory;
-import org.argouml.uml.diagram.static_structure.ui.UMLClassDiagram;
-import org.argouml.uml.diagram.use_case.ui.UMLUseCaseDiagram;
-import org.tigris.gef.graph.MutableGraphSupport;
-import org.tigris.gef.undo.Memento;
-import org.tigris.gef.undo.UndoManager;
+import org.argouml.util.FileConstants;
+import org.argouml.xml.argo.ArgoParser;
+import org.argouml.xml.xmi.XMIParser;
+import org.argouml.xml.xmi.XMIReader;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 /**
  * This class manages the projects loaded in argouml.
@@ -60,69 +61,55 @@ import org.tigris.gef.undo.UndoManager;
  * @author jaap.branderhorst@xs4all.nl
  * @stereotype singleton
  */
-public final class ProjectManager implements MementoCreationObserver {
+public final class ProjectManager {
 
-    /**
-     * The name of the property that defines the current project.
-     */
     public static final String CURRENT_PROJECT_PROPERTY_NAME =
-        "currentProject";
-
-    /**
-     * The name of the property that there is no project.
-     */
-    public static final String NO_PROJECT =
-        "noProject";
-
-    /**
-     * The name of the property that defines the save state.
-     */
+	"currentProject";
     public static final String SAVE_STATE_PROPERTY_NAME = "saveState";
 
-    /**
-     * Logger.
-     */
+    /** logger */
     private static final Logger LOG = Logger.getLogger(ProjectManager.class);
 
     /**
-     * The singleton instance of this class.
+     * The singleton instance of this class
      */
-    private static ProjectManager instance = new ProjectManager();
+    private static ProjectManager _instance;
 
     /**
-     * The project that is visible in the projectbrowser.
+     * The project that is visible in the projectbrowser
      */
-    private static Project currentProject;
+    private static Project _currentProject;
 
     /**
-     * Flag to indicate we are creating a new current project.
+     * Flag to indicate we are creating a new current project
      */
-    private boolean creatingCurrentProject;
+    private boolean _creatingCurrentProject;
 
-    private Action saveAction;
-    
     /**
-     * The listener list.
+     * The listener list
      */
-    private EventListenerList listenerList = new EventListenerList();
+    private EventListenerList _listenerList = new EventListenerList();
 
     /**
      * The event to fire.
-     *
+     * 
      * TODO: Investigate! Is the purpose really to let the next call to
-     * {@link #firePropertyChanged(String, Object, Object)} fire the old
+     * {@link #firePropertyChanged(String, Object, Object)} fire the old 
      * event again if the previous invocation resulted in an exception?
      * If so, please document why. If not, fix it.
      */
-    private PropertyChangeEvent event;
+    private PropertyChangeEvent _event;
 
     /**
      * The singleton accessor method of this class.
-     *
+     * 
      * @return The singleton.
      */
     public static ProjectManager getManager() {
-        return instance;
+        if (_instance == null) {
+            _instance = new ProjectManager();
+        }
+        return _instance;
     }
 
     /**
@@ -130,234 +117,320 @@ public final class ProjectManager implements MementoCreationObserver {
      */
     private ProjectManager() {
         super();
-        Model.setMementoCreationObserver(this);
     }
 
     /**
      * Adds a listener to the listener list.
-     *
+     * 
      * @param listener The listener to add.
      */
     public void addPropertyChangeListener(PropertyChangeListener listener) {
-        listenerList.add(PropertyChangeListener.class, listener);
+        _listenerList.add(PropertyChangeListener.class, listener);
     }
 
     /**
      * Removes a listener from the listener list.
-     *
+     * 
      * @param listener The listener to remove.
      */
     public void removePropertyChangeListener(PropertyChangeListener listener) {
-        listenerList.remove(PropertyChangeListener.class, listener);
+        _listenerList.remove(PropertyChangeListener.class, listener);
     }
 
     /**
      * Fire an event to all members of the listener list.
-     *
+     * 
      * @param propertyName The name of the event.
      * @param oldValue The old value.
      * @param newValue The new value.
      */
     private void firePropertyChanged(String propertyName,
-                                     Object oldValue, Object newValue) {
+				     Object oldValue, Object newValue) 
+    {
         // Guaranteed to return a non-null array
-        Object[] listeners = listenerList.getListenerList();
+        Object[] listeners = _listenerList.getListenerList();
         // Process the listeners last to first, notifying
         // those that are interested in this event
         for (int i = listeners.length - 2; i >= 0; i -= 2) {
             if (listeners[i] == PropertyChangeListener.class) {
                 // Lazily create the event:
-                if (event == null) {
-                    event =
+                if (_event == null)
+                    _event =
                         new PropertyChangeEvent(
                             this,
                             propertyName,
                             oldValue,
                             newValue);
-                }
                 ((PropertyChangeListener) listeners[i + 1]).propertyChange(
-                    event);
+                    _event);
             }
         }
-        event = null;
+        _event = null;
     }
 
     /**
-     * Sets the current project (the project that is viewable in the
+     * Sets the current project (the project that is viewable in the 
      * projectbrowser).
-     * Sets the current diagram for the project (if one exists).
      * This method fires a propertychanged event.<p>
      *
-     * If the argument is null, then the current project will be forgotten
+     * If the argument is null, then the current project will be forgotten 
      * about.
-     *
+     * 
      * @param newProject The new project.
      */
     public void setCurrentProject(Project newProject) {
-        Project oldProject = currentProject;
-        currentProject = newProject;
-        if (currentProject != null
-            && currentProject.getActiveDiagram() == null) {
-            Vector diagrams = currentProject.getDiagrams();
+        Project oldProject = _currentProject;        
+        _currentProject = newProject;
+        if (_currentProject != null
+	    && _currentProject.getActiveDiagram() == null) {
+            Vector diagrams = _currentProject.getDiagrams();
             if (diagrams != null && !diagrams.isEmpty()) {
-                ArgoDiagram activeDiagram =
-                    (ArgoDiagram) currentProject.getDiagrams().get(0);
-                currentProject.setActiveDiagram(activeDiagram);
-            }
+		ArgoDiagram activeDiagram =
+		    (ArgoDiagram) _currentProject.getDiagrams().get(0);
+                _currentProject.setActiveDiagram(activeDiagram);
+	    }
         }
         firePropertyChanged(CURRENT_PROJECT_PROPERTY_NAME,
-                oldProject, newProject);
+			    oldProject, newProject);
     }
 
     /**
      * Returns the current project.<p>
-     *
-     * If there is no project, a new one is created
-     * (unless we are busy creating one).
-     *
-     * @return Project the current project
+     * 
+     * If there is no project, a new one is created.
+     * 
+     * @return Project The current project.
      */
     public Project getCurrentProject() {
-        if (currentProject == null && !creatingCurrentProject) {
-            makeEmptyProject();
+        if (_currentProject == null && !_creatingCurrentProject) {
+            _currentProject = makeEmptyProject();
         }
-        return currentProject;
+        return _currentProject;
     }
-    
+
     /**
-     * Makes an empty project.
-     * @return Project the empty project
+     * Makes an empty project with two standard diagrams.
+     * @return Project
      */
     public Project makeEmptyProject() {
-        return makeEmptyProject(true);
-    }
-
-    /**
-     * Make a new empty project optionally including default diagrams.
-     * <p>
-     * Historically new projects have been created with two default diagrams
-     * (Class and Use Case). NOTE: ArgoUML currently requires at least one
-     * diagram for proper operation.
-     * 
-     * @param addDefaultDiagrams
-     *            if true the project will be be created with the two standard
-     *            default diagrams (Class and Use Case)
-     * @return Project the newly created project
-     */
-    public Project makeEmptyProject(boolean addDefaultDiagrams) {    
-        Model.getPump().stopPumpingEvents();
-        
-        creatingCurrentProject = true;
+        _creatingCurrentProject = true;
         LOG.info("making empty project");
-        Project oldProject = currentProject;
-        currentProject = new Project();
-        if (addDefaultDiagrams) {
-            createDefaultDiagrams();
-        }
-        firePropertyChanged(CURRENT_PROJECT_PROPERTY_NAME,
-                            oldProject, currentProject);
-        creatingCurrentProject = false;
-
-        UndoManager.getInstance().empty();
-        if (!UndoEnabler.enabled) {
-            UndoManager.getInstance().setUndoMax(0);
-        }
-        Model.getPump().startPumpingEvents();
-        
-        if (saveAction != null) {
-            saveAction.setEnabled(false);
-        }
-        return currentProject;
+        Project p = new Project();
+        // the following line should not normally be here,
+        // but is necessary for argouml start up.
+        setCurrentProject(p);
+        p.makeUntitledProject();
+        // set the current project after making it!
+        setCurrentProject(p);
+        _creatingCurrentProject = false;
+        return p;
     }
 
-    private void createDefaultDiagrams() {
-        Object model = Model.getModelManagementFactory().createModel();
-        Model.getCoreHelper().setName(model,
-                Translator.localize("misc.untitled-model"));
-        currentProject.setRoot(model);
-        currentProject.setCurrentNamespace(model);
-        currentProject.addMember(model);
-        ArgoDiagram d = DiagramFactory.getInstance().createDiagram(
-                UMLClassDiagram.class, model, null);
-        currentProject.addMember(d);
-        currentProject.addMember(DiagramFactory.getInstance()
-                .createDiagram(UMLUseCaseDiagram.class, model, null));
-        currentProject.addMember(new ProjectMemberTodoList("",
-                currentProject));
-        currentProject.setActiveDiagram(d);
-    }
-    
-    /**
-     * Set the save action.
-     * 
-     * @param save the action to be used
-     */
-    public void setSaveAction(Action save) {
-        this.saveAction = save;
-        // Register with the save action with other subsystems so that
-        // any changes in those subsystems will enable the
-        // save button/menu item etc.
-        Designer.setSaveAction(save);
-        Model.getPump().setSaveAction(save);
-        MutableGraphSupport.setSaveAction(save);
-    }
-
-    /**
-     * Notify the gui that the
-     * current project's save state has changed. There are 2 receivers:
-     * the SaveProject tool icon and the title bar (for showing a *).
+    /**   
+     * This method creates a project from the specified URL
      *
+     * Unlike the constructor which forces an .argo extension This
+     * method will attempt to load a raw XMI file
+     * 
+     * This method can fail in several different ways. Either by
+     * throwing an exception or by having the
+     * ArgoParser.SINGLETON.getLastLoadStatus() set to not true.
+     * 
+     * @param url The URL to load the project from.
+     * @return The newly loaded project.
+     * @throws IOException if the file cannot be read.
+     * @throws IllegalFormatException if we don't understand the contents.
+     * @throws SAXException if there is some syntax error in the file.
+     * @throws ParserConfigurationException if the XML parser is not 
+     *         configured properly - shouldn't happen.
+     */
+    public Project loadProject(URL url)
+        throws IOException, IllegalFormatException, SAXException,
+	       ParserConfigurationException 
+    {
+        Project p = null;
+        String urlString = url.toString();
+        int lastDot = urlString.lastIndexOf(".");
+        String suffix = "";
+        if (lastDot >= 0) {
+            suffix = urlString.substring(lastDot).toLowerCase();
+        }
+        if (suffix.equals(".xmi")) {
+            p = loadProjectFromXMI(url);
+        } else if (suffix.equals(FileConstants.COMPRESSED_FILE_EXT)) {
+	    // normal case, .zargo
+            p = loadProjectFromZargo(url);
+        } else if (suffix.equals(FileConstants.UNCOMPRESSED_FILE_EXT)) {
+	    // the old argo format probably
+            p = loadProjectFromZargo(url);
+        } else {
+            throw new IllegalFormatException(
+                "No legal format found for url " + url.toString());
+        }
+        return p;
+    }
+
+    /**
+     * Reads an XMI file.<p>
+     *
+     * This could be used to import models from other tools.
+     *
+     * @param url is the file name of the file
+     * @return Project is a new project containing the read model
+     * @throws IOException is thrown if some error occurs
+     */
+    private Project loadProjectFromXMI(URL url) throws IOException {
+        Project p = new Project();
+        XMIParser.SINGLETON.readModels(p, url);
+        Object model = XMIParser.SINGLETON.getCurModel();
+        UmlHelper.getHelper().addListenersToModel(model);
+        p.setUUIDRefs(XMIParser.SINGLETON.getUUIDRefs());
+        p.addMember(new ProjectMemberTodoList("", p));
+        p.addMember(model);
+        p.setNeedsSave(false);
+        Main.addPostLoadAction(new ResetStatsLater());
+        return p;
+    }
+
+    /**
+     * Reads an url of the .zargo format.
+     * 
+     * @param url The URL to load the project from.
+     * @return The newly created Project.
+     * @throws IOException if we cannot read the file.
+     * @throws SAXException if there is a syntax error in the file.
+     * @throws ParserConfigurationException if the parser is incorrectly 
+     *         configured. - Shouldn't happen.
+     */
+    private Project loadProjectFromZargo(URL url)
+        throws IOException, SAXException, ParserConfigurationException {
+        Project p = null;
+        // read the argo 
+        try {
+            ZipInputStream zis = new ZipInputStream(url.openStream());
+
+            // first read the .argo file from Zip
+            ZipEntry entry = zis.getNextEntry();
+            while (entry != null
+		   && !entry.getName().endsWith(FileConstants.PROJECT_FILE_EXT))
+	    {
+                entry = zis.getNextEntry();
+            }
+
+            // the "false" means that members should not be added,
+            // we want to do this by hand from the zipped stream.
+            ArgoParser.SINGLETON.setURL(url);
+            ArgoParser.SINGLETON.readProject(zis, false);
+            p = ArgoParser.SINGLETON.getProject();
+            ArgoParser.SINGLETON.setProject(null); // clear up project refs
+
+            zis.close();
+
+        } catch (IOException e) {
+            // exception can occur both due to argouml code as to J2SE
+            // code, so lets log it
+            LOG.error(e);
+            throw e;
+        }
+        // read the xmi
+        try {
+            ZipInputStream zis = new ZipInputStream(url.openStream());
+
+            // first read the .argo file from Zip
+            String name = zis.getNextEntry().getName();
+            while (!name.endsWith(".xmi")) {
+                ZipEntry nextEntry = zis.getNextEntry();
+                if (nextEntry == null)
+                    throw new IOException("The XMI file is missing "
+					  + "from the .zargo file.");
+                name = nextEntry.getName();
+            }
+
+            XMIReader xmiReader = null;
+            try {
+                xmiReader = new XMIReader();
+            } catch (SAXException se) { // duh, this must be catched and handled
+                LOG.error(se);
+                throw se;
+            } catch (ParserConfigurationException pc) {
+		// duh, this must be catched and handled
+                LOG.error(pc);
+                throw pc;
+            }
+//            Object mmodel = null;
+
+            InputSource source = new InputSource(zis);
+            source.setEncoding("UTF-8");
+//            mmodel = xmiReader.parseToModel(new InputSource(zis));
+            // the following strange construction is needed because
+            // Novosoft does not really know how to handle
+            // exceptions...
+            if (xmiReader.getErrors()) {
+                if (xmiReader.getErrors()) {
+                    ArgoParser.SINGLETON.setLastLoadStatus(false);
+                    ArgoParser.SINGLETON.setLastLoadMessage(
+                        "XMI file "
+                            + url.toString()
+                            + " could not be "
+                            + "parsed.");
+                    LOG.error(
+                        "XMI file "
+                            + url.toString()
+                            + " could not be "
+                            + "parsed.");
+                    throw new SAXException(
+                        "XMI file "
+                            + url.toString()
+                            + " could not be "
+                            + "parsed.");
+                }
+            }
+            zis.close();
+
+        } catch (IOException e) {
+            // exception can occur both due to argouml code as to J2SE
+            // code, so lets log it
+            LOG.error(e);
+            throw e;
+        }
+        p.loadZippedProjectMembers(url);
+        p.postLoad();
+        return p;
+    }
+
+    /**
+     * Notify the gui from the project manager that the
+     * current project's save state has changed.
+     * 
      * @param newValue The new state.
      */
-    public void setSaveEnabled(boolean newValue) {
-        if (saveAction != null) {
-            saveAction.setEnabled(newValue);
-        }
+    public void notifySavePropertyChanged(boolean newValue) {
+        
+        firePropertyChanged(SAVE_STATE_PROPERTY_NAME,
+                            new Boolean(!newValue),
+                            new Boolean(newValue));
     }
     
-
     /**
      * Remove the project.
-     *
+     * 
      * @param oldProject The project to be removed.
      */
     public void removeProject(Project oldProject) {
-
-        if (currentProject == oldProject) {
-            currentProject = null;
+        
+        if (_currentProject == oldProject) {
+            _currentProject = null;
         }
-
+        
         oldProject.remove();
     }
-
-    /**
-     * Called when the model subsystem creates a memento.
-     * We must add this to the UndoManager.
-     *
-     * @see org.argouml.model.MementoCreationObserver#mementoCreated(org.argouml.model.ModelMemento)
-     */
-    public void mementoCreated(final ModelMemento memento) {
-        if (saveAction != null) {
-            saveAction.setEnabled(true);
-        }
-        Memento wrappedMemento = new Memento() {
-            private ModelMemento modelMemento = memento;
-            public void undo() {
-                modelMemento.undo();
-            }
-            public void redo() {
-                modelMemento.redo();
-            }
-            public void dispose() {
-                modelMemento.dispose();
-            }
-            
-            public String toString() {
-                return (isStartChain() ? "*" : " ") + "ModelMemento "
-                        + modelMemento;
-            }
-
-        };
-        UndoManager.getInstance().addMemento(wrappedMemento);
-    }
 }
+
+
+/**
+ * @deprecated since 0.15.1. TODO: What is this replaced by?
+ */
+class ResetStatsLater implements Runnable {
+    public void run() {
+    }
+} /* end class ResetStatsLater */

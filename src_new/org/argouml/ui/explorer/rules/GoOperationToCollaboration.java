@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -28,48 +28,34 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
 
 /**
- * Rule for Operation->Collaboration.<p>
  * Go rule for navigation in the navpane from an operation to the collaboration
  * representing it.
- *
  * @since Oct 1, 2002
  * @author jaap.branderhorst@xs4all.nl
  */
 public class GoOperationToCollaboration extends AbstractPerspectiveRule {
 
-    /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getRuleName()
-     */
-    public String getRuleName() {
-        return Translator.localize ("misc.operation.collaboration");
-    }
+    public String getRuleName() { return "Operation->Collaboration"; }
 
     /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getChildren(
-     *         java.lang.Object)
+     * @see org.argouml.ui.AbstractGoRule#getChildren(java.lang.Object)
      */
     public Collection getChildren(Object parent) {
-        if (Model.getFacade().isAOperation(parent)) {
-            return Model.getFacade().getCollaborations(parent);
+        if (ModelFacade.isAOperation(parent)) {
+            return ModelFacade.getCollaborations(parent);
         }
         return null;
     }
 
-    /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getDependencies(
-     *         java.lang.Object)
-     */
     public Set getDependencies(Object parent) {
-        if (Model.getFacade().isAOperation(parent)) {
+        if (ModelFacade.isAOperation(parent)) {
 	    Set set = new HashSet();
 	    set.add(parent);
-	    if (Model.getFacade().getOwner(parent) != null) {
-                set.add(Model.getFacade().getOwner(parent));
-            }
+	    if (ModelFacade.getOwner(parent) != null)
+		set.add(ModelFacade.getOwner(parent));
 	    return set;
 	}
 	return null;

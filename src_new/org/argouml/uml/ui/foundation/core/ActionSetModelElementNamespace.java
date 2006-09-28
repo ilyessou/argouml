@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -26,27 +26,31 @@ package org.argouml.uml.ui.foundation.core;
 
 import java.awt.event.ActionEvent;
 
-import org.argouml.model.Model;
+import org.argouml.i18n.Translator;
+import org.argouml.model.ModelFacade;
+import org.argouml.uml.ui.UMLChangeAction;
 import org.argouml.uml.ui.UMLComboBox2;
-import org.tigris.gef.undo.UndoableAction;
 
 /**
  * @since Oct 10, 2002
  * @author jaap.branderhorst@xs4all.nl
  * @stereotype singleton
  */
-public class ActionSetModelElementNamespace extends UndoableAction {
+public class ActionSetModelElementNamespace extends UMLChangeAction {
+
+    public static final ActionSetModelElementNamespace SINGLETON = new ActionSetModelElementNamespace();
 
     /**
      * Constructor for ActionSetModelElementNamespace.
      */
     protected ActionSetModelElementNamespace() {
-        super();
+        super(Translator.localize("Set"), true, NO_ICON);
     }
-
+    
+    
+    
     /**
-     * @see java.awt.event.ActionListener#actionPerformed(
-     * java.awt.event.ActionEvent)
+     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
      */
     public void actionPerformed(ActionEvent e) {
         Object source = e.getSource();
@@ -56,18 +60,18 @@ public class ActionSetModelElementNamespace extends UndoableAction {
         if (source instanceof UMLComboBox2) {
             UMLComboBox2 box = (UMLComboBox2) source;
             Object o = box.getTarget();
-            if (Model.getFacade().isAModelElement(o)) {
+            if (org.argouml.model.ModelFacade.isAModelElement(o)) {
                 m = /*(MModelElement)*/ o;
-                oldNamespace = Model.getFacade().getNamespace(m);
+                oldNamespace = ModelFacade.getNamespace(m);
             }
             o = box.getSelectedItem();
-            if (Model.getFacade().isANamespace(o)) {
+            if (org.argouml.model.ModelFacade.isANamespace(o)) {
                 newNamespace = /*(MNamespace)*/ o;
             }
         }
         if (newNamespace != oldNamespace && m != null && newNamespace != null) {
+            ModelFacade.setNamespace(m, newNamespace);
             super.actionPerformed(e);
-            Model.getCoreHelper().setNamespace(m, newNamespace);
         }
     }
 

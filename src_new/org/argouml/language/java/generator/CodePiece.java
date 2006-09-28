@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2001 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -38,27 +38,27 @@ package org.argouml.language.java.generator;
 public abstract class CodePiece
 {
     /**
-     * @return the string representation for this piece of code
-     */
+       Return the string representation for this piece of code.
+    */
     public abstract StringBuffer getText();
 
     /**
-     *  @return the start position
-     */
+       Return the start position.
+    */
     public abstract int getStartPosition();
 
     /**
-     * @return the end position
-     */
+       Return the end position.
+    */
     public abstract int getEndPosition();
 
     /**
-     * @return the start line
-     */
+	Return the start line
+    */
     public abstract int getStartLine();
 
     /**
-     * @return the end line
-     */
+	Return the end line
+    */
     public abstract int getEndLine();
 }

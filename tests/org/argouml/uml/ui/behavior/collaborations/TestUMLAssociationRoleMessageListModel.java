@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -25,8 +25,12 @@
 // $header$
 package org.argouml.uml.ui.behavior.collaborations;
 
-import org.argouml.model.Model;
+import org.argouml.model.uml.behavioralelements.collaborations.CollaborationsFactory;
 import org.argouml.uml.ui.AbstractUMLModelElementListModel2Test;
+
+import ru.novosoft.uml.MBase;
+import ru.novosoft.uml.behavior.collaborations.MAssociationRole;
+import ru.novosoft.uml.behavior.collaborations.MMessage;
 
 /**
  * @since Oct 27, 2002
@@ -48,36 +52,34 @@ public class TestUMLAssociationRoleMessageListModel
      * @see org.argouml.uml.ui.AbstractUMLModelElementListModel2Test#buildElement()
      */
     protected void buildElement() {
-        setElem(Model.getCollaborationsFactory().createAssociationRole());
+        elem = CollaborationsFactory.getFactory().createAssociationRole();
     }
 
     /**
-     * @see org.argouml.uml.ui.AbstractUMLModelElementListModel2Test#buildModel()
+     * @see org.argouml.uml.ui.AbstractUMLModelElementListModel2Test#buildModel(org.argouml.uml.ui.UMLUserInterfaceContainer)
      */
     protected void buildModel() {
-        setModel(new UMLAssociationRoleMessageListModel());
+        model = new UMLAssociationRoleMessageListModel();
     }
 
     /**
      * @see org.argouml.uml.ui.AbstractUMLModelElementListModel2Test#fillModel()
      */
-    protected Object[] fillModel() {
-        Object[] messages = new Object[10];
+    protected MBase[] fillModel() {
+        MMessage[] messages = new MMessage[10];
         for (int i = 0; i < messages.length; i++) {
-            messages[i] = Model.getCollaborationsFactory().createMessage();
-            Model.getCollaborationsHelper().addMessage(getElem(), messages[i]);
-        }
+            messages[i] = CollaborationsFactory.getFactory().createMessage();
+            ((MAssociationRole) elem).addMessage(messages[i]);
+        }   
         return messages;
     }
 
     /**
-     * @see org.argouml.uml.ui.AbstractUMLModelElementListModel2Test#removeHalfModel(Object[])
+     * @see org.argouml.uml.ui.AbstractUMLModelElementListModel2Test#removeHalfModel(ru.novosoft.uml.MBase)
      */
-    protected void removeHalfModel(Object[] elements) {
+    protected void removeHalfModel(MBase[] elements) {
         for (int i = 0; i < 5; i++) {
-            Model.getCollaborationsHelper().removeMessage(
-                    getElem(),
-                    elements[i]);
+            ((MAssociationRole) elem).removeMessage((MMessage) elements[i]);
         }
     }
 

@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 2002-2006 The Regents of the University of California. All
+// Copyright (c) 2002-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,16 +24,12 @@
 
 package org.argouml.uml.ui.behavior.collaborations;
 
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
 import org.argouml.uml.ui.UMLModelElementListModel2;
 
-/**
- * List model that shows the Messages belonging to some
- * AssociationRole.
- *
- */
 public class UMLAssociationRoleMessageListModel
-    extends UMLModelElementListModel2 {
+    extends UMLModelElementListModel2
+{
 
     /**
      * Constructor for UMLAssociationRoleMessageListModel.
@@ -46,15 +42,17 @@ public class UMLAssociationRoleMessageListModel
      * @see org.argouml.uml.ui.UMLModelElementListModel2#buildModelList()
      */
     protected void buildModelList() {
-        setAllElements(Model.getFacade().getMessages(getTarget()));
+	if (ModelFacade.isAAssociationRole(getTarget())) {
+	    setAllElements(ModelFacade.getMessages(getTarget()));
+	}
     }
 
     /**
      * @see org.argouml.uml.ui.UMLModelElementListModel2#isValidElement(Object)
      */
     protected boolean isValidElement(Object/*MBase*/ o) {
-        return Model.getFacade().isAMessage(o)
-            && Model.getFacade().getMessages(getTarget()).contains(o);
+        return ModelFacade.isAAssociationRole(getTarget())
+		&& ModelFacade.isAMessage(o)
+		&& ModelFacade.getMessages(getTarget()).contains(o);
     }
-
 }

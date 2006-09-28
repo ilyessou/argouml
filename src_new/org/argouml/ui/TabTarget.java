@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -29,14 +29,15 @@ import org.argouml.ui.targetmanager.TargetListener;
 /**
  * An interface for JPanels that are in the DetailsPane, and that change target
  * based on the selections made in the gui/views.
- *
+ * 
  * @since 0.13.4
+ * @author $Author$
  */
 public interface TabTarget extends TargetListener {
 
     /**
      * set the target
-     *
+     * 
      * @param target
      *            the target to set
      */
@@ -44,7 +45,7 @@ public interface TabTarget extends TargetListener {
 
     /**
      * get the current target
-     *
+     * 
      * @return the target
      */
     public Object getTarget();
@@ -56,9 +57,6 @@ public interface TabTarget extends TargetListener {
 
     /**
      * Returns true if the tab should be enabled with the given target
-     *
-     * @param target the given target
-     * @return true if the tab should be enabled
      */
     public boolean shouldBeEnabled(Object target);
 }

@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2003 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,53 +22,41 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: CrEmptyPackage.java
+// Classes: CrEmptyPackage
+// Original Author: jrobbins@ics.uci.edu
+
 package org.argouml.uml.cognitive.critics;
 
 import java.util.Collection;
-
 import org.apache.log4j.Logger;
+
 import org.argouml.cognitive.Designer;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
+// Use Model through ModelFacade
+import org.argouml.model.ModelFacade;
 
 
-/**
- * A critic whether a package/subsystem/model is empty.
- *
- * @author Jason Robbins
- */
+/** A critic whether a package/subsystem/model is empty. */
 
 //TODO: different critic for packages consisting only
 //of references to elements of other packages?
 
 public class CrEmptyPackage extends CrUML {
-    /**
-     * Logger.
-     */
-    private static final Logger LOG = Logger.getLogger(CrEmptyPackage.class);
+    protected static Logger cat = Logger.getLogger(CrEmptyPackage.class);
 
-    /**
-     * The constructor.
-     *
-     */
     public CrEmptyPackage() {
-        setupHeadAndDesc();
-	addSupportedDecision(UMLDecision.MODULARITY);
+	setHeadline("Add Elements to Package <ocl>self</ocl>");
+       
+	addSupportedDecision(CrUML.decMODULARITY);
 	addTrigger("ownedElement");
     }
 
-    /**
-     * @see org.argouml.uml.cognitive.critics.CrUML#predicate2(
-     * java.lang.Object, org.argouml.cognitive.Designer)
-     */
     public boolean predicate2(Object dm, Designer dsgr) {
-//	LOG.debug("predicate2 on " + dm);
-	if (!(Model.getFacade().isAPackage(dm))) {
-	    return NO_PROBLEM;
-	}
-	Collection elems = Model.getFacade().getOwnedElements(dm);
-	if (elems.size() == 0) {
-            LOG.debug("PROBLEM_FOUND on " + dm);
+//	cat.debug("predicate2 on " + dm);
+	if (!(ModelFacade.isAPackage(dm))) return NO_PROBLEM;
+	Collection elems = ModelFacade.getOwnedElements(dm);
+	if (elems.size() == 0){
+            cat.debug("PROBLEM_FOUND on " + dm);
             return PROBLEM_FOUND;
         }
 	return NO_PROBLEM;

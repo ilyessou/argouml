@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 2002-2006 The Regents of the University of California. All
+// Copyright (c) 2002-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,22 +24,19 @@
 
 package org.argouml.uml.ui.behavior.collaborations;
 
-import java.beans.PropertyChangeEvent;
 import java.util.Collection;
-import java.util.Enumeration;
 import java.util.Iterator;
 
-import org.argouml.model.AddAssociationEvent;
-import org.argouml.model.Model;
-import org.argouml.model.RemoveAssociationEvent;
+import org.argouml.model.ModelFacade;
+import org.argouml.model.uml.UmlModelEventPump;
+import org.argouml.model.uml.behavioralelements.collaborations.CollaborationsHelper;
 import org.argouml.uml.ui.UMLModelElementListModel2;
-import org.tigris.gef.base.Diagram;
 import org.tigris.gef.presentation.Fig;
 
+import ru.novosoft.uml.MElementEvent;
 /**
- * List model which implements allAvailableContents operation for a
- * ClassifierRole as described in the well formedness rules.
- *
+ * Binary relation list model for available con between classifierroles
+ * 
  * @author jaap.branderhorst@xs4all.nl
  */
 public class UMLClassifierRoleAvailableContentsListModel
@@ -56,103 +53,105 @@ public class UMLClassifierRoleAvailableContentsListModel
      * @see org.argouml.uml.ui.UMLModelElementListModel2#buildModelList()
      */
     protected void buildModelList() {
-        setAllElements(
-            Model.getCollaborationsHelper().allAvailableContents(getTarget()));
+	if (ModelFacade.isAClassifierRole(getTarget())) {
+	    setAllElements(
+		       CollaborationsHelper.getHelper().allAvailableContents(
+									     /*(MClassifierRole)*/ getTarget()));
+	}
     }
 
     /**
-     * @see java.beans.PropertyChangeListener#propertyChange(java.beans.PropertyChangeEvent)
+     * @see
+     * ru.novosoft.uml.MElementListener#roleAdded(ru.novosoft.uml.MElementEvent)
      */
-    public void propertyChange(PropertyChangeEvent e) {
-        if (e instanceof AddAssociationEvent) {
-            if (e.getPropertyName().equals("base")
-                    && e.getSource() == getTarget()) {
-                Object clazz = getChangedElement(e);
-                addAll(Model.getFacade().getOwnedElements(clazz));
-                Model.getPump().addModelEventListener(
-                                      this,
-                                      clazz,
-                                      "ownedElement");
-            } else if (
-                    e.getPropertyName().equals("ownedElement")
-                    && Model.getFacade().getBases(getTarget()).contains(
-                            e.getSource())) {
-                addElement(getChangedElement(e));
-            }
-        } else if (e instanceof RemoveAssociationEvent) {
-            if (e.getPropertyName().equals("base")
-                    && e.getSource() == getTarget()) {
-                Object clazz = getChangedElement(e);
-                Model.getPump().removeModelEventListener(
-                        this,
-                        clazz,
-                    "ownedElement");
-            } else if (
-                e.getPropertyName().equals("ownedElement")
-                && Model.getFacade().getBases(getTarget()).contains(
-                       e.getSource())) {
-                removeElement(getChangedElement(e));
-            }
-        } else {
-            super.propertyChange(e);
+    public void roleAdded(MElementEvent e) {
+        if (e.getName().equals("base") && e.getSource() == getTarget()) {
+            Object clazz = /*(MClassifier)*/ getChangedElement(e);
+            addAll(ModelFacade.getOwnedElements(clazz));
+            // UmlModelEventPump.getPump().removeModelEventListener(this,
+            // clazz, "ownedElement");
+            UmlModelEventPump.getPump().addModelEventListener(
+							      this,
+							      clazz,
+							      "ownedElement");
+        } else if (e.getName().equals("ownedElement")
+		   && ModelFacade.isAClassifierRole(getTarget())
+		   && ModelFacade.getBases(getTarget()).contains(e.getSource())) {
+            addElement(getChangedElement(e));
         }
     }
 
     /**
-     * @see org.argouml.uml.ui.UMLModelElementListModel2#setTarget(java.lang.Object)
+     * @see
+     * org.argouml.uml.ui.UMLModelElementListModel2#setTarget(java.lang.Object)
      */
-    public void setTarget(Object theNewTarget) {
-        theNewTarget = theNewTarget instanceof Fig
-            ? ((Fig) theNewTarget).getOwner() : theNewTarget;
-        if (Model.getFacade().isAModelElement(theNewTarget)
-                || theNewTarget instanceof Diagram) {
-            if (getTarget() != null) {
-                Enumeration enumeration = elements();
-                while (enumeration.hasMoreElements()) {
-                    Object base = enumeration.nextElement();
-                    Model.getPump().removeModelEventListener(
-                        this,
-                        base,
-                        "ownedElement");
-                }
-                Model.getPump().removeModelEventListener(
-                    this,
-                    getTarget(),
-                    "base");
-            }
-            setListTarget(theNewTarget);
-            if (getTarget() != null) {
-                Collection bases = Model.getFacade().getBases(getTarget());
-                Iterator it = bases.iterator();
-                while (it.hasNext()) {
-                    Object base = /*(MBase)*/ it.next();
-                    Model.getPump().addModelEventListener(
-                        this,
-                        base,
-                        "ownedElement");
-                }
-                // make sure we know it when a classifier is added as a base
-                Model.getPump().addModelEventListener(
-                    this,
-                    getTarget(),
-                    "base");
-            }
-            if (getTarget() != null) {
-                removeAllElements();
-                setBuildingModel(true);
-                buildModelList();
-                setBuildingModel(false);
-                if (getSize() > 0) {
-                    fireIntervalAdded(this, 0, getSize() - 1);
-                }
-            }
-        }
+    public void setTarget(Object target) {
+	if (ModelFacade.isAClassifierRole(getTarget())) {
+	    Collection bases = ModelFacade.getBases(getTarget());
+	    Iterator it = bases.iterator();
+	    while (it.hasNext()) {
+ 		Object base = /*(MBase)*/ it.next();
+		UmlModelEventPump.getPump().removeModelEventListener(
+								     this,
+								     base,
+								     "ownedElement");
+	    }
+	    UmlModelEventPump.getPump().removeModelEventListener(
+								 this,
+								 /*(MBase)*/ getTarget(),
+								 "base");
+	    _target = null;
+	}
+
+	removeAllElements();
+        _target = target instanceof Fig ? ((Fig) target).getOwner() : target;
+        if (ModelFacade.isAClassifierRole(_target)) {
+	    Collection bases = ModelFacade.getBases(_target);
+	    Iterator it = bases.iterator();
+	    while (it.hasNext()) {
+		Object base = /*(MBase)*/ it.next();
+		UmlModelEventPump.getPump().addModelEventListener(
+								  this,
+								  base,
+								  "ownedElement");
+	    }
+	    // make sure we know it when a classifier is added as a base
+	    UmlModelEventPump.getPump().addModelEventListener(
+							      this,
+							      /*(MBase)*/ _target,
+							      "base");
+
+	    _buildingModel = true;
+	    buildModelList();
+	    _buildingModel = false;
+	    if (getSize() > 0) {
+		fireIntervalAdded(this, 0, getSize() - 1);
+	    }
+	}
     }
 
     /**
      * @see org.argouml.uml.ui.UMLModelElementListModel2#isValidElement(Object)
      */
-    protected boolean isValidElement(Object element) {
+    protected boolean isValidElement(Object/*MBase*/ element) {
         return false;
+    }
+
+    /**
+     * @see
+     * ru.novosoft.uml.MElementListener#roleRemoved(ru.novosoft.uml.MElementEvent)
+     */
+    public void roleRemoved(MElementEvent e) {
+        if (e.getName().equals("base") && e.getSource() == getTarget()) {
+            Object clazz = /*(MClassifier)*/ getChangedElement(e);
+            UmlModelEventPump.getPump().removeModelEventListener(
+								 this,
+								 clazz,
+								 "ownedElement");
+        } else if (e.getName().equals("ownedElement")
+		   && ModelFacade.isAClassifierRole(getTarget())
+		   && ModelFacade.getBases(getTarget()).contains(e.getSource())) {
+            removeElement(getChangedElement(e));
+        }
     }
 }

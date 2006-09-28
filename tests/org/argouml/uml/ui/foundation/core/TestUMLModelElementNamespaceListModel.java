@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -26,7 +26,12 @@ package org.argouml.uml.ui.foundation.core;
 
 import junit.framework.TestCase;
 
-import org.argouml.model.Model;
+import org.argouml.model.uml.UmlFactory;
+import org.argouml.model.uml.foundation.core.CoreFactory;
+
+import ru.novosoft.uml.MFactoryImpl;
+import ru.novosoft.uml.foundation.core.MModelElement;
+import ru.novosoft.uml.foundation.core.MNamespace;
 
 /**
  * @since Oct 30, 2002
@@ -34,65 +39,52 @@ import org.argouml.model.Model;
  */
 public class TestUMLModelElementNamespaceListModel extends TestCase {
 
-    /**
-     * The model that we test.
-     */
+    private int oldEventPolicy;
     private UMLModelElementNamespaceListModel model;
-
-    /**
-     * The element.
-     */
-    private Object elem;
-
+    private MModelElement elem;
+    
     /**
      * Constructor for TestUMLModelElementNamespaceListModel.
-     *
-     * @param arg0 the name of the test.
      */
     public TestUMLModelElementNamespaceListModel(String arg0) {
         super(arg0);
     }
-
+   
     /**
      * @see junit.framework.TestCase#setUp()
      */
     protected void setUp() throws Exception {
         super.setUp();
-        elem = Model.getCoreFactory().createClass();
+        elem = CoreFactory.getFactory().createClass();
+        oldEventPolicy = MFactoryImpl.getEventPolicy();
+        MFactoryImpl.setEventPolicy(MFactoryImpl.EVENT_POLICY_IMMEDIATE);       
         model = new UMLModelElementNamespaceListModel();
         model.setTarget(elem);
-        Model.getPump().flushModelEvents();
+        elem.addMElementListener(model);
     }
-
+    
     /**
      * @see junit.framework.TestCase#tearDown()
      */
     protected void tearDown() throws Exception {
         super.tearDown();
-        Model.getUmlFactory().delete(elem);
+        UmlFactory.getFactory().delete(elem);
+        MFactoryImpl.setEventPolicy(oldEventPolicy);
         model = null;
     }
-
-    /**
-     * Test for setNameSpace.
-     */
+    
     public void testSetNamespace() {
-        Object ns = Model.getModelManagementFactory().createPackage();
-        Model.getCoreHelper().setNamespace(elem, ns);
-        Model.getPump().flushModelEvents();
+        MNamespace ns = CoreFactory.getFactory().createNamespace();
+        elem.setNamespace(ns);
         assertEquals(1, model.getSize());
         assertEquals(ns, model.getElementAt(0));
     }
-
-    /**
-     * Test removing a namespace.
-     */
+    
     public void testRemoveNamespace() {
-        Object ns = Model.getModelManagementFactory().createPackage();
-        Model.getCoreHelper().setNamespace(elem, ns);
-        Model.getCoreHelper().setNamespace(elem, null);
-        Model.getPump().flushModelEvents();
+        MNamespace ns = CoreFactory.getFactory().createNamespace();
+        elem.setNamespace(ns);
+        elem.setNamespace(null);
         assertEquals(0, model.getSize());
         assertTrue(model.isEmpty());
-    }
+    } 
 }

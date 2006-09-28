@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -31,11 +31,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
 
 /**
- * Rule for Namespace->Classifer or Package.
  * Generates only package and classifier children from a namespace parent.
  *
  * @since 0.15.2
@@ -43,29 +41,21 @@ import org.argouml.model.Model;
 public class GoNamespaceToClassifierAndPackage
     extends AbstractPerspectiveRule {
 
-    /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getRuleName()
-     */
     public String getRuleName() {
-        return Translator.localize ("misc.namespace.classifer-or-package");
+        return "Namespace->Classifer or Package";
     }
 
-    /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getChildren(java.lang.Object)
-     */
     public Collection getChildren(Object parent) {
-        if (!Model.getFacade().isANamespace(parent)) {
+        if (!ModelFacade.isANamespace(parent))
             return null;
-        }
 
-        Iterator elements =
-            Model.getFacade().getOwnedElements(parent).iterator();
+        Iterator elements = ModelFacade.getOwnedElements(parent).iterator();
         List result = new ArrayList();
 
         while (elements.hasNext()) {
             Object element = elements.next();
-            if (Model.getFacade().isAPackage(element)
-		    || Model.getFacade().isAClassifier(element)) {
+            if (ModelFacade.isAPackage(element)
+		    || ModelFacade.isAClassifier(element)) {
 		result.add(element);
             }
         }
@@ -73,11 +63,8 @@ public class GoNamespaceToClassifierAndPackage
         return result;
     }
 
-    /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getDependencies(java.lang.Object)
-     */
     public Set getDependencies(Object parent) {
-        if (Model.getFacade().isANamespace(parent)) {
+        if (ModelFacade.isANamespace(parent)) {
 	    Set set = new HashSet();
 	    set.add(parent);
 	    return set;

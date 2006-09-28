@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -25,31 +25,30 @@
 package org.argouml.cognitive.ui;
 
 import javax.swing.event.TreeModelListener;
+import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 import org.argouml.cognitive.Designer;
 import org.argouml.cognitive.ToDoItem;
 import org.argouml.cognitive.ToDoList;
 
 
-/**
- * Rule for sorting the ToDo list: Priority -> Item.
- *
- */
-public class GoListToPriorityToItem extends AbstractGoList {
-
+public class GoListToPriorityToItem implements TreeModel {
+  
     ////////////////////////////////////////////////////////////////
     // TreeModel implementation
 
-    /**
-     * @see javax.swing.tree.TreeModel#getChild(java.lang.Object, int)
-     */
+    public Object getRoot() {
+	throw new UnsupportedOperationException();
+    } 
+    public void setRoot(Object r) { }
+
     public Object getChild(Object parent, int index) {
 	if (parent instanceof ToDoList) {
 	    return PriorityNode.getPriorities().elementAt(index);
 	}
 	if (parent instanceof PriorityNode) {
 	    PriorityNode pn = (PriorityNode) parent;
-	    ToDoList list = Designer.theDesigner().getToDoList();
+	    ToDoList list = Designer.TheDesigner.getToDoList();
 	    int size = list.size();
 	    for (int i = 0; i < size; i++) {
 		ToDoItem item = list.elementAt(i);
@@ -63,9 +62,6 @@ public class GoListToPriorityToItem extends AbstractGoList {
 					    + "GoListToPriorityToItem");
     }
 
-    /**
-     * @see javax.swing.tree.TreeModel#getChildCount(java.lang.Object)
-     */
     public int getChildCount(Object parent) {
 	if (parent instanceof ToDoList) {
 	    return PriorityNode.getPriorities().size();
@@ -73,7 +69,7 @@ public class GoListToPriorityToItem extends AbstractGoList {
 	if (parent instanceof PriorityNode) {
 	    int res = 0;
 	    PriorityNode pn = (PriorityNode) parent;
-	    ToDoList list = Designer.theDesigner().getToDoList();
+	    ToDoList list = Designer.TheDesigner.getToDoList();
 	    int size = list.size();
 	    for (int i = 0; i < size; i++) {
 		ToDoItem item = list.elementAt(i);
@@ -84,10 +80,6 @@ public class GoListToPriorityToItem extends AbstractGoList {
 	return 0;
     }
 
-    /**
-     * @see javax.swing.tree.TreeModel#getIndexOfChild(
-     * java.lang.Object, java.lang.Object)
-     */
     public int getIndexOfChild(Object parent, Object child) {
 	if (parent instanceof ToDoList) {
 	    return PriorityNode.getPriorities().indexOf(child);
@@ -95,7 +87,7 @@ public class GoListToPriorityToItem extends AbstractGoList {
 	if (parent instanceof PriorityNode) {
 	    int index = 0;
 	    PriorityNode pn = (PriorityNode) parent;
-	    ToDoList list = Designer.theDesigner().getToDoList();
+	    ToDoList list = Designer.TheDesigner.getToDoList();
 	    int size = list.size();
 	    for (int i = 0; i < size; i++) {
 		ToDoItem item = list.elementAt(i);
@@ -108,9 +100,6 @@ public class GoListToPriorityToItem extends AbstractGoList {
 	return -1;
     }
 
-    /**
-     * @see javax.swing.tree.TreeModel#isLeaf(java.lang.Object)
-     */
     public boolean isLeaf(Object node) {
 	if (node instanceof ToDoList) return false;
 	if (node instanceof PriorityNode && getChildCount(node) > 0)
@@ -118,20 +107,8 @@ public class GoListToPriorityToItem extends AbstractGoList {
 	return true;
     }
 
-    /**
-     * @see javax.swing.tree.TreeModel#valueForPathChanged(
-     * javax.swing.tree.TreePath, java.lang.Object)
-     */
     public void valueForPathChanged(TreePath path, Object newValue) { }
-
-    /**
-     * @see javax.swing.tree.TreeModel#addTreeModelListener(javax.swing.event.TreeModelListener)
-     */
     public void addTreeModelListener(TreeModelListener l) { }
-
-    /**
-     * @see javax.swing.tree.TreeModel#removeTreeModelListener(javax.swing.event.TreeModelListener)
-     */
     public void removeTreeModelListener(TreeModelListener l) { }
 
 } /* end class GoListToPriorityToItem */

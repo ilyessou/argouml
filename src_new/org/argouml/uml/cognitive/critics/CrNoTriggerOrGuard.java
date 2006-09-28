@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -23,87 +23,43 @@
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 
+
+// File: CrNoTriggerOrGuard.java
+// Classes: CrNoTriggerOrGuard.java
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.cognitive.critics;
 
 import org.argouml.cognitive.Designer;
 import org.argouml.cognitive.critics.Critic;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
-/**
- * A critic that checks for missing trigger and/or guard.
- *
- *
- * @author jrobbins
- */
+import org.argouml.model.ModelFacade;
 public class CrNoTriggerOrGuard extends CrUML {
 
-    /**
-     * The constructor.
-     */
     public CrNoTriggerOrGuard() {
-        setupHeadAndDesc();
-	addSupportedDecision(UMLDecision.STATE_MACHINES);
+	setHeadline("Add Trigger or Guard to Transistion");
+	addSupportedDecision(CrUML.decSTATE_MACHINES);
 	setKnowledgeTypes(Critic.KT_COMPLETENESS);
 	addTrigger("trigger");
 	addTrigger("guard");
     }
 
-    /**
-     * @see org.argouml.uml.cognitive.critics.CrUML#predicate2(
-     * java.lang.Object, org.argouml.cognitive.Designer)
-     */
     public boolean predicate2(Object dm, Designer dsgr) {
-	if (!(Model.getFacade().isATransition(dm))) {
-            return NO_PROBLEM;
-        }
-	
-        Object transition = /*(MTransition)*/ dm;
-        Object target = Model.getFacade().getTarget(transition);
-
-        if (!(Model.getFacade().isAPseudostate(target))) {
-            return NO_PROBLEM;
-        }
-
-	Object trigger = Model.getFacade().getTrigger(transition);
-	Object guard = Model.getFacade().getGuard(transition);
-	Object source = Model.getFacade().getSource(transition);
-	
-	
-	//	 WFR Transitions, OMG UML 1.3
-	Object k = Model.getFacade().getPseudostateKind(target);
-	if (Model.getFacade().
-            equalsPseudostateKind(k,
-                    Model.getPseudostateKind().getJoin())) {
-            return NO_PROBLEM;
-        }
-	if (!(Model.getFacade().isAState(source))) {
-            return NO_PROBLEM;
-        }
-	if (Model.getFacade().getDoActivity(source) != null) {
-            return NO_PROBLEM;
-        }
+	if (!(ModelFacade.isATransition(dm))) return NO_PROBLEM;
+	Object tr = /*(MTransition)*/ dm;
+	Object/*MEvent*/ t = ModelFacade.getTrigger(tr);
+	Object g = ModelFacade.getGuard(tr);
+	Object sv = ModelFacade.getSource(tr);
+	if (!(ModelFacade.isAState(sv))) return NO_PROBLEM;
+	if (ModelFacade.getDoActivity(sv) != null) return NO_PROBLEM;
 	boolean hasTrigger =
-	    (trigger != null
-            && Model.getFacade().getName(trigger) != null
-            && Model.getFacade().getName(trigger).length() > 0);
-	if (hasTrigger) {
-            return NO_PROBLEM;
-        }
-	boolean noGuard =
-            (guard == null
-            || Model.getFacade().getExpression(guard) == null
-            || Model.getFacade().getBody(
-                Model.getFacade().getExpression(guard)) == null
-            || Model.getFacade().getBody(
-                Model.getFacade().getExpression(guard)).toString().length() == 0);
-	if (noGuard) {
-            return PROBLEM_FOUND;
-        }
+	    (t != null && ModelFacade.getName(t) != null && ModelFacade.getName(t).length() > 0);
+	if (hasTrigger) return NO_PROBLEM;
+	boolean noGuard = (g == null || ModelFacade.getExpression(g) == null ||
+			   ModelFacade.getBody(ModelFacade.getExpression(g)) == null ||
+			   ModelFacade.getBody(ModelFacade.getExpression(g)).toString().length() == 0);
+	if (noGuard) return PROBLEM_FOUND;
 	return NO_PROBLEM;
     }
 
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = -301548543890007262L;
 } /* end class CrNoTriggerOrGuard */

@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,43 +22,32 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: FigPermission.java
+// Classes: FigPermission
+// Original Author: Markus Klink
+
 package org.argouml.uml.diagram.ui;
 
 import org.tigris.gef.base.Layer;
+import org.tigris.gef.presentation.ArrowHeadGreater;
 
-/**
- * The Fig for a permission, which is a form of dependency.
- *
- * @author Markus Klink
- */
 public class FigPermission extends FigDependency {
 
-    /**
-     * The constructor.
-     *
-     */
+    ////////////////////////////////////////////////////////////////
+    // constructors
+    protected ArrowHeadGreater endArrow;
+
     public FigPermission() {
         super();
     }
 
-    /**
-     * The constructor.
-     *
-     * @param edge the edge
-     */
     public FigPermission(Object edge) {
         super(edge);
     }
 
-    /**
-     * The constructor.
-     *
-     * @param edge the edge
-     * @param lay the layer
-     */
     public FigPermission(Object edge, Layer lay) {
         super(edge, lay);
     }
-
+        
 } /* end class FigPermission */
 

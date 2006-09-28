@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -26,7 +26,7 @@ package org.argouml.ui;
 
 import junit.framework.TestCase;
 
-import org.argouml.model.Model;
+import org.argouml.model.uml.foundation.core.CoreFactory;
 import org.argouml.ui.targetmanager.TargetEvent;
 import org.argouml.uml.diagram.static_structure.ui.UMLClassDiagram;
 import org.tigris.gef.presentation.FigText;
@@ -39,7 +39,7 @@ public class TestStylePanel extends TestCase {
 
     class MockStylePanel extends StylePanel {
 
-        private boolean refreshCalled = false;
+        boolean _refreshCalled = false;
 
         public MockStylePanel() {
             super("mock");
@@ -50,14 +50,7 @@ public class TestStylePanel extends TestCase {
          */
         public void refresh() {
             super.refresh();
-            refreshCalled = true;
-        }
-
-        /**
-         * @return Returns the refreshCalled.
-         */
-        boolean isRefreshCalled() {
-            return refreshCalled;
+            _refreshCalled = true;
         }
 
     }
@@ -66,12 +59,9 @@ public class TestStylePanel extends TestCase {
      * @param arg0 is the name of the test case.
      */
     public TestStylePanel(String arg0) {
-        super(arg0);
+        super(arg0);       
     }
 
-    /**
-     * Test setting a target.
-     */
     public void testTargetSet() {
 
         StylePanel pane = new MockStylePanel();
@@ -87,7 +77,7 @@ public class TestStylePanel extends TestCase {
 			    });
         pane.targetSet(e);
         // new target is of type object, refresh should not be called
-        assertTrue(!((MockStylePanel) pane).isRefreshCalled());
+        assertTrue(!((MockStylePanel)pane)._refreshCalled);
         target = new UMLClassDiagram();
         e = new TargetEvent(this,
 			    TargetEvent.TARGET_SET,
@@ -99,8 +89,8 @@ public class TestStylePanel extends TestCase {
 			    });
         pane.targetSet(e);
         // new target is of type UMLClassDiagram, refresh should not be called
-        assertTrue(!((MockStylePanel) pane).isRefreshCalled());
-        target = Model.getCoreFactory().createClass();
+        assertTrue(!((MockStylePanel) pane)._refreshCalled);
+        target = CoreFactory.getFactory().createClass();
         e = new TargetEvent(this,
 			    TargetEvent.TARGET_SET,
 			    new Object[] {
@@ -111,7 +101,7 @@ public class TestStylePanel extends TestCase {
 			    });
         pane.targetSet(e);
         // new target is a modelelement, refresh should not be called
-        assertTrue(!((MockStylePanel) pane).isRefreshCalled());
+        assertTrue(!((MockStylePanel) pane)._refreshCalled);
         target = new FigText(0, 0, 0, 0);
         e = new TargetEvent(this,
 			    TargetEvent.TARGET_SET,
@@ -123,7 +113,7 @@ public class TestStylePanel extends TestCase {
 			    });
         pane.targetSet(e);
         // new target is a fig, refresh should be called
-        assertTrue(((MockStylePanel) pane).isRefreshCalled());
+        assertTrue(((MockStylePanel) pane)._refreshCalled);
 
     }
 }

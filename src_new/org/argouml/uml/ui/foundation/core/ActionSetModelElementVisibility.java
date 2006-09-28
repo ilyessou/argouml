@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -26,54 +26,31 @@ package org.argouml.uml.ui.foundation.core;
 
 import java.awt.event.ActionEvent;
 
-import javax.swing.Action;
 import javax.swing.JRadioButton;
 
 import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
+import org.argouml.uml.ui.UMLChangeAction;
 import org.argouml.uml.ui.UMLRadioButtonPanel;
-import org.tigris.gef.undo.UndoableAction;
 
 /**
- *
- * @author jaap.branderhorst@xs4all.nl
+ * 
+ * @author jaap.branderhorst@xs4all.nl	
  * @since Jan 4, 2003
  */
-public class ActionSetModelElementVisibility extends UndoableAction {
-    /**
-     * The instance.
-     */
-    private static final ActionSetModelElementVisibility SINGLETON =
-        new ActionSetModelElementVisibility();
+public class ActionSetModelElementVisibility extends UMLChangeAction {
 
-    /**
-     * PUBLIC_COMMAND determines the visibility.
-     */
-    public static final String PUBLIC_COMMAND = "public";
+    public static final ActionSetModelElementVisibility SINGLETON = new ActionSetModelElementVisibility();
 
-    /**
-     * PROTECTED_COMMAND determines the visibility.
-     */
-    public static final String PROTECTED_COMMAND = "protected";
-
-    /**
-     * PRIVATE_COMMAND determines the visibility.
-     */
-    public static final String PRIVATE_COMMAND = "private";
-
-    /**
-     * PACKAGE_COMMAND determines the visibility.
-     */
-    public static final String PACKAGE_COMMAND = "package";
+    public final static String PUBLIC_COMMAND = "public";
+    public final static String PROTECTED_COMMAND = "protected";
+    public final static String PRIVATE_COMMAND = "private";
 
     /**
      * Constructor for ActionSetElementOwnershipSpecification.
      */
     protected ActionSetModelElementVisibility() {
-        super(Translator.localize("Set"), null);
-        // Set the tooltip string:
-        putValue(Action.SHORT_DESCRIPTION, 
-                Translator.localize("Set"));
+        super(Translator.localize("Set"), true, NO_ICON);
     }
 
     /**
@@ -84,30 +61,21 @@ public class ActionSetModelElementVisibility extends UndoableAction {
         if (e.getSource() instanceof JRadioButton) {
             JRadioButton source = (JRadioButton) e.getSource();
             String actionCommand = source.getActionCommand();
-            Object target =
-                ((UMLRadioButtonPanel) source.getParent()).getTarget();
-            if (Model.getFacade().isAModelElement(target)) {
+            Object target = ((UMLRadioButtonPanel) source.getParent()).getTarget();
+            if (org.argouml.model.ModelFacade.isAModelElement(target)) {
+                Object m = /*(MModelElement)*/ target;
                 Object kind = null;
                 if (actionCommand.equals(PUBLIC_COMMAND)) {
-                    kind = Model.getVisibilityKind().getPublic();
+                    kind = ModelFacade.PUBLIC_VISIBILITYKIND;
                 } else if (actionCommand.equals(PROTECTED_COMMAND)) {
-                    kind = Model.getVisibilityKind().getProtected();
-                } else if (actionCommand.equals(PACKAGE_COMMAND)) {
-                    kind = Model.getVisibilityKind().getPackage();
+                    kind = ModelFacade.PROTECTED_VISIBILITYKIND;
                 } else {
-                    kind = Model.getVisibilityKind().getPrivate();
+                    kind = ModelFacade.PRIVATE_VISIBILITYKIND;
                 }
-                Model.getCoreHelper().setVisibility(target, kind);
+                ModelFacade.setVisibility(m, kind);
 
             }
         }
-    }
-
-    /**
-     * @return Returns the sINGLETON.
-     */
-    public static ActionSetModelElementVisibility getInstance() {
-        return SINGLETON;
     }
 
 }

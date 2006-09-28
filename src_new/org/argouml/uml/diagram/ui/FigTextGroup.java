@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 2003-2006 The Regents of the University of California. All
+// Copyright (c) 2003 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -31,18 +31,19 @@ import java.util.Iterator;
 
 import org.tigris.gef.presentation.Fig;
 import org.tigris.gef.presentation.FigGroup;
+import org.tigris.gef.presentation.FigText;
 
 /**
  * Custom class to group FigTexts in such a way that they don't
  * overlap and that the group is shrinked to fit (no whitespace in
  * group).
- *
+ * 
  * @author jaap.branderhorst@xs4all.nl
  */
 public class FigTextGroup extends FigGroup implements MouseListener {
 
-    private static final int ROWHEIGHT = 17;
-    private boolean supressCalcBounds = false;
+    public final static int ROWHEIGHT = 17;
+    protected boolean supressCalcBounds = false;
 
     /**
      * Adds a FigText to the list with figs. Makes sure that the
@@ -54,96 +55,94 @@ public class FigTextGroup extends FigGroup implements MouseListener {
         updateFigTexts();
         calcBounds();
     }
-
+    
     /**
-     * Updates the FigTexts. FigTexts without text (equals "") are not shown.
-     * The rest of the figtexts are shown non-overlapping. The first figtext
+     * Updates the FigTexts. FigTexts without text (equals "") are not shown. 
+     * The rest of the figtexts are shown non-overlapping. The first figtext 
      * added (via addFig) is shown at the bottom of the FigTextGroup.
      */
-    private void updateFigTexts() {
-        Iterator it = getFigs().iterator();
+    protected void updateFigTexts() {
+        Iterator it = getFigs(null).iterator();
         int height = 0;
         while (it.hasNext()) {
-            Fig fig = (Fig) it.next();
-            int figHeight = fig.getMinimumSize().height;
-            fig.setBounds(getX(), getY() + height, fig.getWidth(), figHeight);
+            FigText fig = (FigText) it.next();
+            if (fig.getText().equals("")) {
+                fig.setHeight(0);
+            } else {
+                fig.setHeight(ROWHEIGHT);
+            }
+            fig.setX(getX());
+            fig.setY(getY() + height);
             fig.endTrans();
             height += fig.getHeight();
         }
+        // calcBounds();
     }
-
+            
 
     /**
      * @see org.tigris.gef.presentation.Fig#calcBounds()
      */
     public void calcBounds() {
-    	updateFigTexts();
+	updateFigTexts();
         if (!supressCalcBounds) {
-            super.calcBounds();
+	    super.calcBounds();
             // get the widest of all textfigs
             // calculate the total height
             int maxWidth = 0;
             int height = 0;
-            Iterator it = getFigs().iterator();
+            Iterator it = getFigs(null).iterator();
             while (it.hasNext()) {
-                Fig fig = (Fig) it.next();
-                if (fig.getWidth() > maxWidth) {
-                    maxWidth = fig.getWidth();
+                FigText fig = (FigText) it.next();
+                if (fig.getText().equals("")) {
+                    fig.setBounds(fig.getX(), fig.getY(), fig.getWidth(), 0);
+                } 
+                else {
+                    if (fig.getWidth() > maxWidth) {
+                        maxWidth = fig.getWidth();
+                    }
+                    if (!fig.getText().equals("")) {
+                        fig.setHeight(ROWHEIGHT);
+                    }
+                    height += fig.getHeight();
                 }
-                fig.setHeight(fig.getMinimumSize().height);
-                height += fig.getHeight();
-            }
+            }        
             _w = maxWidth;
             _h = height;
         }
+    }   
+
+    /**
+     * @see org.tigris.gef.presentation.Fig#delete()
+     */
+    public void delete() {
+        Iterator it = getFigs(null).iterator();
+        while (it.hasNext()) {
+            ((Fig) it.next()).delete();
+        }
+        super.delete();
     }
 
     /**
-     * @see org.tigris.gef.presentation.Fig#removeFromDiagram()
+     * @see org.tigris.gef.presentation.Fig#dispose()
      */
-    public void removeFromDiagram() {
-        Iterator it = getFigs().iterator();
+    public void dispose() {
+        Iterator it = getFigs(null).iterator();
         while (it.hasNext()) {
-            ((Fig) it.next()).removeFromDiagram();
+            ((Fig) it.next()).dispose();
         }
-        super.removeFromDiagram();
-    }
-
-    /**
-     * @see org.tigris.gef.presentation.Fig#deleteFromModel()
-     */
-    public void deleteFromModel() {
-        Iterator it = getFigs().iterator();
-        while (it.hasNext()) {
-            ((Fig) it.next()).deleteFromModel();
-        }
-        super.deleteFromModel();
+        super.dispose();
     }
 
     ////////////////////////////////////////////////////////////////
     // event handlers - MouseListener implementation
 
-    /**
-     * @see java.awt.event.MouseListener#mousePressed(java.awt.event.MouseEvent)
-     */
     public void mousePressed(MouseEvent me) {
     }
-
-    /**
-     * @see java.awt.event.MouseListener#mouseReleased(java.awt.event.MouseEvent)
-     */
     public void mouseReleased(MouseEvent me) {
     }
-
-    /**
-     * @see java.awt.event.MouseListener#mouseEntered(java.awt.event.MouseEvent)
-     */
     public void mouseEntered(MouseEvent me) {
     }
-
-    /**
-     * @see java.awt.event.MouseListener#mouseExited(java.awt.event.MouseEvent)
-     */
     public void mouseExited(MouseEvent me) {
     }
 
@@ -151,8 +150,6 @@ public class FigTextGroup extends FigGroup implements MouseListener {
      * If the user double clicks on anu part of this FigGroup, pass it
      * down to one of the internal Figs.  This allows the user to
      * initiate direct text editing.
-     *
-     * @see java.awt.event.MouseListener#mouseClicked(java.awt.event.MouseEvent)
      */
     public void mouseClicked(MouseEvent me) {
         if (me.isConsumed())

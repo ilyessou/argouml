@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 2002-2006 The Regents of the University of California. All
+// Copyright (c) 2002-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -26,7 +26,11 @@ package org.argouml.uml.ui.foundation.core;
 
 import junit.framework.TestCase;
 
-import org.argouml.model.Model;
+import ru.novosoft.uml.MFactoryImpl;
+import ru.novosoft.uml.foundation.core.MClassImpl;
+import ru.novosoft.uml.foundation.core.MElementResidence;
+import ru.novosoft.uml.foundation.core.MElementResidenceImpl;
+import ru.novosoft.uml.foundation.core.MModelElement;
 
 /**
  * @since Oct 12, 2002
@@ -34,16 +38,9 @@ import org.argouml.model.Model;
  */
 public class TestUMLModelElementElementResidenceListModel extends TestCase {
 
-    /**
-     * The element.
-     */
-    private Object elem;
-
-    /**
-     * The model that we test.
-     */
+    private MModelElement elem;
     private UMLModelElementElementResidenceListModel list;
-
+    
     /**
      * Constructor for TestUMLModelElementElementResidenceListModel.
      * @param arg0 is the name of the test case.
@@ -51,71 +48,55 @@ public class TestUMLModelElementElementResidenceListModel extends TestCase {
     public TestUMLModelElementElementResidenceListModel(String arg0) {
         super(arg0);
     }
-
+    
     /**
      * @see junit.framework.TestCase#setUp()
      */
     protected void setUp() throws Exception {
         super.setUp();
-        elem =
-            Model.getUmlFactory().buildNode(
-                Model.getMetaTypes().getUMLClass());
+        MFactoryImpl.setEventPolicy(MFactoryImpl.EVENT_POLICY_IMMEDIATE);
+        elem = new MClassImpl();     
         list = new UMLModelElementElementResidenceListModel();
+        elem.addMElementListener(list);
         list.setTarget(elem);
-        Model.getPump().addModelEventListener(list, elem);
-        Model.getPump().flushModelEvents();
     }
-
+    
     /**
      * @see junit.framework.TestCase#tearDown()
      */
     protected void tearDown() throws Exception {
         super.tearDown();
-//        elem.remove();
-//        Model.getUmlFactory().delete(elem);
+        elem.remove();
+        elem = null;
         list = null;
     }
-
-    /**
-     * Test addElementResidence().
-     */
+    
     public void testElementAdded() {
-        Object res = Model.getCoreFactory().createElementResidence();
-        Model.getCoreHelper().addElementResidence(elem, res);
-        Model.getPump().flushModelEvents();
+        MElementResidence res = new MElementResidenceImpl();
+        elem.addElementResidence(res);
         assertTrue(list.getSize() == 1);
         assertTrue(list.getElementAt(0) == res);
     }
-
-    /**
-     * Test removeElementResidence().
-     */
+    
     public void testElementRemoved() {
-        Object res = Model.getCoreFactory().createElementResidence();
-        Model.getCoreHelper().addElementResidence(elem, res);
-        Model.getPump().flushModelEvents();
+        MElementResidence res = new MElementResidenceImpl();
+        elem.addElementResidence(res);
         assertTrue(list.getSize() == 1);
         assertTrue(list.getElementAt(0) == res);
-        Model.getCoreHelper().removeElementResidence(elem, res);
-        Model.getPump().flushModelEvents();
+        elem.removeElementResidence(res);
         assertTrue(list.getSize() == 0);
     }
-
-    /**
-     * Test getting an element when there is none.
-     */
+    
     public void testNoElements() {
-        Model.getPump().flushModelEvents();
         try {
             list.getElementAt(0);
             fail();
-        } catch (ArrayIndexOutOfBoundsException a) {
-            // The correct exception is thrown.
         }
+        catch (ArrayIndexOutOfBoundsException a) { }
         assertTrue(list.size() == 0);
-        assertTrue(Model.getFacade().getElementResidences(elem).isEmpty());
+        assertTrue(elem.getElementResidences().isEmpty());
     }
-
+        
 
 
 }

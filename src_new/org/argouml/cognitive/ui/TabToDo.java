@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -28,35 +28,30 @@ import java.awt.BorderLayout;
 
 import javax.swing.JPanel;
 import javax.swing.JToolBar;
-import javax.swing.SwingConstants;
-
 import org.argouml.application.api.Configuration;
+
 import org.argouml.cognitive.ToDoItem;
-import org.argouml.ui.AbstractArgoJPanel;
-import org.argouml.ui.cmd.ActionNewToDoItem;
-import org.argouml.ui.cmd.ActionResolve;
-import org.argouml.ui.cmd.ActionSnooze;
-import org.argouml.ui.cmd.ToDoItemAction;
+import org.argouml.kernel.Wizard;
+import org.argouml.swingext.BorderSplitPane;
+import org.argouml.swingext.Horizontal;
+import org.argouml.swingext.Vertical;
+import org.argouml.ui.Actions;
+import org.argouml.ui.TabSpawnable;
 import org.argouml.ui.targetmanager.TargetEvent;
 import org.argouml.ui.targetmanager.TargetManager;
-import org.tigris.gef.undo.UndoableAction;
-import org.tigris.swidgets.BorderSplitPane;
-import org.tigris.swidgets.Horizontal;
-import org.tigris.swidgets.Vertical;
+import org.argouml.uml.ui.UMLAction;
 import org.tigris.toolbar.ToolBar;
 
-/**
- * The ToDo Tab.
- *
- */
-public class TabToDo extends AbstractArgoJPanel implements TabToDoTarget {
+public class TabToDo extends TabSpawnable implements TabToDoTarget {
     ////////////////////////////////////////////////////////////////
     // static variables
-    private static int numHushes;
+    public static int _numHushes = 0;
 
-    private static UndoableAction actionNewToDoItem = new ActionNewToDoItem();
-    private static ToDoItemAction actionResolve = new ActionResolve();
-    private static ToDoItemAction actionSnooze = new ActionSnooze();
+    public static UMLAction _actionNewToDoItem = Actions.NewToDoItem;
+    public static UMLAction _actionResolve = Actions.Resolve;
+    public static UMLAction _actionEmailExpert = Actions.EmailExpert;
+    //public static UMLAction _actionMoreInfo = Actions.MoreInfo;
+    public static UMLAction _actionSnooze = Actions.Snooze;
     //public static UMLAction _actionRecordFix = Actions.RecordFix;
     //public static UMLAction _actionReplayFix = Actions.ReplayFix;
     //public static UMLAction _actionFixItNext = Actions.FixItNext;
@@ -65,102 +60,95 @@ public class TabToDo extends AbstractArgoJPanel implements TabToDoTarget {
 
     ////////////////////////////////////////////////////////////////
     // instance variables
+    //JButton _newButton = new JButton("New");
+    //JButton _resolveButton = new JButton("Resolve");
+    //JButton _fixItButton = new JButton("FixIt");  //html
+    //JButton _moreInfoButton = new JButton("More Info"); //html
+    //JButton _emailExpertButton = new JButton("Email Expert"); //html
+    //JButton _snoozeButton = new JButton("Snooze");
+    //JTextArea _description = new JTextArea();
+    WizDescription _description = new WizDescription();
+    JPanel _lastPanel = null;
+    private BorderSplitPane _splitPane;
+    private Object _target;
 
-    private WizDescription description = new WizDescription();
-    private JPanel lastPanel;
-    private BorderSplitPane splitPane;
-    private Object target;
-
-    /**
-     * increments the numHushes.
-     */
-    public static void incrementNumHushes() {
-        numHushes++;
-    }
-
-    /**
-     * The constructor.
-     * Is only called thanks to its listing in the org/argouml/argo.ini file.
-     */
+    ////////////////////////////////////////////////////////////////
+    // constructor
     public TabToDo() {
         super("tab.todo-item");
         String position =
 	    Configuration.getString(Configuration.makeKey("layout",
 							  "tabtodo"));
-        setOrientation(
+        orientation = 
             ((position.equals("West") || position.equals("East"))
-             ? Vertical.getInstance() : Horizontal.getInstance()));
-
+             ? Vertical.getInstance() : Horizontal.getInstance());
+        
         setLayout(new BorderLayout());
 
-        JToolBar toolBar = new ToolBar(SwingConstants.VERTICAL);
-        toolBar.add(actionNewToDoItem);
-        toolBar.add(actionResolve);
-        toolBar.add(actionSnooze);
+        JToolBar toolBar = new ToolBar(JToolBar.VERTICAL);
+        toolBar.putClientProperty("JToolBar.isRollover",  Boolean.TRUE);
+        toolBar.add(_actionNewToDoItem);
+        toolBar.add(_actionResolve);
+        toolBar.add(_actionEmailExpert);
+        toolBar.add(_actionSnooze);
         toolBar.setFloatable(false);
-
+        
         add(toolBar, BorderLayout.WEST);
 
-        splitPane = new BorderSplitPane();
-        add(splitPane, BorderLayout.CENTER);
+        _splitPane = new BorderSplitPane();
+        add(_splitPane, BorderLayout.CENTER);
         setTarget(null);
     }
 
-    /**
-     * Show the description of a todo item.
-     */
     public void showDescription() {
-        if (lastPanel != null) {
-            splitPane.remove(lastPanel);
+        if (_lastPanel != null) {
+            _splitPane.remove(_lastPanel);
         }
-        splitPane.add(description, BorderSplitPane.CENTER);
-        lastPanel = description;
+        _splitPane.add(_description, BorderSplitPane.CENTER);
+        _lastPanel = _description;
         validate();
         repaint();
     }
-
-    /**
-     * @param tdp the todo pane
-     */
+    
     public void setTree(ToDoPane tdp) {
-        if (getOrientation().equals(Horizontal.getInstance())) {
-            splitPane.add(tdp, BorderSplitPane.WEST);
+        if (orientation.equals(Horizontal.getInstance())) {
+            _splitPane.add(tdp, BorderSplitPane.WEST);
         } else {
-            splitPane.add(tdp, BorderSplitPane.NORTH);
+            _splitPane.add(tdp, BorderSplitPane.NORTH);
         }
     }
 
-    /**
-     * @param ws the panel to be shown
-     */
     public void showStep(JPanel ws) {
-        if (lastPanel != null) {
-            splitPane.remove(lastPanel);
+        if (_lastPanel != null) {
+            _splitPane.remove(_lastPanel);
 	}
         if (ws != null) {
-            splitPane.add(ws, BorderSplitPane.CENTER);
-            lastPanel = ws;
+            _splitPane.add(ws, BorderSplitPane.CENTER);
+            _lastPanel = ws;
         } else {
-            splitPane.add(description, BorderSplitPane.CENTER);
-            lastPanel = description;
+            _splitPane.add(_description, BorderSplitPane.CENTER);
+            _lastPanel = _description;
         }
         validate();
         repaint();
     }
 
     /**
-     * Sets the target of the TabToDo.
-     *
+     * Sets the target of the TabToDo
+     * @deprecated As of ArgoUml version 0.13.5,
+     *             the visibility of this method will change in the future,
+     *             replaced by 
+     *             {@link org.argouml.ui.targetmanager.TargetManager}.
      * @param item the new target
      */
     public void setTarget(Object item) {
-        Object t = item;
-        target = t;
+        Object target = item;
+        _target = target;
         // the target of description will allways be set directly by tabtodo
-        description.setTarget(t);
+        _description.setTarget(target);
         Wizard w = null;
-        if (t instanceof ToDoItem) {
-            w = ((ToDoItem) t).getWizard();
+        if (target instanceof ToDoItem) {
+            w = ((ToDoItem) target).getWizard();
 	}
         if (w != null) {
             showStep(w.getCurrentPanel());
@@ -171,32 +159,21 @@ public class TabToDo extends AbstractArgoJPanel implements TabToDoTarget {
     }
 
    /**
-    * Returns the target of the TabToDo.
-    *
+    * Returns the target of the TabToDo
     * @return The current target of the TabToDo
     */
     public Object getTarget() {
-        return target;
+        return _target;
     }
 
-
-    /**
-     * Set the target again to what it was before.
-     */
     public void refresh() {
         setTarget(TargetManager.getInstance().getTarget());
     }
 
-    /**
-     * Update the "enabled" state of the resolve and snooze actions.
-     * 
-     * @param item  the target of the TabToDo class
-     */
-    protected static void updateActionsEnabled(Object item) {
-        actionResolve.setEnabled(actionResolve.isEnabled());
-        actionResolve.updateEnabled(item);
-        actionSnooze.setEnabled(actionSnooze.isEnabled());
-        actionSnooze.updateEnabled(item);
+    protected static void updateActionsEnabled(Object target) {      
+        _actionResolve.updateEnabled(target);
+        _actionEmailExpert.updateEnabled(target);
+        _actionSnooze.updateEnabled(target);
     }
 
     /**
@@ -224,8 +201,4 @@ public class TabToDo extends AbstractArgoJPanel implements TabToDoTarget {
 	setTarget(e.getNewTarget());
     }
 
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = 4819730646847978729L;
 } /* end class TabToDo */

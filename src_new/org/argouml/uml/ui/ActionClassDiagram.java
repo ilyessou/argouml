@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2003 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -25,32 +25,26 @@
 package org.argouml.uml.ui;
 
 import org.apache.log4j.Logger;
-import org.argouml.model.Model;
-import org.argouml.uml.diagram.DiagramFactory;
+import org.argouml.model.ModelFacade;
 import org.argouml.uml.diagram.static_structure.ui.UMLClassDiagram;
 import org.argouml.uml.diagram.ui.UMLDiagram;
 
-/**
- * Action to trigger creation of new class diagram.
+/** Action to trigger creation of new class diagram.
+ *  @stereotype singleton
  */
 public class ActionClassDiagram extends ActionAddDiagram {
+    private static final Logger LOG = 
+        Logger.getLogger(ActionClassDiagram.class);
 
     ////////////////////////////////////////////////////////////////
     // static variables
 
-    /**
-     * Logger.
-     */
-    private static final Logger LOG =
-                Logger.getLogger(ActionClassDiagram.class);
+    public static ActionClassDiagram SINGLETON = new ActionClassDiagram();
 
     ////////////////////////////////////////////////////////////////
     // constructors
 
-    /**
-     * Constructor.
-     */
-    public ActionClassDiagram() {
+    private ActionClassDiagram() {
         super("action.class-diagram");
     }
 
@@ -58,11 +52,8 @@ public class ActionClassDiagram extends ActionAddDiagram {
      * @see org.argouml.uml.ui.ActionAddDiagram#createDiagram(Object)
      */
     public UMLDiagram createDiagram(Object ns) {
-        if (Model.getFacade().isANamespace(ns)) {
-            return (UMLDiagram) DiagramFactory.getInstance().createDiagram(
-                    UMLClassDiagram.class,
-                    ns,
-                    null);
+        if (ModelFacade.isANamespace(ns)) {
+            return new UMLClassDiagram(ns);
         }
         LOG.error("No namespace as argument");
         LOG.error(ns);
@@ -74,17 +65,12 @@ public class ActionClassDiagram extends ActionAddDiagram {
      * @see org.argouml.uml.ui.ActionAddDiagram#isValidNamespace(Object)
      */
     public boolean isValidNamespace(Object handle) {
-        if (!Model.getFacade().isANamespace(handle)) {
+        if (!ModelFacade.isANamespace(handle)) {
             LOG.error("No namespace as argument");
             LOG.error(handle);
             throw new IllegalArgumentException(
-                "The argument " + handle + " is not a namespace.");
+                "The argument " + handle + "is not a namespace.");
         }
-        return true;
+        return true;       
     }
-
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = 2415943949021223859L;
 } /* end class ActionClassDiagram */

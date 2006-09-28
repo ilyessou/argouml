@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2003 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -23,36 +23,99 @@
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 package org.argouml.uml.ui;
-
-import org.argouml.uml.diagram.DiagramFactory;
+import org.argouml.model.ModelFacade;
+import org.argouml.model.uml.UmlFactory;
+import org.argouml.model.uml.behavioralelements.collaborations.CollaborationsHelper;
+import org.argouml.ui.targetmanager.TargetManager;
 import org.argouml.uml.diagram.collaboration.ui.UMLCollaborationDiagram;
 import org.argouml.uml.diagram.ui.UMLDiagram;
+import org.apache.log4j.Logger;
 
-/**
- * Action to trigger creation of new collaboration diagram.
+/** Action to trigger creation of new collaboration diagram.
+ *  @stereotype singleton
  */
-public class ActionCollaborationDiagram extends ActionNewDiagram {
+public class ActionCollaborationDiagram extends ActionAddDiagram {
+    
+    private static final Logger LOG = 
+        Logger.getLogger(ActionCollaborationDiagram.class);
 
-    /**
-     * Constructor.
-     */
-    public ActionCollaborationDiagram() {
+    public static ActionCollaborationDiagram SINGLETON =
+        new ActionCollaborationDiagram();
+
+    private ActionCollaborationDiagram() {
         super("action.collaboration-diagram");
     }
 
     /**
-     * @see org.argouml.uml.ui.ActionNewDiagram#createDiagram()
+     * @see org.argouml.uml.ui.ActionAddDiagram#createDiagram(Object)
      */
-    public UMLDiagram createDiagram() {
-        return (UMLDiagram) DiagramFactory.getInstance().createDiagram(
-                UMLCollaborationDiagram.class,
-                createCollaboration(),
-                null);
+    public UMLDiagram createDiagram(Object handle) {
+        if (!ModelFacade.isANamespace(handle)) {
+            LOG.error("No namespace as argument");
+            LOG.error(handle);
+            throw new IllegalArgumentException(
+                "The argument " + handle + "is not a namespace.");
+        }
+        Object/*MNamespace*/ namespace = handle;
+        Object target = TargetManager.getInstance().getTarget();
+        Object collaboration = null;
+        if (ModelFacade.isAOperation(target)) {
+            collaboration =
+                UmlFactory.getFactory().getCollaborations().buildCollaboration(namespace);
+            ModelFacade.setRepresentedOperation(collaboration, target);
+        } else if (ModelFacade.isAClassifier(target)) {
+            collaboration =
+                UmlFactory.getFactory().getCollaborations().buildCollaboration(target);
+            ModelFacade.setRepresentedClassifier(collaboration, target);
+        } else if (ModelFacade.isAModel(target)) {
+            collaboration =
+                UmlFactory.getFactory().getCollaborations().buildCollaboration(target);
+        } else if (ModelFacade.isAInteraction(target)) {
+            collaboration = ModelFacade.getContext(target);
+        } else if (target instanceof UMLCollaborationDiagram) {
+            Object owner = ((UMLCollaborationDiagram) target).getOwner();
+            if (ModelFacade.isACollaboration(owner)) {
+                //preventing backward compat problems
+                collaboration = owner;
+            }
+        } else if (ModelFacade.isACollaboration(target)) {
+            collaboration = target;
+        } else {
+            collaboration =
+                UmlFactory.getFactory().getCollaborations().buildCollaboration(
+                    namespace);
+        }
+        UMLCollaborationDiagram d = new UMLCollaborationDiagram(collaboration);
+        return d;
     }
 
     /**
-     * The UID.
+     * @see
+     * org.argouml.model.uml.behavioralelements.collaborations.CollaborationsHelper#isAddingCollaborationAllowed(Object)
+     * @see org.argouml.uml.ui.ActionAddDiagram#isValidNamespace(Object)
      */
-    private static final long serialVersionUID = -1089352213298998155L;
+    public boolean isValidNamespace(Object handle) {
+        if (!ModelFacade.isANamespace(handle)) {
+            LOG.error("No namespace as argument");
+            LOG.error(handle);
+            throw new IllegalArgumentException(
+                "The argument " + handle + "is not a namespace.");
+        }
+        Object/*MNamespace*/ ns = handle;
+        return CollaborationsHelper.getHelper().isAddingCollaborationAllowed(ns);
+    }
+
+    /**
+     * Just calls isValidNamespace(...) on the nav pane target.
+     * @see org.argouml.uml.ui.UMLAction#shouldBeEnabled()
+     */
+    public boolean shouldBeEnabled() {
+
+        Object target = TargetManager.getInstance().getModelTarget();
+        if (org.argouml.model.ModelFacade.isANamespace(target))
+            return isValidNamespace(target);
+        else
+            return false;
+    }
 
 } /* end class ActionCollaborationDiagram */

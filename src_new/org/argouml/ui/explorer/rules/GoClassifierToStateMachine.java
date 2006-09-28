@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -28,40 +28,32 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
 
 /**
  * PerspectiveRule to navigate from behavioral
  * feature to statemachine.  Causes statemachine to be shown as child
  * of behavioral feature.
- *
+ * 
  * @author jaap.branderhorst@xs4all.nl
  */
 public class GoClassifierToStateMachine extends AbstractPerspectiveRule {
 
-    /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getRuleName()
-     */
     public String getRuleName() {
-	return Translator.localize ("misc.classifier.statemachine");
+	return "Classifier->Statemachine";
     }
 
     /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getChildren(java.lang.Object)
+     * @see org.argouml.ui.AbstractGoRule#getChildren(Object)
      */
     public Collection getChildren(Object parent) {
-	if (Model.getFacade().isAClassifier(parent)) {
-	    return Model.getFacade().getBehaviors(parent);
-	}
+	if (ModelFacade.isAClassifier(parent)) 
+	    return ModelFacade.getBehaviors(parent);
 	return null;
     }
 
-    /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getDependencies(java.lang.Object)
-     */
     public Set getDependencies(Object parent) {
-        if (Model.getFacade().isAClassifier(parent)) {
+        if (ModelFacade.isAClassifier(parent)) {
 	    Set set = new HashSet();
 	    set.add(parent);
 	    return set;

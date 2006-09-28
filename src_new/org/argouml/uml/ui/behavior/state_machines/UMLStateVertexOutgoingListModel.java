@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -26,12 +26,12 @@ package org.argouml.uml.ui.behavior.state_machines;
 
 import java.util.ArrayList;
 
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
 import org.argouml.uml.ui.UMLModelElementListModel2;
 
 /**
- * Listmodel for the outgoing transitions of a StateVertex.
- *
+ * Listmodel for the outgoing transitions of a StateVertex
+ * 
  * @since Dec 14, 2002
  * @author jaap.branderhorst@xs4all.nl
  */
@@ -48,30 +48,32 @@ public class UMLStateVertexOutgoingListModel extends UMLModelElementListModel2 {
      * @see org.argouml.uml.ui.UMLModelElementListModel2#buildModelList()
      */
     protected void buildModelList() {
-        ArrayList c =
-            new ArrayList(Model.getFacade().getOutgoings(getTarget()));
-        if (Model.getFacade().isAState(getTarget())) {
-            ArrayList i =
-                new ArrayList(
-                        Model.getFacade().getInternalTransitions(getTarget()));
-            c.removeAll(i);
-        }
-        setAllElements(c);
+	removeAllElements();
+	if (ModelFacade.isAStateVertex(getTarget())) {
+	    ArrayList c = new ArrayList(ModelFacade.getOutgoings(getTarget()));
+	    if (ModelFacade.isAState(getTarget())){
+		ArrayList i = new ArrayList(ModelFacade
+			.getInternalTransitions(getTarget()));
+		c.removeAll(i);
+	    }
+	    setAllElements(c);
+	}
     }
 
     /**
      * @see org.argouml.uml.ui.UMLModelElementListModel2#isValidElement(Object)
      */
     protected boolean isValidElement(Object/* MBase */element) {
-        ArrayList c =
-            new ArrayList(Model.getFacade().getOutgoings(getTarget()));
-        if (Model.getFacade().isAState(getTarget())) {
-            ArrayList i =
-                new ArrayList(
-                        Model.getFacade().getInternalTransitions(getTarget()));
+	if (!ModelFacade.isAStateVertex(getTarget())) {
+	    return false;
+	}
+
+        ArrayList c = new ArrayList(ModelFacade.getOutgoings(getTarget()));
+        if (ModelFacade.isAState(getTarget())){
+            ArrayList i = new ArrayList(ModelFacade
+                    .getInternalTransitions(getTarget()));
             c.removeAll(i);
         }
         return c.contains(element);
     }
-
 }

@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -27,40 +27,38 @@ package org.argouml.uml.ui.behavior.state_machines;
 
 import java.awt.event.ActionEvent;
 
-import org.argouml.model.Model;
-import org.argouml.ui.targetmanager.TargetManager;
+import org.argouml.model.uml.behavioralelements.statemachines.StateMachinesFactory;
 import org.argouml.uml.ui.AbstractActionNewModelElement;
 
 /**
- * Action to create a new transition, either
- * an internal transition or a transition
+ * Action to create a new transition, either an internal transition or a transition
  * between two states.
  * @since Dec 15, 2002
  * @author jaap.branderhorst@xs4all.nl
  */
 public class ActionNewTransition extends AbstractActionNewModelElement {
-
+    
     /**
-     * Key used for storing the source of the transition.
-     * If this value is not set,
+     * Key used for storing the source of the transition. If this value is not set,
      * the action assumes that an internal transition should be constructed.
      */
-    public static final String SOURCE = "source";
-
+    public final static String SOURCE = "source";
+    
      /**
-     * Key used for storing the destination of the transition.
-     * If this value is not set,
+     * Key used for storing the destination of the transition. If this value is not set,
      * the action assumes that an internal transition should be constructed.
      */
-    public static final String DESTINATION = "destination";
+    public final static String DESTINATION = "destination";
+    
 
-
+    public static ActionNewTransition SINGLETON = new ActionNewTransition();
+    
     /**
      * Constructor for ActionNewTransition.
      */
-    public ActionNewTransition() {
+    protected ActionNewTransition() {
         super();
-    }
+    }        
 
     /**
      * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
@@ -68,25 +66,10 @@ public class ActionNewTransition extends AbstractActionNewModelElement {
     public void actionPerformed(ActionEvent e) {
         super.actionPerformed(e);
         if (getValue(SOURCE) == null || getValue(DESTINATION) == null) {
-            Object target = TargetManager.getInstance().getModelTarget();
-            Model.getStateMachinesFactory()
-                .buildInternalTransition(target);
+            StateMachinesFactory.getFactory().buildInternalTransition(getTarget());
         } else {
-            Model.getStateMachinesFactory()
-                .buildTransition(getValue(SOURCE), getValue(DESTINATION));
-        }
+            StateMachinesFactory.getFactory().buildTransition(getValue(SOURCE), getValue(DESTINATION));
+        }            
     }
-
-    /**
-     * @return true if the action is enabled
-     * @see org.tigris.gef.undo.UndoableAction#isEnabled()
-     */
-    public boolean isEnabled() {
-        Object target = TargetManager.getInstance().getModelTarget();
-        return super.isEnabled() 
-            && !Model.getStateMachinesHelper().isTopState(target);
-    }
-    
-    
 
 }

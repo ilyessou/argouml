@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -33,29 +33,25 @@ import javax.swing.JTextField;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
-import org.argouml.ui.AbstractArgoJPanel;
+import org.argouml.ui.TabSpawnable;
 import org.argouml.ui.targetmanager.TargetEvent;
 import org.argouml.uml.ui.TabModelTarget;
 
 import org.tigris.gef.presentation.FigText;
 
-/**
- * The properties panel for a simple text / string.
- *
- */
 public class PropPanelString
-    extends AbstractArgoJPanel
-    implements TabModelTarget, PropertyChangeListener, DocumentListener {
+    extends TabSpawnable
+    implements TabModelTarget, PropertyChangeListener, DocumentListener
+{
     ////////////////////////////////////////////////////////////////
     // instance vars
-    private FigText target;
-    private JLabel nameLabel = new JLabel("Text: ");
-    private JTextField nameField = new JTextField();
+    FigText _target;
+    JLabel _nameLabel = new JLabel("Text: ");
+    JTextField _nameField = new JTextField();
 
-    /**
-     * The constructor.
-     *
-     */
+    ////////////////////////////////////////////////////////////////
+    // constructors
+
     public PropPanelString() {
 	super("String");
 	GridBagLayout gb = new GridBagLayout();
@@ -68,19 +64,19 @@ public class PropPanelString
 	c.gridx = 0;
 	c.gridwidth = 1;
 	c.gridy = 0;
-	gb.setConstraints(nameLabel, c);
-	add(nameLabel);
+	gb.setConstraints(_nameLabel, c);
+	add(_nameLabel);
 
 	c.weightx = 1.0;
 	c.gridx = 1;
 	c.gridwidth = GridBagConstraints.REMAINDER;
 	c.gridheight = GridBagConstraints.REMAINDER;
 	c.gridy = 0;
-	gb.setConstraints(nameField, c);
-	add(nameField);
+	gb.setConstraints(_nameField, c);
+	add(_nameField);
 
-	nameField.getDocument().addDocumentListener(this);
-	nameField.setEditable(true);
+	_nameField.getDocument().addDocumentListener(this);
+	_nameField.setEditable(true);
 	// TODO: set font?
 
     }
@@ -88,62 +84,38 @@ public class PropPanelString
     ////////////////////////////////////////////////////////////////
     // accessors
 
-    /**
-     * @see org.argouml.ui.TabTarget#setTarget(java.lang.Object)
-     */
     public void setTarget(Object t) {
 	if (t instanceof FigText) {
-	    target = (FigText) t;
+	    _target = (FigText) t;
 	    // to circumvent to much registred listeners
-	    target.removePropertyChangeListener(this);
-	    target.addPropertyChangeListener(this);
+	    _target.removePropertyChangeListener(this);
+	    _target.addPropertyChangeListener(this);
 	}
-
+   
     }
 
-    /**
-     * @see org.argouml.ui.TabTarget#getTarget()
-     */
-    public Object getTarget() { return target; }
+    public Object getTarget() { return _target; }
 
-    /**
-     * @see org.argouml.ui.TabTarget#refresh()
-     */
-    public void refresh() { setTarget(target); }
+    public void refresh() { setTarget(_target); }
 
-    /**
-     * @see org.argouml.ui.TabTarget#shouldBeEnabled(java.lang.Object)
-     */
-    public boolean shouldBeEnabled(Object theTarget) { return false; }
+    public boolean shouldBeEnabled(Object target) { return false; }
 
 
-    /**
-     * Set the target name.
-     */
     protected void setTargetName() {
     }
 
     ////////////////////////////////////////////////////////////////
     // event handling
 
-    /**
-     * @see javax.swing.event.DocumentListener#insertUpdate(javax.swing.event.DocumentEvent)
-     */
     public void insertUpdate(DocumentEvent e) {
-	if (e.getDocument() == nameField.getDocument() && target != null) {
-	    target.setText(nameField.getText());
-	    target.damage();
+	if (e.getDocument() == _nameField.getDocument() && _target != null) {
+	    _target.setText(_nameField.getText());
+	    _target.damage();
 	}
     }
 
-    /**
-     * @see javax.swing.event.DocumentListener#removeUpdate(javax.swing.event.DocumentEvent)
-     */
     public void removeUpdate(DocumentEvent e) { insertUpdate(e); }
 
-    /**
-     * @see javax.swing.event.DocumentListener#changedUpdate(javax.swing.event.DocumentEvent)
-     */
     public void changedUpdate(DocumentEvent e) {
     }
 
@@ -153,34 +125,38 @@ public class PropPanelString
      */
     public void propertyChange(PropertyChangeEvent evt) {
 	if (evt.getPropertyName().equals("editing")
-	    && evt.getNewValue().equals(Boolean.FALSE)) {
+	    && evt.getNewValue().equals(Boolean.FALSE))
+	{
 	    // ending editing
-	    nameField.setText(target.getText());
+	    _nameField.setText(_target.getText());
 	}
-
+			
     }
 
-    /**
-     * @see org.argouml.ui.targetmanager.TargetListener#targetAdded(org.argouml.ui.targetmanager.TargetEvent)
+    /* (non-Javadoc)
+     * @see
+     * org.argouml.ui.targetmanager.TargetListener#targetAdded(org.argouml.ui.targetmanager.TargetEvent)
      */
     public void targetAdded(TargetEvent e) {
-        // TODO: Auto-generated method stub
+        // TODO Auto-generated method stub
 
     }
 
-    /**
-     * @see org.argouml.ui.targetmanager.TargetListener#targetRemoved(org.argouml.ui.targetmanager.TargetEvent)
+    /* (non-Javadoc)
+     * @see
+     * org.argouml.ui.targetmanager.TargetListener#targetRemoved(org.argouml.ui.targetmanager.TargetEvent)
      */
     public void targetRemoved(TargetEvent e) {
-        // TODO: Auto-generated method stub
+        // TODO Auto-generated method stub
 
     }
 
-    /**
-     * @see org.argouml.ui.targetmanager.TargetListener#targetSet(org.argouml.ui.targetmanager.TargetEvent)
+    /* (non-Javadoc)
+     * @see
+     * org.argouml.ui.targetmanager.TargetListener#targetSet(org.argouml.ui.targetmanager.TargetEvent)
      */
     public void targetSet(TargetEvent e) {
-        // TODO: Auto-generated method stub
+        // TODO Auto-generated method stub
 
     }
 

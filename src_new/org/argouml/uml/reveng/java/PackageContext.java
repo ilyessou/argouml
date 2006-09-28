@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 2003-2006 The Regents of the University of California. All
+// Copyright (c) 2003-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,22 +22,22 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: PackageContext.java
+// Classes: PackageContext
+// Original Author: Marcus Andersson andersson@users.sourceforge.net
+
 package org.argouml.uml.reveng.java;
 
-import org.apache.log4j.Logger;
-import org.argouml.model.Facade;
-import org.argouml.model.Model;
 import org.argouml.uml.reveng.ImportClassLoader;
 
+import org.argouml.model.ModelFacade;
+import org.argouml.model.uml.UmlFactory;
+
 /**
- * This context is a package.
- *
- * @author Marcus Andersson
- */
-class PackageContext extends Context {
-    
-    private static final Logger LOG = Logger.getLogger(PackageContext.class);
-    
+   This context is a package.
+*/
+class PackageContext extends Context
+{
     /** The package this context represents. */
     private Object mPackage;
 
@@ -48,18 +48,20 @@ class PackageContext extends Context {
        Create a new context from a package.
 
        @param base Based on this context.
-       @param thePackage Represents this package.
+       @param mPackage Represents this package.
     */
-    public PackageContext(Context base, Object thePackage) {
+    public PackageContext(Context base, Object mPackage)
+    {
 	super(base);
-	this.mPackage = thePackage;
-	javaName = getJavaName(thePackage);
+	this.mPackage = mPackage;
+	javaName = getJavaName(mPackage);
     }
 
     public Object getInterface(String name)
-	throws ClassifierNotFoundException {
+	throws ClassifierNotFoundException
+    {
         // Search in model
-        Object mInterface = Model.getFacade().lookupIn(mPackage, name);
+        Object mInterface = ModelFacade.lookupIn(mPackage, name);
 
         if (mInterface == null) {
 	    Class classifier;
@@ -68,7 +70,7 @@ class PackageContext extends Context {
 	    try {
 
 		// Special case for model
-		if (Model.getFacade().isAModel(mPackage)) {
+		if (ModelFacade.isAModel(mPackage)) {
 		    classifier = Class.forName(name);
 		}
 		else {
@@ -78,10 +80,10 @@ class PackageContext extends Context {
 		}
 		if (classifier.isInterface()) {
 		    mInterface =
-			Model.getCoreFactory()
+			UmlFactory.getFactory().getCore()
 			    .buildInterface(name, mPackage);
-		    Model.getCoreHelper().setTaggedValue(mInterface,
-					       Facade.GENERATED_TAG,
+		    ModelFacade.setTaggedValue(mInterface,
+					       ModelFacade.GENERATED_TAG,
 					       "yes");
 		}
 	    }
@@ -90,7 +92,7 @@ class PackageContext extends Context {
                 // try USER classpath
                 try {
                     // Special case for model
-                    if (Model.getFacade().isAModel(mPackage)) {
+                    if (ModelFacade.isAModel(mPackage)) {
                         classifier =
 			    ImportClassLoader.getInstance().loadClass(name);
                     }
@@ -102,23 +104,21 @@ class PackageContext extends Context {
                     }
 		    if (classifier.isInterface()) {
 			mInterface =
-			    Model.getCoreFactory()
+			    UmlFactory.getFactory().getCore()
 			        .buildInterface(name, mPackage);
-			Model.getCoreHelper().setTaggedValue(mInterface,
-						   Facade.GENERATED_TAG,
+			ModelFacade.setTaggedValue(mInterface,
+						   ModelFacade.GENERATED_TAG,
 						   "yes");
 		    }
                 }
                 catch (Exception e1) {
 		    // Ignore.
-                    // TODO: Why are these being ignored?
-                    LOG.warn("Exception ignored", e1);
                 }
 	    }
 	}
-	if (mInterface == null && getContext() != null) {
+	if (mInterface == null && context != null) {
 	    // Continue the search through the rest of the model
-	    mInterface = getContext().getInterface(name);
+	    mInterface = context.getInterface(name);
         }
 	if (mInterface == null) {
 	    throw new ClassifierNotFoundException(name);
@@ -128,18 +128,19 @@ class PackageContext extends Context {
     }
 
     /**
-     * Get a classifier from the model. If it is not in the model, try
-     * to find it with the CLASSPATH. If found, in the classpath, the
-     * classifier is created and added to the model. If not found at
-     * all, a datatype is created and added to the model.
-     *
-     * @param name The name of the classifier to find.
-     * @return Found classifier.
-     */
+       Get a classifier from the model. If it is not in the model, try
+       to find it with the CLASSPATH. If found, in the classpath, the
+       classifier is created and added to the model. If not found at
+       all, a datatype is created and added to the model.
+
+       @param classifierName The name of the classifier to find.
+       @return Found classifier.
+    */
     public Object get(String name)
-	throws ClassifierNotFoundException {
+	throws ClassifierNotFoundException
+    {
 	// Search in model
-	Object mClassifier = Model.getFacade().lookupIn(mPackage, name);
+	Object mClassifier = ModelFacade.lookupIn(mPackage, name);
 
 	if (mClassifier == null) {
 	    Class classifier;
@@ -147,7 +148,7 @@ class PackageContext extends Context {
 	    try {
 
 		// Special case for model
-		if (Model.getFacade().isAModel(mPackage)) {
+		if (ModelFacade.isAModel(mPackage)) {
 		    classifier = Class.forName(name);
 		}
 		else {
@@ -157,25 +158,25 @@ class PackageContext extends Context {
 		}
 		if (classifier.isInterface()) {
 		    mClassifier =
-			Model.getCoreFactory()
+			UmlFactory.getFactory().getCore()
 			    .buildInterface(name, mPackage);
 		}
 		else {
 		    mClassifier =
-			Model.getCoreFactory()
+			UmlFactory.getFactory().getCore()
 			    .buildClass(name, mPackage);
 		}
-		Model.getCoreHelper().setTaggedValue(mClassifier,
-					   Facade.GENERATED_TAG,
+		ModelFacade.setTaggedValue(mClassifier,
+					   ModelFacade.GENERATED_TAG,
 					   "yes");
 	    }
 	    catch (ClassNotFoundException e) {
 		// No class or interface found
                 // try USER classpath
-
+                
                 try {
                     // Special case for model
-                    if (Model.getFacade().isAModel(mPackage)) {
+                    if (ModelFacade.isAModel(mPackage)) {
                         classifier =
 			    ImportClassLoader.getInstance().loadClass(name);
                     }
@@ -187,28 +188,26 @@ class PackageContext extends Context {
                     }
 		    if (classifier.isInterface()) {
 			mClassifier =
-			    Model.getCoreFactory()
+			    UmlFactory.getFactory().getCore()
 			        .buildInterface(name, mPackage);
 		    } else {
 			mClassifier =
-			    Model.getCoreFactory()
+			    UmlFactory.getFactory().getCore()
 			        .buildClass(name, mPackage);
 		    }
-		    Model.getCoreHelper().setTaggedValue(mClassifier,
-					       Facade.GENERATED_TAG,
+		    ModelFacade.setTaggedValue(mClassifier,
+					       ModelFacade.GENERATED_TAG,
 					       "yes");
                 }
                 catch (Exception e1) {
 		    // Ignore
-                    // TODO: Why are these being ignored? - tfm
-                    LOG.warn("Exception ignored", e1);
                 }
             }
 	}
 	if (mClassifier == null) {
 	    // Continue the search through the rest of the model
-	    if (getContext() != null) {
-		mClassifier = getContext().get(name);
+	    if (context != null) {
+		mClassifier = context.get(name);
 	    }
 	    else {
 		// Check for java data types
@@ -222,9 +221,10 @@ class PackageContext extends Context {
 		    || name.equals("boolean")
 		    || name.equals("void")
 		    // How do I represent arrays in UML?
-		    || name.indexOf("[]") != -1) {
+		    || name.indexOf("[]") != -1)
+		{
 		    mClassifier =
-			Model.getCoreFactory()
+			UmlFactory.getFactory().getCore()
 			    .buildDataType(name, mPackage);
 		}
 	    }

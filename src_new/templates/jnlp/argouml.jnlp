@@ -19,28 +19,18 @@
     <all-permissions/>
   </security>
   <resources>
-    <j2se version="1.4+" max-heap-size="256m"/>
+    <j2se version="1.4 1.4.0-beta3 1.4.0-beta2 1.4.1 1.4.2 1.3"/>
     <jar href="argouml.jar" main="true" download="eager"/>
-    <jar href="argouml-model.jar"/>
     <jar href="antlrall.jar"/>
+    <jar href="xerces.jar"/>
     <jar href="gef.jar"/>
     <jar href="ocl-argo.jar"/>
+    <jar href="nsuml.jar"/>
     <jar href="log4j.jar"/>
-    <jar href="swidgets.jar"/>
+    <jar href="i18n.jar"/>
     <jar href="toolbar.jar"/>
-    <jar href="commons-logging.jar"/>
-
-    <jar href="ext/argouml-i18n-nb.jar"/>
-    <jar href="ext/argouml-i18n-zh.jar"/>
-
-    <jar href="argouml-mdr.jar"/>
-    <jar href="java-interfaces.jar"/>
     <jar href="jmi.jar"/>
-    <jar href="jmiutils.jar"/>
-    <jar href="mdrapi.jar"/>
-    <jar href="mof.jar"/>
-    <jar href="nbmdr.jar"/>
-    <jar href="openide-util.jar"/>
+    <jar href="commons-logging.jar"/>
 
   </resources>
   <application-desc main-class="org.argouml.application.Main"/>

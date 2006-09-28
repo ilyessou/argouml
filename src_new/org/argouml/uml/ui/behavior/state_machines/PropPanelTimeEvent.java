@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,52 +22,22 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: PropPanelTimeEvent
+// Classes: PropPanelTimeEvent
+// Original Author: oliver.heyden@gentleware.de
+
 package org.argouml.uml.ui.behavior.state_machines;
 
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.border.TitledBorder;
-
-import org.argouml.i18n.Translator;
-import org.argouml.uml.ui.UMLExpressionBodyField;
-import org.argouml.uml.ui.UMLExpressionLanguageField;
-import org.argouml.uml.ui.UMLExpressionModel2;
-import org.argouml.uml.ui.UMLTimeExpressionModel;
 import org.argouml.util.ConfigLoader;
-import org.tigris.swidgets.GridLayout2;
 
-/**
- * The properties panel for a TimeEvent.
- *
- * @author oliver.heyden
- */
 public class PropPanelTimeEvent extends PropPanelEvent {
 
-    /**
-     * The constructor.
-     */
+    ////////////////////////////////////////////////////////////////
+    // contructors
     public PropPanelTimeEvent() {
-        super("Time event", lookupIcon("TimeEvent"), ConfigLoader
-                .getTabPropsOrientation());
+        super("Time event", _eventIcon, 
+              ConfigLoader.getTabPropsOrientation());
     }
+} 
 
-    /**
-     * @see org.argouml.uml.ui.behavior.state_machines.PropPanelEvent#initialize()
-     */
-    public void initialize() {
-        super.initialize();
 
-        UMLExpressionModel2 whenModel = new UMLTimeExpressionModel(
-                this, "when");
-        JPanel whenPanel = createBorderPanel(Translator
-                .localize("label.when"));
-        whenPanel.add(new JScrollPane(new UMLExpressionBodyField(
-                whenModel, true)));
-        whenPanel.add(new UMLExpressionLanguageField(whenModel,
-                false));
-        add(whenPanel);
-        
-        addAction(getDeleteAction());
-    }
-
-}

@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -31,76 +31,56 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
 
-/**
- * Rule for Class->Navigable Class.
- *
- */
 public class GoClassToNavigableClass extends AbstractPerspectiveRule {
 
-    /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getRuleName()
-     */
     public String getRuleName() {
-        return Translator.localize ("misc.class.navigable-class");
+        return "Class->Navigable Class";
     }
 
-    /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getChildren(java.lang.Object)
-     */
     public Collection getChildren(Object parent) {
-        if (!Model.getFacade().isAClass(parent)) {
+        if (!ModelFacade.isAClass(parent))
             return null;
-        }
 
         List childClasses = new ArrayList();
-
-        Collection ends = Model.getFacade().getAssociationEnds(parent);
-        if (ends == null) {
+        
+        Collection ends = ModelFacade.getAssociationEnds(parent);
+        if (ends == null)
             return null;
-        }
-
-        Iterator it = ends.iterator();
-        while (it.hasNext()) {
-            Object ae = /*(MAssociationEnd)*/ it.next();
-            Object asc = Model.getFacade().getAssociation(ae);
-            Collection allEnds = Model.getFacade().getConnections(asc);
-
+        
+        Iterator enum = ends.iterator();
+        while (enum.hasNext()) {
+            Object ae = /*(MAssociationEnd)*/ enum.next();
+            Object asc = ModelFacade.getAssociation(ae);
+            Collection allEnds = ModelFacade.getConnections(asc);
+            
             Object otherEnd = null;
             Iterator endIt = allEnds.iterator();
             if (endIt.hasNext()) {
                 otherEnd = /*(MAssociationEnd)*/ endIt.next();
                 if (ae != otherEnd && endIt.hasNext()) {
                     otherEnd = /*(MAssociationEnd)*/ endIt.next();
-                    if (ae != otherEnd) {
+                    if (ae != otherEnd)
                         otherEnd = null;
-                    }
                 }
             }
-
-            if (otherEnd == null) {
+            
+            if (otherEnd == null)
                 continue;
-            }
-            if (!Model.getFacade().isNavigable(otherEnd)) {
+            if (!ModelFacade.isNavigable(otherEnd))
                 continue;
-            }
-            if (childClasses.contains(Model.getFacade().getType(otherEnd))) {
+            if (childClasses.contains(ModelFacade.getType(otherEnd)))
                 continue;
-            }
-            childClasses.add(Model.getFacade().getType(otherEnd));
+            childClasses.add(ModelFacade.getType(otherEnd));
             // TODO: handle n-way Associations
         }
 
         return childClasses;
     }
 
-    /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getDependencies(java.lang.Object)
-     */
     public Set getDependencies(Object parent) {
-        if (Model.getFacade().isAClass(parent)) {
+        if (ModelFacade.isAClass(parent)) {
 	    Set set = new HashSet();
 	    set.add(parent);
 	    return set;

@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -26,56 +26,31 @@ package org.argouml.uml;
 
 import java.util.Collection;
 import java.util.Iterator;
-
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
 import org.argouml.util.MyTokenizer;
 
-/**
- * This class handles the Documentation of ModelElements.
- * Documentation is represented internally by the tagged value "documentation",
- * but it has its own tab-panel to ease user handling.
- *
- */
 public class DocumentationManager {
 
-    /**
-     * The system's native line-ends, for when things are written to file.
-     */
+    /** The system's native line-ends, for when things are written to file */
     private static final String LINE_SEPARATOR =
 	System.getProperty("line.separator");
 
-    /**
-     * This function returns the documentation in C-style comment format.
-     *
-     * @param o the ModelElement
-     * @param indent the current indentation for new lines
-     * @return the documentation, as a String
-     */
     public static String getDocs(Object o, String indent) {
         return getDocs(o, indent, "/** ", " *  ", " */");
     }
 
-    /**
-     * @param o the ModelElement
-     * @param indent the current indentation for new lines
-     * @param header is the first line
-     * @param prefix is inserted at every line before the doc
-     * @param footer is the closing line
-     * @return the string that represents the documentation
-     *         for the given ModelElement
-     */
     public static String getDocs(Object o, String indent, String header,
 				 String prefix, String footer) {
         String sResult = defaultFor(o, indent);
 
-        if (Model.getFacade().isAModelElement(o)) {
-            Iterator iter = Model.getFacade().getTaggedValues(o);
+        if (ModelFacade.isAModelElement(o)) {
+            Iterator iter = ModelFacade.getTaggedValues(o);
             if (iter != null) {
                 while (iter.hasNext()) {
                     Object tv = iter.next();
-                    String tag = Model.getFacade().getTagOfTag(tv);
+                    String tag = ModelFacade.getTagOfTag(tv);
                     if (tag.equals("documentation") || tag.equals("javadocs")) {
-                        sResult = Model.getFacade().getValueOfTag(tv);
+                        sResult = ModelFacade.getValueOfTag(tv);
                         // give priority to "documentation"
                         if (tag.equals("documentation")) break;
                     }
@@ -110,13 +85,8 @@ public class DocumentationManager {
         return result.toString();
     }
 
-    /**
-     * @param o the ModelElement. If it is not a ModelElement,
-     *          then you'll get a IllegalArgumentException
-     * @param s the string representing the documentation
-     */
     public static void setDocs(Object o, String s) {
-        Model.getCoreHelper().setTaggedValue(o, "documentation", s);
+        ModelFacade.setTaggedValue(o, "documentation", s);
     }
 
     /**
@@ -130,56 +100,116 @@ public class DocumentationManager {
      * @return true if the given element has docs.
      */
     public static boolean hasDocs(Object o) {
-        if (Model.getFacade().isAModelElement(o)) {
-            Iterator i = Model.getFacade().getTaggedValues(o);
+	if (ModelFacade.isAModelElement(o)) {
+	    Iterator i = ModelFacade.getTaggedValues(o);
 
-            if (i != null) {
-                while (i.hasNext()) {
-                    Object tv = i.next();
-                    String tag = Model.getFacade().getTagOfTag(tv);
-                    String value = Model.getFacade().getValueOfTag(tv);
-                    if (("documentation".equals(tag) || "javadocs".equals(tag))
-                        && value != null && value.trim().length() > 0) {
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
+	    if (i != null) {
+		while (i.hasNext()) {
+		    Object tv = i.next();
+		    String tag = ModelFacade.getTagOfTag(tv);
+		    String value = ModelFacade.getValueOfTag(tv);
+		    if ((tag.equals("documentation") || tag.equals("javadocs"))
+			&& value != null && value.trim().length() > 0) {
+			return true;
+		    }
+		}
+	    }
+	}
+	return false;
     }
 
-    /**
-     * Generate default documentation.
-     *
-     * @param o the ModelElement
-     * @param indent the current indentation string for new lines
-     * @return the default documentation
-     */
+    ////////////////////////////////////////////////////////////////
+    // default documentation
+
     public static String defaultFor(Object o, String indent) {
-	if (Model.getFacade().isAClass(o)) {
-            // TODO: Needs localization
+	if (ModelFacade.isAClass(o)) {
+	    /*
+	     * Changed 2001-10-05 STEFFEN ZSCHALER
+	     *
+	     * Was (space added below!):
+	     *
+	     return
+	     "/** A class that represents ...\n"+
+	     " * \n"+
+	     " * @see OtherClasses\n"+
+	     " * @author your_name_here\n"+
+	     " * /";
+	     *
+	     */
 	    return " A class that represents ...\n\n"
 		+ indent + " @see OtherClasses\n"
 		+ indent + " @author your_name_here";
 	}
-	if (Model.getFacade().isAAttribute(o)) {
-
+	if (ModelFacade.isAAttribute(o)) {
+	    /*
+	     * Changed 2001-10-05 STEFFEN ZSCHALER
+	     *
+	     * Was (space added below!):
+	     *
+	     return
+	     "/** An attribute that represents ...\n"+
+	     " * /";
+	     *
+	     */
 	    return " An attribute that represents ...";
 	}
 
-	if (Model.getFacade().isAOperation(o)) {
+	if (ModelFacade.isAOperation(o)) {
+	    /*
+	     * Changed 2001-10-05 STEFFEN ZSCHALER
+	     *
+	     * Was (space added below!):
+	     *
+	     return
+	     "/** An operation that does ...\n"+
+	     " * \n"+
+	     " * @param firstParamName  a description of this parameter\n"+
+	     " * /";
+	     *
+	     */
 	    return " An operation that does...\n\n"
 		+ indent + " @param firstParam a description of this parameter";
 	}
-	if (Model.getFacade().isAInterface(o)) {
-	    return " An interface defining operations expected of ...\n\n"
+	if (ModelFacade.isAInterface(o)) {
+	    /*
+	     * Changed 2001-10-05 STEFFEN ZSCHALER
+	     *
+	     * Was (space added below!):
+	     *
+	     return
+	     "/** A interface defining operations expected of ...\n"+
+	     " * \n"+
+	     " * @see OtherClasses\n"+
+	     " * @author your_name_here\n"+
+	     " * /";
+	     *
+	     */
+	    return " A interface defining operations expected of ...\n\n"
 		+ indent + " @see OtherClasses\n"
 		+ indent + " @author your_name_here";
 	}
-	if (Model.getFacade().isAModelElement(o)) {
+	if (ModelFacade.isAModelElement(o)) {
+	    /*
+	     * Changed 2001-10-05 STEFFEN ZSCHALER
+	     *
+	     * Was (space added below!):
+	     *
+	     return
+	     "/**\n"+
+	     " * \n"+
+	     " * /";
+	     *
+	     */
 	    return "\n";
 	}
 
+	/*
+	 * Changed 2001-10-05 STEFFEN ZSCHALER
+	 *
+	 * Was:
+	 return "(No documentation)";
+	 *
+	 */
 	return null;
     }
 
@@ -216,13 +246,13 @@ public class DocumentationManager {
 	    result.append(header).append(LINE_SEPARATOR);
 	}
 
-	if (Model.getFacade().isAModelElement(o)) {
-	    Collection comments = Model.getFacade().getComments(o);
+	if (ModelFacade.isAModelElement(o)) {
+	    Collection comments = ModelFacade.getComments(o);
 	    if (!comments.isEmpty()) {
 		int nlcount = 2;
-		for (Iterator iter = comments.iterator(); iter.hasNext();) {
+		for (Iterator iter = comments.iterator(); iter.hasNext(); ) {
 		    Object c = iter.next();
-		    String s = Model.getFacade().getName(c);
+		    String s = ModelFacade.getName(c);
 		    nlcount = appendComment(result,
 					    prefix,
 					    s,

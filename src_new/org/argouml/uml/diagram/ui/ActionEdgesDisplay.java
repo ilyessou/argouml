@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,138 +24,80 @@
 
 package org.argouml.uml.diagram.ui;
 
-import java.awt.event.ActionEvent;
-import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.List;
-
-import javax.swing.Action;
-
-import org.argouml.i18n.Translator;
 import org.argouml.kernel.ProjectManager;
-import org.argouml.model.Model;
-import org.argouml.ui.ArgoDiagram;
-import org.tigris.gef.base.Editor;
-import org.tigris.gef.base.Globals;
-import org.tigris.gef.base.Selection;
-import org.tigris.gef.graph.MutableGraphModel;
-import org.tigris.gef.presentation.Fig;
-import org.tigris.gef.undo.UndoableAction;
+import org.argouml.ui.*;
+import org.argouml.uml.ui.UMLAction;
+import org.tigris.gef.base.*;
+import org.tigris.gef.graph.*;
+import org.tigris.gef.presentation.*;
+import java.awt.event.*;
+import java.util.*;
 
-/**
- * An action that makes all edges on the selected node visible/not visible
- * on the diagram.
+/** An action that makes all edges on the selected node visible/not visible
+ *  on the diagram.
+ *
+ * <p>$Id$
  *
  * @author David Manura
  * @since 0.13.5
  */
-public class ActionEdgesDisplay extends UndoableAction {
+
+public class ActionEdgesDisplay extends UMLAction {
 
     ////////////////////////////////////////////////////////////////
     // static variables
 
     // compartments
-    private static UndoableAction showEdges = new ActionEdgesDisplay(true,
-                Translator.localize("menu.popup.add.all-relations"));
-    private static UndoableAction hideEdges = new ActionEdgesDisplay(false,
-                Translator.localize("menu.popup.remove.all-relations"));
+    public static UMLAction ShowEdges
+        = new ActionEdgesDisplay(true, "Show All Edges");
+    public static UMLAction HideEdges
+        = new ActionEdgesDisplay(false, "Hide All Edges");
 
-    private boolean show;
+    private boolean _show;
 
     ////////////////////////////////////////////////////////////////
     // constructors
 
-    /**
-     * The constructor.
-     *
-     * @param showEdge to show or not to show
-     * @param desc the name
-     */
-    protected ActionEdgesDisplay(boolean showEdge, String desc) {
-        super(desc, null);
-		// Set the tooltip string:
-        putValue(Action.SHORT_DESCRIPTION, desc);
-        show = showEdge;
+    protected ActionEdgesDisplay(boolean show, String desc) {
+        super(desc, NO_ICON);
+        _show = show;
     }
 
 
-    // //////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////
     // main methods
 
-    /**
-     * TODO: Support commentEdges.
-     * TODO: Support associations to self.
-     *
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-     */
     public void actionPerformed(ActionEvent ae) {
-    	super.actionPerformed(ae);
         ArgoDiagram d = ProjectManager.getManager()
                 .getCurrentProject().getActiveDiagram();
         Editor ce = Globals.curEditor();
         MutableGraphModel mgm = (MutableGraphModel) ce.getGraphModel();
 
         Enumeration e = ce.getSelectionManager().selections().elements();
+        // note: multiple selection not currently supported (2002-04-05)
         while (e.hasMoreElements()) {
             Selection sel = (Selection) e.nextElement();
             Object owner = sel.getContent().getOwner();
 
-            if (show) { // add
+            if (_show) { // add
                 mgm.addNodeRelatedEdges(owner);
-//                Collection c = Model.getFacade().getComments(owner);
-//                Iterator i = c.iterator();
-//                while (i.hasNext()) {
-//                    Object annotatedElement = i.next();
-//                    Fig f = d.presentationFor(annotatedElement);
-//                    // and now what? How do I add it to the diagram?
-//                }
-            } else { // remove
-                List edges = mgm.getInEdges(owner);
+            }
+            else { // remove
+                Vector edges = mgm.getInEdges(owner);
                 edges.addAll(mgm.getOutEdges(owner));
-                Iterator e2 = edges.iterator();
-                while (e2.hasNext()) {
-                    Object edge = e2.next();
-                    if (Model.getFacade().isAAssociationEnd(edge)) {
-                        edge = Model.getFacade().getAssociation(edge);
-                    }
+                Enumeration e2 = edges.elements();
+                while (e2.hasMoreElements()) {
+                    Object edge = e2.nextElement();
                     Fig fig = d.presentationFor(edge);
                     if (fig != null)
-                        fig.removeFromDiagram();
+                        fig.delete();
                 }
-                //The next does not yet work for comment edges:
-//                Collection c = Model.getFacade().getComments(owner);
-//                Iterator i = c.iterator();
-//                while (i.hasNext()) {
-//                    Object annotatedElement = i.next();
-//                    Fig f = d.presentationFor(annotatedElement);
-//                    if (f != null) f.removeFromDiagram();
-//                }
             }
         }
     }
 
-    /**
-     * @return true if the action is enabled
-     * @see org.tigris.gef.undo.UndoableAction#isEnabled()
-     */
-    public boolean isEnabled() {
-        return true;
-    }
-
-
-    /**
-     * @return Returns the showEdges.
-     */
-    public static UndoableAction getShowEdges() {
-        return showEdges;
-    }
-
-
-    /**
-     * @return Returns the hideEdges.
-     */
-    public static UndoableAction getHideEdges() {
-        return hideEdges;
+    public boolean shouldBeEnabled() { 
+        return true; 
     }
 
 } /* end class ActionEdgesDisplay */

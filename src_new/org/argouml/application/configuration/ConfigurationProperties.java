@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -34,63 +34,65 @@ import java.util.Properties;
 import org.apache.log4j.Logger;
 
 /**
- * This class provides a user configuration based upon properties files.
+ *  This class provides a user configuration based upon properties files.
+ * Eventually this configuration file will be
+ * available to users via a GUI interface to
+ * set keyboards
+ * memory allocations
+ * which modules to load
+ * user preferences
+ * font sizes
+ * user names and data
+ * etc.*
  * @author Thierry Lach
  */
-class ConfigurationProperties extends ConfigurationHandler {
-    /**
-     * Logger.
-     */
-    private static final Logger LOG =
-        Logger.getLogger(ConfigurationProperties.class);
+public class ConfigurationProperties extends ConfigurationHandler {
+    /** logger */
+    private static Logger LOG = 
+	Logger.getLogger(ConfigurationProperties.class);
 
-    /**
-     * The location of Argo's default properties resource.
+    /** The location of Argo's default properties resource.
      */
     private static String propertyLocation =
         "/org/argouml/resource/default.properties";
-
-    /**
-     * The primary property bundle.
+    
+    /** The primary property bundle.
      */
-    private Properties propertyBundle;
+    private Properties propertyBundle = null;
 
-    /**
-     * Flag to ensure that only the first load failure is reported
-     * even though we keep trying because the file or URL may only
-     * be temporarily unavailable.
+    /** Flag to ensure that only the first load failure is reported
+     *  even though we keep trying because the file or URL may only
+     *  be temporarily unavailable.
      */
     private boolean canComplain = true;
 
-    /**
-     * Anonymous constructor.
+    /** Anonymous constructor.
      */
-    ConfigurationProperties() {
-        super(true);
-        Properties defaults = new Properties();
-        try {
-            defaults.load(getClass().getResourceAsStream(propertyLocation));
-            LOG.debug("Configuration loaded from " + propertyLocation);
-        } catch (Exception ioe) {
-            // TODO:  What should we do here?
-            LOG.warn("Configuration not loaded from " + propertyLocation, ioe);
-        }
-        propertyBundle = new Properties(defaults);
+    public ConfigurationProperties() {
+	super(true);
+	Properties defaults = new Properties();
+	try {
+	    defaults.load(getClass().getResourceAsStream(propertyLocation));
+	    LOG.debug("Configuration loaded from " + propertyLocation);
+	}
+	catch (Exception ioe) {
+	    // TODO:  What should we do here?
+	    LOG.warn("Configuration not loaded from " + propertyLocation, ioe);
+	}
+	propertyBundle = new Properties(defaults);
     }
 
-    /**
-     * Returns the default path for user properties.
+    /** Returns the default path for user properties.
      *
-     * @return a generic path string.
+     *  @return a generic path string.
      */
     public String getDefaultPath() {
-        return System.getProperty("user.home") + "/argo.user.properties";
+	return System.getProperty("user.home") + "/argo.user.properties";
     }
 
 
-    /**
-     * Load the configuration from a specified location.
-     *
+    /** Load the configuration from a specified location.
+     * 
      * @param file  the path to load the configuration from.
      *
      * @return true if the load was successful, false if not.
@@ -100,7 +102,8 @@ class ConfigurationProperties extends ConfigurationHandler {
             propertyBundle.load(new FileInputStream(file));
             LOG.info("Configuration loaded from " + file);
             return true;
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             if (canComplain) {
                 LOG.warn("Unable to load configuration " + file);
             }
@@ -112,7 +115,8 @@ class ConfigurationProperties extends ConfigurationHandler {
                     // Pretend we loaded the file correctly
                     return true;
                 }
-            } catch (IOException e1) {
+            }
+            catch (IOException e1) {
                 // Ignore an error here
                 LOG.warn("Unable to create configuration " + file, e1);
             }
@@ -122,98 +126,87 @@ class ConfigurationProperties extends ConfigurationHandler {
         return false;
     }
 
-    /**
-     * Save the configuration to a specified location.
-     *
+    /** Save the configuration to a specified location.
+     * 
      * @param file  the path to save the configuration at.
      *
      * @return true if the save was successful, false if not.
      */
-    public boolean saveFile(File file) {
-        try {
-            propertyBundle.store(new FileOutputStream(file),
-                    "ArgoUML properties");
-            LOG.info("Configuration saved to " + file);
-            return true;
-        } catch (Exception e) {
-            if (canComplain) {
-                LOG.warn("Unable to save configuration " + file + "\n");
-            }
-            canComplain = false;
-        }
+    boolean saveFile(File file) {
+	try {
+	    propertyBundle.store(new FileOutputStream(file), "Argo properties");
+	    LOG.info("Configuration saved to " + file);
+	    return true;
+	}
+	catch (Exception e) {
+	    if (canComplain)
+		LOG.warn("Unable to save configuration " + file + "\n");
+	    canComplain = false;
+	}
 
-        return false;
+	return false;
     }
-
-    /**
-     * Load the configuration from a specified location.
-     *
+    /** Load the configuration from a specified location.
+     * 
      * @param url  the path to load the configuration from.
      *
      * @return true if the load was successful, false if not.
      */
     public boolean loadURL(URL url) {
-        try {
-            propertyBundle.load(url.openStream());
-            LOG.info("Configuration loaded from " + url + "\n");
-            return true;
-        } catch (Exception e) {
-            if (canComplain) {
-                LOG.warn("Unable to load configuration " + url + "\n");
-            }
-            canComplain = false;
-            return false;
-        }
+	try {
+	    propertyBundle.load(url.openStream());
+	    LOG.info("Configuration loaded from " + url + "\n");
+	    return true;
+	}
+	catch (Exception e) {
+	    if (canComplain) {
+		LOG.warn("Unable to load configuration " + url + "\n");
+	    }
+	    canComplain = false;
+	    return false;
+	}
     }
 
-    /**
-     * Save the configuration to a specified location.
-     *
+    /** Save the configuration to a specified location.
+     * 
      * @param url  the path to save the configuration at.
      *
      * @return true if the save was successful, false if not.
      */
-    public boolean saveURL(URL url) {
-        // LOG.info("Configuration saved to " + url + "\n");
-        return false;
+    boolean saveURL(URL url) {
+	// LOG.info("Configuration saved to " + url + "\n");
+	return false;
     }
 
-    /**
-     * Returns the string value of a configuration property.
+    /** Returns the string value of a configuration property.
      *
-     * @param key the key to return the value of.
-     * @param defaultValue the value to return if the key was not found.
+     *  @param key the key to return the value of.
+     *  @param defaultValue the value to return if the key was not found.
      *
-     * @return the string value of the key if found, otherwise null;
+     *  @return the string value of the key if found, otherwise null;
      */
     public String getValue(String key, String defaultValue) {
-        String result = "";
-        try {
-            result = propertyBundle.getProperty(key, defaultValue);
-        } catch (Exception e) {
-            result = defaultValue;
-        }
-        return result;
+	String result = "";
+	try {
+	    result = propertyBundle.getProperty(key, defaultValue);
+	}
+	catch (Exception e) {
+	    result = defaultValue;
+	}
+	if (LOG.isDebugEnabled()) {
+	    LOG.debug("key '" + key + "' returns '" + result + "'");
+	}
+	return result;
     }
 
-    /**
-     * Sets the string value of a configuration property.
+    /** Sets the string value of a configuration property.
      *
-     * @param key the key to set.
-     * @param value the value to set the key to.
+     *  @param key the key to set.
+     *  @param value the value to set the key to.
      */
     public void setValue(String key, String value) {
-        LOG.debug("key '" + key + "' set to '" + value + "'");
-        propertyBundle.setProperty(key, value);
-    }
-
-    /**
-     * Remove a property.
-     *
-     * @param key The property to remove.
-     */
-    public void remove(String key) {
-        propertyBundle.remove(key);
+	LOG.debug("key '" + key + "' set to '" + value + "'");
+	propertyBundle.setProperty(key, value);
     }
 }
 

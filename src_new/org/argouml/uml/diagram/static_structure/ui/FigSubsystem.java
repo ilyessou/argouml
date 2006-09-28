@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,6 +22,7 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $Id$
 
 package org.argouml.uml.diagram.static_structure.ui;
 
@@ -29,6 +30,7 @@ import java.awt.Color;
 import java.awt.Polygon;
 import java.awt.Rectangle;
 
+import org.argouml.model.ModelFacade;
 import org.tigris.gef.graph.GraphModel;
 import org.tigris.gef.presentation.FigPoly;
 
@@ -36,51 +38,48 @@ import org.tigris.gef.presentation.FigPoly;
 
 public class FigSubsystem extends FigPackage {
 
-    private FigPoly figPoly = new FigPoly(Color.black, Color.black);
+    protected FigPoly _figPoly = new FigPoly(Color.black, Color.black);
 
-    /**
-     * The main Constructor.
-     */
-    public FigSubsystem(Object modelElement, int x, int y) {
-        super(modelElement, x, y);
+    public FigSubsystem() {
+        super();
 
-        int[] xpoints = {125, 125, 130, 130, 130, 135, 135};
-        int[] ypoints = {45, 40, 40, 35, 40, 40, 45};
+        int[] xpoints = { 125, 125, 130, 130, 130, 135, 135};
+        int[] ypoints = { 45, 40, 40, 35, 40, 40, 45};
         Polygon polygon = new Polygon(xpoints, ypoints, 7);
-        figPoly.setPolygon(polygon);
-        figPoly.setFilled(false);
-        addFig(figPoly);
+        _figPoly.setPolygon(polygon);
+        _figPoly.setFilled(false);
+        addFig(_figPoly);
         Rectangle r = getBounds();
         setBounds(r.x, r.y, r.width, r.height);
         updateEdges();
     }
 
-    /**
-     * Constructor that hooks the Fig to a UML element
-     * @param gm ignored
-     * @param node the UML element
-     */
     public FigSubsystem(GraphModel gm, Object node) {
-        this(node, 0, 0);
+        this();
+        setOwner(node);
+
+        if (ModelFacade.isASubsystem(node)
+                && (ModelFacade.getName(node) != null)) {
+            getNameFig().setText(ModelFacade.getName(node));
+        }
     }
 
     /**
      * @see org.tigris.gef.presentation.Fig#setBounds(int, int, int, int)
      */
-    protected void setBoundsImpl(int x, int y, int w, int h) {
+    public void setBounds(int x, int y, int w, int h) {
 
-        if (figPoly != null) {
+        if (_figPoly != null) {
             Rectangle oldBounds = getBounds();
-            figPoly.translate((x - oldBounds.x) + (w - oldBounds.width), y
+            Rectangle polyBounds = _figPoly.getBounds();
+            ;
+            _figPoly.translate((x - oldBounds.x) + (w - oldBounds.width), y
                     - oldBounds.y);
 
         }
-        super.setBoundsImpl(x, y, w, h);
+        super.setBounds(x, y, w, h);
     }
 
-    /**
-     * @see org.argouml.uml.diagram.ui.FigNodeModelElement#placeString()
-     */
     public String placeString() {
         return "new Subsystem";
     }

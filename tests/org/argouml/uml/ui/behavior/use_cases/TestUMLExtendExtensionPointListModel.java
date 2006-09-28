@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,10 +22,15 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $header$
 package org.argouml.uml.ui.behavior.use_cases;
 
-import org.argouml.model.Model;
+import org.argouml.model.uml.behavioralelements.usecases.UseCasesFactory;
 import org.argouml.uml.ui.AbstractUMLModelElementListModel2Test;
+
+import ru.novosoft.uml.MBase;
+import ru.novosoft.uml.behavior.use_cases.MExtend;
+import ru.novosoft.uml.behavior.use_cases.MExtensionPoint;
 
 /**
  * @since Oct 29, 2002
@@ -46,36 +51,34 @@ public class TestUMLExtendExtensionPointListModel
      * @see org.argouml.uml.ui.AbstractUMLModelElementListModel2Test#buildElement()
      */
     protected void buildElement() {
-        setElem(Model.getUseCasesFactory().createExtend());
+        elem = UseCasesFactory.getFactory().createExtend();
     }
 
     /**
-     * @see org.argouml.uml.ui.AbstractUMLModelElementListModel2Test#buildModel()
+     * @see org.argouml.uml.ui.AbstractUMLModelElementListModel2Test#buildModel(org.argouml.uml.ui.UMLUserInterfaceContainer)
      */
     protected void buildModel() {
-        setModel(new UMLExtendExtensionPointListModel());
+        model = new UMLExtendExtensionPointListModel();
     }
 
     /**
      * @see org.argouml.uml.ui.AbstractUMLModelElementListModel2Test#fillModel()
      */
-    protected Object[] fillModel() {
-        Object[] points = new Object[10];
+    protected MBase[] fillModel() {
+        MExtensionPoint[] points = new MExtensionPoint[10];
         for (int i = 0; i < 10; i++) {
-            points[i] = Model.getUseCasesFactory().createExtensionPoint();
-            Model.getUseCasesHelper().addExtensionPoint(getElem(), points[i]);
+            points[i] = UseCasesFactory.getFactory().createExtensionPoint();
+            ((MExtend) elem).addExtensionPoint(points[i]);
         }
         return points;
     }
 
     /**
-     * @see org.argouml.uml.ui.AbstractUMLModelElementListModel2Test#removeHalfModel(Object[])
+     * @see org.argouml.uml.ui.AbstractUMLModelElementListModel2Test#removeHalfModel(ru.novosoft.uml.MBase)
      */
-    protected void removeHalfModel(Object[] elements) {
+    protected void removeHalfModel(MBase[] elements) {
         for (int i = 0; i < 5; i++) {
-            Model.getUseCasesHelper().removeExtensionPoint(
-                    getElem(),
-                    elements[i]);
+            ((MExtend) elem).removeExtensionPoint((MExtensionPoint) elements[i]);
         }
     }
 

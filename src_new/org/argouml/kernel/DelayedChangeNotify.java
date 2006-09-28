@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,31 +24,22 @@
 
 package org.argouml.kernel;
 
-import java.beans.PropertyChangeEvent;
+import java.beans.*;
 
 /**
  * This appears to be a gui specific class, therefore it does not belong in
  * the Kernel.
  */
 public class DelayedChangeNotify implements Runnable {
-    private DelayedVChangeListener listener;
-    private PropertyChangeEvent pce;
+    DelayedVChangeListener _listener;
+    PropertyChangeEvent _pce;
 
-    /**
-     * The constructor.
-     *
-     * @param l the listener
-     * @param p the event
-     */
-    public DelayedChangeNotify(DelayedVChangeListener l,
-			       PropertyChangeEvent p) {
-	listener = l;
-	pce = p;
+    public DelayedChangeNotify(DelayedVChangeListener list,
+			       PropertyChangeEvent pce) {
+	_listener = list;
+	_pce = pce;
     }
-
-    /**
-     * @see java.lang.Runnable#run()
-     */
-    public void run() { listener.delayedVetoableChange(pce); }
+  
+    public void run() { _listener.delayedVetoableChange(_pce); }
 
 } /* end class DelayedChangeNotify */

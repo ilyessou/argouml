@@ -1,16 +1,16 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
-// and this paragraph appear in all copies. This software program and
+// and this paragraph appear in all copies.  This software program and
 // documentation are copyrighted by The Regents of the University of
 // California. The software program and documentation are supplied "AS
 // IS", without any accompanying services from The Regents. The Regents
 // does not warrant that the operation of the program will be
 // uninterrupted or error-free. The end-user understands that the program
 // was developed for research purposes and is advised not to rely
-// exclusively on the program for any reason. IN NO EVENT SHALL THE
+// exclusively on the program for any reason.  IN NO EVENT SHALL THE
 // UNIVERSITY OF CALIFORNIA BE LIABLE TO ANY PARTY FOR DIRECT, INDIRECT,
 // SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, INCLUDING LOST PROFITS,
 // ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN IF
@@ -29,104 +29,94 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 
 import org.argouml.i18n.Translator;
-import org.argouml.uml.ui.ActionNavigateContainerElement;
+
+import org.argouml.swingext.Orientation;
+import org.argouml.swingext.GridLayout2;
+import org.argouml.uml.ui.PropPanelButton;
+import org.argouml.uml.ui.UMLComboBoxNavigator;
 import org.argouml.uml.ui.UMLLinkedList;
-import org.argouml.uml.ui.foundation.extension_mechanisms.ActionNewStereotype;
 import org.argouml.util.ConfigLoader;
-import org.tigris.swidgets.Orientation;
 
-/**
- * Theproperties panel for a Association.
- *
- */
+
 public class PropPanelAssociation extends PropPanelRelationship {
-
-    /**
-     * The serial version.
-     */
-    private static final long serialVersionUID = 4272135235664638209L;
 
     /**
      * The scrollpane with the associationends.
      */
-    private JScrollPane assocEndScroll;
+    protected JScrollPane _assocEndScroll;
 
     /**
      * The scrollpane with the associationroles this association plays a role
      * in.
      */
-    private JScrollPane associationRoleScroll;
+    protected JScrollPane _associationRoleScroll;
 
     /**
      * Ths scrollpane with the links that implement this association.
      */
-    private JScrollPane linksScroll;
-
-    /**
-     * Panel for abstract/leaf/root
+    protected JScrollPane _linksScroll;
+    
+    /** Panel for abstract/leaf/root 
      */
-    private JPanel modifiersPanel;
+    protected JPanel _modifiersPanel;
 
-    /**
-     * Construct a property panel for UML Association elements.
-     */
+
     public PropPanelAssociation() {
-        this("Association", ConfigLoader.getTabPropsOrientation());
-        addField(Translator.localize("label.name"),
-                getNameTextField());
-        addField(Translator.localize("label.namespace"),
-                getNamespaceSelector());
-        add(modifiersPanel);
+	this("Association", ConfigLoader.getTabPropsOrientation());
+	addField(Translator.localize("UMLMenu", "label.name"), getNameTextField());
+	addField(Translator.localize("UMLMenu", "label.stereotype"), new UMLComboBoxNavigator(this, Translator.localize("UMLMenu", "tooltip.nav-stereo"), getStereotypeBox()));
+	addField(Translator.localize("UMLMenu", "label.namespace"), getNamespaceComboBox());
+        addField(Translator.localize("UMLMenu", "label.modifiers"), _modifiersPanel);
 
-        addSeparator();
+	addSeperator();
 
-        addField(Translator.localize("label.connections"),
-                assocEndScroll);
+	addField(Translator.localize("UMLMenu", "label.association-ends"), _assocEndScroll);
 
-        addSeparator();
+	addSeperator();
 
-        addField(Translator.localize("label.association-roles"),
-                associationRoleScroll);
-        addField(Translator.localize("label.association-links"),
-                linksScroll);
+	addField(Translator.localize("UMLMenu", "label.association-roles"), _associationRoleScroll);
+	addField(Translator.localize("UMLMenu", "label.association-links"), _linksScroll);
 
-        addAction(new ActionNavigateContainerElement());
-        addAction(new ActionNewStereotype());
-        addAction(getDeleteAction());
+	new PropPanelButton(this, buttonPanel, _navUpIcon, Translator.localize("UMLMenu", "button.go-up"), "navigateUp", null);
+	// new PropPanelButton(this,buttonPanel,_navForwardIcon, Translator.localize("UMLMenu", "button.new-association-end"),"addAssociationEnd",null);
+	new PropPanelButton(this, buttonPanel, _deleteIcon, Translator.localize("UMLMenu", "button.delete-association"), "removeElement", null);
+
+
+    }
+
+    protected PropPanelAssociation(String title, Orientation orientation) {
+	super(title, orientation);
+        initialize();
+	JList assocEndList = new UMLLinkedList(new UMLAssociationConnectionListModel());
+	_assocEndScroll = new JScrollPane(assocEndList);
+	JList baseList = new UMLLinkedList(new UMLAssociationAssociationRoleListModel());
+	_associationRoleScroll = new JScrollPane(baseList);
+	JList linkList = new UMLLinkedList(new UMLAssociationLinkListModel());
+	_linksScroll = new JScrollPane(linkList);
+
+	// TODO: implement the multiple inheritance of an Association (Generalizable element)
+
+    }
+    
+    private void initialize() { 
+
+        _modifiersPanel =
+            new JPanel(new GridLayout2(0, 2, GridLayout2.ROWCOLPREFERRED));          
+        _modifiersPanel.add(
+            new UMLGeneralizableElementAbstractCheckBox());
+        _modifiersPanel.add(
+            new UMLGeneralizableElementLeafCheckBox());
+        _modifiersPanel.add(
+            new UMLGeneralizableElementRootCheckBox());
 
     }
 
     /**
-     * Construct a property panel for an Association.
-     *
-     * @param title the title of the panel
-     * @param orientation the orientation of the panel
+     * Adds an associationend to the association.
      */
-    protected PropPanelAssociation(String title, Orientation orientation) {
-        super(title, lookupIcon("Association"), orientation);
-        initialize();
-        JList assocEndList = new UMLLinkedList(
-                new UMLAssociationConnectionListModel());
-        assocEndScroll = new JScrollPane(assocEndList);
-        JList baseList = new UMLLinkedList(
-                new UMLAssociationAssociationRoleListModel());
-        associationRoleScroll = new JScrollPane(baseList);
-        JList linkList = new UMLLinkedList(new UMLAssociationLinkListModel());
-        linksScroll = new JScrollPane(linkList);
-
-        // TODO: implement the multiple inheritance of an Association
-        // (Generalizable element)
-
-    }
-
-    private void initialize() {
-
-        modifiersPanel = createBorderPanel(
-                Translator.localize("label.modifiers"));
-        modifiersPanel.add(new UMLGeneralizableElementAbstractCheckBox());
-        modifiersPanel.add(new UMLGeneralizableElementLeafCheckBox());
-        modifiersPanel.add(new UMLGeneralizableElementRootCheckBox());
-
+    protected void addAssociationEnd() {
+	// TODO implement this method as soon as issue 1703 is answered.
+	throw new UnsupportedOperationException("addAssociationEnd is not yet implemented");
     }
 
 } /* end class PropPanelAssociation */

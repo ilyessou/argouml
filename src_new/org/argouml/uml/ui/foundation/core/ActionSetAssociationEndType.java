@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -26,39 +26,32 @@ package org.argouml.uml.ui.foundation.core;
 
 import java.awt.event.ActionEvent;
 
-import javax.swing.Action;
-
 import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
+import org.argouml.uml.ui.UMLChangeAction;
 import org.argouml.uml.ui.UMLComboBox2;
-import org.tigris.gef.undo.UndoableAction;
 
 /**
  * @since Nov 3, 2002
  * @author jaap.branderhorst@xs4all.nl
  */
-public class ActionSetAssociationEndType extends UndoableAction {
+public class ActionSetAssociationEndType extends UMLChangeAction {
 
-    private static final ActionSetAssociationEndType SINGLETON =
-        new ActionSetAssociationEndType();
-
+    public static final ActionSetAssociationEndType SINGLETON = new ActionSetAssociationEndType();
+    
     /**
      * Constructor for ActionSetStructuralFeatureType.
      */
     protected ActionSetAssociationEndType() {
-        super(Translator.localize("Set"), null);
-        // Set the tooltip string:
-        putValue(Action.SHORT_DESCRIPTION, 
-                Translator.localize("Set"));
+        super(Translator.localize("Set"), true, NO_ICON);
     }
 
-
+    
 
     /**
      * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
      */
     public void actionPerformed(ActionEvent e) {
-    	super.actionPerformed(e);
         Object source = e.getSource();
         Object oldClassifier = null;
         Object newClassifier = null;
@@ -66,33 +59,19 @@ public class ActionSetAssociationEndType extends UndoableAction {
         if (source instanceof UMLComboBox2) {
             UMLComboBox2 box = (UMLComboBox2) source;
             Object o = box.getTarget();
-            if (Model.getFacade().isAAssociationEnd(o)) {
+            if (org.argouml.model.ModelFacade.isAAssociationEnd(o)) {
                 end = /*(MAssociationEnd)*/ o;
-                oldClassifier = Model.getFacade().getType(end);
+                oldClassifier = ModelFacade.getType(end);
             }
             o = box.getSelectedItem();
-            if (Model.getFacade().isAClassifier(o)) {
+            if (org.argouml.model.ModelFacade.isAClassifier(o)) {
                 newClassifier = /*(MClassifier)*/ o;
             }
         }
-        if (newClassifier != oldClassifier && end != null
-                && newClassifier != null) {
-            newClassifier = /*(MClassifier)*/ Model.getModelManagementHelper()
-                .getCorrespondingElement(
-                      newClassifier,
-                      Model.getFacade().getModel(end));
-            Model.getCoreHelper().setType(end, newClassifier);
+        if (newClassifier != oldClassifier && end != null && newClassifier != null) {
+            ModelFacade.setType(end, newClassifier);
             super.actionPerformed(e);
         }
-
-    }
-
-
-
-    /**
-     * @return Returns the SINGLETON.
-     */
-    public static ActionSetAssociationEndType getInstance() {
-        return SINGLETON;
+        
     }
 }

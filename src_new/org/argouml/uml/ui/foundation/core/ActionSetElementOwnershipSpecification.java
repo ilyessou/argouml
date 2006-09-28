@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -26,30 +26,24 @@ package org.argouml.uml.ui.foundation.core;
 
 import java.awt.event.ActionEvent;
 
-import javax.swing.Action;
-
 import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
+import org.argouml.uml.ui.UMLChangeAction;
 import org.argouml.uml.ui.UMLCheckBox2;
-import org.tigris.gef.undo.UndoableAction;
 /**
  * @since Oct 12, 2002
  * @author jaap.branderhorst@xs4all.nl
  * @stereotype singleton
  */
-public class ActionSetElementOwnershipSpecification extends UndoableAction {
+public class ActionSetElementOwnershipSpecification extends UMLChangeAction {
 
-    private static final ActionSetElementOwnershipSpecification SINGLETON =
-        new ActionSetElementOwnershipSpecification();
+    public static final ActionSetElementOwnershipSpecification SINGLETON = new ActionSetElementOwnershipSpecification();
 
     /**
      * Constructor for ActionSetElementOwnershipSpecification.
      */
     protected ActionSetElementOwnershipSpecification() {
-        super(Translator.localize("Set"), null);
-        // Set the tooltip string:
-        putValue(Action.SHORT_DESCRIPTION, 
-                Translator.localize("Set"));
+        super(Translator.localize("Set"), true, NO_ICON);
     }
 
     /**
@@ -60,19 +54,11 @@ public class ActionSetElementOwnershipSpecification extends UndoableAction {
         if (e.getSource() instanceof UMLCheckBox2) {
             UMLCheckBox2 source = (UMLCheckBox2) e.getSource();
             Object target = source.getTarget();
-            if (Model.getFacade().isAModelElement(target)) {
+            if (org.argouml.model.ModelFacade.isAModelElement(target)) {
                 Object m = /*(MModelElement)*/ target;
-                Model.getCoreHelper().setSpecification(m,
-                        !Model.getFacade().isSpecification(m));
+                ModelFacade.setSpecification(m, source.isSelected());
             }
         }
-    }
-
-    /**
-     * @return Returns the SINGLETON.
-     */
-    public static ActionSetElementOwnershipSpecification getInstance() {
-        return SINGLETON;
     }
 
 }

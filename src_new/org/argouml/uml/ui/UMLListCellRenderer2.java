@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,21 +22,19 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $Id$
 package org.argouml.uml.ui;
 
+import org.argouml.model.ModelFacade;
 import java.awt.Component;
-import java.util.Collection;
-import java.util.Iterator;
 
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.UIManager;
 
+import org.apache.log4j.Logger;
 import org.argouml.application.helpers.ResourceLoaderWrapper;
-import org.argouml.i18n.Translator;
-import org.argouml.model.InvalidElementException;
-import org.argouml.model.Model;
 
 /**
  * The default cell renderer for uml model elements. Used by UMLList2 and its
@@ -44,141 +42,94 @@ import org.argouml.model.Model;
  *
  * This class must be efficient as it is called many 1000's of times.
  *
- * @author jaap.branderhorst@xs4all.nl
+ * @author jaap.branderhorst@xs4all.nl	
  * @since Jan 2, 2003
  */
 public class UMLListCellRenderer2 extends DefaultListCellRenderer {
 
-//    private static final Logger LOG =
-//        Logger.getLogger(UMLListCellRenderer2.class);
+    private Logger cat = Logger.getLogger(UMLListCellRenderer2.class);
 
     /**
      * True if the icon for the modelelement should be shown. The icon is, for
      * instance, a small class symbol for a class.
      */
-    private boolean showIcon;
+    private boolean _showIcon;
 
     /**
      * Constructor for UMLListCellRenderer2.
-     *
-     * @param showTheIcon true if the list should show icons
      */
-    public UMLListCellRenderer2(boolean showTheIcon) {
-
+    public UMLListCellRenderer2(boolean showIcon) {
+        
         // only need to this from super()
         updateUI();
         setAlignmentX(LEFT_ALIGNMENT);
-
-        showIcon = showTheIcon;
+        
+        _showIcon = showIcon;
     }
 
     /**
-     * @see javax.swing.ListCellRenderer#getListCellRendererComponent(javax.swing.JList,
-     *      java.lang.Object, int, boolean, boolean)
+     * @see javax.swing.ListCellRenderer#getListCellRendererComponent(javax.swing.JList, java.lang.Object, int, boolean, boolean)
      */
-    public Component getListCellRendererComponent(JList list, Object value,
-            int index, boolean isSelected, boolean cellHasFocus) {
-        // Leave logging commented out by default for efficiency
-//        LOG.debug("determine rendering for: " + value);
-//        LOG.debug("show icon: " + showIcon);
-        if (Model.getFacade().isAModelElement(value)
-                || Model.getFacade().isAMultiplicity(value)) {
-
-//            LOG.debug("is a Base or Multiplicity");
+    public Component getListCellRendererComponent(JList list, Object value, 
+                    int index, boolean isSelected, boolean cellHasFocus) {
+        
+        if (ModelFacade.isABase(value) || ModelFacade.isAMultiplicity(value)) {
+            
             String text = makeText(value);
             setText(text);
-
-            if (showIcon) {
-
+            
+            if (_showIcon) {
+                
                 // ----- setup similar to the super() implementation -----
                 setComponentOrientation(list.getComponentOrientation());
                 if (isSelected) {
-                    setForeground(list.getSelectionForeground());
                     setBackground(list.getSelectionBackground());
-                } else {
-                    setForeground(list.getForeground());
+                }
+                else {
                     setBackground(list.getBackground());
                 }
-
+                
                 setEnabled(list.isEnabled());
                 setFont(list.getFont());
-                setBorder((cellHasFocus) ? UIManager
-                        .getBorder("List.focusCellHighlightBorder")
-                        : noFocusBorder);
+                setBorder((cellHasFocus) ? 
+                    UIManager.getBorder("List.focusCellHighlightBorder") : 
+                            noFocusBorder);
                 // --------------------------------------------------------
-                setIcon(ResourceLoaderWrapper.getInstance()
-                        .lookupIcon(value));
+                setIcon(ResourceLoaderWrapper
+                            .getResourceLoaderWrapper().lookupIcon(value));
             } else {
-                // hack to make sure that the right height is
+                // hack to make sure that the right hight is 
                 // applied when no icon is used.
-                return super.getListCellRendererComponent(list, text, index,
-                        isSelected, cellHasFocus);
+                return super.getListCellRendererComponent(list, 
+                            text, index, isSelected, cellHasFocus);
             }
-
-        } else if (value instanceof String) {
-            JLabel label = new JLabel(value.toString());
-            return label;
-        } else if (value == null || value.equals("")) {
-            JLabel label = new JLabel(" ");
-            label.setIcon(null);
-            return label;
-        }
-
+            
+        } else
+            if (value == null || value.equals("")) {
+                JLabel label = new JLabel(" ");
+                label.setIcon(null);
+                return label;
+            }
+        
         return this;
     }
 
     /**
      * Makes the text that must be placed on the label that is returned.
-     * If there is no name for the given modelelement, then
-     * (anon xxx) is shown, with xxx the type name.
-     *
-     * @param value the given modelelement
-     * @return String the text to be shown
-     * 
-     * TODO: I18N needed
+     * @param value
+     * @return String
      */
     public String makeText(Object value) {
-        if (value instanceof String) {
-            return (String) value;
-        }
         String name = null;
-        if (Model.getFacade().isAParameter(value)) {
-            Object type = Model.getFacade().getType(value);
-            name = Model.getFacade().getName(value);
+        if (ModelFacade.isAModelElement(value)) {
+            Object/*MModelElement*/ elem = value;
+            name = ModelFacade.getName(elem);
             if (name == null || name.equals("")) {
-                name = "(unnamed " + makeTypeName(value) + ")";
+                name = "(anon " + makeTypeName(elem) + ")";
             }
-            String typeName = null;
-            if (type != null) typeName = Model.getFacade().getName(type);
-            if (typeName != null || "".equals(typeName)) {
-                name = name + ":" + typeName;
-            }
-            return name;
-        }
-        if (Model.getFacade().isAModelElement(value)) {
-            try {
-                name = Model.getFacade().getName(value);
-                if (name == null || name.equals("")) {
-                    name = "(unnamed " + makeTypeName(value) + ")";
-                }
-                if (Model.getFacade().isAStereotype(value)) {
-                    Collection bases = Model.getFacade().getBaseClasses(value);
-                    StringBuffer sb = new StringBuffer();
-                    sb.append(" [");
-                    for( Iterator it = bases.iterator(); it.hasNext(); ) {
-                        sb.append(makeText(it.next()));
-                        if (it.hasNext()) {
-                            sb.append(", ");
-                        }
-                    }
-                    name = name + sb.toString() + "]";
-                }
-            } catch (InvalidElementException e){
-                name = Translator.localize("misc.name.deleted");
-            }
-        } else if (Model.getFacade().isAMultiplicity(value)) {
-            name = Model.getFacade().getName(value);
-        } else {
+        } else if (ModelFacade.isAMultiplicity(value)) {
+            name = value.toString();
+        } else {                    
             name = makeTypeName(value);
         }
         return name;
@@ -186,8 +137,8 @@ public class UMLListCellRenderer2 extends DefaultListCellRenderer {
     }
 
     private String makeTypeName(Object elem) {
-        if (Model.getFacade().isAModelElement(elem)) {
-            return Model.getFacade().getUMLClassName(elem);
+        if (org.argouml.model.ModelFacade.isABase(elem)) {
+            return ModelFacade.getUMLClassName(elem);
         }
         return null;
     }

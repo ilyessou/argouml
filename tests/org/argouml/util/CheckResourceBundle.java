@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -54,9 +54,6 @@ public class CheckResourceBundle {
 
     /**
      * check that no key is entered twice
-     *
-     * @param tc the testcase
-     * @param b the resourcebundle
      */
     public static void checkNoDuplicates(TestCase tc,
 					 ResourceBundle b) {
@@ -65,7 +62,7 @@ public class CheckResourceBundle {
 	     e.hasMoreElements();
 	     ) {
 	    Object c = e.nextElement();
-	    Assert.assertTrue("Duplicate key \""
+	    TestCase.assertTrue("Duplicate key \"" 
 				+ c
 				+ "\" in "
 				+ b.getClass().getName(),
@@ -74,16 +71,11 @@ public class CheckResourceBundle {
         }
     }
 
-    /**
-     * @param tc the testcase
-     * @param b the resourcebundle
-     * @param tags the tags
-     */
     public static void checkContainsAllFrom(TestCase tc,
 					    ResourceBundle b,
 					    String[] tags) {
 	for (int i = 0; i < tags.length; i++)
-	    Assert.assertTrue("Can't find tag \"" + tags[i]
+	    TestCase.assertTrue("Can't find tag \"" + tags[i]
 				+ "\" in "
 				+ b.getClass().getName(),
 				bundleContains(b, tags[i]));
@@ -99,7 +91,7 @@ public class CheckResourceBundle {
 	     e.hasMoreElements();
 	     ) {
 	    String tag = (String) e.nextElement();
-	    Assert.assertTrue("Missing tag \""
+	    TestCase.assertTrue("Missing tag \""
 				+ tag
 				+ "\" in "
 				+ locb.getClass().getName()
@@ -120,7 +112,7 @@ public class CheckResourceBundle {
 	     e.hasMoreElements();
 	     ) {
 	    String tag = (String) e.nextElement();
-	    Assert.assertTrue("Extra tag \""
+	    TestCase.assertTrue("Extra tag \""
 				+ tag
 				+ "\" in "
 				+ locb.getClass().getName()
@@ -134,9 +126,9 @@ public class CheckResourceBundle {
     /**
      * Localizations that we do.
      */
-    private static final String[][] SUPPORTEDLANGUAGES = {
+    private static final String[][] supportedLanguages = { 
 	{
-	    "fr", "", ""
+	    "fr", "", "" 
 	},
 	{
 	    "de", "", ""
@@ -147,7 +139,7 @@ public class CheckResourceBundle {
 	{
 	    "es", "", ""
 	},
-	null
+	null 
     };
 
     /**
@@ -186,29 +178,29 @@ public class CheckResourceBundle {
 			      ""));
 
 	if (System.getProperty("user.language") != null)
-	    el.add(new Locale(System.getProperty("user.language"),
+	    el.add(new Locale(System.getProperty("user.language"), 
 			      "", ""));
 
 	Vector v = new Vector();
 	for (Enumeration ele = el.elements(); ele.hasMoreElements(); ) {
 	    Locale elel = (Locale) ele.nextElement();
-	    for (int j = 0; j < SUPPORTEDLANGUAGES.length; j++) {
-		if (SUPPORTEDLANGUAGES[j] == null)
+	    for (int j = 0; j < supportedLanguages.length; j++) {
+		if (supportedLanguages[j] == null)
 		    continue;
-		if (elel.equals(new Locale(SUPPORTEDLANGUAGES[j][0],
-					   SUPPORTEDLANGUAGES[j][1],
-					   SUPPORTEDLANGUAGES[j][2]))) {
+		if (elel.equals(new Locale(supportedLanguages[j][0],
+					   supportedLanguages[j][1],
+					   supportedLanguages[j][2]))) {
 		    v.add(elel);
 		    break;
 		}
 	    }
 	}
-	for (int j = 0; j < SUPPORTEDLANGUAGES.length; j++) {
-	    if (SUPPORTEDLANGUAGES[j] == null)
+	for (int j = 0; j < supportedLanguages.length; j++) {
+	    if (supportedLanguages[j] == null)
 		continue;
-	    v.add(new Locale(SUPPORTEDLANGUAGES[j][0],
-			     SUPPORTEDLANGUAGES[j][1],
-			     SUPPORTEDLANGUAGES[j][2]));
+	    v.add(new Locale(supportedLanguages[j][0],
+			     supportedLanguages[j][1],
+			     supportedLanguages[j][2]));
 	}
 	return v;
     }
@@ -223,7 +215,7 @@ public class CheckResourceBundle {
      * of these languages contains all tags.
      *
      * @param tc	The test case.
-     * @param bname     The name of the resource bundle we are looking at.
+     * @param b		The resource bundle we are looking at.
      * @param tags	The list of tags that shall exist. If the author of the
      *			test case doesn't have the patience to add it just
      *			leave it empty.
@@ -231,7 +223,7 @@ public class CheckResourceBundle {
     public static void checkResourceBundle(TestCase tc,
 					   String bname,
 					   String[] tags) {
-	ResourceBundle b = ResourceBundle.getBundle(bname,
+	ResourceBundle b = ResourceBundle.getBundle(bname, 
 						    new Locale("", "", ""));
 
 	checkContainsAllFrom(tc, b, tags);
@@ -246,9 +238,9 @@ public class CheckResourceBundle {
 
 	    ResourceBundle locb = ResourceBundle.getBundle(bname, l);
 
-	    Assert.assertTrue("Resource bundle "
+	    TestCase.assertTrue("Resource bundle "
 				+ bname
-				+ " does not exist for "
+				+ " does not exist for " 
 				+ l.toString(),
 				locb != null && locb != b);
 
@@ -259,10 +251,6 @@ public class CheckResourceBundle {
 	}
     }
 
-    /**
-     * @param tc the testcase
-     * @param bname the name of the resourcebundle
-     */
     public static void checkResourceBundle(TestCase tc,
 					   String bname) {
 	String[] n = {

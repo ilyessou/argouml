@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2003 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -32,118 +32,85 @@ import org.argouml.i18n.Translator;
 
 /**
  * Helper class for tree models that provides help building perspectives
- * out of gorules.<p>
+ * out of gorules.
+ *
+ * <p>$Id$
  *
  * @author  alexb
  * @since 0.13.5, Created on 15 April 2003
  */
 public class PerspectiveSupport {
-
+    
     /**
      * The go rules that this Tree model uses to build child nodes.
      */
-    private Vector goRules;
-
+    protected Vector _goRules;
+    
     /** name */
-    private String name;
-
+    protected String _name;
+    
     /** list of all possible rules in the collection Todolist specific */
-    private static Vector rules = new Vector();
-
-    private PerspectiveSupport() { }
-
-    /**
-     * Creates a new instance of PerspectiveSupport
-     *
-     * @param n the name to be localized
-     */
-    public PerspectiveSupport(String n) {
-        name = Translator.localize(n);
-        goRules = new Vector();
+    protected static Vector _rules = new Vector();
+        
+    protected PerspectiveSupport() { }
+    
+    /** Creates a new instance of PerspectiveSupport */
+    public PerspectiveSupport(String name) {
+        
+        setName(Translator.localize("Tree", name));
+        _goRules = new Vector();
     }
-
-    /**
-     * The constructor.<p>
-     *
-     * TODO: Is this constructor used? What is the purpose with it?
-     *
-     * @param n the name to be localized
-     * @param subs the go rules
-     */
-    public PerspectiveSupport(String n, Vector subs) {
-        this(n);
-        goRules = subs;
+    
+    /** needs documenting */
+    public PerspectiveSupport(String name, Vector subs) {
+        this(name);
+        _goRules = subs;
     }
-
+    
     // ------------- Rule management --------------
-
-    /**
-     * Adds a rule to the perspective that will generate child
+    
+    /** adds a rule to the perspective that will generate child
      * nodes for any given parent node.
-     *
-     * @param tm the tree model to be added
      */
     public void addSubTreeModel(TreeModel tm) {
-        if (goRules.contains(tm)) return;
-        goRules.addElement(tm);
+        if (_goRules.contains(tm)) return;
+        _goRules.addElement(tm);
     }
-
-    /**
-     * Remove a rule from the perspective that will generate child
+    
+    /** remove a rule from the perspective that will generate child
      * nodes for any given parent node.
-     *
-     * @param tm the treemodel to be removed
      */
     public void removeSubTreeModel(TreeModel tm) {
-        goRules.removeElement(tm);
+        _goRules.removeElement(tm);
     }
-
-    /**
-     * Get the rules that together form the perspective.
-     *
-     * @return the rules that form the perspecive
-     */
+    
+    /** get the rules that together form the perspective */
     public Vector getSubTreeModels() {
-        return goRules;
+        return _goRules;
     }
-
+    
     // ----------- name -------------------------
-
-    /**
-     * @return the name
-     */
-    public String getName() { return name; }
-
-
-    /**
-     * @param s the name
-     */
-    public void setName(String s) { name = s; }
-
-
-    /**
-     * @see java.lang.Object#toString()
-     */
+    
+    /** needs documenting */
+    public String getName() { return _name; }
+    
+    /** needs documenting */
+    public void setName(String s) { _name = s; }
+    
+    /** needs documenting */
     public String toString() {
         if (getName() != null) return getName();
         else return super.toString();
     }
-
+        
     // ------ all rules ----------
-
-    /** TODO: factor out
-     *
-     * @param rule the rule to be added
-     */
+    
+    /** TODO: factor out */
     public static void registerRule(TreeModel rule) {
-        rules.addElement(rule);
+        _rules.addElement(rule);
     }
-
-    /**
-     * @return Returns the _goRules.
-     */
-    protected Vector getGoRules() {
-        return goRules;
-    }
-
+    
+    /** TODO: factor out */
+    public static Vector getRegisteredRules() { return _rules; }
+    
 }

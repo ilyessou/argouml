@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,67 +22,63 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $Id$
 package org.argouml.uml.ui.foundation.core;
 
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
+
 import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
 import org.argouml.uml.ui.UMLRadioButtonPanel;
 
 /**
- *
- * @author jaap.branderhorst@xs4all.nl
+ * 
+ * @author jaap.branderhorst@xs4all.nl	
  * @since Jan 4, 2003
  */
-public class UMLAssociationEndChangeabilityRadioButtonPanel
-    extends UMLRadioButtonPanel {
+public class UMLAssociationEndChangeabilityRadioButtonPanel extends UMLRadioButtonPanel {
 
     private static Map labelTextsAndActionCommands = new HashMap();
 
+    private static final Logger LOG = 
+        Logger.getLogger(UMLAssociationEndChangeabilityRadioButtonPanel.class);
+
     static {
-        labelTextsAndActionCommands.put(Translator.localize(
-                "label.changeability-addonly"),
-                ActionSetChangeability.ADDONLY_COMMAND);
-        labelTextsAndActionCommands.put(Translator.localize(
-                "label.changeability-changeable"),
-                ActionSetChangeability.CHANGEABLE_COMMAND);
-        labelTextsAndActionCommands.put(Translator.localize(
-                "label.changeability-frozen"),
-                ActionSetChangeability.FROZEN_COMMAND);
+        labelTextsAndActionCommands.put(Translator.localize("UMLMenu", "label.changeability-addonly"), ActionSetChangeability.ADDONLY_COMMAND);
+        labelTextsAndActionCommands.put(Translator.localize("UMLMenu", "label.changeability-changeable"), ActionSetChangeability.CHANGEABLE_COMMAND);
+        labelTextsAndActionCommands.put(Translator.localize("UMLMenu", "label.changeability-frozen"), ActionSetChangeability.FROZEN_COMMAND);
     }
 
     /**
      * Constructor for UMLAssociationEndChangeabilityRadioButtonPanel.
-     * @param title the title for the panel
-     * @param horizontal determines the orientation
+     * @param title
+     * @param horizontal
      */
-    public UMLAssociationEndChangeabilityRadioButtonPanel(
-            String title, boolean horizontal) {
-        super(title, labelTextsAndActionCommands, "changeability",
-                ActionSetChangeability.getInstance(), horizontal);
+    public UMLAssociationEndChangeabilityRadioButtonPanel(String title, boolean horizontal) {
+        super(title, labelTextsAndActionCommands, "changeability", ActionSetChangeability.SINGLETON, horizontal);
     }
 
     /**
      * @see org.argouml.uml.ui.UMLRadioButtonPanel#buildModel()
      */
     public void buildModel() {
-        if (getTarget() != null) {
+        if (ModelFacade.isAAssociationEnd(getTarget())) {
             Object target = /*(MAssociationEnd)*/ getTarget();
-            Object kind = Model.getFacade().getChangeability(target);
-            if (kind == null
-                || kind.equals(ActionSetChangeability.CHANGEABLE_COMMAND)) {
+            Object kind = ModelFacade.getChangeability(target);
+
+            if (kind == null || ModelFacade.CHANGEABLE_CHANGEABLEKIND.equals(kind)) {
                 setSelected(ActionSetChangeability.CHANGEABLE_COMMAND);
-            } else
-		if (kind.equals(ActionSetChangeability.ADDONLY_COMMAND)) {
-		    setSelected(ActionSetChangeability.ADDONLY_COMMAND);
-		} else
-		    if (kind.equals(ActionSetChangeability.FROZEN_COMMAND)) {
-			setSelected(ActionSetChangeability.FROZEN_COMMAND);
-		    } else {
-		        setSelected(ActionSetChangeability.CHANGEABLE_COMMAND);
-		    }
+            } else if (ModelFacade.ADD_ONLY_CHANGEABLEKIND.equals(kind)) {
+		setSelected(ActionSetChangeability.ADDONLY_COMMAND); 
+	    } else if (ModelFacade.FROZEN_CHANGEABLEKIND.equals(kind)) {
+		setSelected(ActionSetChangeability.FROZEN_COMMAND);
+	    } else {
+		LOG.warn("Unknown changeability kind " + kind);
+		setSelected(ActionSetChangeability.CHANGEABLE_COMMAND);
+	    }
         }
     }
 }

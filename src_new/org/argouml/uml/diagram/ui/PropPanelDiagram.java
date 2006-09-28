@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,174 +24,62 @@
 
 package org.argouml.uml.diagram.ui;
 
-import java.awt.event.ActionEvent;
-
-import javax.swing.DefaultListModel;
-import javax.swing.ImageIcon;
-import javax.swing.JList;
-import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 
-import org.apache.log4j.Logger;
 import org.argouml.i18n.Translator;
 import org.argouml.kernel.Project;
 import org.argouml.kernel.ProjectManager;
 import org.argouml.ui.ArgoDiagram;
-import org.argouml.ui.targetmanager.TargetEvent;
-import org.argouml.ui.targetmanager.TargetListener;
 import org.argouml.ui.targetmanager.TargetManager;
-import org.argouml.uml.ui.AbstractActionNavigate;
 import org.argouml.uml.ui.PropPanel;
+import org.argouml.uml.ui.UMLTextField;
+import org.argouml.uml.ui.UMLTextProperty;
 import org.argouml.util.ConfigLoader;
 
-/**
- * This class represents the properties panel for a Diagram.
- *
- */
 public class PropPanelDiagram extends PropPanel {
-    
-    private static final Logger LOG = Logger.getLogger(PropPanelDiagram.class);
 
     /**
      * Constructs a proppanel with a given name.
-     * @see org.argouml.ui.AbstractArgoJPanel#AbstractArgoJPanel(String)
+     * @see org.argouml.ui.TabSpawnable#TabSpawnable(String)
      */
-    protected PropPanelDiagram(String diagramName, ImageIcon icon) {
-        super(diagramName, icon, ConfigLoader.getTabPropsOrientation());
-
-        JTextField field = new JTextField();
-        field.getDocument().addDocumentListener(new DiagramNameDocument(field));
-        addField(Translator.localize("label.name"), field);
-
-        JList lst = new OneRowLinkedList(new UMLDiagramHomeModelListModel());
-        addField(Translator.localize("label.home-model"), new JScrollPane(lst));
-
-        addAction(new ActionNavigateUpFromDiagram());
-        addAction(TargetManager.getInstance().getDeleteAction());
+    protected PropPanelDiagram(String diagramName) {
+        super(diagramName, ConfigLoader.getTabPropsOrientation());
+        
+        JTextField field =
+	    new UMLTextField(this, new UMLTextProperty(ArgoDiagram.class,
+						       "name",
+						       "getName",
+						       "setName"));
+        
+        addField(Translator.localize("UMLMenu", "label.name"), field);
     }
-
+    
     /**
      * Default constructor if there is no child of this class that can show the
      * diagram.
      */
     public PropPanelDiagram() {
-        this("Diagram", null);
+        this("Diagram");
     }
 
-//    /**
-//     * @see org.argouml.uml.ui.PropPanel#removeElement()
-//     */
-//    public void removeElement() {
-//        Object target = getTarget();
-//        if (target instanceof ArgoDiagram) {
-//            try {
-//                ArgoDiagram diagram = (ArgoDiagram) target;
-//                Project project =
-//		    ProjectManager.getManager().getCurrentProject();
-//                //
-//                //  can't easily find owner of diagram
-//                //    set new target to the model
-//                //
-//                Object newTarget = project.getModel();
-//                project.moveToTrash(diagram);
-//                TargetManager.getInstance().setTarget(newTarget);
-//            } catch (Exception e) {
-//                LOG.error(e);
-//            }
-//        }
-//    }
+    public void removeElement() {
+        Object target = getTarget();
+        if (target instanceof ArgoDiagram) {
+            try {
+                ArgoDiagram diagram = (ArgoDiagram) target;
+                Project project =
+		    ProjectManager.getManager().getCurrentProject();
+                //
+                //  can't easily find owner of diagram
+                //    set new target to the model
+                //
+                Object newTarget = project.getModel();
+                project.moveToTrash(diagram);
+                TargetManager.getInstance().setTarget(newTarget);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
 
 } /* end class PropPanelDiagram */
-
-class ActionNavigateUpFromDiagram extends AbstractActionNavigate {
-
-    /**
-     * The constructor.
-     */
-    public ActionNavigateUpFromDiagram() {
-        super("button.go-up", true);
-    }
-
-    /**
-     * @see org.argouml.uml.ui.AbstractActionNavigate#navigateTo(java.lang.Object)
-     */
-    protected Object navigateTo(Object source) {
-        if (source instanceof UMLDiagram) {
-            return ((UMLDiagram) source).getNamespace();
-        }
-        return null;
-    }
-    /**
-     * @see javax.swing.Action#isEnabled()
-     */
-    public boolean isEnabled() {
-        return true;
-    }
-
-    /**
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-     */
-    public void actionPerformed(ActionEvent e) {
-        Object target = TargetManager.getInstance().getTarget();
-        Object destination = navigateTo(target);
-        if (destination != null) {
-            TargetManager.getInstance().setTarget(destination);
-        }
-    }
-}
-
-/**
- * The list model for the "homeModel" of a diagram.
- *
- * @author mvw@tigris.org
- */
-class UMLDiagramHomeModelListModel
-    extends DefaultListModel
-    implements TargetListener {
-
-    /**
-     * Constructor for UMLCommentAnnotatedElementListModel.
-     */
-    public UMLDiagramHomeModelListModel() {
-        super();
-        setTarget(TargetManager.getInstance().getTarget());
-        TargetManager.getInstance().addTargetListener(this);
-    }
-
-    /**
-     * @see TargetListener#targetAdded(TargetEvent)
-     */
-    public void targetAdded(TargetEvent e) {
-        setTarget(e.getNewTarget());
-    }
-
-    /**
-     * @see TargetListener#targetRemoved(TargetEvent)
-     */
-    public void targetRemoved(TargetEvent e) {
-        setTarget(e.getNewTarget());
-    }
-
-    /**
-     * @see TargetListener#targetSet(TargetEvent)
-     */
-    public void targetSet(TargetEvent e) {
-        setTarget(e.getNewTarget());
-    }
-
-    private void setTarget(Object t) {
-        UMLDiagram target = null;
-        if (t instanceof UMLDiagram) {
-            target = (UMLDiagram) t;
-        }
-        removeAllElements();
-
-        Object ns = null;
-        if (target != null) {
-            ns = target.getOwner();
-        }
-        if (ns != null) {
-            addElement(ns);
-        }
-    }
-}
