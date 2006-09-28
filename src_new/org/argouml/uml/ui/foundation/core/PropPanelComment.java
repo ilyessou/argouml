@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2001 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,120 +21,53 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
 package org.argouml.uml.ui.foundation.core;
 
-import java.awt.event.ActionEvent;
-
+import java.awt.Dimension;
+import javax.swing.ImageIcon;
 import javax.swing.JScrollPane;
 
-import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
-import org.argouml.uml.ui.AbstractActionRemoveElement;
-import org.argouml.uml.ui.ActionNavigateContainerElement;
-import org.argouml.uml.ui.UMLMutableLinkedList;
-import org.argouml.uml.ui.UMLPlainTextDocument;
-import org.argouml.uml.ui.UMLTextArea2;
-import org.argouml.uml.ui.foundation.extension_mechanisms.ActionNewStereotype;
+import org.argouml.application.api.Argo;
+import org.argouml.swingext.Orientation;
+import org.argouml.uml.ui.PropPanelButton;
+import org.argouml.uml.ui.UMLTextArea;
+import org.argouml.uml.ui.UMLTextProperty;
 import org.argouml.util.ConfigLoader;
 
+import ru.novosoft.uml.foundation.core.MComment;
+
 /**
- * Proppanel for comments (notes). <p>
- *
- * In UML 1.4 and beyond, the Comment has a "body"
- * attribute to contain the comment string, although 
- * some UML tools continue to use the name attribute.
+ * Proppanel for comments (notes). The text of the comment is kept in the name of
+ * the MComment.
  */
 public class PropPanelComment extends PropPanelModelElement {
 
     /**
-     * The serial version.
-     */
-    private static final long serialVersionUID = -8781239511498017147L;
-
-    /**
-     * Construct a property panel for a Comment.
+     * Constructor for PropPanelComment.
+     * @param name
+     * @param icon
+     * @param orientation
      */
     public PropPanelComment() {
-        super("Comment", ConfigLoader.getTabPropsOrientation());
-
-        addField(Translator.localize("label.name"),
-                getNameTextField());
-
-        UMLMutableLinkedList umll = new UMLMutableLinkedList(
-                new UMLCommentAnnotatedElementListModel(), null, null);
-        umll.setDeleteAction(new ActionDeleteAnnotatedElement());
-        addField(Translator.localize("label.annotated-elements"),
-            new JScrollPane(umll));
-
-        addSeparator();
-
-        UMLTextArea2 text = new UMLTextArea2(new UMLCommentBodyDocument());
+        super("Comment", _commentIcon, ConfigLoader.getTabPropsOrientation());
+        UMLTextArea text = new UMLTextArea(this, new UMLTextProperty(MComment.class, "name","getName","setName"));
         text.setLineWrap(true);
         text.setRows(5);
         JScrollPane pane = new JScrollPane(text);
-        addField(Translator.localize("label.comment.body"), pane);
-
-        addAction(new ActionNavigateContainerElement());
-        addAction(new ActionNewStereotype());
-        addAction(getDeleteAction());
-    }
-}
-
-class UMLCommentBodyDocument extends UMLPlainTextDocument {
-    
-    /**
-     * The serial version.
-     */
-    private static final long serialVersionUID = 3713801312285489580L;
-
-    /**
-     * Constructor for UMLModelElementNameDocument.
-     */
-    public UMLCommentBodyDocument() {
-        super("body"); 
-        /*
-         * TODO: This is probably not the right location
-         * for switching off the "filterNewlines".
-         * The setting gets lost after selecting a different
-         * ModelElement in the diagram.
-         * BTW, see how it is used in
-         * javax.swing.text.PlainDocument.
-         * See issue 1812.
-         */
-        putProperty("filterNewlines", Boolean.FALSE);
-    }
-    
-    /**
-     * @see org.argouml.uml.ui.UMLPlainTextDocument#setProperty(java.lang.String)
-     */
-    protected void setProperty(String text) {
-        Model.getCoreHelper().setBody(getTarget(), text);
-    }
-    
-    /**
-     * @see org.argouml.uml.ui.UMLPlainTextDocument#getProperty()
-     */
-    protected String getProperty() {
-        return (String) Model.getFacade().getBody(getTarget());
-    }
-    
-}
-
-class ActionDeleteAnnotatedElement extends AbstractActionRemoveElement {
-    /**
-     * Constructor.
-     */
-    public ActionDeleteAnnotatedElement() {
-        super(Translator.localize("menu.popup.remove"));
+        addField("Text: ", pane);
+        
+        new PropPanelButton(this,buttonPanel,_navUpIcon, Argo.localize("UMLMenu", "button.go-up"),"navigateNamespace",null);
+        new PropPanelButton(this,buttonPanel,_navBackIcon, Argo.localize("UMLMenu", "button.go-back"),"navigateBackAction","isNavigateBackEnabled");
+        new PropPanelButton(this,buttonPanel,_navForwardIcon, Argo.localize("UMLMenu", "button.go-forward"),"navigateForwardAction","isNavigateForwardEnabled"); 
+        new PropPanelButton(this,buttonPanel,_deleteIcon, Argo.localize("UMLMenu", "button.delete-class"),"removeElement",null);      
     }
 
-    /*
-     * @see org.tigris.gef.undo.UndoableAction#actionPerformed(java.awt.event.ActionEvent)
+    /**
+     * @see org.argouml.uml.ui.PropPanel#isAcceptibleBaseMetaClass(String)
      */
-    public void actionPerformed(ActionEvent arg0) {
-        super.actionPerformed(arg0);
-        Model.getCoreHelper().removeAnnotatedElement(
-                getTarget(), getObjectToRemove());
+    protected boolean isAcceptibleBaseMetaClass(String baseClass) {
+        return false;
     }
-    
+
 }

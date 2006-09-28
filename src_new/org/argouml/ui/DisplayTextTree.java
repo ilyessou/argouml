@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,376 +21,271 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: DisplayTextTree.java
+// Classes: DisplayTextTree
+// Original Author:
+// $Id$
+
+// 26 Apr 2002: Jeremy Bennett (mail@jeremybennett.com). Patch to give a better
+// naming for extension points in convertValueToText.
+
+
 package org.argouml.ui;
 
-import java.util.Collection;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.Vector;
+import java.util.*;
+import java.beans.*;
+import javax.swing.*;
+import javax.swing.event.*;
+import javax.swing.tree.*;
+import javax.swing.plaf.basic.*;
 
-import javax.swing.JTree;
-import javax.swing.tree.TreeModel;
-import javax.swing.tree.TreePath;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.*;
+import ru.novosoft.uml.behavior.state_machines.*;
+import ru.novosoft.uml.behavior.use_cases.*;
+import ru.novosoft.uml.foundation.extension_mechanisms.MTaggedValue;
+import ru.novosoft.uml.foundation.extension_mechanisms.MStereotype;
 
-import org.apache.log4j.Logger;
-import org.argouml.cognitive.ToDoItem;
-import org.argouml.cognitive.ToDoList;
-import org.argouml.i18n.Translator;
-import org.argouml.kernel.Project;
-import org.argouml.kernel.ProjectManager;
-import org.argouml.kernel.ProjectSettings;
-import org.argouml.model.InvalidElementException;
-import org.argouml.model.Model;
-import org.argouml.notation.NotationProviderFactory2;
-import org.argouml.uml.notation.NotationProvider;
-import org.argouml.uml.notation.uml.NotationUtilityUml;
-import org.argouml.uml.ui.UMLTreeCellRenderer;
-import org.tigris.gef.base.Diagram;
+import org.tigris.gef.base.*;
 
-/**
- * This is the JTree that is the GUI component view of the UML model
- * navigation (the explorer) and the todo list.
- */
-public class DisplayTextTree extends JTree {
-    /**
-     * Logger.
-     */
-    private static final Logger LOG = Logger.getLogger(DisplayTextTree.class);
+import org.apache.log4j.Category;
+import org.argouml.application.api.Configuration;
+import org.argouml.application.api.Notation;
+import org.argouml.kernel.*;
+import org.argouml.cognitive.*;
+import org.argouml.uml.generator.*;
+import org.argouml.uml.ui.*;
 
-    /**
-     * A Map helping the tree maintain a consistent expanded paths state.
-     *
-     * <pre>
-     *  keys are the current TreeModel of this Tree
-     *  values are Vector of currently expanded paths.
-     * </pre>
-     */
-    private Hashtable expandedPathsInModel;
+public class DisplayTextTree extends JTree
+implements MElementListener, VetoableChangeListener {
+    
+    protected static Category cat = Category.getInstance(DisplayTextTree.class);
 
-    private boolean reexpanding;
+  Hashtable _expandedPathsInModel = new Hashtable();
+  boolean _reexpanding = false;
+  UpdateTreeHack _myUpdateTreeHack = new UpdateTreeHack(this);
 
-    /**
-     * This determines if stereotypes are to be shown in the explorer.
-     */
-    private boolean showStereotype;
+  public DisplayTextTree() {
+    setCellRenderer(new UMLTreeCellRenderer());
+    putClientProperty("JTree.lineStyle", "Angled");
+    //setEditable(true);
+  }
 
-    /**
-     * Sets the label renderer, line style angled, enable tooltips,
-     * sets row height to 18 pixels.
-     */
-    public DisplayTextTree() {
+  public String convertValueToText(Object value, boolean selected,
+				   boolean expanded, boolean leaf, int row,
+				   boolean hasFocus) {
+    if (value == null) return "(null)";
+    if (value instanceof ToDoItem) {
+      return ((ToDoItem)value).getHeadline();
+    }
+    if (value instanceof ToDoList) {
+	return "ToDoList";
+    }
+    if (value instanceof MTaggedValue) {
+        String tagName = ((MTaggedValue)value).getTag();
+        if (tagName == null || tagName.equals("")) tagName = "(anon)";
+        return("1-" + tagName);
+    }
+    if ((value instanceof MElement)&&(!(value instanceof MTaggedValue))) {
+      // original
+      MElement e = (MElement) value;
+      String ocl = "";
+      if (e instanceof MModelElement)
+	ocl = ((MModelElement)e).getUMLClassName();
+        String name = ((MModelElement)e).getName();
+      if (e instanceof MTransition) {
+		  name = GeneratorDisplay.Generate((MTransition)e);
+      }
+      if (e instanceof MExtensionPoint) {  // Jeremy Bennett patch
+          name = GeneratorDisplay.Generate((MExtensionPoint) e);
+      }
+      if (name == null || name.equals("")) name = "(anon " + ocl + ")";
 
-        super();
+      // Look for stereotype
+      if (Configuration.getBoolean(Notation.KEY_SHOW_STEREOTYPES, false)) {
+          if (e instanceof MModelElement) {
+              MStereotype st = ((MModelElement)e).getStereotype();
+	      if (st != null) {
+		  name += " " + GeneratorDisplay.Generate(st);
+	      }
+          }
+      }
+      return name;
+    }
+    if (value instanceof Diagram) {
+      return ((Diagram)value).getName();
+    }
+    return value.toString();
+  }
 
-        /* MVW: We should use default font sizes as much as possible.
-         * BTW, this impacts only the width, and reduces readibility:
-         */
-//        setFont(LookAndFeelMgr.getInstance().getSmallFont());
 
-        setCellRenderer(new UMLTreeCellRenderer());
-        setRootVisible(false);
-        setShowsRootHandles(true);
+  protected Vector getExpandedPaths() {
+    TreeModel tm = getModel();
+    Vector res = (Vector) _expandedPathsInModel.get(tm);
+    if (res == null) {
+      res = new Vector();
+      _expandedPathsInModel.put(tm, res);
+    }
+    return res;
+  }
 
-        // This enables tooltips for tree; this one won't be shown:
-        setToolTipText("Tree");
+  /**
+   * Tree MModel Expansion notification.
+   *
+   * @param e  a Tree node insertion event
+   */
+  public void fireTreeExpanded(TreePath path) {
+    super.fireTreeExpanded(path);
+    if (_reexpanding) return;
+    if (path == null || _expandedPathsInModel == null) return;
+    Vector expanded = getExpandedPaths();
+    expanded.removeElement(path);
+    expanded.addElement(path);
+    addListenerToPath(path);
+  }
 
-        /* The default (16) puts the icons too close together: */
-        setRowHeight(18);
+  protected void addListenerToPath(TreePath path) {
+    Object node = path.getLastPathComponent();
+    addListenerToNode(node);
+  }
 
-        expandedPathsInModel = new Hashtable();
-        reexpanding = false;
-
-        Project p = ProjectManager.getManager().getCurrentProject();
-        ProjectSettings ps = p.getProjectSettings();
-        showStereotype = ps.getShowStereotypesValue();
+  protected void addListenerToNode(Object node) {
+    if (node instanceof MBase) {
+        ((MBase)node).removeMElementListener(this);
+        ((MBase)node).addMElementListener(this);
+    }
+    if (node instanceof Project) {
+        ((Project)node).removeVetoableChangeListener(this);  
+      ((Project)node).addVetoableChangeListener(this);
+    }
+    if (node instanceof Diagram) {
+        ((Diagram)node).removeVetoableChangeListener(this);
+        ((Diagram)node).addVetoableChangeListener(this);
     }
 
-    // ------------ methods that override JTree methods ---------
-
-    /**
-     * Override the default JTree implementation to display the appropriate text
-     * for any object that will be displayed in the todo list. <p>
-     *
-     * This is used for the Todo list as well as the Explorer list.
-     *
-     * @param value
-     *            the given object
-     * @param selected
-     *            ignored
-     * @param expanded
-     *            ignored
-     * @param leaf
-     *            ignored
-     * @param row
-     *            ignored
-     * @param hasFocus
-     *            ignored
-     *
-     * @return the value converted to text.
-     *
-     * @see javax.swing.JTree#convertValueToText(java.lang.Object, boolean,
-     *      boolean, boolean, int, boolean)
-     */
-    public String convertValueToText(Object value, boolean selected,
-            boolean expanded, boolean leaf, int row, boolean hasFocus) {
-
-        if (value instanceof ToDoItem) {
-            return ((ToDoItem) value).getHeadline();
-        }
-        if (value instanceof ToDoList) {
-            // TODO: Localize
-            return "ToDoList";
-        }
-
-        if (Model.getFacade().isAModelElement(value)) {
-
-            String name = null;
-
-            try {
-                // Jeremy Bennett patch
-                if (Model.getFacade().isATransition(value)) {
-                    name = Model.getFacade().getName(value);
-                    NotationProvider notationProvider =
-                        NotationProviderFactory2.getInstance()
-                            .getNotationProvider(
-                                    NotationProviderFactory2.TYPE_TRANSITION,
-                                    value);
-                    String signature = notationProvider.toString(value, null);
-                    if (name != null && name.length() > 0) {
-                        name += ": " + signature;
-                    } else {
-                        name = signature;
-                    }
-                } else if (Model.getFacade().isAExtensionPoint(value)) {
-                    NotationProvider notationProvider =
-                        NotationProviderFactory2.getInstance()
-                            .getNotationProvider(
-                                NotationProviderFactory2.TYPE_EXTENSION_POINT,
-                                value);
-                    name = notationProvider.toString(value, null);
-                } else if (Model.getFacade().isAComment(value)) {
-                    /*
-                     * From UML 1.4 onwards, the text of the comment
-                     * is stored in the "body".
-                     */
-                    name = (String) Model.getFacade().getBody(value);
-                
-                } else if (Model.getFacade().isATaggedValue(value)) {
-                    String tagName = Model.getFacade().getTag(value);
-                    if (tagName == null || tagName.equals("")) {
-                        // TODO: Localize
-                        tagName = "(unnamed)";
-                    }
-                    Collection referenceValues = 
-                        Model.getFacade().getReferenceValue(value);
-                    Collection dataValues = 
-                        Model.getFacade().getDataValue(value);
-                    Iterator i;
-                    if (referenceValues.size() > 0) {
-                        i = referenceValues.iterator();
-                    } else {
-                        i = dataValues.iterator();
-                    }
-                    String theValue = "";
-                    if (i.hasNext()) theValue = i.next().toString();
-                    if (i.hasNext()) theValue += " , ...";
-                    name = (tagName + " = " + theValue);
-
-                } else {
-                    name = Model.getFacade().getName(value);
-                }
-
-                if (name == null || name.equals("")) {
-                    // TODO: Localize
-                    name =
-                        "(unnamed " + Model.getFacade().getUMLClassName(value)
-                            + ")";
-                }
-                /*
-                 * If the name is too long or multi-line (e.g. for comments)
-                 * then we reduce to the first line or 80 chars.
-                 */
-                // TODO: Localize
-                if (name != null
-                        && name.indexOf("\n") < 80
-                        && name.indexOf("\n") > -1) {
-                    name = name.substring(0, name.indexOf("\n")) + "...";
-                } else if (name != null && name.length() > 80) {
-                    name = name.substring(0, 80) + "...";
-                }
-
-                // Look for stereotype
-                if (showStereotype) {
-                    Collection stereos =
-                        Model.getFacade().getStereotypes(value);
-                    name += " "
-                        + NotationUtilityUml.generateStereotype(stereos);
-                    if (name != null && name.length() > 80) {
-                        name = name.substring(0, 80) + "...";
-                    }
-                }
-            } catch (InvalidElementException e) {
-                name = Translator.localize("misc.name.deleted");
-            }
-
-            return name;
-        }
-
-        if (Model.getFacade().isAExpression(value)) {
-            try {
-                String name = Model.getFacade().getUMLClassName(value);
-                String language = Model.getDataTypesHelper().getLanguage(value);
-                String body = Model.getDataTypesHelper().getBody(value);
-                if (language != null && language.length() > 0) {
-                    name += " (" + language + ")";
-                }
-                if (body != null && body.length() > 0) {
-                    name += ": " + body;
-                }
-                return name;
-            } catch (InvalidElementException e) {
-                return Translator.localize("misc.name.deleted");
-            }
-        }
-        
-        if (Model.getFacade().isAElementImport(value)) {
-            try {
-                // TODO: Localize
-                StringBuffer s = new StringBuffer("Imported ");
-                Object me = Model.getFacade().getImportedElement(value);
-                s.append(Model.getFacade().getUMLClassName(me));
-                s.append(": ");
-                // TODO: Handle the Alias from the ElementImport.
-                s.append(convertValueToText(me, selected, expanded, leaf, row,
-                        hasFocus));
-                return s.toString();
-            } catch (InvalidElementException e) {
-                return Translator.localize("misc.name.deleted");
-            }
-        }
-
-        if (Model.getFacade().isAMultiplicity(value)) {
-            try {
-                // TODO: Localize
-                return "Multiplicity: "
-                    + Model.getDataTypesHelper().multiplicityToString(value);
-            } catch (InvalidElementException e) {
-                return Translator.localize("misc.name.deleted");
-            }
-        }
-
-        if (value instanceof Diagram) {
-            return ((Diagram) value).getName();
-        }
-
-        if (value != null) {
-            return value.toString();
-        }
-        return "-";
+    TreeModel tm = getModel();
+    int childCount = tm.getChildCount(node);
+    for (int i = 0; i < childCount; i++) {
+      Object child = tm.getChild(node, i);
+      if (child instanceof MBase) {
+        ((MBase)child).removeMElementListener(this);
+	((MBase)child).addMElementListener(this);
+      }
+      if (child instanceof Diagram) {
+        ((Diagram)child).removeVetoableChangeListener(this);
+	((Diagram)child).addVetoableChangeListener(this);
+      }
     }
+  }
 
-    /**
-     * Tree Model Expansion notification.<p>
-     *
-     * @param path
-     *            a Tree node insertion event
-     */
-    public void fireTreeExpanded(TreePath path) {
+  public void fireTreeCollapsed(TreePath path) {
+    super.fireTreeCollapsed(path);
+    if (path == null || _expandedPathsInModel == null) return;
+    Vector expanded = getExpandedPaths();
+    expanded.removeElement(path);
+  }
 
-        super.fireTreeExpanded(path);
 
-        LOG.debug("fireTreeExpanded");
-        if (reexpanding) {
-            return;
-        }
-        if (path == null || expandedPathsInModel == null) {
-            return;
-        }
-        Vector expanded = getExpandedPaths();
-        expanded.removeElement(path);
-        expanded.addElement(path);
+  public void setModel(TreeModel newModel) {
+    super.setModel(newModel);
+    Object r = newModel.getRoot();
+    if (r instanceof MBase)
+      ((MBase)r).addMElementListener(this);
+    if (r instanceof Project)
+      ((Project)r).addVetoableChangeListener(this);
+    if (r instanceof Diagram)
+      ((Diagram)r).addVetoableChangeListener(this);
+
+    int childCount = newModel.getChildCount(r);
+    for (int i = 0; i < childCount; i++) {
+      Object child = newModel.getChild(r, i);
+      if (child instanceof MBase)
+	((MBase)child).addMElementListener(this);
+      if (child instanceof Diagram)
+	((Diagram)child).addVetoableChangeListener(this);
     }
+    reexpand();
+  }
 
-    /**
-     * @see javax.swing.JTree#fireTreeCollapsed(javax.swing.tree.TreePath)
-     */
-    public void fireTreeCollapsed(TreePath path) {
+	public void vetoableChange(PropertyChangeEvent e) {
+		cat.debug("DisplayTextTree vetoableChange: " + e.getPropertyName());
+		if (!_myUpdateTreeHack.pending) {
+			SwingUtilities.invokeLater(_myUpdateTreeHack);
+			_myUpdateTreeHack.pending = true;
+		}
+		else cat.debug("update already pending");
+	}
 
-        super.fireTreeCollapsed(path);
 
-        LOG.debug("fireTreeCollapsed");
-        if (path == null || expandedPathsInModel == null) {
-            return;
-        }
-        Vector expanded = getExpandedPaths();
-        expanded.removeElement(path);
+
+
+
+  public static final int DEPTH_LIMIT = 10;
+  public static final int CHANGE = 1;
+  public static final int ADD = 2;
+  public static final int REMOVE = 3;
+  //public static Object path[] = new Object[DEPTH_LIMIT];
+
+  public void forceUpdate() {
+    Object rootArray[] = new Object[1];
+    rootArray[0] = getModel().getRoot();
+    Object noChildren[] = null;
+    int noIndexes[] = null;
+    TreeModelEvent tme = new TreeModelEvent(this, new TreePath(rootArray));
+    treeModelListener.treeStructureChanged(tme);
+    TreeModel tm = getModel();
+    if (tm instanceof NavPerspective) {
+      NavPerspective np = (NavPerspective) tm;
+      np.fireTreeStructureChanged(this, rootArray, noIndexes, noChildren);
     }
+    reexpand();
+  }
 
-    /**
-     * @see javax.swing.JTree#setModel(javax.swing.tree.TreeModel)
-     */
-    public void setModel(TreeModel newModel) {
+//   public void forceUpdate_old() {
+//     int n = 0;
+//     ProjectBrowser pb = ProjectBrowser.TheInstance;
+//     Vector pers = pb.getNavPane().getPerspectives();
+//     NavPerspective curPerspective = pb.getNavPane().getCurPerspective();
+//     if (curPerspective == null) return;
+//     n = (pers.indexOf(curPerspective) + 1) % pers.size();
+//     NavPerspective otherPerspective = (NavPerspective) pers.elementAt(n);
+//     pb.getNavPane().setCurPerspective(otherPerspective);
+//     pb.getNavPane().setCurPerspective(curPerspective);
+//   }
 
-        LOG.debug("setModel");
-        Object r = newModel.getRoot();
-        if (r != null) {
-            super.setModel(newModel);
-        }
-        reexpand();
+  public void reexpand() {
+    if (_expandedPathsInModel == null) return;
+    _reexpanding = true;
+    Object[] path2 = new Object[1];
+    path2[0] = getModel().getRoot();
+    TreeModelEvent tme = new TreeModelEvent(this, path2, null, null);
+    treeModelListener.treeStructureChanged(tme);
+    treeDidChange();
+
+    java.util.Enumeration enum = getExpandedPaths().elements();
+    while (enum.hasMoreElements()) {
+      TreePath path = (TreePath) enum.nextElement();
+      tme = new TreeModelEvent(this, path, null, null);
+      treeModelListener.treeStructureChanged(tme);
+      expandPath(path);
+      addListenerToPath(path);
     }
+    _reexpanding = false;
 
-    // ------------- other methods ------------------
+  }
 
-    /**
-     * Called in reexpand().
-     *
-     * @return a Vector containing all expanded paths
-     */
-    protected Vector getExpandedPaths() {
+	public void propertySet(MElementEvent mee) {
+	}
+	public void listRoleItemSet(MElementEvent mee) {
+	}
+	public void recovered(MElementEvent mee) {
+	}
+	public void removed(MElementEvent mee) {
+	}
+	public void roleAdded(MElementEvent mee) {
+	}
+	public void roleRemoved(MElementEvent mee) {
+	}
 
-        LOG.debug("getExpandedPaths");
-        TreeModel tm = getModel();
-        Vector res = (Vector) expandedPathsInModel.get(tm);
-        if (res == null) {
-            res = new Vector();
-            expandedPathsInModel.put(tm, res);
-        }
-        return res;
-    }
 
-    /**
-     * We re-expand the ones that were open before to maintain the same viewable
-     * tree.
-     *
-     * called by doForceUpdate(), setModel()
-     */
-    private void reexpand() {
-
-        LOG.debug("reexpand");
-        if (expandedPathsInModel == null) {
-            return;
-        }
-
-        reexpanding = true;
-
-        Enumeration pathsEnum = getExpandedPaths().elements();
-        while (pathsEnum.hasMoreElements()) {
-            TreePath path = (TreePath) pathsEnum.nextElement();
-            expandPath(path);
-        }
-        reexpanding = false;
-    }
-
-    /**
-     * @param show true if stereotypes have to be shown
-     */
-    protected void setShowStereotype(boolean show) {
-        this.showStereotype = show;
-    }
-
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = 949560309817566838L;
-}
+} /* end class DisplayTextTree */

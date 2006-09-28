@@ -1,16 +1,15 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
-// and this paragraph appear in all copies. This software program and
+// and this paragraph appear in all copies.  This software program and
 // documentation are copyrighted by The Regents of the University of
 // California. The software program and documentation are supplied "AS
 // IS", without any accompanying services from The Regents. The Regents
 // does not warrant that the operation of the program will be
 // uninterrupted or error-free. The end-user understands that the program
 // was developed for research purposes and is advised not to rely
-// exclusively on the program for any reason. IN NO EVENT SHALL THE
+// exclusively on the program for any reason.  IN NO EVENT SHALL THE
 // UNIVERSITY OF CALIFORNIA BE LIABLE TO ANY PARTY FOR DIRECT, INDIRECT,
 // SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, INCLUDING LOST PROFITS,
 // ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN IF
@@ -24,75 +23,92 @@
 
 package org.argouml.uml.diagram.static_structure.ui;
 
-import java.awt.event.ItemEvent;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.*;
+import java.beans.*;
+import javax.swing.*;
+import javax.swing.event.*;
+import javax.swing.tree.*;
+import javax.swing.text.*;
+import javax.swing.border.*;
+import javax.swing.plaf.basic.*;
+import javax.swing.plaf.metal.MetalLookAndFeel;
 
-import javax.swing.JCheckBox;
+import org.argouml.ui.*;
 
-import org.argouml.ui.StylePanelFigNodeModelElement;
+public class StylePanelFigInterface extends StylePanelFig {
 
-/**
- * Stylepanel which adds an operation checkbox and depends on FigInterface.
- * @see FigInterface
- *
- * @author mkl
- *
- */
-public class StylePanelFigInterface extends StylePanelFigNodeModelElement {
+  ////////////////////////////////////////////////////////////////
+  // constants
 
-    private JCheckBox operCheckBox = new JCheckBox("Operations");
+  ////////////////////////////////////////////////////////////////
+  // instance vars
 
-    /**
-     * Flag to indicate that a refresh is going on.
-     */
-    private boolean refreshTransaction;
+  protected JCheckBox _operCheckBox = new JCheckBox("Operations");
+  protected JLabel _displayLabel = new JLabel("Display: ");
 
-    /**
-     * The constructor.
-     */
-    public StylePanelFigInterface() {
-        super();
+  ////////////////////////////////////////////////////////////////
+  // contructors
 
-        addToDisplayPane(operCheckBox);
-        operCheckBox.setSelected(false);
-        operCheckBox.addItemListener(this);
+  public StylePanelFigInterface() {
+    super();
+    GridBagLayout gb = (GridBagLayout) getLayout();
+    GridBagConstraints c = new GridBagConstraints();
+    c.fill = GridBagConstraints.BOTH;
+    c.ipadx = 0; c.ipady = 0;
+
+    c.gridx = 0;
+    c.gridwidth = 1;
+    c.gridy = 0;
+    c.weightx = 0.0;
+    gb.setConstraints(_displayLabel, c);
+    add(_displayLabel);
+
+    c.gridx = 1;
+    c.gridwidth = 1;
+    c.gridy = 0;
+    c.weightx = 0.0;
+    JPanel pane = new JPanel();
+    pane.setLayout(new FlowLayout(FlowLayout.LEFT));
+    pane.add(_operCheckBox);
+    gb.setConstraints(pane, c);
+    add(pane);
+
+    _operCheckBox.setSelected(false);
+    _operCheckBox.addItemListener(this);
+  }
+
+
+  ////////////////////////////////////////////////////////////////
+  // accessors
+
+  public void refresh() {
+    super.refresh();
+    org.argouml.uml.diagram.static_structure.ui.FigInterface ti = (org.argouml.uml.diagram.static_structure.ui.FigInterface)_target;
+    _operCheckBox.setSelected(ti.isOperationVisible());
+  }
+
+  ////////////////////////////////////////////////////////////////
+  // event handling
+
+  public void insertUpdate(DocumentEvent e) {
+    super.insertUpdate(e);
+  }
+
+  public void removeUpdate(DocumentEvent e) { insertUpdate(e); }
+
+
+
+  public void itemStateChanged(ItemEvent e) {
+    Object src = e.getSource();
+
+    if (src == _operCheckBox) {
+      ((org.argouml.uml.diagram.static_structure.ui.FigInterface)_target).setOperationVisible(_operCheckBox.isSelected());
     }
+    else super.itemStateChanged(e);
+  }
 
-    ////////////////////////////////////////////////////////////////
-    // accessors
 
-    /**
-     * @see org.argouml.ui.TabTarget#refresh()
-     */
-    public void refresh() {
-        refreshTransaction = true;
-        super.refresh();
-        FigInterface ti = (FigInterface) getPanelTarget();
-        operCheckBox.setSelected(ti.isOperationsVisible());
-        refreshTransaction = false;
-    }
-
-    ////////////////////////////////////////////////////////////////
-    // event handling
-
-    /**
-     * @see java.awt.event.ItemListener#itemStateChanged(java.awt.event.ItemEvent)
-     */
-    public void itemStateChanged(ItemEvent e) {
-        if (!refreshTransaction) {
-            Object src = e.getSource();
-
-            if (src == operCheckBox) {
-                ((FigInterface) getPanelTarget())
-                    .setOperationsVisible(operCheckBox.isSelected());
-            } else {
-                super.itemStateChanged(e);
-            }
-        }
-    }
-
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = -5908351031706234211L;
 } /* end class StylePanelFigInterface */
 

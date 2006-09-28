@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,75 +23,42 @@
 
 package org.argouml.uml;
 
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.Vector;
+import java.util.*;
 
-import org.argouml.model.Model;
-import org.tigris.gef.util.ChildGenerator;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
 
-/**
- * Utility class to generate a list of the children of a class.  In this case
- * the "children" of a class are the other classes that are
- * associated with the parent class, and that MAssociation has a
- * COMPOSITE end at the parent.  This is used in one of the critics.
- *
- * @see org.argouml.uml.cognitive.critics.CrCircularComposition
- * @stereotype singleton
- */
+import org.tigris.gef.util.*;
+
+/** Utility class to generate the children of a class.  In this case
+ *  the "children" of a class are the other classes that are
+ *  assocaiated with the parent class, and that MAssociation has a
+ *  COMPOSITE end at the parent.  This is used in one of the
+ *  NavPerspectives. */
+
 public class GenCompositeClasses implements ChildGenerator {
-    /**
-     * This SINGLETON is used in CrCircularComposition.
-     *
-     */
-    private static final GenCompositeClasses SINGLETON =
-        new GenCompositeClasses();
+  public static GenCompositeClasses SINGLETON = new GenCompositeClasses();
 
-    /**
-     * @return Returns the sINGLETON.
-     */
-    public static GenCompositeClasses getSINGLETON() {
-        return SINGLETON;
+  public Enumeration gen(Object o) {
+      Vector res = new Vector();
+    if (!(o instanceof MClassifier)) return res.elements();
+    MClassifier cls = (MClassifier) o;
+    Vector ends = new Vector(cls.getAssociationEnds());
+    if (ends == null) return res.elements();
+    Iterator enum = ends.iterator();
+    while (enum.hasNext()) {
+      MAssociationEnd ae = (MAssociationEnd) enum.next();
+      if (MAggregationKind.COMPOSITE.equals(ae.getAggregation())) {
+	MAssociation asc = ae.getAssociation();
+	List conn = asc.getConnections();
+	if (conn == null || conn.size() != 2) continue;
+	Object otherEnd = (ae == conn.get(0)) ?
+	  conn.get(1) : conn.get(0);
+	MClassifier componentClass = ((MAssociationEnd)otherEnd).getType();
+	res.add(componentClass);
+      }
     }
-    /**
-     * @see org.tigris.gef.util.ChildGenerator#gen(java.lang.Object)
-     */
-    public Enumeration gen(Object o) {
-	Vector res = new Vector();
-	if (!(Model.getFacade().isAClassifier(o))) {
-	    return res.elements();
-	}
-	Object cls = /*(MClassifier)*/ o;
-	Vector ends = new Vector(Model.getFacade().getAssociationEnds(cls));
-	if (ends == null) {
-	    return res.elements();
-	}
-	Iterator assocEnds = ends.iterator();
-	while (assocEnds.hasNext()) {
-	    Object ae = /*(MAssociationEnd)*/ assocEnds.next();
-	    if (Model.getAggregationKind().getComposite().equals(
-	            Model.getFacade().getAggregation(ae))) {
-		Object asc = Model.getFacade().getAssociation(ae);
-		ArrayList conn =
-		    new ArrayList(Model.getFacade().getConnections(asc));
-		if (conn == null || conn.size() != 2) {
-		    continue;
-		}
-		Object otherEnd =
-		    (ae == conn.get(0)) ? conn.get(1) : conn.get(0);
-		if (Model.getFacade().getType(ae)
-		        != Model.getFacade().getType(otherEnd)) {
-		    res.add(Model.getFacade().getType(otherEnd));
-		}
-	    }
-	}
-	return res.elements();
-    }
-
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = -6027679124153204193L;
+    return res.elements();
+  }
 } /* end class GenCompositeClasses */
-
+  

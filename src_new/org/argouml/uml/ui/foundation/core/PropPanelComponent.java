@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,68 +21,89 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+// File: PropPanelComponent.java
+// Classes: PropPanelComponent
+// Original Author: 5eichler@informatik.uni-hamburg.de
+// $Id$
+
+// 21 Mar 2002: Jeremy Bennett (mail@jeremybennett.com). Changed to use the
+// labels "Generalizes:" and "Specializes:" for inheritance.
+
+// 4 Apr 2002: Jeremy Bennett (mail@jeremybennett.com). Labels corrected to
+// "Generalizations:" and "Specializations". Layout of prop panel balanced
+// better.
+
+
 package org.argouml.uml.ui.foundation.core;
 
-import javax.swing.JList;
-import javax.swing.JScrollPane;
+import java.awt.*;
+import java.util.Vector;
 
-import org.argouml.i18n.Translator;
-import org.argouml.uml.ui.ActionNavigateNamespace;
-import org.argouml.uml.ui.UMLLinkedList;
-import org.argouml.uml.ui.foundation.extension_mechanisms.ActionNewStereotype;
-import org.argouml.util.ConfigLoader;
+import javax.swing.*;
+import ru.novosoft.uml.foundation.core.*;
 
-/**
- * PropPanel for a UML Component.
- *
- * @author 5eichler@informatik.uni-hamburg.de
- */
+import org.argouml.application.api.*;
+import org.argouml.model.uml.foundation.core.CoreHelper;
+import org.argouml.uml.ui.*;
+
+
 public class PropPanelComponent extends PropPanelClassifier {
 
-    /**
-     * The serial version.
-     */
-    private static final long serialVersionUID = 1551050121647608478L;
+  ////////////////////////////////////////////////////////////////
+  // contructors
+  public PropPanelComponent() {
+    super("Component", _componentIcon, 2);
 
-    /**
-     * Construct a property panel for Component elements.
-     */
-    public PropPanelComponent() {
-        super("Component",
-            lookupIcon("Component"),
-            ConfigLoader.getTabPropsOrientation());
-        addField(Translator.localize("label.name"),
-                getNameTextField());
-        addField(Translator.localize("label.namespace"),
-                getNamespaceSelector());
-        add(getModifiersPanel());
+    Class mclass = MComponent.class;
 
-        addSeparator();
+    addCaption(Argo.localize("UMLMenu", "label.name"),1,0,0);
+    addField(nameField,1,0,0);
 
-        addField(Translator.localize("label.generalizations"),
-                getGeneralizationScroll());
-        addField(Translator.localize("label.specializations"),
-                getSpecializationScroll());
+    addCaption(Argo.localize("UMLMenu", "label.stereotype"),2,0,0);
+    addField(stereotypeBox,2,0,0);
 
-        addSeparator();
+    addCaption(Argo.localize("UMLMenu", "label.namespace"),3,0,0);
+    addField(namespaceScroll,3,0,0);
 
-        addField(Translator.localize("label.client-dependencies"),
-                getClientDependencyScroll());
-        addField(Translator.localize("label.supplier-dependencies"),
-                getSupplierDependencyScroll());
+    addCaption(Argo.localize("UMLMenu", "label.modifiers"),4,0,1);
+    JPanel modifiersPanel = new JPanel(new GridLayout(0,3));
+    modifiersPanel.add(new UMLCheckBox(Argo.localize("UMLMenu", "checkbox.abstract-lc"),this,new UMLReflectionBooleanProperty("isAbstract",mclass,"isAbstract","setAbstract")));
+    modifiersPanel.add(new UMLCheckBox(Argo.localize("UMLMenu", "checkbox.final-lc"),this,new UMLReflectionBooleanProperty("isLeaf",mclass,"isLeaf","setLeaf")));
+    modifiersPanel.add(new UMLCheckBox(localize("root"),this,new UMLReflectionBooleanProperty("isRoot",mclass,"isRoot","setRoot")));
+    addField(modifiersPanel,4,0,0);
 
-        JList resList = new UMLLinkedList(new UMLComponentResidentListModel());
-        addField(Translator.localize("label.residents"),
-                new JScrollPane(resList));
+    addCaption("Generalizations:",0,1,1);
+    addField(extendsScroll,0,1,1);
 
-        addAction(new ActionNavigateNamespace());
-        addAction(getActionNewReception());
-        addAction(new ActionNewStereotype());
-        addAction(getDeleteAction());
+    addCaption("Specializations:",1,1,1);
+    addField(derivedScroll,1,1,1);
 
+    new PropPanelButton(this,buttonPanel,_navUpIcon, Argo.localize("UMLMenu", "button.go-up"),"navigateUp",null);
+    new PropPanelButton(this,buttonPanel,_navBackIcon, Argo.localize("UMLMenu", "button.go-back"),"navigateBackAction","isNavigateBackEnabled");
+    new PropPanelButton(this,buttonPanel,_navForwardIcon, Argo.localize("UMLMenu" ,"button.go-forward"),"navigateForwardAction","isNavigateForwardEnabled");
+    new PropPanelButton(this,buttonPanel,_deleteIcon,localize("Delete component"),"removeElement",null);
+  }
+
+    protected boolean isAcceptibleBaseMetaClass(String baseClass) {
+        return (baseClass.equals("Component") || 
+                baseClass.equals("Classifier") ||
+                baseClass.equals("GeneralizableElement") ||
+                baseClass.equals("Namespace")
+                );
     }
 
 
+    /**
+     * @see org.argouml.model.uml.foundation.core.CoreHelper#getAllComponents()
+     */
+	protected Vector getGeneralizationChoices() {
+		Vector choices = new Vector();
+		choices.addAll(CoreHelper.getHelper().getAllComponents());
+		return choices;
+	}
+
 } /* end class PropPanelComponent */
+
 
 

@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,75 +21,71 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: CrUtilityViolated.java
+// Classes: CrUtilityViolated
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.cognitive.critics;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
+import java.util.*;
 
-import org.argouml.cognitive.Designer;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
+import ru.novosoft.uml.foundation.extension_mechanisms.*;
 
-/**
- * A critic to detect when a class can never have instances (of
- * itself of any subclasses). This is done by checking that there
- * are no instance operations or attributes in the class itself
- * or in any of the realized interfaces or inherited classes.
- *
- * @author jrobbins
- */
+import org.argouml.cognitive.*;
+import org.argouml.model.uml.UmlHelper;
+import org.argouml.uml.*;
+
+/** A critic to detect when a class can never have instances (of
+ *  itself of any subclasses). */
+
 public class CrUtilityViolated extends CrUML {
 
-    /**
-     * The constructor.
-     */
-    public CrUtilityViolated() {
-        setupHeadAndDesc();
-        addSupportedDecision(UMLDecision.STORAGE);
-        addSupportedDecision(UMLDecision.STEREOTYPES);
-        addSupportedDecision(UMLDecision.CLASS_SELECTION);
-        addTrigger("stereotype");
-        addTrigger("behavioralFeature");
-    }
+  public CrUtilityViolated() {
+    setHeadline("Remove MInstance Variables from Utility Class");
+    addSupportedDecision(CrUML.decSTORAGE);
+    addSupportedDecision(CrUML.decSTEREOTYPES);
+    addTrigger("stereotype");
+    addTrigger("behavioralFeature");
+  }
 
-    /**
-     * @see org.argouml.uml.cognitive.critics.CrUML#predicate2(
-     * java.lang.Object, org.argouml.cognitive.Designer)
-     */
-    public boolean predicate2(Object dm, Designer dsgr) {
-        // we could check for base class of the stereotype but the
-	// condition normally covers it all.
-        if (!(Model.getFacade().isAClassifier(dm))) {
-            return NO_PROBLEM;
-        }
-	if (!(Model.getFacade().isUtility(dm))) {
-	    return NO_PROBLEM;
-	}
-
-	Collection classesToCheck = new ArrayList();
-	classesToCheck.addAll(Model.getCoreHelper().getSupertypes(dm));
-	classesToCheck.addAll(
-	    Model.getCoreHelper().getAllRealizedInterfaces(dm));
-	classesToCheck.add(dm);
-	Iterator it = classesToCheck.iterator();
-	while (it.hasNext()) {
-	    Object o = it.next();
-	    if (!Model.getFacade().isAInterface(o)) {
-		Iterator it2 = Model.getFacade().getAttributes(o).iterator();
-		while (it2.hasNext()) {
-		    if (Model.getFacade().isInstanceScope(it2.next())) {
-			return PROBLEM_FOUND;
-		    }
-		}
-	    }
-	    Iterator it2 = Model.getFacade().getOperations(o).iterator();
-	    while (it2.hasNext()) {
-		if (Model.getFacade().isInstanceScope(it2.next())) {
-		    return PROBLEM_FOUND;
-		}
-	    }
-	}
-        return NO_PROBLEM;
+  public boolean predicate2(Object dm, Designer dsgr) {
+    if (!(dm instanceof MClass)) return NO_PROBLEM;
+    MClass cls = (MClass) dm;
+    if ((cls.getStereotype()==null) || !("utility".equals(cls.getStereotype().getName())))
+      return NO_PROBLEM;
+    Collection str = getInheritedStructuralFeatures(cls,0);
+    if (str == null) return NO_PROBLEM;
+    Iterator enum = str.iterator();
+    while (enum.hasNext()) {
+      MStructuralFeature sf = (MStructuralFeature) enum.next();
+      MChangeableKind ck = sf.getChangeability();
+      MScopeKind sk = sf.getOwnerScope();
+      if (MScopeKind.INSTANCE.equals(sk))
+	return PROBLEM_FOUND;
     }
+    //needs-more-work?: don't count static or constants?
+    return NO_PROBLEM;
+  }
+
+	private Collection getInheritedStructuralFeatures(MClassifier cls,int depth)
+	{     
+		Collection res = new Vector();
+		res.addAll(UmlHelper.getHelper().getCore().getAttributes(cls));
+
+		Collection inh = cls.getGeneralizations();
+		for (Iterator iter = inh.iterator(); iter.hasNext();) {
+			MGeneralization gen = (MGeneralization)iter.next();
+                        MGeneralizableElement parent = gen.getParent();
+			if (parent != cls && parent instanceof MClassifier && depth < 50) {
+				Collection superstructs = getInheritedStructuralFeatures((MClassifier) parent,depth+1);
+				res.addAll(superstructs);
+			};
+		};
+		return res;
+
+  };
 } /* end class CrUtilityViolated */
+

@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2001 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,70 +21,67 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+/*
+  JavaRE - Code generation and reverse engineering for UML and Java
+  Author: Marcus Andersson andersson@users.sourceforge.net
+*/
+
 package org.argouml.language.java.generator;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.Stack;
-import java.util.Vector;
+import java.io.*;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
+import ru.novosoft.uml.foundation.extension_mechanisms.*;
+import ru.novosoft.uml.model_management.*;
+import java.util.*;
 
-import org.argouml.model.Model;
+// Added 2001-10-05 STEFFEN ZSCHALER
+import org.argouml.uml.DocumentationManager;
 
 /**
  * This helper class generates CodePiece based code.
  * It needs some work. See issue
  * http://argouml.tigris.org/issues/show_bug.cgi?id=435
- *
- * JavaRE - Code generation and reverse engineering for UML and Java.
- *
- * @author Marcus Andersson andersson@users.sourceforge.net
  */
-class CodeGenerator {
+class CodeGenerator
+{
     /**
        Generate code for a class.
 
        @param mClass The class to generate code for.
        @param writer The writer to write to.
     */
-    public static void generateClass(Object/*MClass*/ mClass,
-				     BufferedReader reader,
-				     BufferedWriter writer)
-	throws IOException {
-
-	ClassCodePiece ccp =
-	    new ClassCodePiece(null, Model.getFacade().getName(mClass));
+    static public void generateClass(MClass mClass, Writer writer)
+	throws Exception
+    {
+	ClassCodePiece ccp = new ClassCodePiece(null, mClass.getName());
 	Stack parseStateStack = new Stack();
-	parseStateStack.push(
-	        new ParseState(Model.getFacade().getNamespace(mClass)));
-	ccp.write(reader, writer, parseStateStack);
+	parseStateStack.push(new ParseState(mClass.getNamespace()));
+	ccp.write(writer, parseStateStack, 0);
 
 	writer.write("{\n");
 
 	// Features
-	Collection features = Model.getFacade().getFeatures(mClass);
-	for (Iterator i = features.iterator(); i.hasNext();) {
-	    Object feature = /*(MFeature)*/ i.next();
-	    if (Model.getFacade().isAOperation(feature)) {
-		generateOperation(/*(MOperation)*/ feature, mClass,
-				  reader, writer);
+	Collection features = mClass.getFeatures();
+	for(Iterator i = features.iterator(); i.hasNext(); ) {
+	    MFeature feature = (MFeature)i.next();
+	    if(feature instanceof MOperation) {
+		generateOperation((MOperation)feature, mClass, writer);
 	    }
-	    if (Model.getFacade().isAAttribute(feature)) {
-		generateAttribute(/*(MAttribute)*/ feature, mClass,
-				  reader, writer);
+	    if(feature instanceof MAttribute) {
+		generateAttribute((MAttribute)feature, mClass, writer);
 	    }
 	}
 
 	// Inner classes
-	Collection elements = Model.getFacade().getOwnedElements(mClass);
-	for (Iterator i = elements.iterator(); i.hasNext();) {
-	    Object element = /*(MModelElement)*/ i.next();
-	    if (Model.getFacade().isAClass(element)) {
-		generateClass(element, reader, writer);
-	    } else if (Model.getFacade().isAInterface(element)) {
-		generateInterface(element, reader, writer);
+	Collection elements = mClass.getOwnedElements();
+	for(Iterator i = elements.iterator(); i.hasNext(); ) {
+	    MModelElement element = (MModelElement)i.next();
+	    if(element instanceof MClass) {
+		generateClass((MClass)element, writer);
+	    }
+	    else if(element instanceof MInterface) {
+		generateInterface((MInterface)element, writer);
 	    }
 	}
 
@@ -93,46 +89,43 @@ class CodeGenerator {
     }
 
     /**
-     * Generate code for an interface.
-     *
-     * @param mInterface The interface to generate code for.
-     * @param writer The writer to write to.
-     */
-    public static void generateInterface(Object mInterface,
-					 BufferedReader reader,
-					 BufferedWriter writer)
-	throws IOException {
+       Generate code for an interface.
+
+       @param mInterface The interface to generate code for.
+       @param writer The writer to write to.
+    */
+    static public void generateInterface(MInterface mInterface, Writer writer)
+	throws Exception
+    {
 	InterfaceCodePiece icp =
-	    new InterfaceCodePiece(null, Model.getFacade().getName(mInterface));
+	    new InterfaceCodePiece(null, mInterface.getName());
 	Stack parseStateStack = new Stack();
-	parseStateStack.push(
-	        new ParseState(Model.getFacade().getNamespace(mInterface)));
-	icp.write(reader, writer, parseStateStack);
+	parseStateStack.push(new ParseState(mInterface.getNamespace()));
+	icp.write(writer, parseStateStack, 0);
 
 	writer.write("{\n");
 
 	// Features
-	Collection features = Model.getFacade().getFeatures(mInterface);
-	for (Iterator i = features.iterator(); i.hasNext();) {
-	    Object feature = /*(MFeature)*/ i.next();
-	    if (Model.getFacade().isAOperation(feature)) {
-		generateOperation(/*(MOperation)*/ feature,
-				  mInterface, reader, writer);
+	Collection features = mInterface.getFeatures();
+	for(Iterator i = features.iterator(); i.hasNext(); ) {
+	    MFeature feature = (MFeature)i.next();
+	    if(feature instanceof MOperation) {
+		generateOperation((MOperation)feature, mInterface, writer);
 	    }
-	    if (Model.getFacade().isAAttribute(feature)) {
-		generateAttribute(/*(MAttribute)*/ feature,
-				  mInterface, reader, writer);
+	    if(feature instanceof MAttribute) {
+		generateAttribute((MAttribute)feature, mInterface, writer);
 	    }
 	}
 
 	// Inner classes
-	Collection elements = Model.getFacade().getOwnedElements(mInterface);
-	for (Iterator i = elements.iterator(); i.hasNext();) {
-	    Object element = /*(MModelElement)*/ i.next();
-	    if (Model.getFacade().isAClass(element)) {
-		generateClass(element, reader, writer);
-	    } else if (Model.getFacade().isAInterface(element)) {
-		generateInterface(element, reader, writer);
+	Collection elements = mInterface.getOwnedElements();
+	for(Iterator i = elements.iterator(); i.hasNext(); ) {
+	    MModelElement element = (MModelElement)i.next();
+	    if(element instanceof MClass) {
+		generateClass((MClass)element, writer);
+	    }
+	    else if(element instanceof MInterface) {
+		generateInterface((MInterface)element, writer);
 	    }
 	}
 
@@ -146,56 +139,44 @@ class CodeGenerator {
        @param mClassifier The classifier the operation belongs to.
        @param writer The writer to write to.
     */
-    public static void generateOperation(Object mOperation,
-					 Object mClassifier,
-					 BufferedReader reader,
-					 BufferedWriter writer)
-	throws IOException {
-
+    static public void generateOperation(MOperation mOperation, MClassifier mClassifier, Writer writer)
+	throws Exception
+    {
 	OperationCodePiece ocp =
-	    new OperationCodePiece(new SimpleCodePiece(new StringBuffer(),
-						       0, 0, 0),
-				   new SimpleCodePiece(new StringBuffer(),
-						       0, 0, 0),
-				   Model.getFacade().getName(mOperation));
+	    new OperationCodePiece(new SimpleCodePiece(new StringBuffer(), 0, 0, 0),
+				   new SimpleCodePiece(new StringBuffer(), 0, 0, 0),
+				   mOperation.getName());
 	Stack parseStateStack = new Stack();
 	parseStateStack.push(new ParseState(mClassifier));
-	ocp.write(reader, writer, parseStateStack);
+	ocp.write(writer, parseStateStack, 0);
 
-	if (Model.getFacade().isAbstract(mOperation)
-	    || Model.getFacade().isAInterface(mClassifier)) {
-
+	if(mOperation.isAbstract() || mClassifier instanceof MInterface) {
 	    writer.write(";\n");
-	} else {
+	}
+	else {
 	    writer.write("{}\n");
 	}
     }
 
     /**
-     * Generate code for an attribute.
-     *
-     * @param mAttribute The attribute to generate code for.
-     * @param mClassifier The classifier the attribute belongs to.
-     * @param writer The writer to write to.
-     */
-    public static void generateAttribute(Object mAttribute,
-					 Object mClassifier,
-					 BufferedReader reader,
-					 BufferedWriter writer)
-	throws IOException {
+       Generate code for an attribute.
 
+       @param mAttribute The attribute to generate code for.
+       @param mClassifier The classifier the attribute belongs to.
+       @param writer The writer to write to.
+    */
+    static public void generateAttribute(MAttribute mAttribute, MClassifier mClassifier, Writer writer)
+	throws Exception
+    {
 	Vector names = new Vector();
-	StringBuffer sbName =
-	    new StringBuffer(Model.getFacade().getName(mAttribute));
-	names.addElement(new SimpleCodePiece(sbName, 0, 0, 0));
+	names.addElement(new SimpleCodePiece(new StringBuffer(mAttribute.getName()), 0, 0, 0));
 	AttributeCodePiece acp =
 	    new AttributeCodePiece(null,
-				   new SimpleCodePiece(new StringBuffer(),
-						       0, 0, 0),
+				   new SimpleCodePiece(new StringBuffer(), 0, 0, 0),
 				   names);
 	Stack parseStateStack = new Stack();
 	parseStateStack.push(new ParseState(mClassifier));
-	acp.write(reader, writer, parseStateStack);
+	acp.write(writer, parseStateStack, 0);
 	writer.write(";\n");
     }
 }

@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,70 +21,103 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: PropPanelNodeInstance.java
+// Classes: PropPanelNodeInstance
+// Original Author: 5eichler@informatik.uni-hamburg.de
+// $Id$
+
 package org.argouml.uml.ui.behavior.common_behavior;
 
-import javax.swing.JList;
-import javax.swing.JScrollPane;
+import java.awt.*;
+import java.util.*;
+import javax.swing.*;
 
-import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
-import org.argouml.uml.ui.AbstractActionAddModelElement;
-import org.argouml.uml.ui.ActionNavigateContainerElement;
-import org.argouml.uml.ui.UMLLinkedList;
-import org.argouml.uml.ui.UMLMutableLinkedList;
-import org.argouml.uml.ui.foundation.core.UMLContainerResidentListModel;
-import org.argouml.uml.ui.foundation.extension_mechanisms.ActionNewStereotype;
-import org.argouml.util.ConfigLoader;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
+import ru.novosoft.uml.behavior.common_behavior.*;
 
-/**
- * The properties panel of a NodeInstance.
- *
- * TODO: this property panel needs refactoring to remove dependency on old gui
- * components.
- */
-public class PropPanelNodeInstance extends PropPanelInstance {
+import org.argouml.application.api.*;
+import org.argouml.uml.ui.*;
+import org.argouml.uml.ui.foundation.core.PropPanelModelElement;
 
-    /**
-     * The serial version.
-     */
-    private static final long serialVersionUID = -3391167975804021594L;
-
-    /**
-     * Construct a property panel for Node Instance elements.
-     */
+public class PropPanelNodeInstance extends PropPanelModelElement {
     public PropPanelNodeInstance() {
-        super("Node Instance", lookupIcon("NodeInstance"),
-                ConfigLoader.getTabPropsOrientation());
+        super("Node Instance", _nodeInstanceIcon,2);
 
-        addField(Translator.localize("label.name"), getNameTextField());
-        addField(Translator.localize("label.namespace"),
-                getNamespaceSelector());
+	Class mclass = MNodeInstance.class;
+	
+	addCaption(Argo.localize("UMLMenu", "label.name"),1,0,0);
+	addField(nameField,1,0,0);
 
-        addSeparator();
-
-        addField(Translator.localize("label.stimili-sent"),
-                getStimuliSenderScroll());
-
-        addField(Translator.localize("label.stimili-received"),
-                getStimuliReceiverScroll());
-
-        JList resList = new UMLLinkedList(new UMLContainerResidentListModel());
-        addField(Translator.localize("label.residents"),
-                new JScrollPane(resList));
-
-        addSeparator();
-        AbstractActionAddModelElement a =
-            new ActionAddInstanceClassifier(Model.getMetaTypes().getNode());
-        JScrollPane classifierScroll =
-                new JScrollPane(new UMLMutableLinkedList(
-	                new UMLInstanceClassifierListModel(),
-	            a, null, null, true));
-	addField(Translator.localize("label.classifiers"),
-                    classifierScroll);
+    addCaption("Classifier:",2,0,0);
+    UMLClassifierComboBoxModel classifierModel = new UMLClassifierComboBoxModel(this,"isAcceptibleClassifier","classifier","getClassifier","setClassifier",false,MClassifier.class,true);
+	UMLComboBox clsComboBox = new UMLComboBox(classifierModel);
+   	addField(new UMLComboBoxNavigator(this, Argo.localize("UMLMenu", "tooltip.nav-class"),clsComboBox),2,0,0);
 
 
-        addAction(new ActionNavigateContainerElement());
-        addAction(new ActionNewStereotype());
-        addAction(getDeleteAction());
+	addCaption(Argo.localize("UMLMenu", "label.stereotype"),3,0,0);
+	addField(stereotypeBox,3,0,0);
+
+
+	addCaption(Argo.localize("UMLMenu", "label.namespace"),4,0,1);
+	addField(namespaceScroll,4,0,0);
+
+
+	new PropPanelButton(this,buttonPanel,_navUpIcon, Argo.localize("UMLMenu", "button.go-up"),"navigateUp",null);
+	new PropPanelButton(this,buttonPanel,_navBackIcon, Argo.localize("UMLMenu" , "button.go-back"),"navigateBackAction","isNavigateBackEnabled");
+	new PropPanelButton(this,buttonPanel,_navForwardIcon, Argo.localize("UMLMenu", "button.go-forward"),"navigateForwardAction","isNavigateForwardEnabled");
+	new PropPanelButton(this,buttonPanel,_deleteIcon,localize("Delete"),"removeElement",null);
+
+
     }
+
+    public boolean isAcceptibleBaseMetaClass(String baseClass) {
+        return baseClass.equals("NodeInstance") ||
+            baseClass.equals("Instance");
+    }
+
+    public boolean isAcceptibleClassifier(MModelElement classifier) {
+        return classifier instanceof MClassifier;
+    }
+
+
+    public void setClassifier(MClassifier element) {
+        Object target = getTarget();
+	
+        if(target instanceof MInstance) {
+	    MInstance inst = (MInstance)target;
+
+	    // delete all classifiers
+	    Collection col = inst.getClassifiers();
+	    if (col != null) {
+		Iterator iter = col.iterator();
+		if (iter != null && iter.hasNext()) {
+		    MClassifier classifier = (MClassifier)iter.next();
+		    inst.removeClassifier(classifier);
+		}
+	    }
+	    // add classifier
+	    inst.addClassifier( element);
+
+        }
+    }
+
+    public MClassifier getClassifier() {
+        MClassifier classifier = null;
+        Object target = getTarget();
+        if(target instanceof MInstance) {
+            // at the moment , we only deal with one classifier
+            Collection col = ((MInstance)target).getClassifiers();
+            if (col != null) {
+                Iterator iter = col.iterator();
+                if (iter != null && iter.hasNext()) {
+                    classifier = (MClassifier)iter.next();
+                }
+            }
+		    
+        }
+        return classifier;
+    }
+
+
 }

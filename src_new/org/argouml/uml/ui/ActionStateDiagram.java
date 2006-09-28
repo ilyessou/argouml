@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,84 +23,72 @@
 
 package org.argouml.uml.ui;
 
-import java.util.Collection;
-import java.util.Iterator;
+import org.apache.log4j.Category;
+import org.argouml.kernel.*;
+import org.argouml.model.uml.UmlFactory;
+import org.argouml.model.uml.behavioralelements.statemachines.StateMachinesFactory;
+import org.argouml.ui.*;
+import org.argouml.uml.*;
+import org.argouml.uml.diagram.state.ui.*;
 
-import org.argouml.kernel.Project;
-import org.argouml.kernel.ProjectManager;
-import org.argouml.model.Model;
-import org.argouml.ui.ArgoDiagram;
-import org.argouml.ui.targetmanager.TargetManager;
-import org.argouml.uml.diagram.DiagramFactory;
-import org.argouml.uml.diagram.state.ui.UMLStateDiagram;
-import org.argouml.uml.diagram.ui.UMLDiagram;
+import ru.novosoft.uml.*;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.behavior.state_machines.*;
 
-/**
- * Action to create a new statechart diagram.
- */
-public class ActionStateDiagram extends ActionNewDiagram {
+import java.awt.event.*;
+import java.beans.*;
+
+import javax.swing.JOptionPane;
+
+
+public class ActionStateDiagram extends ActionAddDiagram {
+    protected static Category cat = Category.getInstance(ActionStateDiagram.class);
+
+    ////////////////////////////////////////////////////////////////
+    // static variables
+    
+    public static ActionStateDiagram SINGLETON = new ActionStateDiagram(); 
+
+
+    ////////////////////////////////////////////////////////////////
+    // constructors
+
+    private ActionStateDiagram() { super("StateDiagram"); }
+    
+    protected ActionStateDiagram(String name) { super(name); }
 
     /**
-     * Constructor.
+     * Overriden since it should only be possible to add statediagrams and 
+     * activitydiagrams to classifiers and behavioral features.
+     * @see org.argouml.uml.ui.UMLAction#shouldBeEnabled()
      */
-    public ActionStateDiagram() {
-        super("action.state-diagram");
-    }
-
-    /**
-     * @see org.argouml.uml.ui.ActionNewDiagram#createDiagram()
-     */
-    protected UMLDiagram createDiagram() {
-        Project p = ProjectManager.getManager().getCurrentProject();
-        Object target = TargetManager.getInstance().getModelTarget();
-        Object machine = null;
-        Object namespace = p.getRoot(); // the root model
-        if (Model.getStateMachinesHelper().isAddingStatemachineAllowed(
-              target)) {
-            /* The target is a valid context. */
-            machine = Model.getStateMachinesFactory().buildStateMachine(target);
-        } else if (Model.getFacade().isAStateMachine(target)
-                && hasNoDiagramYet(target)) {
-            /* This target is a statemachine, 
-             * for which no diagram exists yet, 
-             * so, let's use it. */
-            machine = target;
-        } else {
-            /* Let's just build a Statemachine, 
-             * and put it in a suitable namespace. */
-            machine = Model.getStateMachinesFactory().createStateMachine();
-            if (Model.getFacade().isANamespace(target)) {
-                namespace = target;
-            }
-            Model.getCoreHelper().setNamespace(machine, namespace);
-            Model.getStateMachinesFactory()
-                    .buildCompositeStateOnStateMachine(machine);
-        }
-        
-        return (UMLDiagram) DiagramFactory.getInstance().createDiagram(
-                UMLStateDiagram.class,
-                Model.getFacade().getNamespace(machine),
-                machine);
+    public boolean shouldBeEnabled() {
+    	ProjectBrowser pb = ProjectBrowser.TheInstance;
+    	Object target = pb.getDetailsTarget();
+    	if (target == null) {
+    		target = pb.getTarget();
+    	}
+    	return target instanceof MBehavioralFeature || target instanceof MClassifier;
     }
     
-    private boolean hasNoDiagramYet(Object machine) {
-        Project p = ProjectManager.getManager().getCurrentProject();
-        Collection c = p.getDiagrams();
-        Iterator i = c.iterator();
-        while (i.hasNext()) {
-            ArgoDiagram d = (ArgoDiagram) i.next();
-            if (d instanceof UMLStateDiagram) {
-                if (((UMLStateDiagram) d).getStateMachine() == machine) {
-                    return false;
-                }
-            }
+    /**
+     * @see org.argouml.uml.ui.ActionAddDiagram#createDiagram(MNamespace, Object)
+     */
+    public ArgoDiagram createDiagram(MNamespace ns, Object target) {
+        MStateMachine machine = StateMachinesFactory.getFactory().buildStateMachine((MModelElement)target);
+        if (target instanceof MBehavioralFeature) {
+            ns = ((MBehavioralFeature)target).getNamespace();
         }
-        return true;
+        UMLStateDiagram d = new UMLStateDiagram(ns, machine);
+        return d;
     }
 
     /**
-     * The UID.
+     * @see org.argouml.uml.ui.ActionAddDiagram#isValidNamespace(MNamespace)
      */
-    private static final long serialVersionUID = -5197718695001757808L;
+    public boolean isValidNamespace(MNamespace ns) {
+        if (ns instanceof MClassifier) return true;
+        return false;
+    }
 
 } /* end class ActionStateDiagram */

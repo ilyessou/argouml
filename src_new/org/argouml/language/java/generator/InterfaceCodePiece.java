@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -30,15 +29,20 @@
 
 package org.argouml.language.java.generator;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.util.Stack;
+import org.argouml.model.uml.UmlFactory;
+
+import java.io.*;
+import java.util.*;
+
+import ru.novosoft.uml.*;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
 
 /**
    This code piece represents an interface declaration.
 */
-public class InterfaceCodePiece extends NamedCodePiece {
+public class InterfaceCodePiece extends NamedCodePiece
+{
     /** The code piece this interface represents. */
     private CodePiece interfaceDef;
 
@@ -48,84 +52,112 @@ public class InterfaceCodePiece extends NamedCodePiece {
     /**
        Constructor.
 
-       @param def The code piece this interface represents.
-       @param n The name of the interface.
+       @param interfaceDef The code piece this interface represents.
+       @param name The name of the interface.
     */
-    public InterfaceCodePiece(CodePiece def,
-                              String n) {
-	interfaceDef = def;
-	name = n;
+    public InterfaceCodePiece(CodePiece interfaceDef,
+                              String name)
+    {
+	this.interfaceDef = interfaceDef;
+	this.name = name;
     }
 
     /**
-     * @see org.argouml.language.java.generator.CodePiece#getText()
-     *
-     * Return the string representation for this piece of code.
-     */
-    public StringBuffer getText() {
+       Return the string representation for this piece of code.
+    */
+    public StringBuffer getText()
+    {
 	return interfaceDef.getText();
     }
 
     /**
-     * @see org.argouml.language.java.generator.CodePiece#getStartPosition()
-     *
-     * Return the start position.
-     */
-    public int getStartPosition() {
+       Return the start position.
+    */
+    public int getStartPosition()
+    {
 	return interfaceDef.getStartPosition();
     }
 
     /**
-     * @see org.argouml.language.java.generator.CodePiece#getEndPosition()
-     *
-     * Return the end position.
-     */
-    public int getEndPosition() {
+       Return the end position.
+    */
+    public int getEndPosition()
+    {
 	return interfaceDef.getEndPosition();
     }
 
     /**
-     * @see org.argouml.language.java.generator.CodePiece#getStartLine()
-     *
-     * Return the start line
-     */
-    public int getStartLine() {
+	Return the start line
+    */
+    public int getStartLine()
+    {
 	return interfaceDef.getStartLine();
     }
 
     /**
-     * @see org.argouml.language.java.generator.CodePiece#getEndLine()
-     * Return the end line
-     */
-    public int getEndLine() {
+	Return the end line
+    */
+    public int getEndLine()
+    {
 	return interfaceDef.getEndLine();
     }
 
     /**
-     * @see org.argouml.language.java.generator.NamedCodePiece#write(
-     *         java.io.BufferedReader, java.io.BufferedWriter, java.util.Stack)
-     *
-     * Write the code this piece represents to file. This will add one
-     * level to the stack if the interface is in the model.
-     */
-    public void write(BufferedReader reader,
-                      BufferedWriter writer,
-                      Stack parseStateStack) throws IOException {
-        ParseState parseState = (ParseState) parseStateStack.peek();
-        Object mInterface = /*(MInterface)*/ parseState.newClassifier(name);
+       Write the code this piece represents to file. This will add one
+       level to the stack.
+    */
+    public void write(Writer writer,
+                      Stack parseStateStack,
+                      int column)
+	throws Exception
+    {
+	ParseState parseState = (ParseState)parseStateStack.peek();
+	MInterface mInterface = (MInterface)parseState.newClassifier(name);
 
-	if (mInterface != null) {
-	    parseStateStack.push(new ParseState(mInterface));
-	    StringBuffer sbText =
-		GeneratorJava.getInstance().generateClassifierStart(mInterface);
-	    if (sbText != null) {
-		writer.write (sbText.toString());
+	if(mInterface == null) {
+	    // Removed
+	    mInterface = UmlFactory.getFactory().getCore().createInterface();
+	    writer.write("REMOVED ");
+	}
+
+	parseStateStack.push(new ParseState(mInterface));
+
+  StringBuffer sbText = GeneratorJava.getInstance().generateClassifierStart (mInterface);
+
+  if (sbText != null) {
+    writer.write (sbText.toString());
+  }
+
+/*	if(GeneratorJava.generateConstraintEnrichedDocComment(mInterface, writer)) {
+	    for(int k=0; k<column; k++) {
+		writer.write(" ");
 	    }
-            // dispose code piece in reader
-            ffCodePiece(reader, null);
-        } else {
-            // not in model, so write the original code
-            ffCodePiece(reader, writer);
-        }
+	}
+
+	if(mInterface.getVisibility() == MVisibilityKind.PUBLIC) {
+	    writer.write("public ");
+	}
+	else if(mInterface.getVisibility() == MVisibilityKind.PROTECTED) {
+	    writer.write("protected ");
+	}
+	else if(mInterface.getVisibility() == MVisibilityKind.PRIVATE) {
+	    writer.write("private ");
+	}
+	writer.write("interface " + mInterface.getName());
+
+	Collection generalizations = mInterface.getGeneralizations();
+	boolean first = false;
+	for(Iterator i = generalizations.iterator(); i.hasNext(); ) {
+	    if(first) {
+		writer.write(" extends ");
+		first = false;
+	    }
+	    else {
+		writer.write(", ");
+	    }
+	    writer.write(((MInterface)
+			      ((MGeneralization)i.next()).getParent()).
+			     getName());
+	}*/
     }
 }

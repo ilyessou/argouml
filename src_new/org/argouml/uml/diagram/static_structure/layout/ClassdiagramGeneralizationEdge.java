@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,23 +23,25 @@
 
 package org.argouml.uml.diagram.static_structure.layout;
 
+import org.argouml.uml.diagram.layout.*;
+import org.argouml.uml.diagram.ui.*;
 import org.tigris.gef.presentation.*;
 
 /**
  *
  * @author  mkl
  */
-public class ClassdiagramGeneralizationEdge
-    extends ClassdiagramInheritanceEdge
-{
-
-    /**
-     * The constructor.
-     *
-     * @param edge the fig edge
-     */
+public class ClassdiagramGeneralizationEdge extends ClassdiagramInheritanceEdge {
+    
+    
     public ClassdiagramGeneralizationEdge(FigEdge edge) {
         super(edge);
     }
+    
+    public int getVerticalOffset() {
+        return (int)(_vGap * 0.4);
+    }
+        
+
 }
 

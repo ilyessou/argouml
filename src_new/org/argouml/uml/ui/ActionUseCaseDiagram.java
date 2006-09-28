@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,49 +23,37 @@
 
 package org.argouml.uml.ui;
 
-import org.apache.log4j.Logger;
-import org.argouml.model.Model;
-import org.argouml.uml.diagram.DiagramFactory;
-import org.argouml.uml.diagram.ui.UMLDiagram;
-import org.argouml.uml.diagram.use_case.ui.UMLUseCaseDiagram;
+import org.argouml.kernel.*;
+import org.argouml.ui.*;
+import org.argouml.uml.diagram.use_case.ui.*;
 
-/**
- * Action to create a new use case diagram.
- */
+import ru.novosoft.uml.behavior.collaborations.MCollaboration;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.model_management.*;
+import java.awt.event.*;
+import java.beans.*;
+
+
 public class ActionUseCaseDiagram extends ActionAddDiagram {
 
-    private static final Logger LOG =
-        Logger.getLogger(ActionUseCaseDiagram.class);
+    public static ActionUseCaseDiagram SINGLETON = new ActionUseCaseDiagram(); 
 
-    public ActionUseCaseDiagram() {
-        super("action.usecase-diagram");
+    public ActionUseCaseDiagram() { super("UseCaseDiagram"); }
+    
+    /**
+     * @see org.argouml.uml.ui.ActionAddDiagram#createDiagram(MNamespace)
+     */
+    public ArgoDiagram createDiagram(MNamespace ns, Object target) {
+        return new UMLUseCaseDiagram(ns);
     }
 
     /**
-     * @see org.argouml.uml.ui.ActionAddDiagram#createDiagram(Object)
+     * @see org.argouml.uml.ui.ActionAddDiagram#isValidNamespace(MNamespace)
      */
-    public UMLDiagram createDiagram(Object namespace) {
-        if (!Model.getFacade().isANamespace(namespace)) {
-            LOG.error("No namespace as argument");
-            LOG.error(namespace);
-            throw new IllegalArgumentException(
-                "The argument " + namespace + "is not a namespace.");
-        }
-        return (UMLDiagram)DiagramFactory.getInstance().createDiagram(
-                UMLUseCaseDiagram.class,
-                namespace,
-                null);
-    }
-
-    /**
-     * @see org.argouml.uml.ui.ActionAddDiagram#isValidNamespace(Object)
-     */
-    public boolean isValidNamespace(Object handle) {
-        boolean validNamespace = false;
-        if (Model.getFacade().isAPackage(handle)
-            || Model.getFacade().isAClassifier(handle))
-            validNamespace = true;
-        return validNamespace;
+    public boolean isValidNamespace(MNamespace ns) {
+        if (ns instanceof MPackage) return true;
+        if (ns instanceof MClassifier) return true;
+        return false;
     }
 
 } /* end class ActionUseCaseDiagram */

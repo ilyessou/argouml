@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,92 +23,90 @@
 
 package org.argouml.uml.ui.foundation.core;
 
-import javax.swing.JList;
-import javax.swing.JScrollPane;
+import java.awt.*;
+import java.util.*;
+import javax.swing.*;
 
-import org.argouml.i18n.Translator;
-import org.argouml.uml.ui.ActionNavigateNamespace;
-import org.argouml.uml.ui.UMLLinkedList;
-import org.argouml.uml.ui.foundation.extension_mechanisms.ActionNewStereotype;
-import org.argouml.util.ConfigLoader;
-import org.tigris.swidgets.Orientation;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.extension_mechanisms.MStereotype;
 
-/**
- * The properties panel for a Dependency.
- *
- */
-public class PropPanelDependency extends PropPanelRelationship {
+import org.argouml.application.api.*;
+import org.argouml.uml.ui.*;
 
-    /**
-     * The serial version.
-     */
-    private static final long serialVersionUID = 3665986064546532722L;
+public class PropPanelDependency extends PropPanelModelElement {
 
-    /**
-     * The scrollpane with the modelelement that is the supplier of this
-     * dependency
-     */
-    private JScrollPane supplierScroll;
-
-    /**
-     * The scrollpane with the modelelement that is the client of this
-     * dependency
-     */
-    private JScrollPane clientScroll;
-
-    /**
-     * 'default' constructor used if a modelelement is a child of dependency (or
-     * dependency itself) but does not have a proppanel of their own.
-     */
     public PropPanelDependency() {
-        this("Dependency", ConfigLoader.getTabPropsOrientation());
+        super("Dependency",_dependencyIcon, 2);
+        
+        Class[] namesToWatch = { MStereotype.class,MNamespace.class,MDependency.class};
+    	setNameEventListening(namesToWatch);
 
-        addField(Translator.localize("label.name"),
-                getNameTextField());
-        addField(Translator.localize("label.namespace"),
-                getNamespaceSelector());
+        Class mclass = MDependency.class;
 
-        addSeparator();
+        addCaption(Argo.localize("UMLMenu", "label.name"),1,0,0);
+        addField(nameField,1,0,0);
 
-        addField(Translator.localize("label.suppliers"),
-                supplierScroll);
-        addField(Translator.localize("label.clients"),
-                clientScroll);
+        addCaption(Argo.localize("UMLMenu", "label.stereotype"),2,0,0);
+        addField(new UMLComboBoxNavigator(this, Argo.localize("UMLMenu", "tooltip.nav-stereo"),stereotypeBox),2,0,0);
 
-        addAction(new ActionNavigateNamespace());
-        addAction(new ActionNewStereotype());
-        addAction(getDeleteAction());
+        addCaption(Argo.localize("UMLMenu", "label.namespace"),3,0,1);
+        addField(namespaceScroll,3,0,0);
+
+        addCaption("Suppliers:",0,1,0.5);
+        JList suppliersList = new UMLList(new UMLReflectionListModel(this,"supplier",true,"getSuppliers","setSuppliers",null,null),true);
+        suppliersList.setForeground(Color.blue);
+        suppliersList.setVisibleRowCount(1);
+        addField(new JScrollPane(suppliersList),0,1,0.5);
+
+        addCaption("Clients:",1,1,0.5);
+        JList clientsList = new UMLList(new UMLReflectionListModel(this,"client",true,"getClients","setClients",null,null),true);
+        clientsList.setForeground(Color.blue);
+        clientsList.setVisibleRowCount(1);
+        addField(new JScrollPane(clientsList),1,1,0.5);
+
+
+	new PropPanelButton(this,buttonPanel,_navUpIcon, Argo.localize("UMLMenu", "button.go-up"),"navigateNamespace",null);
+	new PropPanelButton(this,buttonPanel,_navBackIcon, Argo.localize("UMLMenu", "button.go-back"),"navigateBackAction","isNavigateBackEnabled");
+	new PropPanelButton(this,buttonPanel,_navForwardIcon, Argo.localize("UMLMenu" ,"button.go-forward"),"navigateForwardAction","isNavigateForwardEnabled");
+	new PropPanelButton(this,buttonPanel,_deleteIcon, Argo.localize("UMLMenu", "button.delete-association"),"removeElement",null);
+
     }
 
-    /**
-     * Constructor that should be used by subclasses to initialize the
-     * attributes a dependency has.
-     * @see org.argouml.uml.ui.PropPanel#PropPanel(String, Orientation)
-     */
-    protected PropPanelDependency(String name, Orientation orientation) {
-        super(name, lookupIcon(name), orientation);
-        JList supplierList = new UMLLinkedList(
-                new UMLDependencySupplierListModel(), true);
-        supplierScroll = new JScrollPane(supplierList);
-
-        JList clientList = new UMLLinkedList(
-                new UMLDependencyClientListModel(), true);
-        clientScroll = new JScrollPane(clientList);
+    public Collection getSuppliers() {
+        Collection suppliers = null;
+        Object target = getTarget();
+        if(target instanceof MDependency) {
+            suppliers = ((MDependency) target).getSuppliers();
+        }
+        return suppliers;
     }
 
-    /**
-     * @return Returns the supplierScroll.
-     */
-    protected JScrollPane getSupplierScroll() {
-        return supplierScroll;
+    public void setSuppliers(Collection suppliers) {
+        Object target = getTarget();
+        if(target instanceof MDependency) {
+            ((MDependency) target).setSuppliers(suppliers);
+        }
     }
 
-    /**
-     * @return Returns the clientScroll.
-     */
-    protected JScrollPane getClientScroll() {
-        return clientScroll;
+    public Collection getClients() {
+        Collection suppliers = null;
+        Object target = getTarget();
+        if(target instanceof MDependency) {
+            suppliers = ((MDependency) target).getClients();
+        }
+        return suppliers;
     }
 
+    public void setClients(Collection suppliers) {
+        Object target = getTarget();
+        if(target instanceof MDependency) {
+            ((MDependency) target).setClients(suppliers);
+        }
+    }
+
+    protected boolean isAcceptibleBaseMetaClass(String baseClass) {
+        return baseClass.equals("Dependency");
+    }
 
 } /* end class PropPanelDependency */
+

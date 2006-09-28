@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,63 +21,69 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+
+// File: PropPanelState.java
+// Classes: PropPanelState
+// Original Author: your email address here
+// $Id$
+
 package org.argouml.uml.ui.behavior.activity_graphs;
 
-import javax.swing.ImageIcon;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.*;
+import ru.novosoft.uml.foundation.data_types.*;
+import ru.novosoft.uml.model_management.*;
+import ru.novosoft.uml.behavior.state_machines.*;
+import ru.novosoft.uml.behavior.common_behavior.*;
+import ru.novosoft.uml.behavior.activity_graphs.*;
 
-import org.argouml.i18n.Translator;
-import org.tigris.swidgets.Orientation;
-import org.argouml.uml.ui.behavior.state_machines.AbstractPropPanelState;
-import org.argouml.util.ConfigLoader;
+import org.argouml.application.api.*;
+import org.argouml.ui.*;
+import org.argouml.uml.ui.*;
+import org.argouml.uml.ui.behavior.state_machines.*;
 
-/**
- * User interface panel shown at the bottom of the screen that allows the user
- * to edit the properties of the selected UML model element.
- */
-public class PropPanelActionState extends AbstractPropPanelState {
+import javax.swing.*;
+import java.awt.*;
 
-    /**
-     * The serial version.
-     */
-    private static final long serialVersionUID = 4936258091606712050L;
+/** User interface panel shown at the bottom of the screen that allows
+ *  the user to edit the properties of the selected UML model
+ *  element. */
 
-    /**
-     * Construct a default property panel for an Action State.
-     */
-    public PropPanelActionState() {
-        this("Action State", lookupIcon("ActionState"), 
-                ConfigLoader.getTabPropsOrientation());
-    }
+public class PropPanelActionState extends PropPanelState {
 
-    /**
-     * Construct a property panel for an Action State with the given params.
-     *
-     * @param name the name of the properties panel
-     * @param icon the icon to be shown next to the name
-     * @param orientation the orientation of the panel
-     */
-    public PropPanelActionState(String name, ImageIcon icon,
-            Orientation orientation) {
+  ////////////////////////////////////////////////////////////////
+  // contructors
+  public PropPanelActionState() {
+    super("Action State",_actionStateIcon, 2);
 
-        super(name, icon, orientation);
+    Class mclass = MActionState.class;
 
-        addField(Translator.localize("label.name"),
-                getNameTextField());
-        addField(Translator.localize("label.container"),
-                getContainerScroll());
-        addField(Translator.localize("label.entry"),
-                getEntryScroll());
+    addCaption(Argo.localize("UMLMenu", "label.name"),1,0,0);
+    addField(nameField,1,0,0);
 
-        addField(Translator.localize("label.deferrable"),
-                getDeferrableEventsScroll());
+    addCaption(Argo.localize("UMLMenu", "label.stereotype"),2,0,0);
+    addField(new UMLComboBoxNavigator(this, Argo.localize("UMLMenu", "tooltip.nav-stereo"),stereotypeBox),2,0,0);
 
-        addSeparator();
+    addCaption("Entry-Action:",3,0,0);
+    addField(entryScroll,3,0,0);
 
-        addField(Translator.localize("label.incoming"),
-                getIncomingScroll());
-        addField(Translator.localize("label.outgoing"),
-                getOutgoingScroll());
+    addCaption(Argo.localize("UMLMenu", "label.modifiers"),4,0,1);
+    JPanel modifiersPanel = new JPanel(new GridLayout(0,2));
+    modifiersPanel.add(new UMLCheckBox(localize("dynamic"),this,new UMLReflectionBooleanProperty("isDynamic",mclass,"isDynamic","setDynamic")));
+    addField(modifiersPanel,4,0,0);
 
-    }
+    addCaption(Argo.localize("UMLMenu", "label.incoming"),0,1,0.5);
+    addField(incomingScroll,0,1,0.5);
+    
+    addCaption(Argo.localize("UMLMenu", "label.outgoing"),1,1,0.5);
+    addField(outgoingScroll,1,1,0.5);
+
+  }
+
+  protected boolean isAcceptibleBaseMetaClass(String baseClass) {
+    return baseClass.equals("ActionState");
+  }
 
 } /* end class PropPanelActionState */
+

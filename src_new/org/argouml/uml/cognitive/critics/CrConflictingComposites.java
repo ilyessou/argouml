@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,68 +21,66 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+
+// File: CrConflictingComposites.java
+// Classes: CrConflictingComposites
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.cognitive.critics;
 
-import java.util.Collection;
-import java.util.Iterator;
+import java.util.*;
 
-import org.argouml.cognitive.Designer;
-import org.argouml.cognitive.critics.Critic;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
 
-/**
- * Well-formedness rule [2] for association end. See page 28 of UML 1.1
- * Semantics. OMG document ad/97-08-04.
- *
- * @author jrobbins
- */
+import org.argouml.cognitive.*;
+import org.argouml.cognitive.critics.*;
+
+/** Well-formedness rule [2] for MAssociationEnd. See page 28 of UML 1.1
+ *  Semantics. OMG document ad/97-08-04. */
+
 public class CrConflictingComposites extends CrUML {
 
-    /**
-     * The constructor.
-     *
-     */
-    public CrConflictingComposites() {
-        setupHeadAndDesc();
+  public CrConflictingComposites() {
+    setHeadline("Remove Conflicting Composite Associations");
 
-	addSupportedDecision(UMLDecision.CONTAINMENT);
-	setKnowledgeTypes(Critic.KT_SEMANTICS);
-	// no good trigger
-    }
+    addSupportedDecision(CrUML.decCONTAINMENT);
+    setKnowledgeTypes(Critic.KT_SEMANTICS);
+    // no good trigger
+  }
 
-    /**
-     * @see org.argouml.uml.cognitive.critics.CrUML#predicate2(
-     * java.lang.Object, org.argouml.cognitive.Designer)
-     */
-    public boolean predicate2(Object classifier, Designer dsgr) {
-	if (!(Model.getFacade().isAClassifier(classifier))) {
-	    return NO_PROBLEM;
-	}
-	Collection conns = Model.getFacade().getAssociationEnds(classifier);
-	if (conns == null) {
-	    return NO_PROBLEM;
-	}
-	int compositeCount = 0;
-	Iterator assocEnds = conns.iterator();
-	while (assocEnds.hasNext()) {
-            Object myEnd = assocEnds.next();
-	    if (Model.getCoreHelper()
-                .equalsAggregationKind(myEnd, "composite")) {
-		continue;
-	    }
-	    if (Model.getFacade().getLower(myEnd) == 0) {
-		continue;
-	    }
-	    Object asc = Model.getFacade().getAssociation(myEnd);
-	    if (asc != null
-		&& Model.getCoreHelper().hasCompositeEnd(asc)) {
-		compositeCount++;
-            }
-	}
-	if (compositeCount > 1) {
-	    return PROBLEM_FOUND;
-	}
-	return NO_PROBLEM;
+  public boolean predicate2(Object dm, Designer dsgr) {
+    if (!(dm instanceof MClassifier)) return NO_PROBLEM;
+    MClassifier cls = (MClassifier) dm;
+    Collection conns = cls.getAssociationEnds();
+    if (conns == null) return NO_PROBLEM;
+    int compositeCount = 0;
+    Iterator enum = conns.iterator();
+    while (enum.hasNext()) {
+      MAssociationEnd myEnd = (MAssociationEnd) enum.next();
+      if (MAggregationKind.COMPOSITE.equals(myEnd.getAggregation()))
+	continue;
+      MMultiplicity m = myEnd.getMultiplicity();
+      if (m.getLower() == 0) continue;
+      MAssociation asc = myEnd.getAssociation();
+      if (asc != null && hasCompositeEnd(asc)) compositeCount++;
     }
+    if (compositeCount > 1) return PROBLEM_FOUND;
+    return NO_PROBLEM;
+  }
+
+  private final boolean hasCompositeEnd(MAssociation asc)
+  {
+    List ends = asc.getConnections();
+    for (Iterator iter = ends.iterator(); iter.hasNext();) {
+      MAssociationEnd end = (MAssociationEnd)iter.next();
+      if (end.getAggregation()==MAggregationKind.COMPOSITE)
+        return true;
+    };
+    return false;
+  };
+
 } /* end class CrConflictingComposites.java */
+

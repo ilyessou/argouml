@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,176 +21,184 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: FigComment.java
+// Classes: FigComment
+// Original Author: a_rueckert@gmx.net
+// $Id$
+
 package org.argouml.uml.diagram.static_structure.ui;
 
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Graphics;
-import java.awt.Point;
-import java.awt.Polygon;
-import java.awt.Rectangle;
-import java.awt.event.InputEvent;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-import java.beans.VetoableChangeListener;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.*;
+import java.beans.*;
+import javax.swing.*;
+import javax.swing.plaf.metal.MetalLookAndFeel;
+import ru.novosoft.uml.foundation.core.*;
 
-import javax.swing.SwingUtilities;
+import ru.novosoft.uml.*;
+import ru.novosoft.uml.behavior.state_machines.*;
 
-import org.apache.log4j.Logger;
-import org.argouml.kernel.DelayedChangeNotify;
-import org.argouml.kernel.DelayedVChangeListener;
-import org.argouml.model.AttributeChangeEvent;
-import org.argouml.model.Model;
-import org.argouml.model.RemoveAssociationEvent;
-import org.argouml.uml.diagram.ui.FigMultiLineText;
-import org.argouml.uml.diagram.ui.FigNodeModelElement;
-import org.tigris.gef.base.Geometry;
-import org.tigris.gef.base.Selection;
-import org.tigris.gef.graph.GraphModel;
-import org.tigris.gef.presentation.Fig;
-import org.tigris.gef.presentation.FigPoly;
-import org.tigris.gef.presentation.FigRect;
-import org.tigris.gef.presentation.FigText;
+import org.tigris.gef.base.*;
+import org.tigris.gef.presentation.*;
+import org.tigris.gef.graph.*;
 
-/**
- * Class to display a UML comment in a diagram.
- *
- * @author Andreas Rueckert
+import org.apache.log4j.Category;
+import org.argouml.kernel.*;  
+import org.argouml.ui.*;
+import org.argouml.uml.*;
+import org.argouml.uml.diagram.ui.*;
+import org.argouml.uml.diagram.state.*;
+import org.argouml.uml.diagram.state.ui.*;
+import org.argouml.model.uml.UmlFactory;
+
+
+/** 
+ * Class to display a UML note in a diagram 
+ * Since we don't need stereotypes for the note and an
+ * empty stereotype textfield causes problems with the
+ * note layout, I subclass FigNode instead of FigNodeModelElement.
  */
-public class FigComment
-    extends FigNodeModelElement
-    implements VetoableChangeListener,
-	       DelayedVChangeListener,
-	       MouseListener,
-	       KeyListener,
-	       PropertyChangeListener {
-    /**
-     * Logger.
-     */
-    private static final Logger LOG = Logger.getLogger(FigComment.class);
+public class FigComment extends FigNodeModelElement implements VetoableChangeListener, DelayedVChangeListener, MouseListener, KeyListener, PropertyChangeListener, MElementListener {
+    protected static Category cat = Category.getInstance(FigComment.class);
+
 
     ////////////////////////////////////////////////////////////////
     // constants
 
-    private int width = 80;
-    private int height = 60;
+    // public final int MARGIN = 2;
+    public int x = 0;
+    public int y = 0;
+    public int width = 80;
+    public int height = 60;
+    public int gapY = 10;
 
-    /**
-     * A dog-ear is a bent corner in a book.
-     */
-    private int dogear = 10;
+    protected boolean _readyToEdit = true;     
 
-    private boolean readyToEdit = true;
+    public static Font LABEL_FONT;
+    public static Font ITALIC_LABEL_FONT;
+    public final int MARGIN = 2;
+
+    static {
+	LABEL_FONT = MetalLookAndFeel.getSubTextFont();
+	ITALIC_LABEL_FONT = new Font(LABEL_FONT.getFamily(),
+				     Font.ITALIC, LABEL_FONT.getSize());
+    }                                                                     
 
     ////////////////////////////////////////////////////////////////
     // instance variables
 
+    // The model element the note is attached to.
+    private MModelElement _noteOwner = null;
+
     // The figure that holds the text of the note.
-    private FigText bodyTextFig;
+    FigText _text;
 
-    private FigPoly outlineFig;
+    /** UML does not really use ports, so just define one big one so
+     *  that users can drag edges to or from any point in the icon. */
+    FigRect _bigPort;
 
-    /**
-     * The upper right corner.
-     */
-    private FigPoly urCorner;
-
-    /**
-     * Flag to indicate that we have just been created. This is to fix the
-     * problem with loading comments that have stereotypes already
-     * defined.<p>
-     */
-    private boolean newlyCreated;
+    FigPoly _body;
+    FigPoly _urCorner;
 
     ////////////////////////////////////////////////////////////////
     // constructors
 
-    /**
-     * The main constructor used for file loading.
-     */
     public FigComment() {
+	_body = new FigPoly( Color.black, Color.white);
+	_body.addPoint(x, y);
+	_body.addPoint(x + width - 1 - gapY, y);
+	_body.addPoint(x + width - 1, y + gapY);
+	_body.addPoint(x + width - 1, y + height - 1);
+	_body.addPoint(x, y + height - 1);
+	_body.addPoint(x, y);
+	_body.setFilled(true);
+	_body.setLineWidth(1);
+	
+	_urCorner = new FigPoly(Color.black, Color.white);
+	_urCorner.addPoint(x + width - 1 - gapY, y);
+	_urCorner.addPoint(x + width - 1, y + gapY);
+	_urCorner.addPoint(x + width - 1 - gapY, y + gapY);
+	_urCorner.addPoint(x + width - 1 - gapY, y);
+	_urCorner.setFilled(true);
+	_urCorner.setLineWidth(1);
 
-        outlineFig = new FigPoly(Color.black, Color.white);
-        outlineFig.addPoint(0, 0);
-        outlineFig.addPoint(width - 1 - dogear, 0);
-        outlineFig.addPoint(width - 1, dogear);
-        outlineFig.addPoint(width - 1, height - 1);
-        outlineFig.addPoint(0, height - 1);
-        outlineFig.addPoint(0, 0);
-        outlineFig.setFilled(true);
-        outlineFig.setLineWidth(1);
+	_bigPort = new FigRect(x, y, width, height, null, null);     
+	_bigPort.setFilled(false);
+	_bigPort.setLineWidth(0);
 
-        urCorner = new FigPoly(Color.black, Color.white);
-        urCorner.addPoint(width - 1 - dogear, 0);
-        urCorner.addPoint(width - 1, dogear);
-        urCorner.addPoint(width - 1 - dogear, dogear);
-        urCorner.addPoint(width - 1 - dogear, 0);
-        urCorner.setFilled(true);
-        Color col = outlineFig.getFillColor();
-        urCorner.setFillColor(col.darker());
-        urCorner.setLineWidth(1);
+	_text = new FigText(2, 2, width - 2 - gapY, height - 4, true);
+	_text.setFont(LABEL_FONT);
+	_text.setTextColor(Color.black);
+	_text.setMultiLine(true);
+	_text.setAllowsTab(false);
+	_text.setText(placeString());        
+	_text.setJustification(FigText.JUSTIFY_LEFT);
+	_text.setFilled(false);
+	_text.setLineWidth(0);
+	//_text.setLineColor(Color.white);
 
-        setBigPort(new FigRect(0, 0, width, height, null, null));
-        getBigPort().setFilled(false);
-        getBigPort().setLineWidth(0);
+	// add Figs to the FigNode in back-to-front order
+	addFig(_bigPort); 
+	addFig(_body);
+	addFig(_urCorner);
+	addFig(_text);
 
-        bodyTextFig =
-            new FigMultiLineText(2, 2,
-                                 width - 2 - dogear, height - 4, true);
+	setBlinkPorts(false); //make port invisble unless mouse enters
+	Rectangle r = getBounds();
+	setBounds(r.x, r.y, r.width, r.height);
+	updateEdges();
 
-        // add Figs to the FigNode in back-to-front order
-        addFig(getBigPort());
-        addFig(outlineFig);
-        addFig(urCorner);
-        addFig(getStereotypeFig());
-        addFig(bodyTextFig);
-
-        setBlinkPorts(false); //make port invisble unless mouse enters
-        Rectangle r = getBounds();
-        setBounds(r.x, r.y, r.width, r.height);
-        updateEdges();
-
-        readyToEdit = false;
-        // Mark this as newly created. This is to get round the problem with
-        // creating figs for loaded comments that had stereotypes. They are
-        // saved with their dimensions INCLUDING the stereotype, but since we
-        // pretend the stereotype is not visible, we add height the first time
-        // we render such a comment. This is a complete fudge, and really we
-        // ought to address how comment objects with stereotypes are saved. But
-        // that will be hard work.
-        newlyCreated = true;
+	_readyToEdit = false;
     }
 
     /**
-     * Construct a new comment.
+     * Construct a new note
      *
-     * @param gm the graphmodel
-     * @param node the underlying UML Comment
+     * @param gm The graphmodel
+     * @param node The underlying MComment node
      */
     public FigComment(GraphModel gm, Object node) {
-        this();
-        setOwner(node);
+	this();
+	setOwner(node);
+	modelChanged(); 
     }
 
     /**
-     * Get the default text for this figure.
+     * Create a note for a given model element.
      *
+     * @param element The annotated model element.
+     */
+    public FigComment(MModelElement element) {
+	this();                                     // Construct the figure.
+	MComment node = UmlFactory.getFactory().getCore().createComment();         // Create a new Comment node.
+	setOwner(node);                             // Set it as the owner of the figure.
+	element.addComment(node);                   // Tell the annotated element, that it has a comment now.
+
+	// Notes in state diagrams need a special treatment, cause
+	// the nodes in them don't necessary have a namespace, where
+	// we could add the note. So I added this hack... :-(
+	// Andreas Rueckert <a_rueckert@gmx.net>
+	if(element instanceof MStateVertex) { 
+
+	    ProjectBrowser pb = ProjectBrowser.TheInstance;    // If the current target is a state diagram, we have to
+	    if (pb.getTarget() instanceof UMLStateDiagram) {   // check, if we are editing the diagram.
+		StateDiagramGraphModel gm = (StateDiagramGraphModel)(((UMLStateDiagram)pb.getTarget()).getGraphModel());
+		node.setNamespace(gm.getNamespace());  // We are editing, so we set the Namespace directly.
+	    }
+	} else {
+	    node.setNamespace(element.getNamespace());  // Add the comment to the same namespace as the annotated element.
+	}
+
+	storeNote( placeString());                  // Set the default text for this figure type.
+    }
+
+    /**
+     * Get the default text for this figure. 
+     *   
      * @return The default text for this figure.
      */
-    public String placeString() {
-        String placeString = retrieveBody();
-        if (placeString == null) {
-            placeString = "new note";
-        }
-        return placeString;
-    }
+    public String placeString() { return "new note"; }
 
     /**
      * Clone this figure.
@@ -199,34 +206,13 @@ public class FigComment
      * @return The cloned figure.
      */
     public Object clone() {
-        FigComment figClone = (FigComment) super.clone();
-        Iterator thisIter = this.getFigs().iterator();
-        while (thisIter.hasNext()) {
-            Object thisFig = thisIter.next();
-            if (thisFig == outlineFig) {
-                figClone.outlineFig = (FigPoly) thisFig;
-            }
-            if (thisFig == urCorner) {
-                figClone.urCorner = (FigPoly) thisFig;
-            }
-            if (thisFig == bodyTextFig) {
-                figClone.bodyTextFig = (FigText) thisFig;
-            }
-        }
-        return figClone;
-    }
-
-    /**
-     * @see org.tigris.gef.presentation.Fig#setOwner(java.lang.Object)
-     */
-    public void setOwner(Object own) {
-        super.setOwner(own);
-        if (own != null) {
-            String body = (String) Model.getFacade().getBody(getOwner());
-            if (body != null) {
-                bodyTextFig.setText(body);
-            }
-        }
+	FigComment figClone = (FigComment)super.clone();
+	Vector v = figClone.getFigs();
+	figClone._bigPort = (FigRect)v.elementAt(0);    
+	figClone._body = (FigPoly)v.elementAt(1);
+	figClone._urCorner = (FigPoly)v.elementAt(2);
+	figClone._text = (FigText) v.elementAt(3);
+	return figClone;
     }
 
     ////////////////////////////////////////////////////////////////
@@ -236,263 +222,191 @@ public class FigComment
      * See FigNodeModelElement.java for more info on these methods.
      */
 
-    /**
-     * If the user double clicks on any part of this FigNode, pass it
-     * down to one of the internal Figs.  This allows the user to
-     * initiate direct text editing.
-     *
-     * @see java.awt.event.MouseListener#mouseClicked(java.awt.event.MouseEvent)
-     */
+    /** If the user double clicks on any part of this FigNode, pass it
+     *  down to one of the internal Figs.  This allows the user to
+     *  initiate direct text editing. */
     public void mouseClicked(MouseEvent me) {
-        if (!readyToEdit) {
-            if (Model.getFacade().isAModelElement(getOwner())) {
-                readyToEdit = true;
-            } else {
-                LOG.debug("not ready to edit note");
-                return;
-            }
-        }
-        if (me.isConsumed()) {
-            return;
-        }
-        if (me.getClickCount() >= 2
-	    && !(me.isPopupTrigger()
-		 || me.getModifiers() == InputEvent.BUTTON3_MASK)) {
-            if (getOwner() == null) {
-                return;
-            }
-            Fig f = hitFig(new Rectangle(me.getX() - 2, me.getY() - 2, 4, 4));
-            if (f instanceof MouseListener) {
-                ((MouseListener) f).mouseClicked(me);
-            }
-        }
-        me.consume();
+	if (!_readyToEdit) {
+	    if (getOwner() instanceof MModelElement) {
+		MModelElement own = (MModelElement)getOwner();
+		storeNote("");
+		_readyToEdit = true;
+	    } else {
+		cat.debug("not ready to edit note");
+		return;
+	    }
+	}
+	if (me.isConsumed()) return;
+	if (me.getClickCount() >= 2 &&
+	    !(me.isPopupTrigger() || me.getModifiers() == InputEvent.BUTTON3_MASK)) {
+	    if (getOwner() == null) return;
+	    Fig f = hitFig(new Rectangle(me.getX() - 2, me.getY() - 2, 4, 4));
+	    if (f instanceof MouseListener) ((MouseListener)f).mouseClicked(me);
+	}       
+	me.consume();
     }
 
-    /**
-     * @see java.beans.VetoableChangeListener#vetoableChange(java.beans.PropertyChangeEvent)
-     */
     public void vetoableChange(PropertyChangeEvent pce) {
-        Object src = pce.getSource();
-        if (src == getOwner()) {
-            DelayedChangeNotify delayedNotify =
-		new DelayedChangeNotify(this, pce);
-            SwingUtilities.invokeLater(delayedNotify);
-        } else {
-            LOG.debug("FigNodeModelElement got vetoableChange"
-		      + " from non-owner:" + src);
-        }
-    }
+	Object src = pce.getSource();
+	if (src == getOwner()) {
+	    DelayedChangeNotify delayedNotify = new DelayedChangeNotify(this, pce);
+	    SwingUtilities.invokeLater(delayedNotify);
+	}
+	else cat.debug("FigNodeModelElement got vetoableChange"+
+				" from non-owner:" + src);
+    }     
 
-    /**
-     * @see org.argouml.kernel.DelayedVChangeListener#delayedVetoableChange(java.beans.PropertyChangeEvent)
-     */
     public void delayedVetoableChange(PropertyChangeEvent pce) {
-        // update any text, colors, fonts, etc.
-        renderingChanged();
-        // update the relative sizes and positions of internel Figs
-        endTrans();
+	Object src = pce.getSource();
+	startTrans();
+	// update any text, colors, fonts, etc.
+	modelChanged();
+	// update the relative sizes and positions of internel Figs
+	updateBounds();
+	endTrans();
     }
 
-    /**
-     * @see java.beans.PropertyChangeListener#propertyChange(java.beans.PropertyChangeEvent)
-     */
     public void propertyChange(PropertyChangeEvent pve) {
-        Object src = pve.getSource();
-        String pName = pve.getPropertyName();
-        if (pName.equals("editing")
-	    && Boolean.FALSE.equals(pve.getNewValue())) {
-            //parse the text that was edited
-            textEdited((FigText) src);
-            // resize the FigNode to accomodate the new text
-            Rectangle bbox = getBounds();
-            Dimension minSize = getMinimumSize();
-            bbox.width = Math.max(bbox.width, minSize.width);
-            bbox.height = Math.max(bbox.height, minSize.height);
-            setBounds(bbox.x, bbox.y, bbox.width, bbox.height);
-            endTrans();
-        } else {
-            super.propertyChange(pve);
-        }
+	Object src = pve.getSource();
+	String pName = pve.getPropertyName();
+	if (pName.equals("editing") && Boolean.FALSE.equals(pve.getNewValue())) {
+	    try {
+		startTrans();
+		//parse the text that was edited
+		textEdited((FigText)src);
+		// resize the FigNode to accomodate the new text
+		Rectangle bbox = getBounds();
+		Dimension minSize = getMinimumSize();
+		bbox.width = Math.max(bbox.width, minSize.width);
+		bbox.height = Math.max(bbox.height, minSize.height);
+		setBounds(bbox.x, bbox.y, bbox.width, bbox.height);
+		endTrans();
+	    }
+	    catch (PropertyVetoException ex) {
+                cat.error("could not parse and use the text entered in figcomment", ex);
+	    }
+	}
+	else super.propertyChange(pve);
     }
 
-    /**
-     * @see java.awt.event.KeyListener#keyPressed(java.awt.event.KeyEvent)
-     */
+    public void propertySet(MElementEvent mee) {
+	modelChanged();
+	damage();
+    }
+
+    public void listRoleItemSet(MElementEvent mee) {
+	modelChanged();
+	damage();
+    }
+
+    public void recovered(MElementEvent mee) {
+    }
+
+    public void removed(MElementEvent mee) {
+	this.delete();
+    }
+    
+    public void roleAdded(MElementEvent mee) {
+	modelChanged();
+	damage();
+    }
+
+    public void roleRemoved(MElementEvent mee) {
+	modelChanged();
+	damage();
+    }  
+
     public void keyPressed(KeyEvent ke) {
+	if (!_readyToEdit) {
+	    if (getOwner() instanceof MModelElement) {
+		storeNote("");
+		_readyToEdit = true;
+	    } else {
+		cat.debug("not ready to edit note");
+		return;
+	    }
+	}
+	if (ke.isConsumed()) return;
+	if (getOwner() == null) return;
+	_text.keyPressed(ke);
     }
 
-    /**
-     * Not used, do nothing.
-     *
-     * @see java.awt.event.KeyListener#keyReleased(java.awt.event.KeyEvent)
-     */
-    public void keyReleased(KeyEvent ke) {
-    }
+    /** not used, do nothing. */
+    public void keyReleased(KeyEvent ke) { }
 
-    /**
-     * @see java.awt.event.KeyListener#keyTyped(java.awt.event.KeyEvent)
-     */
     public void keyTyped(KeyEvent ke) {
-        if (Character.isISOControl(ke.getKeyChar())) {
-            return;
-        }
-        if (!readyToEdit) {
-            if (Model.getFacade().isAModelElement(getOwner())) {
-                storeBody("");
-                readyToEdit = true;
-            } else {
-                LOG.debug("not ready to edit note");
-                return;
-            }
-        }
-        if (ke.isConsumed()) {
-            return;
-        }
-        if (getOwner() == null) {
-            return;
-        }
-        bodyTextFig.keyTyped(ke);
-    }
-
+    }                         
+        
     ////////////////////////////////////////////////////////////////
     // Fig accessors
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#makeSelection()
-     */
-    public Selection makeSelection() {
-        return new SelectionComment(this);
-    }
-
-    /**
-     * @see org.tigris.gef.presentation.Fig#setLineColor(java.awt.Color)
-     */
     public void setLineColor(Color col) {
-        // The text element has no border, so the line color doesn't matter.
-        outlineFig.setLineColor(col);
-        urCorner.setLineColor(col);
+	// The _text element has no border, so the line color doesn't matter.
+	_body.setLineColor(col);
+	_urCorner.setLineColor(col);
     }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#getLineColor()
-     */
-    public Color getLineColor() {
-        return outlineFig.getLineColor();
-    }
+    public Color getLineColor() { return _body.getLineColor(); }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#setFillColor(java.awt.Color)
-     */
     public void setFillColor(Color col) {
-        outlineFig.setFillColor(col);
-        urCorner.setFillColor(col);
+	_body.setFillColor(col);
+	_urCorner.setFillColor(col);
     }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#getFillColor()
-     */
-    public Color getFillColor() {
-        return outlineFig.getFillColor();
-    }
-
-    /**
-     * @see org.tigris.gef.presentation.Fig#setFilled(boolean)
-     */
+    public Color getFillColor() { return _body.getFillColor(); }
+    
     public void setFilled(boolean f) {
-        bodyTextFig.setFilled(false); // The text is always opaque.
-        outlineFig.setFilled(f);
-        urCorner.setFilled(f);
+	_text.setFilled(false);  // The text is always opaque.
+	_body.setFilled(f);
+	_urCorner.setFilled(f);
     }
+    
+    public boolean getFilled() { return _body.getFilled(); }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#getFilled()
-     */
-    public boolean getFilled() {
-        return outlineFig.getFilled();
-    }
-
-    /**
-     * @see org.tigris.gef.presentation.Fig#setLineWidth(int)
-     */
     public void setLineWidth(int w) {
-        bodyTextFig.setLineWidth(0); // Make a seamless integration of the text
-        // in the note figure.
-        outlineFig.setLineWidth(w);
-        urCorner.setLineWidth(w);
+	_text.setLineWidth(0);  // Make a seamless integration of the text
+	                        // in the note figure.
+	_body.setLineWidth(w);
+	_urCorner.setLineWidth(w);
     }
-
-    /**
-     * @see org.tigris.gef.presentation.Fig#getLineWidth()
-     */
-    public int getLineWidth() {
-        return outlineFig.getLineWidth();
-    }
+    
+    public int getLineWidth() { return _body.getLineWidth(); }
 
     ////////////////////////////////////////////////////////////////
     // user interaction methods
 
-    /**
-     * @see org.argouml.uml.diagram.ui.FigNodeModelElement#textEdited(org.tigris.gef.presentation.FigText)
-     */
-    protected void textEdited(FigText ft) {
-        if (ft == bodyTextFig) {
-            storeBody(ft.getText());
-        }
-    }
-
-    /**
-     * @see org.argouml.uml.diagram.ui.FigNodeModelElement#textEditStarted(org.tigris.gef.presentation.FigText)
-     */
-    protected void textEditStarted(FigText ft) {
-        showHelp("parsing.help.comment");
-    }
-
-    /**
-     * @see org.tigris.gef.presentation.Fig#setEnclosingFig(org.tigris.gef.presentation.Fig)
-     */
+    protected void textEdited(FigText ft) throws PropertyVetoException {
+	if(ft == _text)
+	    storeNote( ft.getText());
+    }     
+    
     public void setEnclosingFig(Fig encloser) {
-        super.setEnclosingFig(encloser);
+	super.setEnclosingFig(encloser);
     }
 
     ////////////////////////////////////////////////////////////////
     // accessor methods
 
     /**
-     * Stores the body text in the associated model element.
+     * Store a note in the associated model element.
      *
-     * @param body The body text to store.
+     * @param note The note to store.
      */
-    public final void storeBody(String body) {
-        if (getOwner() != null) {
-            Model.getCoreHelper().setBody(getOwner(), body);
-        }
+    public final void storeNote(String note) {
+	if(getOwner() != null)
+	    ((MModelElement)getOwner()).setName( note);
     }
 
     /**
-     * Retrieve the body text from the associated model element.
+     * Retrieve the note from the associated model element.
      *
-     * @return The body from the associated model element.
+     * @return The note from the associated model element.
      */
-    private String retrieveBody() {
-        return (getOwner() != null)
-            ? (String) Model.getFacade().getBody(getOwner())
-            : null;
+    public final String retrieveNote() {
+	return (getOwner() != null) ? ((MModelElement)getOwner()).getName() : null;
     }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#getUseTrapRect()
-     */
-    public boolean getUseTrapRect() {
-        return true;
-    }
-    
-    /**
-     * Always returns null as the FigComment does not display its name.
-     */
-    public Rectangle getNameBounds() {
-        return null;
-    }
+    public boolean getUseTrapRect() { return true; }
 
     /**
      * Get the minimum size for the note figure.
@@ -501,212 +415,65 @@ public class FigComment
      */
     public Dimension getMinimumSize() {
 
-        // Get the size of the text field.
-        Dimension aSize = bodyTextFig.getMinimumSize();
+	// Get the size of the text field.
+	Dimension textMinimumSize = _text.getMinimumSize();
 
-        // If we have a stereotype displayed, then allow some space for that
-        // (width and height)
-
-        if (getStereotypeFig().isVisible()) {
-            Dimension stereoMin = getStereotypeFig().getMinimumSize();
-            aSize.width =
-                Math.max(aSize.width,
-                         stereoMin.width);
-            aSize.height += stereoMin.height;
-        }
-
-        // And add the gaps around the textfield to get the minimum
-        // size of the note.
-        return new Dimension(aSize.width + 4 + dogear,
-			     aSize.height + 4);
+	// And add the gaps around the textfield to get the minimum
+	// size of the note.
+	return new Dimension(textMinimumSize.width + 4 + gapY, textMinimumSize.height + 4);
     }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#setBounds(int, int, int, int)
-     */
-    protected void setBoundsImpl(int px, int py, int w, int h) {
-        if (bodyTextFig == null) {
-            return;
-        }
+    public void setBounds(int x, int y, int w, int h) {
+	if (_text == null) return;
 
-        Dimension stereoMin = getStereotypeFig().getMinimumSize();
+	Rectangle oldBounds = getBounds();
 
-        int stereotypeHeight = 0;
-        if (getStereotypeFig().isVisible()) {
-            stereotypeHeight = stereoMin.height;
-        }
+	// Resize the text figure
+	_text.setBounds(x + 2, y  + 2 , w - 4 - gapY , h - 4);
 
-        Rectangle oldBounds = getBounds();
+	// Resize the big port around the figure
+	_bigPort.setBounds(x, y, w, h);
 
-        // Resize the text figure
-        bodyTextFig.setBounds(px + 2, py + 2 + stereotypeHeight,
-                w - 4 - dogear, h - 4 - stereotypeHeight);
+	// Since this is a complex polygon, there's no easy way to resize it.
+	Polygon newPoly = new Polygon();
+	newPoly.addPoint(x, y);
+	newPoly.addPoint(x + w - 1 - gapY, y);
+	newPoly.addPoint(x + w - 1, y + gapY);
+	newPoly.addPoint(x + w - 1, y + h - 1);
+	newPoly.addPoint(x, y + h - 1);
+	newPoly.addPoint(x, y);
+	_body.setPolygon(newPoly);
 
-        getStereotypeFig().setBounds(px + 2, py + 2,
-                w - 4 - dogear, stereoMin.height);
+	// Just move the corner to it's new position.
+	_urCorner.setBounds(x + w - 1 - gapY, y, gapY, gapY);
 
-        // Resize the big port around the figure
-        getBigPort().setBounds(px, py, w, h);
-
-        // Since this is a complex polygon, there's no easy way to resize it.
-        Polygon newPoly = new Polygon();
-        newPoly.addPoint(px, py);
-        newPoly.addPoint(px + w - 1 - dogear, py);
-        newPoly.addPoint(px + w - 1, py + dogear);
-        newPoly.addPoint(px + w - 1, py + h - 1);
-        newPoly.addPoint(px, py + h - 1);
-        newPoly.addPoint(px, py);
-        outlineFig.setPolygon(newPoly);
-
-        // Just move the corner to it's new position.
-        urCorner.setBounds(px + w - 1 - dogear, py, dogear, dogear);
-
-        calcBounds(); //_x = x; _y = y; _w = w; _h = h;
-        firePropChange("bounds", oldBounds, getBounds());
+	calcBounds(); //_x = x; _y = y; _w = w; _h = h;
+	firePropChange("bounds", oldBounds, getBounds());
     }
 
-    /**
-     * @see org.argouml.uml.diagram.ui.FigNodeModelElement#updateBounds()
-     */
     protected void updateBounds() {
-        Rectangle bbox = getBounds();
-        Dimension minSize = getMinimumSize();
-        bbox.width = Math.max(bbox.width, minSize.width);
-        bbox.height = Math.max(bbox.height, minSize.height);
-        setBounds(bbox.x, bbox.y, bbox.width, bbox.height);
-    }
+	Rectangle bbox = getBounds();
+	Dimension minSize = getMinimumSize();
+	bbox.width = Math.max(bbox.width, minSize.width);
+	bbox.height = Math.max(bbox.height, minSize.height);
+	setBounds(bbox.x, bbox.y, bbox.width, bbox.height);
+    }    
 
     ///////////////////////////////////////////////////////////////////
     // Internal methods
 
-    /**
-     * This is called after any part of the UML ModelElement (the comment) has
-     * changed. This method automatically updates the note FigText.
-     *
-     * @see org.argouml.uml.diagram.ui.FigNodeModelElement#modelChanged(java.beans.PropertyChangeEvent)
-     */
-    protected final void modelChanged(PropertyChangeEvent mee) {
-        super.modelChanged(mee);
-
-        if (mee instanceof AttributeChangeEvent
-                && mee.getPropertyName().equals("body")) {
-
-            bodyTextFig.setText(mee.getNewValue().toString());
-            calcBounds();
-            setBounds(getBounds());
-            damage();
-        } else if (mee instanceof RemoveAssociationEvent
-                && mee.getPropertyName().equals("annotatedElement")) {
-            /* Remove the commentedge.
-             * If there are more then one comment-edges between 
-             * the 2 objects, then delete them all. */
-            Collection toRemove = new ArrayList();
-            Collection c = getFigEdges(); // all connected edges
-            Iterator i = c.iterator();
-            while (i.hasNext()) {
-                FigEdgeNote fen = (FigEdgeNote) i.next();
-                Object otherEnd = fen.getDestination(); // the UML object
-                if (otherEnd == getOwner()) { // wrong end of the edge
-                    otherEnd = fen.getSource();
-                }
-                if (otherEnd == mee.getOldValue())  {
-                    toRemove.add(fen);
-                }
-            }
-            i = toRemove.iterator();
-            while (i.hasNext()) {
-                FigEdgeNote fen = (FigEdgeNote) i.next();
-                fen.removeFromDiagram();
-            }
-        }
-    }
-
-    /**
-     * @see org.argouml.uml.diagram.ui.FigNodeModelElement#updateStereotypeText()
-     */
-    protected void updateStereotypeText() {
-        Object me = /*(MModelElement)*/ getOwner();
-
-        if (me == null) {
-            return;
-        }
-
-        Rectangle rect = getBounds();
-
-        Dimension stereoMin = getStereotypeFig().getMinimumSize();
-
-        if (Model.getFacade().getStereotypes(me).isEmpty()) {
-
-            if (getStereotypeFig().isVisible()) {
-                getStereotypeFig().setVisible(false);
-                rect.y += stereoMin.height;
-                rect.height -= stereoMin.height;
-                setBounds(rect.x, rect.y, rect.width, rect.height);
-                calcBounds();
-            }
-        } else {
-            getStereotypeFig().setOwner(getOwner());
-
-            if (!getStereotypeFig().isVisible()) {
-                getStereotypeFig().setVisible(true);
-
-                // Only adjust the stereotype height if we are not newly
-                // created. This gets round the problem of loading classes with
-                // stereotypes defined, which have the height already including
-                // the stereotype.
-
-                if (!newlyCreated) {
-                    rect.y -= stereoMin.height;
-                    rect.height += stereoMin.height;
-                    rect.width =
-                        Math.max(getMinimumSize().width, rect.width);
-                    setBounds(rect.x, rect.y, rect.width, rect.height);
-                    calcBounds();
-                }
-            }
-        }
-        // Whatever happened we are no longer newly created, so clear the
-        // flag. Then set the bounds for the rectangle we have defined.
-        newlyCreated = false;
-    }
     
-    public String getBody() {
-        return bodyTextFig.getText();
-    }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#getClosestPoint(java.awt.Point)
+    /** 
+     * This is called aftern any part of the UML MModelElement has
+     * changed. This method automatically updates the note FigText. 
      */
-    public Point getClosestPoint(Point anotherPt) {
-        Rectangle r = getBounds();
-        int[] xs = {
-            r.x, r.x + r.width - dogear, r.x + r.width,
-            r.x + r.width,  r.x,            r.x,
-        };
-        int[] ys = {
-            r.y, r.y,                    r.y + dogear,
-            r.y + r.height, r.y + r.height, r.y,
-        };
-        Point p =
-            Geometry.ptClosestTo(
-                xs,
-                ys,
-                6,
-                anotherPt);
-        return p;
+    protected final void modelChanged() {
+	if (_readyToEdit) {
+	    String noteStr = retrieveNote();
+	    if(noteStr != null)
+		_text.setText(noteStr);
+	}
     }
-
-    /**
-     * @see org.tigris.gef.presentation.Fig#paint(java.awt.Graphics)
-     */
-    public void paint(Graphics g) {
-        Color col = outlineFig.getFillColor();
-        urCorner.setFillColor(col.darker());
-        super.paint(g);
-    }
-
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = 7242542877839921267L;
+     
 } /* end class FigComment */

@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,56 +21,95 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
-
 package org.argouml.uml.ui;
 
-import java.awt.event.ActionEvent;
+import org.apache.log4j.Category;
+import org.argouml.kernel.*;
+import org.argouml.ui.*;
+import org.argouml.uml.reveng.*;
+import org.argouml.util.osdep.*;
+import org.tigris.gef.base.*;
+import java.awt.event.*;
+import java.io.*;
+import javax.swing.*;
 
-import javax.swing.Action;
 
-import org.argouml.application.helpers.ResourceLoaderWrapper;
-import org.argouml.i18n.Translator;
-import org.argouml.uml.reveng.Import;
-import org.tigris.gef.undo.UndoableAction;
+/* class ActionImportFromSources */
+public class ActionImportFromSources extends UMLAction {
+    
+    protected static Category cat = Category.getInstance(org.argouml.uml.ui.ActionImportFromSources.class);
+
+    ////////////////////////////////////////////////////////////////
+    // static variables
+
+    public static ActionImportFromSources SINGLETON = new ActionImportFromSources(); 
+
+    public static final String separator = "/"; //System.getProperty("file.separator");
 
 
-/** Action to trigger importing from sources.
- * @stereotype singleton
- */
-public class ActionImportFromSources extends UndoableAction {
+    ////////////////////////////////////////////////////////////////
+    // constructors
 
-    /**
-     * The singleton.
-     */
-    private static final ActionImportFromSources SINGLETON =
-        new ActionImportFromSources();
-
-    /**
-     *  The constructor.
-     */
     protected ActionImportFromSources() {
-        // this is never downlighted...
-        super(Translator.localize("action.import-sources"),
-                ResourceLoaderWrapper.lookupIcon("action.import-sources"));
-        // Set the tooltip string:
-        putValue(Action.SHORT_DESCRIPTION, 
-                Translator.localize("action.import-sources"));
+        super("Import sources...");
     }
 
-    /**
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-     */
+
+    ////////////////////////////////////////////////////////////////
+    // main methods
+
     public void actionPerformed(ActionEvent event) {
-    	super.actionPerformed(event);
-    	new Import();
-    }
+        ProjectBrowser pb = ProjectBrowser.TheInstance;
+        Project p = pb.getProject();
 
+        try {
+            String directory = Globals.getLastDirectory();
+            JFileChooser chooser = OsUtil.getFileChooser(directory);
 
-    /**
-     * @return Returns the SINGLETON.
-     */
-    public static ActionImportFromSources getInstance() {
-        return SINGLETON;
+            if (chooser == null) chooser = OsUtil.getFileChooser();
+
+            chooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+            chooser.setDialogTitle("Import sources");
+            //      FileFilter filter = FileFilters.ArgoFilter;
+            //chooser.addChoosableFileFilter(filter);
+            //chooser.setFileFilter(filter);
+	    
+	    chooser.setAccessory(Import.getConfigPanel());
+
+            int retval = chooser.showOpenDialog(pb);
+
+            if (retval == 0) {
+                File theFile = chooser.getSelectedFile();
+                if (theFile != null) {
+                    String path = chooser.getSelectedFile().getParent();
+                    String filename = chooser.getSelectedFile().getName();
+                    filename = path + separator + filename;
+                    //    if (!filename.endsWith(Project.FILE_EXT)) {
+                    //  filename += Project.FILE_EXT;
+                    //  theFile = new File(filename);
+                    //}
+                    Globals.setLastDirectory(path);
+                    if (filename != null) {
+                        pb.showStatus("Parsing " + path + filename + "...");
+                        //p = ArgoParser.SINGLETON.getProject();
+                        Import.doFile(p, theFile);
+                        p.postLoad();
+
+			// Check if any diagrams where modified and the project
+			// should be saved before exiting.
+			if(Import.needsSave()) {
+			    p.setNeedsSave(true);
+			}
+
+                        pb.setProject(p);
+                        pb.showStatus("Parsed " + filename);
+                        return;
+                    }
+                }
+            }
+        } catch (Exception exception) {
+            cat.error("got an Exception in ActionImportFromSources", exception);
+        }
     }
 }
-/* end class ActionImportFromSources */
+/* end class ActionImportFromSources */   

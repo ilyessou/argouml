@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,70 +23,120 @@
 
 package org.argouml.uml;
 
-import org.argouml.kernel.AbstractProjectMember;
-import org.argouml.kernel.Project;
-import org.argouml.model.Model;
+import org.apache.log4j.Category;
+import org.argouml.kernel.*;
+import org.argouml.model.uml.UmlFactory;
+import org.argouml.ui.*;
+import org.argouml.xml.xmi.XMIParser;
+
+import java.net.URL;
+import java.util.Iterator;
+import java.io.*;
+import java.util.zip.*;
+import javax.swing.*;
+
+import ru.novosoft.uml.model_management.MModel;
+import ru.novosoft.uml.foundation.core.MNamespace;
+import ru.novosoft.uml.xmi.*;
+
+import org.tigris.gef.util.Dbg;
 
 /**
  * @author Piotr Kaminski
  */
-public class ProjectMemberModel extends AbstractProjectMember {
 
-    private static final String MEMBER_TYPE = "xmi";
-    private static final String FILE_EXT = "." + MEMBER_TYPE;
 
-    private Object model;
+/** This file updated by Jim Holt 1/17/00 for nsuml support **/
 
-    /**
-     * The constructor.
-     *
-     * @param m the model
-     * @param p the project
-     */
-    public ProjectMemberModel(Object m, Project p) {
 
-        super(p.getBaseName() + FILE_EXT, p);
+public class ProjectMemberModel extends ProjectMember {
+	
+	private static Category cat = Category.getInstance(org.argouml.uml.ProjectMemberModel.class);
 
-        if (!Model.getFacade().isAModel(m))
-            throw new IllegalArgumentException();
+  ////////////////////////////////////////////////////////////////
+  // constants
 
-        setModel(m);
+  public static final String MEMBER_TYPE = "xmi";
+  public static final String FILE_EXT = "." + MEMBER_TYPE;
+
+  ////////////////////////////////////////////////////////////////
+  // instance variables
+
+  private MModel _model;
+
+  ////////////////////////////////////////////////////////////////
+  // constructors
+
+  public ProjectMemberModel(String name, Project p) { super(name, p); }
+
+  public ProjectMemberModel(MModel m, Project p) {
+    super(p.getBaseName() + FILE_EXT, p);
+    setModel(m);
+  }
+
+  ////////////////////////////////////////////////////////////////
+  // accessors
+
+  public MModel getModel() { return _model; }
+  protected void setModel(MModel model) { _model = model; }
+
+  public String getType() { return MEMBER_TYPE; }
+  public String getFileExtension() { return FILE_EXT; }
+
+
+  ////////////////////////////////////////////////////////////////
+  // actions
+
+  public void load() throws java.io.IOException, org.xml.sax.SAXException {
+    cat.info("Reading " + getURL());
+    XMIParser.SINGLETON.readModels(_project,getURL());
+    _model = XMIParser.SINGLETON.getCurModel();
+    _project._UUIDRefs = XMIParser.SINGLETON.getUUIDRefs();
+    cat.info("Done reading " + getURL());
+  }
+
+  public void save(String path, boolean overwrite) throws Exception {
+      save(path, overwrite, null);
+  }
+
+  public void save(String path, boolean overwrite, Writer writer) throws Exception{
+
+      if (writer == null) {
+	  	throw new IllegalArgumentException("No Writer specified!");
+      }
+
+
+      //if (!path.endsWith("/")) path += "/";
+      //String fullpath = path + getName();
+
+    XMIWriter xmiwriter = null;
+
+    try {
+      ProjectBrowser pb = ProjectBrowser.TheInstance;
+
+      xmiwriter = new XMIWriter(_model,writer);
+      xmiwriter.gen();
     }
+    catch (Exception ex) {
+      logNotContainedElements(xmiwriter);
+      throw ex;
+    }
+    finally {
+    	if (xmiwriter != null) {
+    		if (!xmiwriter.getNotContainedElements().isEmpty()) {
+    			logNotContainedElements(xmiwriter);
+    			throw new IncompleteXMIException();
+    		}
+    	}
+    }
+  }
 
-    /**
-     * @return the model
-     */
-    public Object getModel() {
-        return model;
-    }
-
-    /**
-     * @param m the model
-     */
-    protected void setModel(Object m) {
-        model = /*(MModel)*/m;
-    }
-
-    /**
-     * @see org.argouml.kernel.AbstractProjectMember#getType()
-     */
-    public String getType() {
-        return MEMBER_TYPE;
-    }
-    /**
-     * @see org.argouml.kernel.AbstractProjectMember#getZipFileExtension()
-     */
-    public String getZipFileExtension() {
-        return FILE_EXT;
-    }
-    
-    /**
-     * There is not yet any repair task for the UML model but this is open to
-     * implement as and when any problems areas are discovered.
-     * @see org.argouml.kernel.ProjectMember#repair()
-     */
-    public String repair() {
-        return "";
-    }
+	private void logNotContainedElements(XMIWriter xmiwriter) {
+		if (xmiwriter != null) {
+			Iterator it = xmiwriter.getNotContainedElements().iterator();
+			while (it.hasNext())
+	  			cat.error("Not contained in XMI: " + it.next());
+      	}
+	}
 
 } /* end class ProjectMemberModel */

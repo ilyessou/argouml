@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,69 +21,79 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+
+// File: PropPanelState.java
+// Classes: PropPanelState
+// Original Author: your email address here
+// $Id$
+
 package org.argouml.uml.ui.behavior.state_machines;
 
-import javax.swing.JList;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
+import java.awt.*;
+import java.util.*;
 
-import org.argouml.i18n.Translator;
-import org.argouml.ui.LookAndFeelMgr;
-import org.argouml.uml.ui.ActionNavigateTransition;
-import org.argouml.uml.ui.UMLExpressionBodyField;
-import org.argouml.uml.ui.UMLExpressionExpressionModel;
-import org.argouml.uml.ui.UMLExpressionLanguageField;
-import org.argouml.uml.ui.UMLExpressionModel2;
-import org.argouml.uml.ui.UMLLinkedList;
+import javax.swing.*;
+
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.behavior.state_machines.*;
+import ru.novosoft.uml.foundation.data_types.*;
+
+import org.argouml.application.api.*;
+import org.argouml.uml.ui.*;
 import org.argouml.uml.ui.foundation.core.PropPanelModelElement;
-import org.argouml.uml.ui.foundation.extension_mechanisms.ActionNewStereotype;
-import org.argouml.util.ConfigLoader;
 
-/**
- * A property panel for Guards. 
- * 
- * @since Dec 14, 2002
- * @author jaap.branderhorst@xs4all.nl
- */
 public class PropPanelGuard extends PropPanelModelElement {
-    
-    /**
-     * The serial version.
-     */
-    private static final long serialVersionUID = 3698249606426850936L;
 
-    /**
-     * Construct a new property panel for a Guard.
-     * 
-     */
+    ////////////////////////////////////////////////////////////////
+    // contructors
     public PropPanelGuard() {
-        super("Guard", ConfigLoader.getTabPropsOrientation());
-        
-        addField(Translator.localize("label.name"), getNameTextField());
-        
-        JList transitionList = new UMLLinkedList(
-                new UMLGuardTransitionListModel());
-        transitionList.setVisibleRowCount(1);
-        addField(Translator.localize("label.transition"), new JScrollPane(
-                transitionList));
-        
-        addSeparator();
+        super("Guard", _guardIcon, 2);
 
-        JPanel exprPanel = createBorderPanel(Translator
-                .localize("label.expression"));
-        UMLExpressionModel2 expressionModel = new UMLExpressionExpressionModel(
-                this, "expression");
-        JTextArea ebf = new UMLExpressionBodyField(expressionModel, true);
-        ebf.setFont(LookAndFeelMgr.getInstance().getStandardFont());
-        ebf.setRows(1);
-        exprPanel.add(new JScrollPane(ebf));
-        exprPanel.add(new UMLExpressionLanguageField(expressionModel, true));
-        
-        add(exprPanel);
-        addAction(new ActionNavigateTransition());
-        addAction(new ActionNewStereotype());
-        addAction(getDeleteAction());
+        Class mclass = MGuard.class;
+
+	addCaption(Argo.localize("UMLMenu", "label.name"),1,0,0);
+        addField(nameField,1,0,0);
+
+        UMLExpressionModel expressionModel = new UMLExpressionModel(this,MGuard.class,"expression",
+		    MBooleanExpression.class,"getExpression","setExpression");
+
+        addCaption(Argo.localize("UMLMenu", "label.expression"),2,0,0);
+        addField(new JScrollPane(new UMLExpressionBodyField(expressionModel,true),JScrollPane.VERTICAL_SCROLLBAR_NEVER,JScrollPane.HORIZONTAL_SCROLLBAR_NEVER),2,0,0);
+
+        addCaption(Argo.localize("UMLMenu", "label.language"),3,0,0);
+        addField(new UMLExpressionLanguageField(expressionModel,true),3,0,0);
+
+        addCaption("Transition:",4,0,1);
+	UMLModelElementListModel transitionModel=new UMLReflectionListModel(this,"transition",false,"getTransition",null,null,null);
+	transitionModel.setUpperBound(1);
+        JList transitionList = new UMLList(transitionModel,true);
+	transitionList.setForeground(Color.blue);
+	transitionList.setVisibleRowCount(1);
+	transitionList.setFont(smallFont);
+        addLinkField(new JScrollPane(transitionList,JScrollPane.VERTICAL_SCROLLBAR_NEVER,JScrollPane.HORIZONTAL_SCROLLBAR_NEVER),4,0,0);
+
+	new PropPanelButton(this,buttonPanel,_navUpIcon, Argo.localize("UMLMenu", "button.go-up"),"navigateUp",null);
+	new PropPanelButton(this,buttonPanel,_navBackIcon, Argo.localize("UMLMenu" ,"button.go-back"),"navigateBackAction","isNavigateBackEnabled");
+	new PropPanelButton(this,buttonPanel,_navForwardIcon, Argo.localize("UMLMenu", "button.go-forward"),"navigateForwardAction","isNavigateForwardEnabled");
+	//new PropPanelButton(this,buttonPanel,_deleteIcon,localize("Delete"),"removeElement",null);
+
+  }
+
+    public MTransition getTransition() {
+        MTransition transition = null;
+        Object target = getTarget();
+        if(target instanceof MGuard) {
+            transition = ((MGuard) target).getTransition();
+        }
+        return transition;
     }
-    
-} /* end class PropPanelGuard */
+
+    protected boolean isAcceptibleBaseMetaClass(String baseClass) {
+        return baseClass.equals("Guard");
+    }
+
+} /* end class PropPanelState */
+
+
+

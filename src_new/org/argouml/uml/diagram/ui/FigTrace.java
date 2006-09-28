@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,40 +21,38 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: FigTrace.java
+// Classes: FigTrace
+// Original Author: your email address here
+// $Id$
 
 package org.argouml.uml.diagram.ui;
 
-import java.awt.Color;
-import org.tigris.gef.presentation.ArrowHeadTriangle;
-import org.tigris.gef.presentation.FigEdgeLine;
+import java.awt.*;
 
-/**
- * This class is not used at all.
- *
- */
+import ru.novosoft.uml.foundation.core.*;
+
+import org.tigris.gef.presentation.*;
+
 public class FigTrace extends FigEdgeLine {
 
-    /**
-     * The constructor.
-     */
-    public FigTrace() {
-	getFig().setLineColor(Color.red);
-	ArrowHeadTriangle endArrow = new ArrowHeadTriangle();
-	endArrow.setFillColor(Color.red);
-	setDestArrowHead(endArrow);
-	setBetweenNearestPoints(true);
-    }
+  ////////////////////////////////////////////////////////////////
+  // constructors
 
-    /**
-     * The constructor.
-     *
-     * @param edge the owning UML element
-     */
-    public FigTrace(Object edge) {
-	this();
-	setOwner(edge);
-    }
+  public FigTrace() {
+    _fig.setLineColor(Color.red);
+    ArrowHeadTriangle endArrow = new ArrowHeadTriangle();
+    endArrow.setFillColor(Color.red);
+    setDestArrowHead(endArrow);
+    setBetweenNearestPoints(true);
+  }
 
-    static final long serialVersionUID = -2094146244090391544L;
+  public FigTrace(Object edge) {
+    this();
+    setOwner(edge);
+  }
+
+  static final long serialVersionUID = -2094146244090391544L;
 
 } /* end class FigTrace */
+

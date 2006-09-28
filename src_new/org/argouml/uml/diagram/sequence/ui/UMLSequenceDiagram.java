@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,207 +21,217 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+
+// File: UMLSequenceDiagram.java
+// Classes: UMLSequenceDiagram
+// Original Author: 5eichler@informatik.uni-hamburg.de
+// $Id$
+
+
 package org.argouml.uml.diagram.sequence.ui;
 
-import java.beans.PropertyVetoException;
-import java.util.Hashtable;
+import java.util.*;
+import java.awt.*;
+import java.beans.*;
+import javax.swing.*;
 
-import org.argouml.application.helpers.ResourceLoaderWrapper;
-import org.argouml.i18n.Translator;
-import org.argouml.kernel.ProjectManager;
-import org.argouml.model.Model;
-import org.argouml.ui.CmdSetMode;
-import org.argouml.uml.diagram.sequence.SequenceDiagramGraphModel;
-import org.argouml.uml.diagram.ui.RadioAction;
-import org.argouml.uml.diagram.ui.UMLDiagram;
+import ru.novosoft.uml.model_management.*;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.behavior.collaborations.*;
+import ru.novosoft.uml.behavior.common_behavior.*;
 
-/**
- * The diagram for sequence diagrams.<p>
- *
- * Totally rewritten for release 0.16.<p>
- *
- * @author jaap.branderhorst@xs4all.nl Aug 3, 2003
- * @author 5eichler@informatik.uni-hamburg.de originally.
- */
+import org.tigris.gef.base.Layer;
+import org.tigris.gef.base.LayerPerspective;
+import org.tigris.gef.presentation.*;
+import org.tigris.gef.ui.*;
+
+import org.apache.log4j.Category;
+import org.argouml.ui.*;
+import org.argouml.uml.diagram.ui.*;
+import org.argouml.uml.ui.ActionAddNote;
+import org.argouml.uml.diagram.sequence.*;
+
+
+
 public class UMLSequenceDiagram extends UMLDiagram {
+    protected static Category cat = Category.getInstance(UMLSequenceDiagram.class);
 
-    private static final long serialVersionUID = 4143700589122465301L;
+  ////////////////
+  // actions for toolbar
+
+
+  protected static Action _actionObject =
+  new CmdCreateNode(MObject.class, "Object");
+
+  protected static Action _actionLinkWithStimulusCall =
+  new ActionAddLink(MCallAction.class, "StimulusCall");
+
+  protected static Action _actionLinkWithStimulusCreate =
+  new ActionAddLink(MCreateAction.class, "StimulusCreate");
+
+  protected static Action _actionLinkWithStimulusDestroy =
+  new ActionAddLink(MDestroyAction.class, "StimulusDestroy");
+
+  protected static Action _actionLinkWithStimulusSend =
+  new ActionAddLink(MSendAction.class, "StimulusSend");
+
+  protected static Action _actionLinkWithStimulusReturn =
+  new ActionAddLink(MReturnAction.class, "StimulusReturn");
+
+
+
+
+  ////////////////////////////////////////////////////////////////
+  // contructors
+  protected static int _SequenceDiagramSerial = 1;
+
+
+  public UMLSequenceDiagram() {
+  	
+    try { setName(getNewDiagramName()); }
+    catch (PropertyVetoException pve) { }
+  }
+
+  public UMLSequenceDiagram(MNamespace m) {
+    this();
+    setNamespace(m);
+  }
+
+ 
+
+  public int getNumStimuluss() {
+    Layer lay = getLayer();
+    Vector figs = lay.getContents();
+    int res = 0;
+    int size = figs.size();
+    for (int i=0; i < size; i++) {
+      Fig f = (Fig) figs.elementAt(i);
+      if (f.getOwner() instanceof MStimulus) res++;
+    }
+    return res;
+  }
+
+  public void setNamespace(MNamespace m) {
+    super.setNamespace(m);
+    SequenceDiagramGraphModel gm = new SequenceDiagramGraphModel();
+    gm.setNamespace(m);
+    setGraphModel(gm);
     
-    private Object[] actions;
-    static final String SEQUENCE_CONTRACT_BUTTON = "button.sequence-contract";
-    static final String SEQUENCE_EXPAND_BUTTON = "button.sequence-expand";
-
-    /**
-     * Constructs a new sequence diagram with a default name and NO namespace.
-     * namespaces are used to determine the 'owner' of the diagram for diagrams
-     * but that's plain misuse.
-     */
-    public UMLSequenceDiagram() {
-        super();
-        // Dirty hack to remove the trash the Diagram constructor leaves
-        SequenceDiagramGraphModel gm =
-            new SequenceDiagramGraphModel();
-        SequenceDiagramLayer lay =
-            new SequenceDiagramLayer(this.getName(), gm);
-        SequenceDiagramRenderer rend = new SequenceDiagramRenderer();
-        lay.setGraphEdgeRenderer(rend);
-        lay.setGraphNodeRenderer(rend);
-        setLayer(lay);
+    LayerPerspective lay;
+    if (m == null) {
+        cat.error("SEVERE WARNING: Sequence diagram was created " +
+                           "without a valid namesspace. " + 
+                           "Setting namespace to empty.");
+        lay = new SequenceDiagramLayout("", gm);
     }
+    else
+        lay = new SequenceDiagramLayout(m.getName(), gm);
+    setLayer(lay);
+    SequenceDiagramRenderer rend = new SequenceDiagramRenderer(); // singleton
+    lay.setGraphNodeRenderer(rend);
+    lay.setGraphEdgeRenderer(rend);
+  }
 
-    /**
-     * The constructor.
-     *
-     * @param collaboration the collaboration
-     */
-    public UMLSequenceDiagram(Object collaboration) {
-        this();
-        try {
-            setName(getNewDiagramName());
-        } catch (PropertyVetoException pve) {
+  /** initialize the toolbar for this diagram type */
+  protected void initToolBar() {
+    _toolBar = new ToolBar();
+    _toolBar.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
+//     _toolBar.add(Actions.Cut);
+//     _toolBar.add(Actions.Copy);
+//     _toolBar.add(Actions.Paste);
+//     _toolBar.addSeparator();
+
+    _toolBar.add(_actionSelect);
+    _toolBar.add(_actionBroom);
+    _toolBar.addSeparator();
+
+    _toolBar.add(_actionObject);
+    _toolBar.addSeparator();
+
+    _toolBar.add(_actionLinkWithStimulusCall);
+    _toolBar.add(_actionLinkWithStimulusCreate);
+    _toolBar.add(_actionLinkWithStimulusDestroy);
+    _toolBar.add(_actionLinkWithStimulusSend);
+    _toolBar.add(_actionLinkWithStimulusReturn);
+
+    // other actions
+   _toolBar.addSeparator();
+    _toolBar.add(ActionAddNote.SINGLETON);
+    _toolBar.addSeparator();
+
+    _toolBar.add(_actionRectangle);
+    _toolBar.add(_actionRRectangle);
+    _toolBar.add(_actionCircle);
+    _toolBar.add(_actionLine);
+    _toolBar.add(_actionText);
+    _toolBar.add(_actionPoly);
+    _toolBar.add(_actionSpline);
+    _toolBar.add(_actionInk);
+    _toolBar.addSeparator();
+
+    _toolBar.add(_diagramName);
+  }
+
+  /** every stimulus has to become a path item of its link
+    * to have a graphical connections between stimulus and link */
+  public void postLoad() {
+
+    super.postLoad();
+
+
+    Collection stimuli;
+    Iterator stimuliIterator;
+    Iterator oeIterator=null;
+    Collection ownedElements=null;
+    if ( getNamespace() != null) ownedElements = getNamespace().getOwnedElements();
+    if (ownedElements != null) oeIterator = ownedElements.iterator();
+    Layer lay = getLayer();
+    if (oeIterator != null && lay != null) {
+      Vector contents = new Vector();
+      boolean objFound=false;
+      FigSeqObject figSeqObj=null;
+      FigSeqLink figLink=null;
+      FigSeqStimulus figStim=null;
+
+      Vector createdObjs = new Vector();
+      Vector createLinks = new Vector();
+      FigSeqObject dest=null;
+
+      while(oeIterator.hasNext()) {
+        MModelElement me = (MModelElement)oeIterator.next();
+     
+
+        if (me instanceof MLink) {
+          stimuli = ((MLink) me).getStimuli();
+          stimuliIterator= stimuli.iterator();
+          while(stimuliIterator.hasNext()) {
+            MStimulus stimulus = (MStimulus)stimuliIterator.next();
+            FigSeqStimulus figStimulus = (FigSeqStimulus) lay.presentationFor(stimulus);
+            if ( figStimulus != null ) {
+              figStimulus.addPathItemToLink(lay);
+            }
+          }
         }
-        ((SequenceDiagramGraphModel) getGraphModel())
-	    .setCollaboration(collaboration);
-        setNamespace(collaboration); //See issue 3373.
+      }
     }
+    
+  
+   
+  }
 
-    /**
-     * Returns the owner of this diagram. 
-     *
-     * @see org.argouml.uml.diagram.ui.UMLDiagram#getOwner()
-     */
-    public Object getOwner() {
-        return getNamespace();
+   protected static String getNewDiagramName() {
+  	String name = null;
+  	Object[] args = {name};
+  	do {
+        name = "sequence diagram " + _SequenceDiagramSerial;
+        _SequenceDiagramSerial++;
+        args[0] = name;
     }
+    while (TheInstance.vetoCheck("name", args));
+    return name;
+  }
 
-    /**
-     * Creates a new diagramname.
-     *
-     * @return a new unique name.
-     */
-    protected String getNewDiagramName() {
-        String name = getLabelName() + " " + getNextDiagramSerial();
-        if (!(ProjectManager.getManager().getCurrentProject()
-	      .isValidDiagramName(name))) {
-            name = getNewDiagramName();
-        }
-        return name;
-    }
 
-    /**
-     * @see org.argouml.uml.diagram.ui.UMLDiagram#getLabelName()
-     */
-    public String getLabelName() {
-        return Translator.localize("label.sequence-diagram");
-    }
-
-    /**
-     * Must return an array of actions via which the model can be
-     * manipulated. To use the 'nested actions' feature (like the
-     * different association types on UMLClassDiagram) these nested
-     * actions must be in an array of their own.<p>
-     *
-     * In case of the sequence diagram this method must return the
-     * following actions:<ul>
-     * <li>Action to create an object
-     * <li>Action to add a procedural link
-     * <li>Action to add a create link
-     * <li>Action to add a asynchronous link
-     * <li>Action to add a synchronous link
-     * <li>Action to add a return link
-     * </ul>
-     *
-     * @see org.argouml.uml.diagram.ui.UMLDiagram#getUmlActions()
-     */
-    protected Object[] getUmlActions() {
-        if (actions == null) {
-            actions = new Object[7];
-            actions[0] =
-                new ActionAddClassifierRole();
-            int offset = 1;
-
-            Object[][] actionList = {
-                {Model.getMetaTypes().getCallAction(),
-                    "button.new-callaction", },
-                {Model.getMetaTypes().getReturnAction(),
-                    "button.new-returnaction", },
-                {Model.getMetaTypes().getCreateAction(),
-                    "button.new-createaction", },
-                {Model.getMetaTypes().getDestroyAction(),
-                    "button.new-destroyaction", },
-            };
-
-	    for (int i = 0; i < actionList.length; i++) {
-		Hashtable args = new Hashtable();
-                args.put("edgeClass", Model.getMetaTypes().getMessage());
-		args.put("action", actionList[i][0]);
-                args.put("actionName",
-			 ResourceLoaderWrapper
-			 .getImageBinding((String) actionList[i][1]));
-		actions[i + offset] =
-                    new RadioAction(new CmdSetMode(ModeCreateMessage.class,
-                    args,
-						   (String) actionList[i][1]));
-	    }
-            Hashtable args = new Hashtable();
-            args.put("name", SEQUENCE_EXPAND_BUTTON);
-            actions[5] =
-		new RadioAction(new CmdSetMode(ModeChangeHeight.class,
-					       args,
-					       SEQUENCE_EXPAND_BUTTON));
-            args = new Hashtable();
-            args.put("name", SEQUENCE_CONTRACT_BUTTON);
-            actions[6] =
-		new RadioAction(new CmdSetMode(ModeChangeHeight.class,
-					       args,
-					       SEQUENCE_CONTRACT_BUTTON));
-        }
-        return actions;
-    }
-
-    /**
-     * @see org.argouml.uml.diagram.ui.UMLDiagram#getNamespace()
-     */
-    public Object getNamespace() {
-        return ((SequenceDiagramGraphModel) getGraphModel()).getCollaboration();
-    }
-
-    /**
-     * @see org.argouml.uml.diagram.ui.UMLDiagram#setNamespace(java.lang.Object)
-     */
-    public void setNamespace(Object ns) {
-        ((SequenceDiagramGraphModel) getGraphModel()).setCollaboration(ns);
-        super.setNamespace(ns);
-    }
-
-    /**
-     * Method called by Project.removeDiagram to clean up the mess in
-     * this diagram when the diagram is removed.
-     */
-    public void cleanUp() {
-/*
-        ProjectManager.getManager().getCurrentProject().moveToTrash(collab);
-*/
-    }
-
-    /**
-     * @see org.argouml.uml.diagram.ui.UMLDiagram#isRelocationAllowed(
-     *         java.lang.Object)
-     */
-    public boolean isRelocationAllowed(Object base)  {
-    	return false;
-	/* TODO: We may return the following when the
-	 * relocate() has been implemented.
-	 */
-//    	Model.getFacade().isAClassifier(base)
-//        	|| Model.getFacade().isAOperation(base);
-    }
-
-    /**
-     * @see org.argouml.uml.diagram.ui.UMLDiagram#relocate(java.lang.Object)
-     */
-    public boolean relocate(Object base) {
-        return false;
-    }
 
 } /* end class UMLSequenceDiagram */

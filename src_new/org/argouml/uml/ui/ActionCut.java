@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-01 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,132 +23,24 @@
 
 package org.argouml.uml.ui;
 
-import java.awt.Toolkit;
-import java.awt.datatransfer.DataFlavor;
-import java.awt.datatransfer.Transferable;
-import java.awt.datatransfer.UnsupportedFlavorException;
-import java.awt.event.ActionEvent;
-import java.io.IOException;
-import java.util.Collection;
 
-import javax.swing.AbstractAction;
-import javax.swing.Action;
-import javax.swing.Icon;
-import javax.swing.event.CaretEvent;
-import javax.swing.event.CaretListener;
-import javax.swing.text.JTextComponent;
+public class ActionCut extends UMLAction {
 
-import org.argouml.application.helpers.ResourceLoaderWrapper;
-import org.argouml.i18n.Translator;
-import org.tigris.gef.base.CmdCut;
-import org.tigris.gef.base.Globals;
+    ////////////////////////////////////////////////////////////////
+    // static variables
 
-/**
- * The Cut Action.
- */
-public class ActionCut extends AbstractAction implements CaretListener {
+    public static ActionCut SINGLETON = new ActionCut(); 
 
-    private static ActionCut instance = new ActionCut();
-
-    private static final String LOCALIZE_KEY = "action.cut";
 
     ////////////////////////////////////////////////////////////////
     // constructors
 
-    /**
-     * Constructor.
-     */
-    public ActionCut() {
-        super(Translator.localize(LOCALIZE_KEY));
-        Icon icon = ResourceLoaderWrapper.lookupIcon(LOCALIZE_KEY);
-        if (icon != null) {
-            putValue(Action.SMALL_ICON, icon);
-	}
-        putValue(
-		 Action.SHORT_DESCRIPTION,
-		 Translator.localize(LOCALIZE_KEY) + " ");
-    }
+    public ActionCut() { super("Cut"); }
 
-    /**
-     * @return the singleton
-     */
-    public static ActionCut getInstance() {
-        return instance;
-    }
 
-    private JTextComponent textSource;
+    ////////////////////////////////////////////////////////////////
+    // main methods
 
-    /**
-     * Cuts some text or a fig.
-     *
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-     */
-    public void actionPerformed(ActionEvent ae) {
-        if (textSource == null) {
-            if (removeFromDiagramAllowed()) {
-                CmdCut cmd = new CmdCut();
-                cmd.doIt();
-            }
-        } else {
-            textSource.cut();
-        }
-        if (isSystemClipBoardEmpty()
-            && Globals.clipBoard == null
-            || Globals.clipBoard.isEmpty()) {
-            ActionPaste.getInstance().setEnabled(false);
-        } else {
-            ActionPaste.getInstance().setEnabled(true);
-        }
-    }
-
-    /**
-     * Disable cutting figs from a diagram to prevent issue 3480.
-     * See also ActionPaste, which is also disabled for similar reasons.
-     *
-     * @return true if cut is allowed for the selected items
-     */
-    private boolean removeFromDiagramAllowed() {
-        return false;
-    }
-
-    /**
-     * @see
-     * javax.swing.event.CaretListener#caretUpdate(javax.swing.event.CaretEvent)
-     */
-    public void caretUpdate(CaretEvent e) {
-        if (e.getMark() != e.getDot()) { // there is a selection
-            setEnabled(true);
-            textSource = (JTextComponent) e.getSource();
-        } else {
-            Collection figSelection =
-                Globals.curEditor().getSelectionManager().selections();
-            if (figSelection == null || figSelection.isEmpty()) {
-                setEnabled(false);
-            } else {
-                setEnabled(true);
-            }
-            textSource = null;
-        }
-
-    }
-
-    private boolean isSystemClipBoardEmpty() {
-        //      if there is a selection on the clipboard
-        boolean hasContents = false;
-        Transferable content =
-            Toolkit.getDefaultToolkit().getSystemClipboard().getContents(null);
-        DataFlavor[] flavors = content.getTransferDataFlavors();
-        try {
-            for (int i = 0; i < flavors.length; i++) {
-                if (content.getTransferData(flavors[i]) != null) {
-                    hasContents = true;
-                    break;
-                }
-            }
-        } catch (UnsupportedFlavorException ignorable) {
-        } catch (IOException ignorable) {
-        }
-        return !hasContents;
-    }
+    public boolean shouldBeEnabled() { return false; }
 
 } /* end class ActionCut */

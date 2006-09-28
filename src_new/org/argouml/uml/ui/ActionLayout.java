@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-01 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,107 +23,70 @@
 
 package org.argouml.uml.ui;
 
-import java.awt.event.ActionEvent;
-import java.util.Collection;
+import org.tigris.gef.base.*;
+import org.tigris.gef.presentation.*;
+import org.tigris.gef.graph.*;
 
-import javax.swing.Action;
-
-import org.argouml.i18n.Translator;
-import org.argouml.kernel.Project;
-import org.argouml.kernel.ProjectManager;
-import org.argouml.ui.ArgoDiagram;
-import org.argouml.uml.diagram.activity.layout.ActivityDiagramLayouter;
-import org.argouml.uml.diagram.activity.ui.UMLActivityDiagram;
-import org.argouml.uml.diagram.layout.Layouter;
-import org.argouml.uml.diagram.static_structure.layout.ClassdiagramLayouter;
-import org.argouml.uml.diagram.static_structure.ui.UMLClassDiagram;
+import org.argouml.ui.*;
 import org.argouml.uml.diagram.ui.UMLDiagram;
-import org.tigris.gef.base.Editor;
-import org.tigris.gef.base.Globals;
-import org.tigris.gef.base.SelectionManager;
-import org.tigris.gef.undo.UndoableAction;
+import org.argouml.uml.diagram.static_structure.ui.*;
+import org.argouml.uml.diagram.static_structure.layout.*;
 
-/**
- * Action to automatically lay out a diagram.
- *
- */
-public class ActionLayout extends UndoableAction {
+import java.awt.event.*;
+import java.util.Vector;
+
+public class ActionLayout extends UMLAction {
+
+    ////////////////////////////////////////////////////////////////
+    // instance variables
+
+    protected String _tabName;
+
 
     ////////////////////////////////////////////////////////////////
     // constructors
 
-    /**
-     * The constructor.
-     */
-    public ActionLayout() {
-        super(Translator.localize("action.layout"), null);
-        // Set the tooltip string:
-        putValue(Action.SHORT_DESCRIPTION, 
-                Translator.localize("action.layout"));
+    public ActionLayout(String tabName) {
+	super(tabName, NO_ICON);
+	_tabName = tabName;
     }
+
 
     ////////////////////////////////////////////////////////////////
     // main methods
 
-    /**
-     * Check whether we deal with a supported diagram type
+    /** check whether we deal with a supported diagram type 
      * (currently only UMLClassDiagram).
-     * @return true if the action is enabled
+     * Incremental Layout is not implemented for any diagram type,
+     * so it is greyed out.
      * @see org.argouml.ui.ProjectBrowser
      */
-    public boolean isEnabled() {
-        if (!super.isEnabled()) {
-            return false;
-        }
-        Project p = ProjectManager.getManager().getCurrentProject();
-        if (p == null) {
-            return false;
-        }
-        ArgoDiagram d = p.getActiveDiagram();
-        if (d instanceof UMLClassDiagram 
-                || d instanceof UMLActivityDiagram) {
-            return true;
-        }
-        return false;
+    public boolean shouldBeEnabled() {
+	return (super.shouldBeEnabled() 
+		&& (ProjectBrowser.TheInstance.getActiveDiagram() instanceof UMLClassDiagram)
+        && "Automatic".equals(_tabName));
     }
 
-    /**
-     * This action performs the layout and triggers a redraw of the editor pane.
-     * 
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
+    /** This action performs the layout and triggers a redraw
+     * of the editor pane.
      */
     public void actionPerformed(ActionEvent ae) {
-    	super.actionPerformed(ae);
-        ArgoDiagram diagram = ProjectManager.getManager()
-                .getCurrentProject().getActiveDiagram();
-        Layouter layouter;
-        if (diagram instanceof UMLClassDiagram) {
-            layouter = new ClassdiagramLayouter((UMLClassDiagram) diagram);
-        } else if (diagram instanceof UMLActivityDiagram) {
-            layouter = 
-                 new ActivityDiagramLayouter((UMLActivityDiagram) diagram);
-        } else {
-            return;
-        }
+	ClassdiagramLayouter layouter = 
+	    new ClassdiagramLayouter((UMLDiagram)ProjectBrowser.
+				     TheInstance.getActiveDiagram());
 
-        // Using the selection manager to force a repaint seems like a
-        // heavyweight way to do this - tfm
-        
-        // Create a selection containing all figures in diagram
-        Editor ce = Globals.curEditor();
-        SelectionManager sm = ce.getSelectionManager();
-        Collection nodes =
-            ((UMLDiagram) ProjectManager.getManager().getCurrentProject()
-                    .getActiveDiagram())
-                    .getLayer().getContents();                    
-        sm.select(nodes);
+	Editor ce = Globals.curEditor();
+	SelectionManager sm = ce.getSelectionManager();         
 
-        // Rearrange the diagram layout
-        layouter.layout();
-        
-        // Tell the selection manager we're done and deselect everything
-        // This will force a repaint.
-        sm.endTrans(); 
-        sm.deselectAll();
+        // Get all the figures from the diagram.
+        Vector nodes = ((UMLClassDiagram)ProjectBrowser.TheInstance.getActiveDiagram()).getLayer().getContents();
+        for(int i=0; i < nodes.size(); i++) {
+	    sm.select((Fig)(nodes.elementAt(i)));  // Select all the figures in the diagram.
+        }      
+
+	sm.startTrans();    // Notify the selection manager that selected figures will be moved now.
+	layouter.layout();  // Compute a new layout.
+	sm.endTrans();      // Finish the transition.
+	sm.deselectAll();   // Deselect all figures.
     }
 } /* end class ActionLayout */

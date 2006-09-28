@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,64 +21,57 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: CrTooManyAttr.java
+// Classes: CrTooManyAttr
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.cognitive.critics;
 
-import java.util.Collection;
-import java.util.Iterator;
+import java.util.*;
+import javax.swing.*;
 
-import org.argouml.cognitive.Designer;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
-/**
- * A critic to detect when a classifier has too many attributes.
- *
- * @author mkl
- */
-public class CrTooManyAttr extends AbstractCrTooMany {
-    
-    /**
-     * The initial threshold.
-     */
-    private static final int ATTRIBUTES_THRESHOLD = 7;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
+import ru.novosoft.uml.foundation.extension_mechanisms.*;
 
-    /**
-     * The constructor.
-     *
-     */
-    public CrTooManyAttr() {
-        setupHeadAndDesc();
-	addSupportedDecision(UMLDecision.STORAGE);
-	setThreshold(ATTRIBUTES_THRESHOLD);
-	addTrigger("structuralFeature");
-    }
+import org.argouml.cognitive.*;
 
-    /**
-     * @see org.argouml.uml.cognitive.critics.CrUML#predicate2(
-     * java.lang.Object, org.argouml.cognitive.Designer)
-     */
-    public boolean predicate2(Object dm, Designer dsgr) {
-	if (!(Model.getFacade().isAClassifier(dm))) {
-            return NO_PROBLEM;
-        }
-	// TODO: consider inherited attributes?
-	Collection features = Model.getFacade().getFeatures(dm);
-	if (features == null) {
-            return NO_PROBLEM;
-        }
-	int n = 0;
-	for (Iterator iter = features.iterator(); iter.hasNext();) {
-	    if (Model.getFacade().isAStructuralFeature(iter.next())) {
-		n++;
-            }
-	}
-	if (n <= getThreshold()) {
-            return NO_PROBLEM;
-        }
-	return PROBLEM_FOUND;
-    }
+/** A critic to detect when a class can never have instances (of
+ *  itself of any subclasses). */
 
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = 1281218975903539324L;
+public class CrTooManyAttr extends CrUML {
+
+  ////////////////////////////////////////////////////////////////
+  // constants
+  public static String THRESHOLD = "Threshold";
+
+  ////////////////////////////////////////////////////////////////
+  // constructor
+  public CrTooManyAttr() {
+    setHeadline("Reduce Attributes on <ocl>self</ocl>");
+    addSupportedDecision(CrUML.decSTORAGE);
+    setArg(THRESHOLD, new Integer(7));
+    addTrigger("structuralFeature");
+  }
+
+  ////////////////////////////////////////////////////////////////
+  // critiquing API
+  public boolean predicate2(Object dm, Designer dsgr) {
+    if (!(dm instanceof MClassifier)) return NO_PROBLEM;
+    MClassifier cls = (MClassifier) dm;
+    // needs-more-work: consider inherited attributes?
+    int threshold = ((Integer)getArg(THRESHOLD)).intValue();
+    Collection str = cls.getFeatures();
+    if (str == null) return NO_PROBLEM;
+    int n=0;
+    for (Iterator iter = str.iterator(); iter.hasNext();) {
+      if (iter.next() instanceof MStructuralFeature)
+        n++;
+    };
+    if (n <= threshold) return NO_PROBLEM;
+    return PROBLEM_FOUND;
+  }
+
 } /* end class CrTooManyAttr */
+

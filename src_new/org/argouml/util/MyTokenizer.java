@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,87 +23,70 @@
 
 package org.argouml.util;
 
-import java.util.Collection;
-import java.util.Enumeration;
-import java.util.NoSuchElementException;
-import java.util.Vector;
+import java.util.*;
 
 /**
  * Internal class for managing the delimiters in MyTokenizer. It's rather
  * similar to CustomSeparator, but faster for short constant strings.
  */
 class TokenSep {
-    private TokenSep next = null;
-    private final String theString;
-    private final int length;
-    private int pattern;
+	public TokenSep next = null;
+	private final String _string;
+	private final int _length;
+	private int _pattern;
 
-    /**
-     * Constructs a TokenSep that will match the String given in str.
-     *
-     * @param str The delimiter string.
-     */
-    public TokenSep(String str) {
-	theString = str;
-	length = str.length();
-	if (length > 32)
-	    throw new IllegalArgumentException("TokenSep " + str
-	                + " is " + length + " (> 32) chars long");
-	pattern = 0;
-    }
-
-    /**
-     * Called by MyTokenizer when a new character is processed in the
-     * sequence. Returns true if we have found the delimiter.
-     */
-    public boolean addChar(char c) {
-	int i;
-
-	pattern <<= 1;
-	pattern |= 1;
-	for (i = 0; i < length; i++) {
-	    if (theString.charAt(i) != c) {
-		pattern &= ~(1 << i);
-	    }
+	/**
+	 * Constructs a TokenSep that will match the String given in str.
+	 *
+	 * @param str The delimiter string.
+	 */
+	public TokenSep(String str) {
+		_string = str;
+		_length = str.length();
+		if (_length > 32)
+			throw new IllegalArgumentException("TokenSep " + str
+				+ " is " + _length + " (> 32) chars long");
+		_pattern = 0;
 	}
 
-	return (pattern & (1 << (length - 1))) != 0;
-    }
+	/**
+	 * Called by MyTokenizer when a new character is processed in the
+	 * sequence. Returns true if we have found the delimiter.
+	 */
+	public boolean addChar(char c) {
+		int i;
 
-    /**
-     * Called by MyTokenizer before starting scanning for a new token.
-     */
-    public void reset() {
-	pattern = 0;
-    }
+		_pattern <<= 1;
+		_pattern |= 1;
+		for (i = 0; i < _length; i++) {
+			if (_string.charAt(i) != c) {
+				_pattern &= ~(1 << i);
+			}
+		}
 
-    /**
-     * Gets the length of this token.
-     */
-    public int length() {
-	return length;
-    }
+		return (_pattern & (1 << (_length - 1))) != 0;
+	}
 
-    /**
-     * Gets this token.
-     */
-    public String getString() {
-	return theString;
-    }
+	/**
+	 * Called by MyTokenizer before starting scanning for a new token.
+	 */
+	public void reset() {
+		_pattern = 0;
+	}
 
-    /**
-     * @param n The next to set.
-     */
-    public void setNext(TokenSep n) {
-        this.next = n;
-    }
+	/**
+	 * Gets the length of this token.
+	 */
+	public int length() {
+		return _length;
+	}
 
-    /**
-     * @return Returns the next.
-     */
-    public TokenSep getNext() {
-        return next;
-    }
+	/**
+	 * Gets this token.
+	 */
+	public String getString() {
+		return _string;
+	}
 }
 
 /**
@@ -120,101 +102,101 @@ class TokenSep {
  * <pre>(a+(b*c)-15*eq(a, b))</pre>.
  *
  * <p>This is in fact the class currently used for the public separators in
- * MyTokenizer, except PAREN_EXPR_STRING_SEPARATOR and LINE_SEPARATOR.
+ * MyTokenizer, except PAREN_EXPR_STRING_SEPARATOR.
  */
 class QuotedStringSeparator extends CustomSeparator {
-    private final char escChr;
-    private final char startChr;
-    private final char stopChr;
-    private boolean esced;
-    private int tokLen;
-    private int level;
+	private final char _escChr;
+	private final char _startChr;
+	private final char _stopChr;
+	private boolean _esced;
+	private int _tokLen;
+	private int _level;
 
-    /**
-     * Creates a separator of the first form (see above) where
-     * 'chr' = q and 'esc' = esc.
-     *
-     * @param q The delimiter character.
-     * @param esc The escape character.
-     */
-    public QuotedStringSeparator(char q, char esc) {
-	super(q);
+	/**
+	 * Creates a separator of the first form (see above) where
+	 * 'chr' = q and 'esc' = esc.
+	 *
+	 * @param q The delimiter character.
+	 * @param esc The escape character.
+	 */
+	public QuotedStringSeparator(char q, char esc) {
+		super(q);
 
-	esced = false;
-	escChr = esc;
-	startChr = 0;
-	stopChr = q;
-	tokLen = 0;
-	level = 1;
-    }
-
-    /**
-     * Creates a separator of the second form (see above) where
-     * 'lchr' = sq, 'rchr' = eq and 'esc' = esc.
-     *
-     * @param sq The left delimiter character.
-     * @param eq The right delimiter character.
-     * @param esc The escape character.
-     */
-    public QuotedStringSeparator(char sq, char eq, char esc) {
-	super(sq);
-
-	esced = false;
-	escChr = esc;
-	startChr = sq;
-	stopChr = eq;
-	tokLen = 0;
-	level = 1;
-    }
-
-    public void reset() {
-	super.reset();
-	tokLen = 0;
-	level = 1;
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * Overridden to return the entire length of the token.
-     */
-    public int tokenLength() {
-	return super.tokenLength() + tokLen;
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * Overridden to return true.
-     *
-     * @return true
-     */
-    public boolean hasFreePart() {
-	return true;
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * Overridden to find the end of the token.
-     */
-    public boolean endChar(char c) {
-	tokLen++;
-
-	if (esced) {
-	    esced = false;
-	    return false;
+		_esced = false;
+		_escChr = esc;
+		_startChr = 0;
+		_stopChr = q;
+		_tokLen = 0;
+		_level = 1;
 	}
-	if (escChr != 0 && c == escChr) {
-	    esced = true;
-	    return false;
+
+	/**
+	 * Creates a separator of the second form (see above) where
+	 * 'lchr' = sq, 'rchr' = eq and 'esc' = esc.
+	 *
+	 * @param sq The left delimiter character.
+	 * @param eq The right delimiter character.
+	 * @param esc The escape character.
+	 */
+	public QuotedStringSeparator(char sq, char eq, char esc) {
+		super(sq);
+
+		_esced = false;
+		_escChr = esc;
+		_startChr = sq;
+		_stopChr = eq;
+		_tokLen = 0;
+		_level = 1;
 	}
-	if (startChr != 0 && c == startChr)
-	    level++;
-	if (c == stopChr)
-	    level--;
-	return level <= 0;
-    }
+
+	public void reset() {
+		super.reset();
+		_tokLen = 0;
+		_level = 1;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * Overridden to return the entire length of the token.
+	 */
+	public int tokenLength() {
+		return super.tokenLength() + _tokLen;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * Overridden to return true.
+	 *
+	 * @return true
+	 */
+	public boolean hasFreePart() {
+		return true;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * Overridden to find the end of the token.
+	 */
+	public boolean endChar(char c) {
+		_tokLen++;
+
+		if (_esced) {
+			_esced = false;
+			return false;
+		}
+		if (_escChr != 0 && c == _escChr) {
+			_esced = true;
+			return false;
+		}
+		if (_startChr != 0 && c == _startChr)
+			_level++;
+		if (c == _stopChr)
+			_level--;
+		return _level <= 0;
+	}
 }
 
 /**
@@ -226,181 +208,94 @@ class QuotedStringSeparator extends CustomSeparator {
  * for quoted strings inside the the expression.
  */
 class ExprSeparatorWithStrings extends CustomSeparator {
-    private boolean isSQuot;
-    private boolean isDQuot;
-    private boolean isEsc;
-    private int tokLevel;
-    private int tokLen;
+	private boolean _isSQuot;
+	private boolean _isDQuot;
+	private boolean _isEsc;
+	private int _tokLevel;
+	private int _tokLen;
 
-    /**
-     * The constructor. No choices available.
-     */
-    public ExprSeparatorWithStrings() {
-	super('(');
+	/**
+	 * The constructor. No choices available.
+	 */
+	public ExprSeparatorWithStrings() {
+		super('(');
 
-	isEsc = false;
-	isSQuot = false;
-	isDQuot = false;
-	tokLevel = 1;
-	tokLen = 0;
-    }
-
-    public void reset() {
-	super.reset();
-
-	isEsc = false;
-	isSQuot = false;
-	isDQuot = false;
-	tokLevel = 1;
-	tokLen = 0;
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * Overridden to return the entire length of the token.
-     */
-    public int tokenLength() {
-	return super.tokenLength() + tokLen;
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * Overridden to return true.
-     *
-     * @return true
-     */
-    public boolean hasFreePart() {
-	return true;
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * Overridden to find the end of the token.
-     */
-    public boolean endChar(char c) {
-	tokLen++;
-	if (isSQuot) {
-	    if (isEsc) {
-		isEsc = false;
-		return false;
-	    }
-	    if (c == '\\')
-		isEsc = true;
-	    else if (c == '\'')
-		isSQuot = false;
-	    return false;
-	} else if (isDQuot) {
-	    if (isEsc) {
-		isEsc = false;
-		return false;
-	    }
-	    if (c == '\\')
-		isEsc = true;
-	    else if (c == '\"')
-		isDQuot = false;
-	    return false;
-	} else {
-	    if (c == '\'')
-		isSQuot = true;
-	    else if (c == '\"')
-		isDQuot = true;
-	    else if (c == '(')
-		tokLevel++;
-	    else if (c == ')')
-		tokLevel--;
-	    return tokLevel <= 0;
-	}
-    }
-}
-
-/**
- * A descendent of CustomSeparator that recognizes "the tree line ends":
- * <ul>
- * <li>UNIX: &lt;lf&gt;</li>
- * <li>DOS: &lt;cr&gt; &lt;lf&gt;</li>
- * <li>MAC: &lt;cr&gt;</li>
- * </ul>
- *
- * <p>This is in fact the class currently used LINE_SEPARATOR in MyTokenizer.
- */
-class LineSeparator extends CustomSeparator {
-    private boolean hasCr;
-    private boolean hasLf;
-    private boolean hasPeeked;
-
-    /**
-     * Creates a LineSeparator.
-     */
-    public LineSeparator() {
-	hasCr = false;
-	hasLf = false;
-	hasPeeked = false;
-    }
-
-    public void reset() {
-	super.reset();
-	hasCr = false;
-	hasLf = false;
-	hasPeeked = false;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public int tokenLength() {
-	return hasCr && hasLf ? 2 : 1;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public int getPeekCount() {
-	return hasPeeked ? 1 : 0;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public boolean hasFreePart() {
-	return !hasLf;
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * Overridden to find the start of a line-end.
-     */
-    public boolean addChar(char c) {
-	if (c == '\n') {
-	    hasLf = true;
-	    return true;
+		_isEsc = false;
+		_isSQuot = false;
+		_isDQuot = false;
+		_tokLevel = 1;
+		_tokLen = 0;
 	}
 
-	if (c == '\r') {
-	    hasCr = true;
-	    return true;
+	public void reset() {
+		super.reset();
+
+		_isEsc = false;
+		_isSQuot = false;
+		_isDQuot = false;
+		_tokLevel = 1;
+		_tokLen = 0;
 	}
 
-	return false;
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * Overridden to find the end of a line-end.
-     */
-    public boolean endChar(char c) {
-	if (c == '\n') {
-	    hasLf = true;
-	} else {
-	    hasPeeked = true;
+	/**
+	 * {@inheritDoc}
+	 *
+	 * Overridden to return the entire length of the token.
+	 */
+	public int tokenLength() {
+		return super.tokenLength() + _tokLen;
 	}
 
-	return true;
-    }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * Overridden to return true.
+	 *
+	 * @return true
+	 */
+	public boolean hasFreePart() {
+		return true;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * Overridden to find the end of the token.
+	 */
+	public boolean endChar(char c) {
+		_tokLen++;
+		if (_isSQuot) {
+			if (_isEsc) {
+				_isEsc = false;
+				return false;
+			}
+			if (c == '\\')
+				_isEsc = true;
+			else if (c == '\'')
+				_isSQuot = false;
+			return false;
+		} else if (_isDQuot) {
+			if (_isEsc) {
+				_isEsc = false;
+				return false;
+			}
+			if (c == '\\')
+				_isEsc = true;
+			else if (c == '\"')
+				_isDQuot = false;
+			return false;
+		} else {
+			if (c == '\'')
+				_isSQuot = true;
+			else if (c == '\"')
+				_isDQuot = true;
+			else if (c == '(')
+				_tokLevel++;
+			else if (c == ')')
+				_tokLevel--;
+			return _tokLevel <= 0;
+		}
+	}
 }
 
 /**
@@ -435,7 +330,7 @@ class LineSeparator extends CustomSeparator {
  * <p><b>Example</b><br><pre>
  * MyTokenizer tzer = new MyTokenizer("Hello, how are you?", " ,\\,");
  * while (tzer.hasMoreTokens())
- *   _cat.info("\"" + tzer.nextToken() + "\"");
+ *   System.out.println("\"" + tzer.nextToken() + "\"");
  * </pre>
  *
  * <p>Which whould yield the following output:<pre>
@@ -453,306 +348,301 @@ class LineSeparator extends CustomSeparator {
  * @since 0.11.2
  * @see CustomSeparator
  */
-public class MyTokenizer implements Enumeration {
-    /** A custom separator for quoted strings enclosed in single quotes
-     *  and using \ as escape character. There may not be an end quote
-     *  if the tokenizer reaches the end of the String. */
-    public static final CustomSeparator SINGLE_QUOTED_SEPARATOR =
-	new QuotedStringSeparator('\'', '\\');
+public class MyTokenizer implements Enumeration
+{
+	/** A custom separator for quoted strings enclosed in single quotes
+	 *  and using \ as escape character. There may not be an end quote
+	 *  if the tokenizer reaches the end of the String. */
+	public final static CustomSeparator SINGLE_QUOTED_SEPARATOR =
+		new QuotedStringSeparator('\'', '\\');
 
-    /** A custom separator for quoted strings enclosed in double quotes
-     *  and using \ as escape character. There may not be an end quote
-     *  if the tokenizer reaches the end of the String. */
-    public static final CustomSeparator DOUBLE_QUOTED_SEPARATOR =
-	new QuotedStringSeparator('\"', '\\');
+	/** A custom separator for quoted strings enclosed in double quotes
+	 *  and using \ as escape character. There may not be an end quote
+	 *  if the tokenizer reaches the end of the String. */
+	public final static CustomSeparator DOUBLE_QUOTED_SEPARATOR =
+		new QuotedStringSeparator('\"', '\\');
 
-    /** A custom separator for expressions enclosed in parentheses and
-     *  matching lparams with rparams. There may not be proper matching
-     *  if the tokenizer reaches the end of the String. Do not use this
-     *  together with PAREN_EXPR_STRING_SEPARATOR. */
-    public static final CustomSeparator PAREN_EXPR_SEPARATOR =
-	new QuotedStringSeparator('(', ')', '\0');
+	/** A custom separator for expressions enclosed in parentheses and
+	 *  matching lparams with rparams. There may not be proper matching
+	 *  if the tokenizer reaches the end of the String. Do not use this
+	 *  together with PAREN_EXPR_STRING_SEPARATOR. */
+	public final static CustomSeparator PAREN_EXPR_SEPARATOR =
+		new QuotedStringSeparator('(', ')', '\0');
 
-    /** A custom separator for expressions enclosed in parentheses and
-     *  matching lparams with rparams. There may not be proper matching
-     *  if the tokenizer reaches the end of the String. It also takes
-     *  quoted strings (either single or double quotes) in the expression
-     *  into consideration, unlike PAREN_EXPR_SEPARATOR. Do not use this
-     *  together with PAREN_EXPR_SEPARATOR. */
-    public static final CustomSeparator PAREN_EXPR_STRING_SEPARATOR =
-	new ExprSeparatorWithStrings();
+	/** A custom separator for expressions enclosed in parentheses and
+	 *  matching lparams with rparams. There may not be proper matching
+	 *  if the tokenizer reaches the end of the String. It also takes
+	 *  quoted strings (either single or double quotes) in the expression
+	 *  into consideration, unlike PAREN_EXPR_SEPARATOR. Do not use this
+	 *  together with PAREN_EXPR_SEPARATOR. */
+	public final static CustomSeparator PAREN_EXPR_STRING_SEPARATOR =
+		new ExprSeparatorWithStrings();
 
-    /** A custom separator for texts. Singles out the line ends,
-     *  and consequently the lines, if they are in either dos, mac
-     *  or unix format. */
-    public static final CustomSeparator LINE_SEPARATOR =
-	new LineSeparator();
+	private int _sIdx;
+	private final int _eIdx;
+	private int _tokIdx;
+	private final String _source;
+	private final TokenSep _delims;
+	private String _savedToken;
+	private int _savedIdx;
+	private Vector _customSeps;
+	private String _putToken;
 
-    private int sIdx;
-    private final int eIdx;
-    private int tokIdx;
-    private final String source;
-    private final TokenSep delims;
-    private String savedToken;
-    private int savedIdx;
-    private Vector customSeps;
-    private String putToken;
-
-    /**
-     * Constructs a new instance. See above for a description of the
-     * delimiter string.
-     *
-     * @param string	The String to be tokenized.
-     * @param delim	The String of delimiters.
-     */
-    public MyTokenizer(String string, String delim) {
-	source = string;
-	delims = parseDelimString(delim);
-	sIdx = 0;
-	tokIdx = 0;
-	eIdx = string.length();
-	savedToken = null;
-	customSeps = null;
-	putToken = null;
-    }
-
-    /**
-     * Constructs a new instance. See above for a description of the
-     * delimiter string and custom separators.
-     *
-     * @param string	The String to be tokenized.
-     * @param delim	The String of delimiters.
-     * @param sep	A custom separator to use.
-     */
-    public MyTokenizer(String string, String delim, CustomSeparator sep) {
-	source = string;
-	delims = parseDelimString(delim);
-	sIdx = 0;
-	tokIdx = 0;
-	eIdx = string.length();
-	savedToken = null;
-	customSeps = new Vector();
-	customSeps.add(sep);
-    }
-
-    /**
-     * Constructs a new instance. See above for a description of the
-     * delimiter string and custom separators.
-     *
-     * @param string	The String to be tokenized.
-     * @param delim	The String of delimiters.
-     * @param seps	Some container with custom separators to use.
-     */
-    public MyTokenizer(String string, String delim, Collection seps) {
-	source = string;
-	delims = parseDelimString(delim);
-	sIdx = 0;
-	tokIdx = 0;
-	eIdx = string.length();
-	savedToken = null;
-	customSeps = new Vector(seps);
-    }
-
-    /**
-     * Returns true if there are more tokens left.
-     *
-     * @return true if another token can be fetched with nextToken.
-     */
-    public boolean hasMoreTokens() {
-	return sIdx < eIdx || savedToken != null
-	    || putToken != null;
-    }
-
-    /**
-     * Retrives the next token.
-     *
-     * @return The next token.
-     */
-    public String nextToken() {
-	CustomSeparator csep;
-	TokenSep sep;
-	String s = null;
-	int i, j;
-
-	if (putToken != null) {
-	    s = putToken;
-	    putToken = null;
-	    return s;
+	/**
+	 * Constructs a new instance. See above for a description of the
+	 * delimiter string.
+	 *
+	 * @param string	The String to be tokenized.
+	 * @param delim	The String of delimiters.
+	 */
+	public MyTokenizer(String string, String delim) {
+		_source = string;
+		_delims = parseDelimString(delim);
+		_sIdx = 0;
+		_tokIdx = 0;
+		_eIdx = string.length();
+		_savedToken = null;
+		_customSeps = null;
+		_putToken = null;
 	}
 
-	if (savedToken != null) {
-	    s = savedToken;
-	    tokIdx = savedIdx;
-	    savedToken = null;
-	    return s;
+	/**
+	 * Constructs a new instance. See above for a description of the
+	 * delimiter string and custom separators.
+	 *
+	 * @param string	The String to be tokenized.
+	 * @param delim	The String of delimiters.
+	 * @param sep	A custom separator to use.
+	 */
+	public MyTokenizer(String string, String delim, CustomSeparator sep) {
+		_source = string;
+		_delims = parseDelimString(delim);
+		_sIdx = 0;
+		_tokIdx = 0;
+		_eIdx = string.length();
+		_savedToken = null;
+		_customSeps = new Vector();
+		_customSeps.add(sep);
 	}
 
-	if (sIdx >= eIdx)
-	    throw new NoSuchElementException(
-					     "No more tokens available");
-
-	for (sep = delims; sep != null; sep = sep.getNext())
-	    sep.reset();
-
-	if (customSeps != null) {
-	    for (i = 0; i < customSeps.size(); i++)
-		((CustomSeparator) customSeps.get(i)).reset();
+	/**
+	 * Constructs a new instance. See above for a description of the
+	 * delimiter string and custom separators.
+	 *
+	 * @param string	The String to be tokenized.
+	 * @param delim	The String of delimiters.
+	 * @param seps	Some container with custom separators to use.
+	 */
+	public MyTokenizer(String string, String delim, Collection seps) {
+		_source = string;
+		_delims = parseDelimString(delim);
+		_sIdx = 0;
+		_tokIdx = 0;
+		_eIdx = string.length();
+		_savedToken = null;
+		_customSeps = new Vector(seps);
 	}
 
-	for (i = sIdx; i < eIdx; i++) {
-	    char c = source.charAt(i);
+	/**
+	 * Returns true if there are more tokens left.
+	 *
+	 * @return true if another token can be fetched with nextToken.
+	 */
+	public boolean hasMoreTokens() {
+		return _sIdx < _eIdx || _savedToken != null ||
+			_putToken != null;
+	}
 
-	    for (j = 0; customSeps != null
-	            && j < customSeps.size(); j++) {
-		csep = (CustomSeparator) customSeps.get(j);
+	/**
+	 * Retrives the next token.
+	 *
+	 * @return The next token.
+	 */
+	public String nextToken() {
+		CustomSeparator csep;
+		TokenSep sep;
+		String s = null;
+		int i, j;
 
-		if (csep.addChar(c))
-		    break;
-	    }
-	    if (customSeps != null && j < customSeps.size()) {
-		csep = (CustomSeparator) customSeps.get(j);
-
-		while (csep.hasFreePart() && i + 1 < eIdx)
-		    if (csep.endChar(source.charAt(++i)))
-			break;
-		i -= Math.min(csep.getPeekCount(), i);
-
-		int clen = Math.min(i + 1, source.length());
-
-		if (i - sIdx + 1 > csep.tokenLength()) {
-		    s = source.substring(sIdx,
-					  i - csep.tokenLength() + 1);
-
-		    savedIdx = i - csep.tokenLength() + 1;
-		    savedToken = source.substring(
-						    savedIdx, clen);
-		} else {
-		    s = source.substring(sIdx, clen);
+		if (_putToken != null) {
+			s = _putToken;
+			_putToken = null;
+			return s;
 		}
 
-		tokIdx = sIdx;
-		sIdx = i + 1;
-		break;
-	    }
-
-	    for (sep = delims; sep != null; sep = sep.getNext())
-		if (sep.addChar(c))
-		    break;
-	    if (sep != null) {
-		if (i - sIdx + 1 > sep.length()) {
-		    s = source.substring(sIdx,
-					  i - sep.length() + 1);
-		    savedIdx = i - sep.length() + 1;
-		    savedToken = sep.getString();
-		} else {
-		    s = sep.getString();
+		if (_savedToken != null) {
+			s = _savedToken;
+			_tokIdx = _savedIdx;
+			_savedToken = null;
+			return s;
 		}
-		tokIdx = sIdx;
-		sIdx = i + 1;
-		break;
-	    }
-	}
 
-	if (s == null) {
-	    s = source.substring(sIdx);
-	    tokIdx = sIdx;
-	    sIdx = eIdx;
-	}
+		if (_sIdx >= _eIdx)
+			throw new NoSuchElementException(
+				"No more tokens available");
 
-	return s;
-    }
+		for (sep = _delims; sep != null; sep = sep.next)
+			sep.reset();
 
-    /**
-     * This class implements the Enumeration interface. This call maps
-     * to nextToken.
-     *
-     * @return nextToken();
-     * @see	#nextToken() nextToken
-     */
-    public Object nextElement() {
-	return nextToken();
-    }
-
-    /**
-     * This class implements the Enumeration interface. This call maps
-     * to hasMoreTokens.
-     *
-     * @return hasMoreTokens();
-     * @see	#hasMoreTokens() hasMoreTokens
-     */
-    public boolean hasMoreElements() {
-	return hasMoreTokens();
-    }
-
-    /**
-     * Returns the index in the string of the last token returned by
-     * nextToken, or zero if no token has been retrived.
-     *
-     * @return The index of the last token.
-     */
-    public int getTokenIndex() {
-	return tokIdx;
-    }
-
-    /**
-     * Put a token on the input stream. This will be the next token read
-     * from the tokenizer. If this function is called again before the
-     * last token has been read, then it will be lost.
-     *
-     * <p>The index returned from getTokenIndex will be the same for the
-     * token put as that of the last token that wasn't put.
-     *
-     * @param s The token to put.
-     * @throws NullPointerException if s is null.
-     */
-    public void putToken(String s) {
-	if (s == null)
-	    throw new NullPointerException(
-					   "Cannot put a null token");
-
-	putToken = s;
-    }
-
-    /**
-     * Creates a linked list of TokenSeps from the comma separated string
-     * str.
-     *
-     * @param str The string specifying delimiter strings.
-     * @return A list of TokenSeps.
-     */
-    private static TokenSep parseDelimString(String str) {
-	TokenSep first = null;
-	TokenSep p = null;
-	int idx0, idx1, length;
-	String val = "";
-	char c;
-
-	length = str.length();
-	for (idx0 = 0; idx0 < length;) {
-	    for (idx1 = idx0; idx1 < length; idx1++) {
-		c = str.charAt(idx1);
-		if (c == '\\') {
-		    idx1++;
-		    if (idx1 < length)
-			val += str.charAt(idx1);
-		} else if (c == ',') {
-		    break;
-		} else {
-		    val += c;
+		if (_customSeps != null) {
+			for (i = 0; i < _customSeps.size(); i++)
+				((CustomSeparator)_customSeps.get(i)).reset();
 		}
-	    }
-	    idx1 = Math.min(idx1, length);
-	    if (idx1 > idx0) {
-		p = new TokenSep(val);
-		val = "";
-		p.setNext(first);
-		first = p;
-	    }
 
-	    idx0 = idx1 + 1;
+		for (i = _sIdx; i < _eIdx; i++) {
+			char c = _source.charAt(i);
+
+			for (j = 0; _customSeps != null &&
+				    j < _customSeps.size(); j++) {
+				csep = (CustomSeparator)_customSeps.get(j);
+
+				if (csep.addChar(c))
+					break;
+			}
+			if (_customSeps != null && j < _customSeps.size()) {
+				csep = (CustomSeparator)_customSeps.get(j);
+
+				while (csep.hasFreePart() && i + 1 < _eIdx)
+					if (csep.endChar(_source.charAt(++i)))
+						break;
+
+				int clen = Math.min(i+1, _source.length());
+
+				if (i - _sIdx + 1 > csep.tokenLength()) {
+					s = _source.substring(_sIdx,
+						i - csep.tokenLength() + 1);
+
+					_savedIdx = i - csep.tokenLength() + 1;
+					_savedToken = _source.substring(
+						_savedIdx, clen);
+				} else {
+					s = _source.substring(_sIdx, clen);
+				}
+
+				_tokIdx = _sIdx;
+				_sIdx = i + 1;
+				break;
+			}
+
+			for (sep = _delims; sep != null; sep = sep.next)
+				if (sep.addChar(c))
+					break;
+			if (sep != null)
+			{
+				if (i - _sIdx + 1 > sep.length()) {
+					s = _source.substring(_sIdx,
+						i - sep.length() + 1);
+					_savedIdx = i - sep.length() + 1;
+					_savedToken = sep.getString();
+				} else {
+					s = sep.getString();
+				}
+				_tokIdx = _sIdx;
+				_sIdx = i + 1;
+				break;
+			}
+		}
+
+		if (s == null) {
+			s = _source.substring(_sIdx);
+			_tokIdx = _sIdx;
+			_sIdx = _eIdx;
+		}
+
+		return s;
 	}
 
-	return first;
-    }
+	/**
+	 * This class implements the Enumeration interface. This call maps
+	 * to nextToken.
+	 *
+	 * @return nextToken();
+	 * @see	#nextToken() nextToken
+	 */
+	public Object nextElement() {
+		return nextToken();
+	}
+
+	/**
+	 * This class implements the Enumeration interface. This call maps
+	 * to hasMoreTokens.
+	 *
+	 * @return hasMoreTokens();
+	 * @see	#hasMoreTokens() hasMoreTokens
+	 */
+	public boolean hasMoreElements() {
+		return hasMoreTokens();
+	}
+
+	/**
+	 * Returns the index in the string of the last token returned by
+	 * nextToken, or zero if no token has been retrived.
+	 *
+	 * @return The index of the last token.
+	 */
+	public int getTokenIndex() {
+		return _tokIdx;
+	}
+
+	/**
+	 * Put a token on the input stream. This will be the next token read
+	 * from the tokenizer. If this function is called again before the
+	 * last token has been read, then it will be lost.
+	 *
+	 * <p>The index returned from getTokenIndex will be the same for the
+	 * token put as that of the last token that wasn't put.
+	 *
+	 * @param s The token to put.
+	 * @throws NullPointerException if s is null.
+	 */
+	public void putToken(String s) {
+		if (s == null)
+			throw new NullPointerException(
+				"Cannot put a null token");
+
+		_putToken = s;
+	}
+
+	/**
+	 * Creates a linked list of TokenSeps from the comma separated string
+	 * str.
+	 *
+	 * @param str The string specifying delimiter strings.
+	 * @return A list of TokenSeps.
+	 */
+	private static TokenSep parseDelimString(String str) {
+		TokenSep first = null;
+		TokenSep p = null;
+		int idx0, idx1, length;
+		String val = "";
+		char c;
+
+		length = str.length();
+		for (idx0 = 0; idx0 < length; ) {
+			for (idx1 = idx0; idx1 < length; idx1++) {
+				c = str.charAt(idx1);
+				if (c == '\\') {
+					idx1++;
+					if (idx1 < length)
+						val += str.charAt(idx1);
+				} else if (c == ',') {
+					break;
+				} else {
+					val += c;
+				}
+			}
+			idx1 = Math.min(idx1, length);
+			if (idx1 > idx0) {
+				p = new TokenSep(val);
+				val = "";
+				p.next = first;
+				first = p;
+			}
+
+			idx0 = idx1 + 1;
+		}
+
+		return first;
+	}
 }
 

@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,222 +21,180 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+
+// File: WizBreakCircularComp.java
+// Classes: WizBreakCircularComp
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.cognitive.critics;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Vector;
+import java.util.*;
+import java.beans.*;
+import javax.swing.*;
 
-import javax.swing.JPanel;
+import org.apache.log4j.Category;
+import org.argouml.cognitive.ui.*;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
+import ru.novosoft.uml.model_management.*;
 
-import org.apache.log4j.Logger;
-import org.argouml.cognitive.ListSet;
-import org.argouml.cognitive.ToDoItem;
-import org.argouml.cognitive.ui.WizStepChoice;
-import org.argouml.cognitive.ui.WizStepConfirm;
-import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.tigris.gef.util.*;
 
-/**
- * A non-modal wizard to help the user change select an association
- * to make non-aggregate.
- */
-public class WizBreakCircularComp extends UMLWizard {
-    private static final Logger LOG =
-	Logger.getLogger(WizBreakCircularComp.class);
+import org.argouml.kernel.*;
+import org.argouml.uml.generator.*;
 
-    private String instructions1 = 
-        Translator.localize("critics.WizBreakCircularComp-ins1");
+/** A non-modal wizard to help the user change select an association
+ *  to make non-aggregate. */
 
-    private String instructions2 = 
-        Translator.localize("critics.WizBreakCircularComp-ins2");
+public class WizBreakCircularComp extends Wizard {
+    protected static Category cat = Category.getInstance(WizBreakCircularComp.class);
 
-    private String instructions3 = 
-        Translator.localize("critics.WizBreakCircularComp-ins3");
+  protected String _instructions1 =
+  "Please select one of the following classes. "+
+  "In the next two steps a association of that class will "+
+  "be made non-aggregate.";
 
-    private WizStepChoice step1 = null;
-    private WizStepChoice step2 = null;
-    private WizStepConfirm step3 = null;
+  protected String _instructions2 =
+  "Please select one of the following associations. "+
+  "In the next step that association will "+
+  "be made non-aggregate.";
 
-    private Object selectedCls = null;
-    private Object selectedAsc = null;
+  protected String _instructions3 =
+  "Are you sure you want to make this association non-aggregate?";
 
-    /**
-     * The constructor.
-     */
-    public WizBreakCircularComp() { }
+  protected WizStepChoice _step1 = null;
+  protected WizStepChoice _step2 = null;
+  protected WizStepConfirm _step3 = null;
 
-    /**
-     * @see org.argouml.cognitive.ui.Wizard#getNumSteps()
-     */
-    public int getNumSteps() { return 3; }
+  protected MClassifier _selectedCls = null;
+  protected MAssociation _selectedAsc = null;
 
-    /**
-     * @return The choices for this step.
-     */
-    protected Vector getOptions1() {
-	Vector res = new Vector();
-	if (getToDoItem() != null) {
-	    ToDoItem item = (ToDoItem) getToDoItem();
-	    ListSet offs = item.getOffenders();
-	    int size = offs.size();
-	    for (int i = 0; i < size; i++) {
-		Object me = /*(MModelElement)*/ offs.elementAt(i);
-		String s = Model.getFacade().getName(me);
-		res.addElement(s);
-	    }
-	}
-	return res;
+  public WizBreakCircularComp() { }
+
+  public int getNumSteps() { return 3; }
+
+  protected Vector getOptions1() {
+    Vector res = new Vector();
+    if (_item != null) {
+      VectorSet offs = _item.getOffenders();
+      int size = offs.size();
+      for (int i = 0; i < size; i++) {
+	MModelElement me = (MModelElement) offs.elementAt(i);
+	String s = GeneratorDisplay.Generate(me.getName());
+	res.addElement(s);
+      }
     }
+    return res;
+  }
 
-    /**
-     * @return The choices for this step.
-     */
-    protected Vector getOptions2() {
-	Vector res = new Vector();
-	if (selectedCls != null) {
-	    Collection aes = Model.getFacade().getAssociationEnds(selectedCls);
-	    Object fromType = selectedCls;
-	    String fromName = Model.getFacade().getName(fromType);
-	    for (Iterator iter = aes.iterator(); iter.hasNext();) {
-		Object fromEnd = /*(MAssociationEnd)*/ iter.next();
-		Object asc = Model.getFacade().getAssociation(fromEnd);
-		Object toEnd =
-		    new ArrayList(Model.getFacade().getConnections(asc)).get(0);
-		if (toEnd == fromEnd) {
-		    toEnd = new ArrayList(
-		            Model.getFacade().getConnections(asc)).get(1);
-		}
-		Object toType = Model.getFacade().getType(toEnd);
-		String ascName = Model.getFacade().getName(asc);
-		String toName = Model.getFacade().getName(toType);
-		String s = ascName 
-                    + " " 
-                    + Translator.localize("critics.WizBreakCircularComp-from") 
-                    + fromName
-                    + " "
-                    + Translator.localize("critics.WizBreakCircularComp-to")
-                    + " "
-                    + toName;
-		res.addElement(s);
-	    }
-	}
-	return res;
+  protected Vector getOptions2() {
+    Vector res = new Vector();
+    if (_selectedCls != null) {
+      Collection aes = _selectedCls.getAssociationEnds();
+      int size = aes.size();
+      MClassifier fromType = _selectedCls;
+      String fromName = GeneratorDisplay.Generate(fromType.getName());
+      for (Iterator iter = aes.iterator(); iter.hasNext();) {
+	MAssociationEnd fromEnd = (MAssociationEnd) iter.next();
+	MAssociation asc = fromEnd.getAssociation();
+	MAssociationEnd toEnd = (MAssociationEnd)
+	  asc.getConnections().get(0);
+	if (toEnd == fromEnd)
+	  toEnd = (MAssociationEnd) asc.getConnections().get(1);
+	MClassifier toType = toEnd.getType();
+	String ascName = GeneratorDisplay.Generate(asc.getName());
+	String toName = GeneratorDisplay.Generate(toType.getName());
+	String s = ascName + " from " + fromName + " to " + toName;
+	res.addElement(s);
+      }
     }
+    return res;
+  }
 
-    /**
-     * Create a new panel for the given step.
-     *
-     * @see org.argouml.cognitive.ui.Wizard#makePanel(int)
-     */
-    public JPanel makePanel(int newStep) {
-	switch (newStep) {
-	case 1:
-	    if (step1 == null) {
-		step1 = new WizStepChoice(this, instructions1, getOptions1());
-		step1.setTarget(getToDoItem());
-	    }
-	    return step1;
-	case 2:
-	    if (step2 == null) {
-		step2 = new WizStepChoice(this, instructions2, getOptions2());
-		step2.setTarget(getToDoItem());
-	    }
-	    return step2;
-	case 3:
-	    if (step3 == null) {
-		step3 = new WizStepConfirm(this, instructions3);
-	    }
-	    return step3;
-	}
-	return null;
+  /** Create a new panel for the given step.  */
+  public JPanel makePanel(int newStep) {
+    switch (newStep) {
+    case 1:
+      if (_step1 == null) {
+	_step1 = new WizStepChoice(this, _instructions1, getOptions1());
+	_step1.setTarget(_item);
+      }
+      return _step1;
+    case 2:
+      if (_step2 == null) {
+	_step2 = new WizStepChoice(this, _instructions2, getOptions2());
+	_step2.setTarget(_item);
+      }
+      return _step2;
+    case 3:
+      if (_step3 == null) {
+	_step3 = new WizStepConfirm(this, _instructions3);
+      }
+      return _step3;
     }
+    return null;
+  }
 
-    /**
-     * Take action at the completion of a step. For example, when the
-     * given step is 0, do nothing; and when the given step is 1, do
-     * the first action.  Argo non-modal wizards should take action as
-     * they do along, as soon as possible, they should not wait until
-     * the final step.
-     *
-     * @see org.argouml.cognitive.ui.Wizard#doAction(int)
-     */
-    public void doAction(int oldStep) {
-	LOG.debug("doAction " + oldStep);
-	int choice = -1;
-	ToDoItem item = (ToDoItem) getToDoItem();
-	ListSet offs = item.getOffenders();
-	switch (oldStep) {
-	case 1:
-	    if (step1 != null) {
-	        choice = step1.getSelectedIndex();
-	    }
-	    if (choice == -1) {
-		throw new Error("nothing selected, should not get here");
-	    }
-	    selectedCls = offs.elementAt(choice);
-	    break;
-	    ////////////////
-	case 2:
-	    if (step2 != null) {
-	        choice = step2.getSelectedIndex();
-	    }
-	    if (choice == -1) {
-		throw new Error("nothing selected, should not get here");
-	    }
-	    Object ae = null;
-	    Iterator iter =
-	        Model.getFacade().getAssociationEnds(selectedCls).iterator();
-	    for (int n = 0; n <= choice; n++) {
-	        ae = /*(MAssociationEnd)*/ iter.next();
-	    }
-	    selectedAsc = Model.getFacade().getAssociation(ae);
-	    break;
-	    ////////////////
-	case 3:
-	    if (selectedAsc != null) {
-		List conns = new ArrayList(
-		        Model.getFacade().getConnections(selectedAsc));
-		Object ae0 = /*(MAssociationEnd)*/ conns.get(0);
-		Object ae1 = /*(MAssociationEnd)*/ conns.get(1);
-		try {
-		    Model.getCoreHelper().setAggregation(
-		            ae0,
-		            Model.getAggregationKind().getNone());
-		    Model.getCoreHelper().setAggregation(
-		            ae1,
-		            Model.getAggregationKind().getNone());
-		} catch (Exception pve) {
-		    LOG.error("could not set aggregation", pve);
-		}
-	    }
-	    break;
+  /** Take action at the completion of a step. For example, when the
+   *  given step is 0, do nothing; and when the given step is 1, do
+   *  the first action.  Argo non-modal wizards should take action as
+   *  they do along, as soon as possible, they should not wait until
+   *  the final step. */
+  public void doAction(int oldStep) {
+    cat.debug("doAction " + oldStep);
+    int choice = -1;
+    VectorSet offs = _item.getOffenders();
+    switch (oldStep) {
+    case 1:
+      if (_step1 != null) choice = _step1.getSelectedIndex();
+      if (choice == -1) {
+	throw new Error("nothing selected, should not get here");
+      }
+      _selectedCls = (MClassifier) offs.elementAt(choice);
+      break;
+      ////////////////
+    case 2:
+      if (_step2 != null) choice = _step2.getSelectedIndex();
+      if (choice == -1) {
+	throw new Error("nothing selected, should not get here");
+      }
+      MAssociationEnd ae=null;
+      Iterator iter = _selectedCls.getAssociationEnds().iterator();
+      for (int n=0; n<=choice; n++)
+        ae = (MAssociationEnd) iter.next();
+      _selectedAsc = ae.getAssociation();
+      break;
+      ////////////////
+    case 3:
+      if (_selectedAsc != null) {
+	List conns = _selectedAsc.getConnections();
+	MAssociationEnd ae0 = (MAssociationEnd) conns.get(0);
+	MAssociationEnd ae1 = (MAssociationEnd) conns.get(1);
+	try {
+	  ae0.setAggregation(MAggregationKind.NONE);
+	  ae1.setAggregation(MAggregationKind.NONE);
 	}
+	catch (Exception pve) {
+	  cat.error("could not set aggregation", pve);
+	}
+      }
+      break;
     }
+  }
 
-    /**
-     * @see org.argouml.cognitive.ui.Wizard#canGoNext()
-     */
-    public boolean canGoNext() { return canFinish(); }
+  public boolean canGoNext() { return canFinish(); }
 
-    /**
-     * @see org.argouml.cognitive.ui.Wizard#canFinish()
-     */
-    public boolean canFinish() {
-	if (!super.canFinish()) {
-	    return false;
-	}
-	if (getStep() == 0) {
-	    return true;
-	}
-	if (getStep() == 1 && step1 != null && step1.getSelectedIndex() != -1) {
-	    return true;
-	}
-	if (getStep() == 2 && step2 != null && step2.getSelectedIndex() != -1) {
-	    return true;
-	}
-	return false;
-    }
+  public boolean canFinish() {
+    if (!super.canFinish()) return false;
+    if (_step == 0) return true;
+    if (_step == 1 && _step1 != null && _step1.getSelectedIndex() != -1)
+      return true;
+    if (_step == 2 && _step2 != null && _step2.getSelectedIndex() != -1)
+      return true;
+    return false;
+  }
+
+
 } /* end class WizBreakCircularComp */

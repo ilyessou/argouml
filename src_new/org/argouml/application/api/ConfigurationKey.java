@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2001 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -23,7 +22,7 @@
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 package org.argouml.application.api;
-import java.beans.PropertyChangeEvent;
+import java.beans.*;
 
 /**
  *   This class provides definition and manipulation of configuration keys.
@@ -35,20 +34,13 @@ import java.beans.PropertyChangeEvent;
  */
 public interface ConfigurationKey {
 
-    /**
-     * Return the actual key used to access the configuration.
-     *
-     * @return the key.
-     */
-    String getKey();
+  /** Return the actual key used to access the configuration.
+   */ 
+  public String getKey();
 
-    /**
-     * Tells if this configuration key is the one changed in the
-     * <code>PropertyChangeEvent</code>.
-     *
-     * @param pce PropertyChangeEvent to check
-     * @return true if the changed property is for the key.
-     */
-    boolean isChangedProperty(PropertyChangeEvent pce);
+  /** Tells if this configuration key is the one changed in the
+   *  PropertyChangeEvent.
+   */
+  public boolean isChangedProperty(PropertyChangeEvent pce);
 }
 

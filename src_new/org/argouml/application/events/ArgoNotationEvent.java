@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2001 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -23,27 +22,19 @@
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 package org.argouml.application.events;
+import org.argouml.application.api.*;
 
-/**
- * ArgoNotationEvent is used to notify interested parties
- * that the module which is the event source
- * has been posted, selected, or canceled.
+/** ArgoNotationEvent is used to notify interested parties
+ *  that the module which is the event source
+ *  has been posted, selected, or canceled.
  */
+
 public class ArgoNotationEvent extends ArgoEvent {
 
-    /**
-     * @param eventType reported by this event.
-     * @param src object that caused the event.
-     */
     public ArgoNotationEvent(int eventType, Object src) {
         super(eventType, src);
     }
 
-    /**
-     * Indicates the start of the 100-digit range for notation events.
-     *
-     * @return the first id reserved for events.
-     */
     public int getEventStartRange() { return ANY_NOTATION_EVENT; }
 }
 

@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,101 +21,83 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: CrInterfaceWithoutComponent.java
+// Classes: CrInterfaceWithoutComponent
+// Original Author: 5eichler@informatik.uni-hamburg.de
+// $Id$
+
 package org.argouml.uml.cognitive.critics;
 
-import java.util.Collection;
-import java.util.Iterator;
+import java.util.*;
 
-import org.argouml.cognitive.Designer;
-import org.argouml.cognitive.ListSet;
-import org.argouml.cognitive.ToDoItem;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
-import org.argouml.uml.cognitive.UMLToDoItem;
-import org.argouml.uml.diagram.deployment.ui.UMLDeploymentDiagram;
-import org.argouml.uml.diagram.static_structure.ui.FigInterface;
-import org.tigris.gef.presentation.Fig;
+import ru.novosoft.uml.foundation.core.*;
+
+import org.tigris.gef.util.*;
+
+import org.argouml.cognitive.*;
+import org.argouml.uml.diagram.static_structure.ui.*;
+import org.argouml.uml.diagram.deployment.ui.*;
 
 /**
  * A critic to detect when a interface in a deployment-diagram
- * is not inside a component.
- *
- * @author 5eichler@informatik.uni-hamburg.de
- */
+ * is not inside a component
+ **/
+
 public class CrInterfaceWithoutComponent extends CrUML {
 
-    /**
-     * The constructor.
-     */
-    public CrInterfaceWithoutComponent() {
-        setupHeadAndDesc();
-	addSupportedDecision(UMLDecision.PATTERNS);
-    }
+  public CrInterfaceWithoutComponent() {
+    setHeadline("Interfaces normally are inside components");
+    addSupportedDecision(CrUML.decPATTERNS);
+  }
 
-    /**
-     * @see org.argouml.uml.cognitive.critics.CrUML#predicate2(
-     * java.lang.Object, org.argouml.cognitive.Designer)
-     */
-    public boolean predicate2(Object dm, Designer dsgr) {
-	if (!(dm instanceof UMLDeploymentDiagram)) return NO_PROBLEM;
-	UMLDeploymentDiagram dd = (UMLDeploymentDiagram) dm;
-	ListSet offs = computeOffenders(dd);
-	if (offs == null) return NO_PROBLEM;
-	return PROBLEM_FOUND;
-    }
+  public boolean predicate2(Object dm, Designer dsgr) {
+    if (!(dm instanceof UMLDeploymentDiagram)) return NO_PROBLEM;
+    UMLDeploymentDiagram dd = (UMLDeploymentDiagram) dm;
+    VectorSet offs = computeOffenders(dd);
+    if (offs == null) return NO_PROBLEM;
+    return PROBLEM_FOUND;
+  }
 
-    /**
-     * @see org.argouml.cognitive.critics.Critic#toDoItem(
-     * java.lang.Object, org.argouml.cognitive.Designer)
-     */
-    public ToDoItem toDoItem(Object dm, Designer dsgr) {
-	UMLDeploymentDiagram dd = (UMLDeploymentDiagram) dm;
-	ListSet offs = computeOffenders(dd);
-	return new UMLToDoItem(this, offs, dsgr);
-    }
+  public ToDoItem toDoItem(Object dm, Designer dsgr) {
+    UMLDeploymentDiagram dd = (UMLDeploymentDiagram) dm;
+    VectorSet offs = computeOffenders(dd);
+    return new ToDoItem(this, offs, dsgr);
+  }
 
-    /**
-     * @see org.argouml.cognitive.Poster#stillValid(
-     * org.argouml.cognitive.ToDoItem, org.argouml.cognitive.Designer)
-     */
-    public boolean stillValid(ToDoItem i, Designer dsgr) {
-	if (!isActive()) return false;
-	ListSet offs = i.getOffenders();
-	UMLDeploymentDiagram dd = (UMLDeploymentDiagram) offs.firstElement();
-	//if (!predicate(dm, dsgr)) return false;
-	ListSet newOffs = computeOffenders(dd);
-	boolean res = offs.equals(newOffs);
-	return res;
-    }
+  public boolean stillValid(ToDoItem i, Designer dsgr) {
+    if (!isActive()) return false;
+    VectorSet offs = i.getOffenders();
+    UMLDeploymentDiagram dd = (UMLDeploymentDiagram) offs.firstElement();
+    //if (!predicate(dm, dsgr)) return false;
+    VectorSet newOffs = computeOffenders(dd);
+    boolean res = offs.equals(newOffs);
+    return res;
+  }
 
-    /**
-     * If there are interfaces that are not inside a component
-     * the returned vector-set is not null. Then in the vector-set
-     * are the UMLDeploymentDiagram and all FigInterfaces with no
-     * enclosing FigComponent
-     *
-     * @param dd the diagram to check
-     * @return the set of offenders
-     */
-    public ListSet computeOffenders(UMLDeploymentDiagram dd) {
-	Collection figs = dd.getLayer().getContents();
-	ListSet offs = null;
-        Iterator figIter = figs.iterator();
-	while (figIter.hasNext()) {
-	    Object obj = figIter.next();
-	    if (!(obj instanceof FigInterface)) continue;
-	    FigInterface fi = (FigInterface) obj;
-	    Fig enclosing = fi.getEnclosingFig();
-	    if (enclosing == null || (!(Model.getFacade()
-	            .isAComponent(enclosing.getOwner())))) {
-		if (offs == null) {
-		    offs = new ListSet();
-		    offs.addElement(dd);
-		}
-		offs.addElement(fi);
-	    }
-	}
-	return offs;
+  /**
+   * If there are interfaces that are not inside a component
+   * the returned vector-set is not null. Then in the vector-set
+   * are the UMLDeploymentDiagram and all FigInterfaces with no
+   * enclosing FigComponent
+   **/
+  public VectorSet computeOffenders(UMLDeploymentDiagram dd) { 
+    Vector figs = dd.getLayer().getContents();
+    VectorSet offs = null;
+    int size = figs.size();
+    for (int i=0; i<size; i++) {
+      Object obj = figs.elementAt(i);
+      if (!(obj instanceof FigInterface)) continue;
+      FigInterface fi = (FigInterface) obj;
+      if (fi.getEnclosingFig() == null || (!(fi.getEnclosingFig().getOwner() instanceof MComponent))) {
+        if (offs == null) {
+          offs = new VectorSet();
+          offs.addElement(dd);
+        }
+        offs.addElement(fi);
+      }
     }
+    return offs;
+  } 
 
 } /* end class CrInterfaceWithoutComponent.java */
+

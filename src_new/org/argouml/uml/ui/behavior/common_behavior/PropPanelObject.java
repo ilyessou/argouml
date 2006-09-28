@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,66 +21,167 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: PropPanelObject.java
+// Classes: PropPanelObject
+// Original Author: 5eichler@informatik.uni-hamburg.de
+// $Id$
+
 package org.argouml.uml.ui.behavior.common_behavior;
 
-import javax.swing.JScrollPane;
+import javax.swing.*;
+import java.awt.*;
+import java.util.*;
 
-import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
-import org.argouml.uml.ui.AbstractActionAddModelElement;
-import org.argouml.uml.ui.ActionNavigateNamespace;
-import org.argouml.uml.ui.UMLMutableLinkedList;
-import org.argouml.uml.ui.foundation.extension_mechanisms.ActionNewStereotype;
-import org.argouml.util.ConfigLoader;
+import org.argouml.application.api.*;
+import org.argouml.uml.ui.*;
+import org.argouml.model.uml.UmlFactory;
+import org.argouml.ui.*;
+import org.argouml.uml.ui.foundation.core.*;
+import org.argouml.uml.*;
 
-
-/**
- * The properties panel of an Object.
- */
-public class PropPanelObject extends PropPanelInstance {
-
-    /**
-     * Construct a property panel for UML Object elements.
-     */
-    public PropPanelObject() {
-	super("Object", lookupIcon("Object"),
-            ConfigLoader.getTabPropsOrientation());
-
-	addField(Translator.localize("label.name"), getNameTextField());
-
-	addField(Translator.localize("label.namespace"),
-		     getNamespaceSelector());
-
-        addSeparator();
-
-	addField(Translator.localize("label.stimili-sent"),
-            getStimuliSenderScroll());
-
-	addField(Translator.localize("label.stimili-received"),
-            getStimuliReceiverScroll());
-
-	addSeparator();
-
-	AbstractActionAddModelElement action =
-	    new ActionAddInstanceClassifier(
-                    Model.getMetaTypes().getClassifier());
-	JScrollPane classifierScroll =
-	    new JScrollPane(
-	            new UMLMutableLinkedList(
-	                    new UMLInstanceClassifierListModel(),
-	                    action, null, null, true));
-	addField(Translator.localize("label.classifiers"),
-            classifierScroll);
+import ru.novosoft.uml.*;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
+import ru.novosoft.uml.behavior.common_behavior.*;
+import ru.novosoft.uml.foundation.extension_mechanisms.*;
 
 
-	addAction(new ActionNavigateNamespace());
-	addAction(new ActionNewStereotype());
-    addAction(getDeleteAction());
+public class PropPanelObject extends PropPanelModelElement {
 
+    public  PropPanelObject() {
+	super("Object",_objectIcon,2);
+
+	Class mclass = MObject.class;
+
+	addCaption(Argo.localize("UMLMenu", "label.name"),1,0,0);
+	addField(nameField,1,0,0);
+	
+	addCaption("Classifier:",2,0,0);   	
+	UMLClassifierComboBoxModel classifierModel = new UMLClassifierComboBoxModel(this,"isAcceptibleClassifier","classifier","getClassifier","setClassifier",true,MClassifier.class,true);
+	UMLComboBox clsComboBox = new UMLComboBox(classifierModel);
+	addField(new UMLComboBoxNavigator(this, Argo.localize("UMLMenu", "tooltip.nav-class"),clsComboBox),2,0,0);
+	
+	addCaption(Argo.localize("UMLMenu", "label.stereotype"),3,0,0);
+	addField(new UMLComboBoxNavigator(this, Argo.localize("UMLMenu", "tooltip.nav-stereo"),stereotypeBox),3,0,0);
+   
+	addCaption(Argo.localize("UMLMenu", "label.namespace"),4,0,1);
+	addLinkField(namespaceScroll,4,0,0);
+
+	addCaption("Stimuli sent:",1,1,0.25);
+	JList sentList = new UMLList(new UMLStimulusListModel(this,null,true,"sent"),true);
+	sentList.setForeground(Color.blue);
+	sentList.setVisibleRowCount(1);
+	JScrollPane sentScroll = new JScrollPane(sentList);
+	addField(sentScroll,1,1,0.25);
+
+	addCaption("Stimuli received:",2,1,0.25);
+	JList receivedList = new UMLList(new UMLStimulusListModel(this,null,true,"received"),true);
+	receivedList.setForeground(Color.blue);
+	receivedList.setVisibleRowCount(1);
+	JScrollPane receivedScroll= new JScrollPane(receivedList);
+	addField(receivedScroll,2,1,0.25);
+	
+	new PropPanelButton(this,buttonPanel,_navUpIcon, Argo.localize("UMLMenu", "button.go-up"),"navigateNamespace",null);
+	new PropPanelButton(this,buttonPanel,_navBackIcon, Argo.localize("UMLMenu", "button.go-back"),"navigateBackAction","isNavigateBackEnabled");
+	new PropPanelButton(this,buttonPanel,_navForwardIcon, Argo.localize("UMLMenu", "button.go-forward"),"navigateForwardAction","isNavigateForwardEnabled");
+	
+	new PropPanelButton(this,buttonPanel,_deleteIcon,localize("Delete object"),"removeElement",null);
+     
+    }
+    
+
+    public void navigateNamespace() {
+        Object target = getTarget();
+        if(target instanceof MModelElement) {
+            MModelElement elem = (MModelElement) target;
+            MNamespace ns = elem.getNamespace();
+            if(ns != null) {
+                navigateTo(ns);
+            }
+        }
     }
 
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = 3594423150761388537L;
+
+    
+    public boolean isAcceptibleClassifier(MModelElement classifier) {
+        return classifier instanceof MClassifier;
+    }
+
+     public MClassifier getClassifier() {
+        MClassifier classifier = null;
+        Object target = getTarget();
+        if(target instanceof MInstance) {
+        //    UML 1.3 apparently has this a 0..n multiplicity
+        //    I'll have to figure out what that means
+        //            classifier = ((MInstance) target).getClassifier();
+
+	    // at the moment , we only deal with one classifier
+	    Collection col = ((MInstance)target).getClassifiers();
+		Iterator iter = col.iterator();
+		if (iter.hasNext()) {
+		    classifier = (MClassifier)iter.next();
+        }
+        }
+        return classifier;
+    }
+
+    public void setClassifier(MClassifier element) {
+        Object target = getTarget();
+	
+        if(target instanceof MInstance) {
+	    MInstance inst = (MInstance)target;
+	    Vector classifiers = new Vector();
+	    if (element != null) {
+	    	classifiers.add(element);
+	    }
+	    inst.setClassifiers(classifiers);
+        }
+	    /*
+//            ((MInstance) target).setClassifier((MClassifier) element);
+
+	    // delete all classifiers
+	    Collection col = inst.getClassifiers();
+	    if (col != null) {
+		Iterator iter = col.iterator();
+		if (iter != null && iter.hasNext()) {
+		    MClassifier classifier = (MClassifier)iter.next();
+		    inst.removeClassifier(classifier);
+		}
+	    }
+	    
+	    Iterator it = inst.getClassifiers().iterator();
+	    while (it.hasNext()) {
+	    	inst.removeClassifier((MClassifier)it.next());
+	    }
+	    // add classifier
+	    if (element != null) {
+	    	inst.addClassifier( element);
+	    }
+
+        }
+        */
+    }
+    
+     
+    public boolean isAcceptibleBaseMetaClass(String baseClass) {
+        return baseClass.equals("Object");
+    }
+    
+    public void removeElement() {
+
+        MObject target = (MObject) getTarget();        
+	MModelElement newTarget = (MModelElement) target.getNamespace();
+                
+        UmlFactory.getFactory().delete(target);
+	if(newTarget != null) navigateTo(newTarget);
+    }
+
+
+
+            
+
+   
+  
+
+
 }

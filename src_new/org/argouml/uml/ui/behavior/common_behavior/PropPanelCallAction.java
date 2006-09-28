@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,220 +21,53 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+
 package org.argouml.uml.ui.behavior.common_behavior;
 
-import java.awt.event.ActionEvent;
-import java.beans.PropertyChangeEvent;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.*;
+import javax.swing.*;
 
-import org.argouml.i18n.Translator;
-import org.argouml.model.AttributeChangeEvent;
-import org.argouml.model.Model;
-import org.argouml.ui.targetmanager.TargetManager;
-import org.argouml.uml.ui.UMLComboBox2;
-import org.argouml.uml.ui.UMLComboBoxModel2;
-import org.argouml.uml.ui.UMLComboBoxNavigator;
-import org.argouml.uml.ui.UMLSearchableComboBox;
-import org.tigris.gef.undo.UndoableAction;
+import ru.novosoft.uml.behavior.common_behavior.*;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
+import ru.novosoft.uml.model_management.*;
 
-/**
- * The properties panel for a CallAction.
- */
-public class PropPanelCallAction extends PropPanelAction {
+import org.argouml.application.api.*;
+import org.argouml.uml.ui.*;
+import org.argouml.uml.ui.foundation.core.*;
 
-    /**
-     * The constructor.
-     *
-     */
+public class PropPanelCallAction extends PropPanelModelElement {
+
+    ////////////////////////////////////////////////////////////////
+    // contructors
     public PropPanelCallAction() {
-        super("CallAction", lookupIcon("CallAction"));
+        super("Action", _callActionIcon,2);
+
+        Class mclass = MCallAction.class;
+
+	addCaption(Argo.localize("UMLMenu", "label.name"),1,0,0);
+        addField(nameField,1,0,0);
+
+        UMLExpressionModel expressionModel = new UMLExpressionModel(this,MAction.class,"script",
+            MActionExpression.class,"getScript","setScript");
+
+        addCaption(Argo.localize("UMLMenu", "label.expression"),2,0,0);
+        addField(new JScrollPane(new UMLExpressionBodyField(expressionModel,true)),2,0,0);
+
+        addCaption(Argo.localize("UMLMenu", "label.language"),3,0,1);
+        addField(new UMLExpressionLanguageField(expressionModel,true),3,0,0);
+
+	new PropPanelButton(this,buttonPanel,_navBackIcon, Argo.localize("UMLMenu", "button.go-back"),"navigateBackAction","isNavigateBackEnabled");
+	new PropPanelButton(this,buttonPanel,_navForwardIcon, Argo.localize("UMLMenu", "button.go-forward"),"navigateForwardAction","isNavigateForwardEnabled");
     }
 
-    /**
-     * @see org.argouml.uml.ui.behavior.common_behavior.PropPanelAction#initialize()
-     */
-    public void initialize() {
-        super.initialize();
-
-        UMLSearchableComboBox operationComboBox =
-            new UMLCallActionOperationComboBox2(
-                new UMLCallActionOperationComboBoxModel());
-        addFieldBefore(Translator.localize("label.operation"),
-                new UMLComboBoxNavigator(
-                        this,
-                        Translator.localize("label.operation.navigate.tooltip"),
-                        operationComboBox),
-                argumentsScroll);
+    protected boolean isAcceptibleBaseMetaClass(String baseClass) {
+	return baseClass.equals("CallAction");
     }
 
 
-    private class UMLCallActionOperationComboBox2
-        extends UMLSearchableComboBox {
-        /**
-         * The constructor.
-         *
-         * @param arg0 the model
-         */
-        public UMLCallActionOperationComboBox2(UMLComboBoxModel2 arg0) {
-            super(arg0, new SetActionOperationAction());
-            setEditable(false);
-        }
-
-        /**
-         * The UID.
-         */
-        private static final long serialVersionUID = 1453984990567492914L;
-    }
-
-    private class SetActionOperationAction extends UndoableAction {
-
-        /**
-         * The constructor.
-         */
-        public SetActionOperationAction() {
-            super("");
-        }
-
-        /**
-         * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-         */
-        public void actionPerformed(ActionEvent e) {
-            super.actionPerformed(e);
-            Object source = e.getSource();
-            if (source instanceof UMLComboBox2) {
-                Object selected = ((UMLComboBox2) source).getSelectedItem();
-                Object target = ((UMLComboBox2) source).getTarget();
-                if (Model.getFacade().isACallAction(target)
-                    && Model.getFacade().isAOperation(selected)) {
-                    if (Model.getFacade().getOperation(target) != selected) {
-                        Model.getCommonBehaviorHelper()
-                            .setOperation(target, selected);
-                    }
-                }
-            }
-        }
-
-        /**
-         * The UID.
-         */
-        private static final long serialVersionUID = -3574312020866131632L;
-    }
-
-    private class UMLCallActionOperationComboBoxModel
-        extends UMLComboBoxModel2 {
-        /**
-         * The constructor.
-         */
-        public UMLCallActionOperationComboBoxModel() {
-            super("operation", true);
-        }
-
-        /**
-         * The list of operations shall contain
-         * all operations of all classifiers
-         * contained in the same package as the callaction itself. <p>
-         *
-         * TODO: In fact, we also should include operations of imported
-         * clasifiers.
-         *
-         * @see org.argouml.uml.ui.UMLComboBoxModel2#buildModelList()
-         */
-        protected void buildModelList() {
-            Object target = TargetManager.getInstance().getModelTarget();
-            Collection ops = new ArrayList();
-            if (Model.getFacade().isACallAction(target)) {
-                Object ns = Model.getFacade().getModelElementContainer(target);
-                while (!Model.getFacade().isAPackage(ns)) {
-                    ns = Model.getFacade().getModelElementContainer(ns);
-                    if (ns == null) {
-                        break;
-                    }
-                }
-                if (Model.getFacade().isANamespace(ns)) {
-                    Collection c =
-                        Model.getModelManagementHelper()
-                            .getAllModelElementsOfKind(
-                                ns,
-                                Model.getMetaTypes().getClassifier());
-                    Iterator i = c.iterator();
-                    while (i.hasNext()) {
-                        ops.addAll(Model.getFacade().getOperations(i.next()));
-                    }
-                }
-                /* To be really sure, let's add the operation
-                 * that is linked to the action in the model,
-                 * too - if it is not listed yet.
-                 * We need this, incase an operation is moved
-                 * out of the package,
-                 * or maybe with imported XMI...
-                 */
-                Object current = Model.getFacade().getOperation(target);
-                if (Model.getFacade().isAOperation(current)) {
-                    if (!ops.contains(current)) {
-                        ops.add(current);
-                    }
-                }
-            }
-            setElements(ops);
-        }
-
-        /**
-         * @see org.argouml.uml.ui.UMLComboBoxModel2#getSelectedModelElement()
-         */
-        protected Object getSelectedModelElement() {
-            Object target = TargetManager.getInstance().getModelTarget();
-            if (Model.getFacade().isACallAction(target)) {
-                return Model.getFacade().getOperation(target);
-            }
-            return null;
-        }
-
-        /**
-         * @see org.argouml.uml.ui.UMLComboBoxModel2#isValidElement(java.lang.Object)
-         */
-        protected boolean isValidElement(Object element) {
-            Object target = TargetManager.getInstance().getModelTarget();
-            if (Model.getFacade().isACallAction(target)) {
-                return element == Model.getFacade().getOperation(target);
-            }
-            return false;
-        }
-
-        /**
-         * The function in the parent removes items from the list
-         * when deselected. We do not need that here. <p>
-         *
-         *  This function is only needed when another operation is connected to
-         *  the action in the model, to select it in the combo. <p>
-         *
-         *  It is e.g. not usefull to update the combo for removed operations,
-         *  since you can only remove operations by changing the target,
-         *  and selecting the action again re-generates the complete list.
-         *
-         * @see java.beans.PropertyChangeListener#propertyChange(java.beans.PropertyChangeEvent)
-         */
-        public void propertyChange(PropertyChangeEvent evt) {
-            if (evt instanceof AttributeChangeEvent) {
-                if (evt.getPropertyName().equals("operation")) {
-                    if (evt.getSource() == getTarget()
-                            && (getChangedElement(evt) != null)) {
-                        Object elem = getChangedElement(evt);
-                        setSelectedItem(elem);
-                    }
-                }
-            }
-        }
-
-        /**
-         * The UID.
-         */
-        private static final long serialVersionUID = 7752478921939209157L;
-    }
-
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = 6998109319912301992L;
 } /* end class PropPanelCallAction */
+

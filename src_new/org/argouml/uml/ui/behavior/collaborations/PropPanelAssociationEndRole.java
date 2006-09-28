@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,44 +23,38 @@
 
 package org.argouml.uml.ui.behavior.collaborations;
 
-import javax.swing.JList;
-import javax.swing.JScrollPane;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
+import ru.novosoft.uml.model_management.*;
+import ru.novosoft.uml.behavior.collaborations.*;
 
-import org.argouml.i18n.Translator;
-import org.argouml.uml.ui.UMLLinkedList;
-import org.argouml.uml.ui.foundation.core.PropPanelAssociationEnd;
-import org.argouml.util.ConfigLoader;
+import javax.swing.*;
 
-/**
- * The properties panel for an associationend.
- *
- */
+import org.argouml.application.api.*;
+import org.argouml.uml.ui.*;
+import org.argouml.uml.ui.foundation.core.*;
+import org.argouml.uml.MMUtil;
+import org.argouml.util.*;
+
+import java.awt.*;
+import java.util.*;
+
 public class PropPanelAssociationEndRole extends PropPanelAssociationEnd {
 
-    /**
-     * Constructs the proppanel and places all scrollpanes etc. on the canvas.
-     * @see java.lang.Object#Object()
-     */
     public PropPanelAssociationEndRole() {
-        super("AssociationEndRole", ConfigLoader.getTabPropsOrientation());
-        setAssociationLabel(Translator.localize("label.association-role"));
-        createControls();
-        positionStandardControls();
-        positionControls();
+        super("AssociationEndRole", _assocEndRoleIcon, ConfigLoader.getTabPropsOrientation());
+        Class mclass = MAssociationEndRole.class;
+        makeFields(mclass);
     }
 
-    /**
-     * @see org.argouml.uml.ui.foundation.core.PropPanelAssociationEnd#positionControls()
-     */
-    protected void positionControls() {
+    protected void makeFields(Class mclass) {
+        super.makeFields(mclass);
+        associationsLabel.setText("AssociationRole:");
+    }
 
-        JList baseList =
-	    new UMLLinkedList(new UMLAssociationEndRoleBaseListModel());
-        baseList.setVisibleRowCount(1);
-        addField(Translator.localize("label.base"),
-		 new JScrollPane(baseList));
-
-        super.positionControls();
+    protected boolean isAcceptibleBaseMetaClass(String baseClass) {
+        return baseClass.equals("AssociationEndRole");
     }
 
 } /* end class PropPanelAssociationEndRole */
+

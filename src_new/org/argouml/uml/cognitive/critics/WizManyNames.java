@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,123 +21,90 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+
+// File: WizManyNames.java
+// Classes: WizManyNames
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.cognitive.critics;
 
-import java.util.Vector;
+import java.util.*;
+import java.beans.*;
+import javax.swing.*;
 
-import javax.swing.JPanel;
+import org.apache.log4j.Category;
+import org.argouml.application.api.*;
+import org.argouml.cognitive.ui.*;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
+import ru.novosoft.uml.model_management.*;
 
-import org.apache.log4j.Logger;
-import org.argouml.cognitive.ui.WizStepManyTextFields;
-import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.kernel.*;
 
-/**
- * A non-modal wizard to help the user change the name of a MModelElement to a
- * better name.
- * 
- * @author jrobbins
- */
-public class WizManyNames extends UMLWizard {
-    /**
-     * Logger.
-     */
-    private static final Logger LOG = Logger.getLogger(WizManyNames.class);
+/** A non-modal wizard to help the user change the name of a
+ *  MModelElement to a better name. */
 
-    /**
-     * The text that describes what to be done.
-     */
-    private String instructions = Translator
-            .localize("critics.WizManyNames-ins");
+public class WizManyNames extends Wizard {
+    protected static Category cat = Category.getInstance(WizManyNames.class);
 
-    /**
-     * A vector of model elements.
-     */
-    private Vector mes;
+  protected String _instructions =
+  "Please change the name of the offending model element.";
+  protected String _label = Argo.localize("UMLMenu", "label.name");
+  public Vector _mes = null;
 
-    private WizStepManyTextFields step1;
+  protected WizStepManyTextFields _step1 = null;
 
-    /**
-     * The constructor.
-     * 
-     */
-    public WizManyNames() {
+  public WizManyNames() { }
+
+  public int getNumSteps() { return 1; }
+
+  public void setMEs(Vector mes) { _mes = mes; }
+
+  public void setInstructions(String s) { _instructions = s; }
+
+  /** Create a new panel for the given step.  */
+  public JPanel makePanel(int newStep) {
+    switch (newStep) {
+    case 1:
+      if (_step1 == null) {
+	Vector names = new Vector();
+	int size = _mes.size();
+	for (int i = 0; i < size; i++) {
+	  MModelElement me = (MModelElement) _mes.elementAt(i);
+	  names.addElement(me.getName());
+	}
+	_step1 = new WizStepManyTextFields(this, _instructions, names);
+      }
+      return _step1;
     }
+    return null;
+  }
 
-    /**
-     * @param m
-     *            the offenders
-     */
-    public void setMEs(Vector m) {
-        int mSize = m.size();
-        for (int i = 0; i < 3 && i < mSize; ++i) {
-            if (!Model.getFacade().isAModelElement(m.get(i))) {
-                throw new IllegalArgumentException(
-                        "The vector should contain model elements in "
-                                + "the first 3 positions");
-            }
-        }
-
-        mes = m;
+  /** Take action at the completion of a step. For example, when the
+   *  given step is 0, do nothing; and when the given step is 1, do
+   *  the first action.  Argo non-modal wizards should take action as
+   *  they do along, as soon as possible, they should not wait until
+   *  the final step. */
+  public void doAction(int oldStep) {
+    cat.debug("doAction " + oldStep);
+    switch (oldStep) {
+    case 1:
+      Vector newNames = null;
+      if (_step1 != null) newNames = _step1.getStrings();
+      try {
+	int size = _mes.size();
+	for (int i = 0; i < size; i++) {
+	  MModelElement me = (MModelElement) _mes.elementAt(i);
+	  me.setName((String)newNames.elementAt(i));
+	}
+      }
+      catch (Exception pve) {
+	cat.error("could not set name", pve);
+      }
     }
+  }
 
-    /**
-     * Create a new panel for the given step.
-     * 
-     * @see org.argouml.cognitive.ui.Wizard#makePanel(int)
-     */
-    public JPanel makePanel(int newStep) {
-        switch (newStep) {
-        case 1:
-            if (step1 == null) {
-                Vector names = new Vector();
-                int size = mes.size();
-                for (int i = 0; i < size; i++) {
-                    Object me = /* (MModelElement) */mes.elementAt(i);
-                    names.addElement(Model.getFacade().getName(me));
-                }
-                step1 = new WizStepManyTextFields(this, instructions, names);
-            }
-            return step1;
 
-        default:
-        }
-        return null;
-    }
-
-    /**
-     * Take action at the completion of a step. For example, when the given step
-     * is 0, do nothing; and when the given step is 1, do the first action. Argo
-     * non-modal wizards should take action as they do along, as soon as
-     * possible, they should not wait until the final step.
-     * 
-     * @see org.argouml.cognitive.ui.Wizard#doAction(int)
-     */
-    public void doAction(int oldStep) {
-        LOG.debug("doAction " + oldStep);
-        switch (oldStep) {
-        case 1:
-            Vector newNames = null;
-            if (step1 != null) {
-                newNames = step1.getStrings();
-            }
-            try {
-                int size = mes.size();
-                for (int i = 0; i < size; i++) {
-                    Object me = /* (MModelElement) */mes.elementAt(i);
-                    Model.getCoreHelper().setName(me,
-                            (String) newNames.elementAt(i));
-                }
-            } catch (Exception pve) {
-                LOG.error("could not set name", pve);
-            }
-
-        default:
-        }
-    }
-
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = -2827847568754795770L;
 } /* end class WizManyNames */

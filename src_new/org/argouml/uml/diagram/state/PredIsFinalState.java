@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,34 +23,20 @@
 
 package org.argouml.uml.diagram.state;
 
-import org.argouml.model.Model;
-import org.tigris.gef.util.Predicate;
+import ru.novosoft.uml.behavior.state_machines.*;
+import ru.novosoft.uml.foundation.data_types.*;
 
-/**
- * Predicate to test if this is a final state.
- *
- */
+import org.tigris.gef.util.*;
+
 public class PredIsFinalState implements Predicate {
 
-    /**
-     * TheInstance is the singleton.
-     */
-    private static PredIsFinalState theInstance = new PredIsFinalState();
+  public static PredIsFinalState TheInstance = new PredIsFinalState();
 
-    private PredIsFinalState() { }
+  private PredIsFinalState() { }
 
-    /**
-     * @see org.tigris.gef.util.Predicate#predicate(java.lang.Object)
-     */
-    public boolean predicate(Object obj) {
-	return (Model.getFacade().isAFinalState(obj));
-    }
-
-    /**
-     * @return the instance
-     */
-    public static PredIsFinalState getTheInstance() {
-        return theInstance;
-    }
+  public boolean predicate(Object obj) {
+    return (obj instanceof MFinalState);
+  }
 
 } /* end class PredIsFinalState */
+

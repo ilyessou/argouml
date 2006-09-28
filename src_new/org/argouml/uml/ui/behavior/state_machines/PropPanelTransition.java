@@ -1,16 +1,15 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
-// and this paragraph appear in all copies. This software program and
+// and this paragraph appear in all copies.  This software program and
 // documentation are copyrighted by The Regents of the University of
 // California. The software program and documentation are supplied "AS
 // IS", without any accompanying services from The Regents. The Regents
 // does not warrant that the operation of the program will be
 // uninterrupted or error-free. The end-user understands that the program
 // was developed for research purposes and is advised not to rely
-// exclusively on the program for any reason. IN NO EVENT SHALL THE
+// exclusively on the program for any reason.  IN NO EVENT SHALL THE
 // UNIVERSITY OF CALIFORNIA BE LIABLE TO ANY PARTY FOR DIRECT, INDIRECT,
 // SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, INCLUDING LOST PROFITS,
 // ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN IF
@@ -22,83 +21,238 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+
+// File: PropPanelTransition.java
+// Classes: PropPanelTransition
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.ui.behavior.state_machines;
 
-import javax.swing.JList;
-import javax.swing.JScrollPane;
+import java.awt.*;
+import java.util.*;
+import javax.swing.*;
 
-import org.argouml.i18n.Translator;
-import org.argouml.uml.ui.ActionNavigateContainerElement;
-import org.argouml.uml.ui.UMLLinkedList;
-import org.argouml.uml.ui.UMLMutableLinkedList;
-import org.argouml.uml.ui.foundation.core.PropPanelModelElement;
-import org.argouml.uml.ui.foundation.extension_mechanisms.ActionNewStereotype;
-import org.argouml.util.ConfigLoader;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.behavior.state_machines.*;
+import ru.novosoft.uml.foundation.data_types.*;
+import ru.novosoft.uml.behavior.common_behavior.*;
+import ru.novosoft.uml.MFactory;
 
-/**
- * The properties panel for a Transition.
- *
- * @author jrobbins
- */
+import org.apache.log4j.Category;
+import org.argouml.application.api.*;
+import org.argouml.kernel.Project;
+import org.argouml.model.uml.UmlFactory;
+import org.argouml.uml.ui.foundation.core.*;
+import org.argouml.uml.ui.*;
+import org.argouml.ui.ProjectBrowser;
+
 public class PropPanelTransition extends PropPanelModelElement {
+         protected static Category cat = 
+        Category.getInstance(PropPanelTransition.class);
 
-    /**
-     * The serial version.
-     */
-    private static final long serialVersionUID = 7249233994894343728L;
-
-    /**
-     * Construct a new property panel for a Transition.
-     */
+    ////////////////////////////////////////////////////////////////
+    // contructors
     public PropPanelTransition() {
-        super("Transition",
-            lookupIcon("Transition"),
-            ConfigLoader.getTabPropsOrientation());
+        super("Transition",_transitionIcon,3);
 
-        addField(Translator.localize("label.name"),
-                getNameTextField());
-        JList statemachineList = new UMLLinkedList(
-                new UMLTransitionStatemachineListModel());
-        statemachineList.setVisibleRowCount(1);
-        addField(Translator.localize("label.statemachine"),
-                new JScrollPane(statemachineList));
-        JList stateList = new UMLLinkedList(new UMLTransitionStateListModel());
-        stateList.setVisibleRowCount(1);
-        addField(Translator.localize("label.state"),
-                new JScrollPane(stateList));
+        Class mclass = MTransition.class;
 
-        addSeparator();
+        addCaption(Argo.localize("UMLMenu", "label.name"),1,0,0);
+        addField(nameField,1,0,0);
 
-        JList sourceList =
-            new UMLLinkedList(new UMLTransitionSourceListModel());
-        sourceList.setVisibleRowCount(1);
-        addField(Translator.localize("label.source"),
-                new JScrollPane(sourceList));
-        JList targetList =
-            new UMLLinkedList(new UMLTransitionTargetListModel());
-        targetList.setVisibleRowCount(1);
-        addField(Translator.localize("label.target"),
-                new JScrollPane(targetList));
-        JList triggerList = new UMLTransitionTriggerList(
-                new UMLTransitionTriggerListModel());
-        triggerList.setVisibleRowCount(1);
-        addField(Translator.localize("label.trigger"),
-                new JScrollPane(triggerList));
-        JList guardList = new UMLMutableLinkedList(
-                new UMLTransitionGuardListModel(), null,
-                ActionNewGuard.getSingleton());
-        guardList.setVisibleRowCount(1);
-        addField(Translator.localize("label.guard"),
-                new JScrollPane(guardList));
-        JList effectList = new UMLTransitionEffectList(
-                new UMLTransitionEffectListModel());
-        effectList.setVisibleRowCount(1);
-        addField(Translator.localize("label.effect"),
-                new JScrollPane(effectList));
+        addCaption(Argo.localize("UMLMenu", "label.stereotype"),2,0,1);
+        addField(new UMLComboBoxNavigator(this, Argo.localize("UMLMenu", "tooltip.nav-stereo"),stereotypeBox),2,0,0);
 
-        addAction(new ActionNavigateContainerElement());
-        addAction(new ActionNewStereotype());
-        addAction(getDeleteAction());
+	addCaption("Source:",0,1,0);
+        UMLModelElementListModel sourceModel = new UMLReflectionListModel(this,"source",true,"getTransitionSource",null,null,null);
+        sourceModel.setUpperBound(1);
+       	JList sourceList=new UMLList(sourceModel,true);
+	sourceList.setForeground(Color.blue);
+	sourceList.setVisibleRowCount(1);
+	sourceList.setFont(smallFont);
+	addLinkField(new JScrollPane(sourceList,JScrollPane.VERTICAL_SCROLLBAR_NEVER,JScrollPane.HORIZONTAL_SCROLLBAR_NEVER),0,1,0);
+
+	addCaption("Target:",1,1,1);
+        UMLModelElementListModel targetModel = new UMLReflectionListModel(this,"target",true,"getTransitionTarget",null,null,null);
+        targetModel.setUpperBound(1);
+	JList targetList=new UMLList(targetModel,true);
+	targetList.setForeground(Color.blue);
+	targetList.setVisibleRowCount(1);
+	targetList.setFont(smallFont);
+        addLinkField(new JScrollPane(targetList,JScrollPane.VERTICAL_SCROLLBAR_NEVER,JScrollPane.HORIZONTAL_SCROLLBAR_NEVER),1,1,0);
+
+        addCaption(Argo.localize("UMLMenu", "label.trigger"),0,2,0);
+        UMLModelElementListModel trigModel = new UMLReflectionListModel(this,"trigger",true,"getTrigger",null,"addTrigger","deleteTrigger");
+	trigModel.setUpperBound(1);
+        UMLList trigList=new UMLList(trigModel,true);
+	trigList.setForeground(Color.blue);
+	trigList.setVisibleRowCount(1);
+	trigList.setFont(smallFont);
+        JScrollPane trigScroll = new JScrollPane(trigList,JScrollPane.VERTICAL_SCROLLBAR_NEVER,JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        addLinkField(trigScroll,0,2,0);
+
+        addCaption("Guard:",1,2,0);
+        UMLModelElementListModel guardModel = new UMLReflectionListModel(this,"guard",true,"getGuard",null,"addGuard","deleteGuard");
+        guardModel.setUpperBound(1);
+        UMLList guardList=new UMLList(guardModel,true);
+	guardList.setForeground(Color.blue);
+	guardList.setVisibleRowCount(1);
+	guardList.setFont(smallFont);
+        JScrollPane guardScroll = new JScrollPane(guardList,JScrollPane.VERTICAL_SCROLLBAR_NEVER,JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        addLinkField(guardScroll,1,2,0);
+
+        addCaption("Effect:",2,2,1);
+        UMLModelElementListModel effectModel = new UMLReflectionListModel(this,"effect",true,"getEffect",null,"addEffect","deleteEffect");
+        effectModel.setUpperBound(1);
+        UMLList effectList=new UMLList(effectModel,true);
+	effectList.setForeground(Color.blue);
+	effectList.setVisibleRowCount(1);
+	effectList.setFont(smallFont);
+        JScrollPane effectScroll = new JScrollPane(effectList,JScrollPane.VERTICAL_SCROLLBAR_NEVER,JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        addLinkField(effectScroll,2,2,0);
+
+	new PropPanelButton(this,buttonPanel,_navUpIcon, Argo.localize("UMLMenu", "button.go-up"),"navigateUp",null);
+	new PropPanelButton(this,buttonPanel,_navBackIcon, Argo.localize("UMLMenu", "button.go-back"),"navigateBackAction","isNavigateBackEnabled");
+	new PropPanelButton(this,buttonPanel,_navForwardIcon, Argo.localize("UMLMenu", "button.go-forward"),"navigateForwardAction","isNavigateForwardEnabled");
+	new PropPanelButton(this,buttonPanel,_deleteIcon,localize("Delete"),"removeElement",null);
+  }
+
+    public void navigateUp() {
+        Object target = getTarget();
+        if(target instanceof MTransition) {
+            MTransition elem = (MTransition) target;
+            MStateMachine stateMachine = elem.getStateMachine();
+            if(stateMachine != null) {
+                navigateTo(stateMachine);
+            }
+        }
     }
 
+    public MStateMachine getStateMachine() {
+        MStateMachine machine = null;
+        Object target = getTarget();
+        if(target instanceof MTransition) {
+            machine = ((MTransition) target).getStateMachine();
+        }
+	if (machine==null) cat.debug("PropPanelTransition: StateMachine is null!");
+        return machine;
+    }
+
+
+    public MStateVertex getTransitionSource() {
+        MStateVertex source = null;
+	Object target = getTarget();
+        if(target instanceof MTransition) {
+            source = ((MTransition) target).getSource();
+        }
+        return source;
+    }
+
+    public MStateVertex getTransitionTarget() {
+        MStateVertex transitionTarget = null;
+	Object target = getTarget();
+        if(target instanceof MTransition) {
+            transitionTarget = ((MTransition) target).getTarget();
+        }
+        return transitionTarget;
+    }
+
+    public MEvent getTrigger() {
+        MEvent trigger = null;
+        Object target = getTarget();
+        if(target instanceof MTransition) {
+            trigger= ((MTransition) target).getTrigger();
+        }
+        return trigger;
+    }
+
+   public MCallEvent addTrigger(Integer index) {
+        MCallEvent trigger = null;
+        Object target = getTarget();
+        if(target instanceof MTransition) {
+	    MTransition trans=(MTransition) target;
+	    MFactory factory=trans.getFactory();
+            trigger = factory.createCallEvent();
+	    trigger.setName("anon");
+	    //needs-more-work
+	    trigger.setNamespace(ProjectBrowser.TheInstance.getProject().getModel());
+            trans.setTrigger(trigger);
+        }
+	return trigger;
+	//is done in UMLReflectionListModel navigateTo(trigger);
+    }
+
+    public void deleteTrigger(Integer index) {
+        Object target = getTarget();
+        if(target instanceof MTransition) {
+            ((MTransition) target).setTrigger(null);
+        }
+    }
+
+
+    public MGuard getGuard() {
+	MGuard guard = null;
+        Object target = getTarget();
+        if(target instanceof MTransition) {
+	    guard = ((MTransition)target).getGuard();
+        }
+        return guard;
+    }
+
+    public MGuard addGuard(Integer index) {
+        MGuard guard = null;
+        Object target = getTarget();
+        if(target instanceof MTransition) {
+            MFactory factory=((MTransition) target).getFactory();
+            guard = factory.createGuard();
+            guard.setName("anon");
+            ((MTransition) target).setGuard(guard);
+        }
+        return guard;
+    }
+
+    public void deleteGuard(Integer index) {
+        Object target = getTarget();
+        if(target instanceof MTransition) {
+            ((MTransition) target).setGuard(null);
+        }
+    }
+
+    public MAction getEffect() {
+        MAction effect = null;
+        Object target = getTarget();
+        if(target instanceof MTransition) {
+            effect = ((MTransition) target).getEffect();
+        }
+        return effect;
+    }
+
+    public MAction addEffect(Integer index) {
+        MAction effect = null;
+        Object target = getTarget();
+        if(target instanceof MTransition) {
+            effect = UmlFactory.getFactory().getCommonBehavior().createCallAction();
+            effect.setName("anon");
+            ((MTransition) target).setEffect(effect);
+        }
+        return effect;
+    }
+
+    public void deleteEffect(Integer index) {
+        Object target = getTarget();
+        if(target instanceof MTransition) {
+            ((MTransition) target).setEffect(null);
+        }
+    }
+
+    protected boolean isAcceptibleBaseMetaClass(String baseClass) {
+        return baseClass.equals("Transition");
+    }
+
+
+
+
 } /* end class PropPanelTransition */
+

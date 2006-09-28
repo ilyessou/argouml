@@ -1,16 +1,15 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
-// and this paragraph appear in all copies. This software program and
+// and this paragraph appear in all copies.  This software program and
 // documentation are copyrighted by The Regents of the University of
 // California. The software program and documentation are supplied "AS
 // IS", without any accompanying services from The Regents. The Regents
 // does not warrant that the operation of the program will be
 // uninterrupted or error-free. The end-user understands that the program
 // was developed for research purposes and is advised not to rely
-// exclusively on the program for any reason. IN NO EVENT SHALL THE
+// exclusively on the program for any reason.  IN NO EVENT SHALL THE
 // UNIVERSITY OF CALIFORNIA BE LIABLE TO ANY PARTY FOR DIRECT, INDIRECT,
 // SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, INCLUDING LOST PROFITS,
 // ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN IF
@@ -21,149 +20,146 @@
 // PROVIDED HEREUNDER IS ON AN "AS IS" BASIS, AND THE UNIVERSITY OF
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
-
 package org.argouml.ui;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Vector;
 
-import javax.swing.Action;
+import org.argouml.model.uml.UmlFactory;
 
-import org.argouml.i18n.Translator;
-import org.argouml.application.helpers.ResourceLoaderWrapper;
-import org.argouml.model.Model;
-import org.tigris.gef.base.CreateNodeAction;
-
-/**
- * Command to create nodes with the appropriate modelelement. The modelelement
- * is initialized via the build methods on the uml factories.
+/** 
  *
- * First we search for a buildMODELELEMENTNAME method without parameters.
- * If that is not found we use the createMODELELEMENTNAME method.
- *
- * @see org.argouml.model.Model
- * @see org.argouml.model.ActivityGraphsFactory
- * @see org.argouml.model.CollaborationsFactory
- * @see org.argouml.model.CommonBehaviorFactory
- * @see org.argouml.model.CoreFactory
- * @see org.argouml.model.DataTypesFactory
- * @see org.argouml.model.ExtensionMechanismsFactory
- * @see org.argouml.model.ModelManagementFactory
- * @see org.argouml.model.StateMachinesFactory
- * @see org.argouml.model.UseCasesFactory
+ * Command to create nodes with the appropriate modelelement. The modelelement is
+ * initialized via the create methods on the uml factories
+ * @see org.argouml.model.uml.foundation.core.CoreFactory
  * @author jaap.branderhorst@xs4all.nl
  */
-public class CmdCreateNode extends CreateNodeAction {
-    
-    private static final long serialVersionUID = 4813526025971574818L;
+public class CmdCreateNode extends org.tigris.gef.base.CmdCreateNode {
 
-    /**
-     * Constructor for CmdCreateNode.
-     *
-     * @param args a hastable of arguments
-     * @param resource for localizing the name
-     * @param name the to be localized tooltip name
-     * @deprecated in 0.23.2 use CmdCreateNode(Object, String)
-     */
-    public CmdCreateNode(Hashtable args, String resource, String name) {
-        super(args, resource, name);
-        putToolTip(name);
-    }
+	/**
+	 * Constructor for CmdCreateNode.
+	 * @param args
+	 * @param resource
+	 * @param name
+	 */
+	public CmdCreateNode(Hashtable args, String resource, String name) {
+		super(args, resource, name);
+	}
 
-    /**
-     * Constructor for CmdCreateNode.
-     *
-     * @param args a hastable of arguments
-     * @param name the to be localized name of the command = tooltip name
-     * @deprecated in 0.23.2 use CmdCreateNode(Object, String)
-     */
-    public CmdCreateNode(Hashtable args, String name) {
-        super(args, ResourceLoaderWrapper.getImageBinding(name));
-        putToolTip(name);
-    }
+	/**
+	 * Constructor for CmdCreateNode.
+	 * @param args
+	 * @param name
+	 */
+	public CmdCreateNode(Hashtable args, String name) {
+		super(args, name);
+	}
 
-    /**
-     * Constructor for CmdCreateNode.
-     *
-     * @param nodeClass the class for which to create a node, and which
-     *                  to create itself
-     * @param resource for localizing the name
-     * @param name the tooltip name
-     * @deprecated in 0.23.2 use CmdCreateNode(Object, String)
-     */
-    public CmdCreateNode(Class nodeClass, String resource, String name) {
-        super(nodeClass, resource, ResourceLoaderWrapper.getImageBinding(name));
-        putToolTip(name);
-    }
+	/**
+	 * Constructor for CmdCreateNode.
+	 * @param nodeClass
+	 * @param resource
+	 * @param name
+	 */
+	public CmdCreateNode(Class nodeClass, String resource, String name) {
+		super(nodeClass, resource, name);
+	}
 
-    /**
-     * Constructor for CmdCreateNode.
-     *
-     * @param nodeType the type of model element for which to create a FigNode
-     * @param name the i18n key used to generate the tooltip and icon.
-     */
-    public CmdCreateNode(Object nodeType, String name) {
-        super(nodeType,
-                name,
-                ResourceLoaderWrapper.lookupIconResource(
-                        ResourceLoaderWrapper.getImageBinding(name)));
-        putToolTip(name);
-    }
+	/**
+	 * Constructor for CmdCreateNode.
+	 * @param nodeClass
+	 * @param name
+	 */
+	public CmdCreateNode(Class nodeClass, String name) {
+		super(nodeClass, name);
+	}
 
-    /**
-     * Constructor for CmdCreateNode.
-     *
-     * @param nodeClass the class for which to create a node, and which
-     *                  to create itself
-     * @param sticky the global sticky mode boolean allows the user
-     *               to place several nodes rapidly (in succession)
-     * @param resource for localizing the name
-     * @param name the tooltip name
-     * @deprecated in 0.23.2 use CmdCreateNode(Object, String)
-     */
-    public CmdCreateNode(Class nodeClass, boolean sticky, String resource,
-            String name) {
-        super(nodeClass, sticky, resource,
-                ResourceLoaderWrapper.getImageBinding(name));
-        putToolTip(name);
-    }
+	/**
+	 * Constructor for CmdCreateNode.
+	 * @param nodeClass
+	 * @param sticky
+	 * @param resource
+	 * @param name
+	 */
+	public CmdCreateNode(
+		Class nodeClass,
+		boolean sticky,
+		String resource,
+		String name) {
+		super(nodeClass, sticky, resource, name);
+	}
 
-    /**
-     * Constructor for CmdCreateNode.
-     *
-     * @param nodeClass the class for which to create a node, and which
-     *                  to create itself
-     * @param sticky the global sticky mode boolean allows the user
-     *               to place several nodes rapidly (in succession)
-     * @param name the tooltip name
-     * @deprecated in 0.23.2 use CmdCreateNode(Object, String)
-     */
-    public CmdCreateNode(Object nodeClass, boolean sticky, String name) {
-        super((Class) nodeClass, sticky,
-                ResourceLoaderWrapper.getImageBinding(name));
-        putToolTip(name);
-    }
+	/**
+	 * Constructor for CmdCreateNode.
+	 * @param nodeClass
+	 * @param sticky
+	 * @param name
+	 */
+	public CmdCreateNode(Class nodeClass, boolean sticky, String name) {
+		super(nodeClass, sticky, name);
+	}
+	
+	
 
-    /**
-     * Delegate creation of the node to the uml model subsystem.
-     *
-     * @return an object which represents a particular UML
-     *         Element.
-     *
-     * @see org.tigris.gef.graph.GraphFactory#makeNode()
-     * @see org.tigris.gef.base.CmdCreateNode#makeNode()
-     */
-    public Object makeNode() {
-        Object newNode =
-            Model.getUmlFactory().buildNode(getArg("className"));
-        return newNode;
-    }
+	/**
+	 * Creates a modelelement using the uml model factories.
+	 * @see org.tigris.gef.graph.GraphFactory#makeNode()
+	 */
+	public Object makeNode() {
+		// here we should implement usage of the factories
+		// since i am kind of lazy i use reflection
+		
+		// factories
+		
+	
+	try {
+		Vector factoryMethods = new Vector();
+		Method[] methodArray = UmlFactory.class.getMethods();
+		for (int i = 0 ; i<methodArray.length; i++) {
+			if (methodArray[i].getName().startsWith("get") && 
+				!methodArray[i].getName().equals("getFactory") && 
+				!methodArray[i].getName().equals("getClass")) {
+					factoryMethods.add(methodArray[i]);
+			}
+		}
+		Iterator it = factoryMethods.iterator();
+		while (it.hasNext()) {
+			Object factory = ((Method) it.next()).invoke(UmlFactory.getFactory(), new Object[] {});
+			List createMethods = Arrays.asList(factory.getClass().getMethods());
+			Iterator it2 = createMethods.iterator();
+			String classname = getCreateClassName();
+			while (it2.hasNext()) {
+				Method method = (Method)it2.next();
+				String methodname = method.getName();
+				if (methodname.endsWith(classname) && methodname.substring(0, methodname.lastIndexOf(classname)).equals("create")) {					
+					return method.invoke(factory, new Object[] {});
+				}
+			}
+		}					
+	} catch (IllegalAccessException e2) {
+	} catch (InvocationTargetException e3) {
+	}
+	
+		return super.makeNode();
+	}
+	
+	/**
+	 * returns the name of the uml modelelement without impl, M or the fullname
+	 * @return String
+	 */
+	private String getCreateClassName() {
+		String name = ((Class)_args.get("className")).getName();
+		name = name.substring(name.lastIndexOf('.')+2, name.length());
+		if (name.endsWith("Impl")) {
+			name = name.substring(0, name.lastIndexOf("Impl"));
+		}
+		return name;
+	}
 
-    /**
-     * Adds tooltip text to the Action.
-     *
-     * @param name The key to localize as the name.
-     */
-    private void putToolTip(String name) {
-        putValue(Action.SHORT_DESCRIPTION, Translator.localize(name));
-    }
 }

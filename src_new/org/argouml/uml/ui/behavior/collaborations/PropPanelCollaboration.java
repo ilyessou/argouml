@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2001 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,90 +23,69 @@
 
 package org.argouml.uml.ui.behavior.collaborations;
 
-import javax.swing.JScrollPane;
+import javax.swing.ImageIcon;
 
-import org.argouml.i18n.Translator;
-import org.argouml.uml.ui.ActionNavigateContainerElement;
-import org.argouml.uml.ui.UMLComboBox2;
+import org.argouml.application.api.Argo;
+import org.argouml.uml.ui.PropPanel;
 import org.argouml.uml.ui.UMLComboBoxNavigator;
-import org.argouml.uml.ui.UMLLinkedList;
+import org.argouml.uml.ui.UMLTextField;
+import org.argouml.uml.ui.UMLTextProperty;
 import org.argouml.uml.ui.foundation.core.PropPanelNamespace;
-import org.argouml.uml.ui.foundation.extension_mechanisms.ActionNewStereotype;
-import org.argouml.util.ConfigLoader;
+import ru.novosoft.uml.behavior.collaborations.MCollaboration;
 
 /**
- * Property panel for collaborations. 
- *
- * @author jaap.branderhorst@xs4all.nl
+ * Property panel for collaborations. This panel is not totally finished yet.
+ * It is not possible at the moment to see any attributes or associations at the
+ * panel except for name and stereotype. Since the other attributes are not 
+ * implemented correctly speaking in general terms, they are not implemented
+ * in this class either.
+ * 
+ * @author Jaap Branderhorst
  */
 public class PropPanelCollaboration extends PropPanelNamespace {
 
     /**
-     * The serial version.
-     */
-    private static final long serialVersionUID = 5642815840272293391L;
-
-    /**
-     * Construct a property panel for a Collaboration.
+     * Constructor for PropPanelCollaboration.
+     * @param title
+     * @param icon
+     * @param panelCount
      */
     public PropPanelCollaboration() {
-        super("Collaboration", ConfigLoader.getTabPropsOrientation());
-
-        addField(Translator.localize("label.name"),
-                getNameTextField());
-        addField(Translator.localize("label.namespace"),
-                getNamespaceSelector());
-
-        // the represented classifier
-        UMLComboBox2 representedClassifierComboBox =
-            new UMLComboBox2(
-                     new UMLCollaborationRepresentedClassifierComboBoxModel(),
-                     new ActionSetRepresentedClassifierCollaboration());
-        addField(Translator.localize("label.represented-classifier"),
-                new UMLComboBoxNavigator(
-                        this,
-                        Translator.localize(
-                                "label.represented-classifier."
-                                + "navigate.tooltip"),
-                        representedClassifierComboBox));
-
-        // the represented operation
-        UMLComboBox2 representedOperationComboBox =
-            new UMLComboBox2(
-                     new UMLCollaborationRepresentedOperationComboBoxModel(),
-                     new ActionSetRepresentedOperationCollaboration());
-        addField(Translator.localize("label.represented-operation"),
-                new UMLComboBoxNavigator(
-                        this,
-                        Translator.localize(
-                                "label.represented-operation."
-                                + "navigate.tooltip"),
-                        representedOperationComboBox));
-
-        addSeparator();
-
-        UMLLinkedList interactionList =
-	    new UMLLinkedList(new UMLCollaborationInteractionListModel());
-        interactionList.setVisibleRowCount(1);
-        addField(Translator.localize("label.interaction"),
-            new JScrollPane(interactionList));
-
-        UMLLinkedList constrainingList =
-	    new UMLLinkedList(
-                new UMLCollaborationConstrainingElementListModel());
-        addField(Translator.localize("label.constraining-elements"),
-            new JScrollPane(constrainingList));
-
-        addSeparator();
-
-        /* Add the owned-elements field 
-         * with ClassifierRoles and AssociationRoles:
-         */
-        addField(Translator.localize("label.owned-elements"),
-                getOwnedElementsScroll());
+        super("Collaboration", _collaborationIcon, 3);
         
-        addAction(new ActionNavigateContainerElement());
-        addAction(new ActionNewStereotype());
-        addAction(getDeleteAction());
+        addCaption(Argo.localize("UMLMenu", "label.name"),1,0,0);
+        addField(nameField,1,0,0);
+        
+        addCaption(Argo.localize("UMLMenu", "label.stereotype"),2,0,0);
+        addField(new UMLComboBoxNavigator(this, Argo.localize("UMLMenu", "tooltip.nav-stereo"),stereotypeBox),2,0,0);
+        // next part does not work since the setmethod expects a string...
+        /*
+        addCaption(Argo.localize("UMLMenu", "label.representedClassifier"),3,0,0);
+        addField(new UMLTextField(this, 
+            new UMLTextProperty(MCollaboration.class, "representedClassifier", 
+            "getRepresentedClassifier", "setRepresentedClassifier")),4,0,0);
+        
+        addCaption(Argo.localize("UMLMenu", "label.representedOperation"),5,0,0);
+        addField(new UMLTextField(this, 
+            new UMLTextProperty(MCollaboration.class, "representedOperation", 
+            "getRepresentedOperation", "setRepresentedOperation")),6,0,1);         
+        */
+        
+        // next part is a trick to fill the rest of the panel:
+        addCaption("",3,0,0);
+        addCaption("",4,0,0);
+        addCaption("",5,0,1);
     }
+
+    /**
+     * Used to determine which stereotypes are legal with a collaboration. At 
+     * the moment, only the stereotypes of namespace and generlizable elements
+     * are shown.
+     * @see org.argouml.uml.ui.PropPanel#isAcceptibleBaseMetaClass(String)
+     */
+    protected boolean isAcceptibleBaseMetaClass(String baseClass) {
+        return baseClass.equals("Namespace") || 
+            baseClass.equals("GeneralizableElement");
+    }
+
 }

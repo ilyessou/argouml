@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-01 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,30 +23,128 @@
 
 package org.argouml.uml.ui;
 
-import org.argouml.uml.diagram.DiagramFactory;
-import org.argouml.uml.diagram.sequence.ui.UMLSequenceDiagram;
-import org.argouml.uml.diagram.ui.UMLDiagram;
+import org.argouml.application.api.Argo;
+import org.argouml.kernel.*;
+import org.argouml.model.uml.UmlFactory;
+import org.argouml.uml.diagram.sequence.ui.*;
+import org.argouml.ui.*;
 
-/**
- * Action to add a new sequence diagram.
- */
-public final class ActionSequenceDiagram extends ActionNewDiagram {
+import ru.novosoft.uml.behavior.collaborations.MCollaboration;
+import ru.novosoft.uml.behavior.collaborations.MInteraction;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.model_management.*;
+import java.awt.event.*;
+import java.beans.*;
 
+
+public class ActionSequenceDiagram extends ActionAddDiagram {
+
+    ////////////////////////////////////////////////////////////////
+    // static variables
+    
+    public static ActionSequenceDiagram SINGLETON = new ActionSequenceDiagram(); 
+
+
+    ////////////////////////////////////////////////////////////////
+    // constructors
+
+    private ActionSequenceDiagram() { super("SequenceDiagram"); }
+
+
+    ////////////////////////////////////////////////////////////////
+    // main methods
+
+/*
+    public void actionPerformed(ActionEvent ae) {
+	Project p = ProjectBrowser.TheInstance.getProject();
+	try {
+        // Object target = ProjectBrowser.TheInstance.getTarget();
+        Object target = ProjectBrowser.TheInstance.getDetailsTarget();
+        MCollaboration c = null;
+        MNamespace ns = p.getCurrentNamespace();
+        // check for valid target and valid collaboration
+        if (target instanceof MOperation) {
+            c = UmlFactory.getFactory().getCollaborations().buildCollaboration(ns);
+            c.setRepresentedOperation((MOperation)target);
+        } else {
+        if (target instanceof MClassifier) {
+            c = UmlFactory.getFactory().getCollaborations().buildCollaboration(ns);
+            c.setRepresentedClassifier((MClassifier)target);
+        } else {
+        if (target instanceof MModel) {
+            c = UmlFactory.getFactory().getCollaborations().buildCollaboration((MModel)target);
+        } else {
+        if (target instanceof UMLSequenceDiagram) {
+            Object o = ((UMLSequenceDiagram)target).getOwner();
+            if (o instanceof MCollaboration) { //preventing backward compat problems
+                c = (MCollaboration)o;
+            } else {
+                c = UmlFactory.getFactory().getCollaborations().buildCollaboration(p.getModel());
+            }
+        } else {
+            if (target instanceof MCollaboration) {
+            c = (MCollaboration)target;
+        } else {
+        //if (target instanceof UMLDiagram) {
+            c = UmlFactory.getFactory().getCollaborations().buildCollaboration(p.getModel());
+        //} else {
+            
+        } } } } }  
+        if (c != null) {
+            // UmlFactory.getFactory().getCollaborations().buildInteraction(c);
+            UMLSequenceDiagram d  = new UMLSequenceDiagram(c);
+            p.addMember(d);
+            ProjectBrowser.TheInstance.getNavPane().addToHistory(d);
+            ProjectBrowser.TheInstance.setTarget(d);
+        } else {
+            ProjectBrowser.TheInstance.getStatusBar().showStatus(Argo.localize("UMLMenu", "diagram.collaboration.notpossible"));
+        }
+	}
+	catch (PropertyVetoException pve) { }
+	super.actionPerformed(ae);
+    }
+*/
+    
     /**
-     * Constructor.
+     * @see org.argouml.uml.ui.ActionAddDiagram#createDiagram(MNamespace, Object)
      */
-    public ActionSequenceDiagram() {
-        super("action.sequence-diagram");
+    public ArgoDiagram createDiagram(MNamespace ns, Object target) {
+        MCollaboration c = null;
+        if (target instanceof MOperation) {
+            c = UmlFactory.getFactory().getCollaborations().buildCollaboration(ns);
+            c.setRepresentedOperation((MOperation)target);
+        } else 
+        if (target instanceof MClassifier) {
+            c = UmlFactory.getFactory().getCollaborations().buildCollaboration(ns);
+            c.setRepresentedClassifier((MClassifier)target);
+        } else 
+        if (target instanceof MModel) {
+            c = UmlFactory.getFactory().getCollaborations().buildCollaboration((MModel)target);
+        } else 
+        if (target instanceof MInteraction) {
+            c = ((MInteraction)target).getContext();
+        } else
+        if (target instanceof UMLSequenceDiagram) {
+            Object o = ((UMLSequenceDiagram)target).getOwner();
+            if (o instanceof MCollaboration) { //preventing backward compat problems
+                c = (MCollaboration)o;
+            } 
+        } else 
+        if (target instanceof MCollaboration) {
+            c = (MCollaboration)target;
+        } else {
+            c =  UmlFactory.getFactory().getCollaborations().buildCollaboration(ns);
+        }   
+        UMLSequenceDiagram d  = new UMLSequenceDiagram(c);
+        return d;
     }
 
     /**
-     * @see org.argouml.uml.ui.ActionNewDiagram#createDiagram()
+     * @see org.argouml.uml.ui.ActionAddDiagram#isValidNamespace(MNamespace)
      */
-    public UMLDiagram createDiagram() {
-        return (UMLDiagram) DiagramFactory.getInstance().createDiagram(
-                UMLSequenceDiagram.class,
-                createCollaboration(),
-                null);
+    public boolean isValidNamespace(MNamespace ns) {
+        if (ns instanceof MCollaboration) return true;
+        return false;
     }
 
-} /* end class ActionSequenceDiagram */
+}  /* end class ActionSequenceDiagram */

@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-01 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,75 +23,152 @@
 
 package org.argouml.uml.ui;
 
-import java.awt.event.ActionEvent;
-
-import javax.swing.AbstractAction;
-import javax.swing.Action;
-import javax.swing.Icon;
-
-import org.apache.log4j.Logger;
-import org.argouml.application.helpers.ResourceLoaderWrapper;
-import org.argouml.i18n.Translator;
-import org.argouml.kernel.ProjectManager;
-import org.argouml.ui.ProjectBrowser;
+import org.argouml.application.api.*;
+import org.argouml.kernel.*;
+import org.argouml.ui.*;
+import java.io.*;
+import java.awt.event.*;
+import java.util.zip.*;
+import java.text.MessageFormat;
+import java.net.URL;
+import javax.swing.JOptionPane;
 
 /**
  * Action that saves the project.
  *
  * @see ActionOpenProject
+ * @stereotype singleton
  */
-public class ActionSaveProject extends AbstractAction {
-	
-    private static final long serialVersionUID = -5579548202585774293L;
-	/**
-     * Logger.
-     */
-    private static final Logger LOG = Logger.getLogger(ActionSaveProject.class);
+public class ActionSaveProject extends UMLAction {
+  
+  ////////////////////////////////////////////////////////////////
+  // static variables
 
-    /**
-     * The constructor.
-     */
-    public ActionSaveProject() {
-        super(Translator.localize("action.save-project"),
-                ResourceLoaderWrapper.lookupIcon("action.save-project"));
-        // Set the tooltip string:
-        putValue(Action.SHORT_DESCRIPTION, 
-                Translator.localize("action.save-project"));
-        super.setEnabled(false);
-    }
+  public static ActionSaveProject SINGLETON = new ActionSaveProject(); 
 
-    /**
-     * The constructor.
-     * @param name the name of the action.
-     * @param icon the icon to represent this action graphically.
-     */
-    protected ActionSaveProject(String name, Icon icon) {
-        super(name, icon);
-    }
+  ////////////////////////////////////////////////////////////////
+  // constructors
 
-    /**
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-     */
-    public void actionPerformed(ActionEvent e) {
-        LOG.info("Performing save action");
-        ProjectBrowser.getInstance().trySave(
-                ProjectManager.getManager().getCurrentProject() != null
-                        && ProjectManager.getManager().getCurrentProject()
-                                .getURI() != null);
-    }
+  public ActionSaveProject() {
+    super("Save Project");
+  }
 
-    /**
-     * Set the enabled state of the save action.
-     * When we become enabled inform the user by highlighting the title bar
-     * with an asterisk.
-     * @param enabled new state for save command
-     */
-    public void setEnabled(boolean enabled) {
-        if (enabled == this.enabled) {
-            return;
+  public ActionSaveProject(String title, boolean icon) {
+    super(title, icon);
+  }
+
+
+  ////////////////////////////////////////////////////////////////
+  // main methods
+
+  public void actionPerformed(ActionEvent e) {
+    trySave(true);
+  }
+
+  public boolean trySave (boolean overwrite) {
+    URL url = ProjectBrowser.TheInstance.getProject().getURL();
+    return trySave(overwrite, new File(url.getFile()));
+  }
+
+  public boolean trySave(boolean overwrite, File file) {
+    ProjectBrowser pb = ProjectBrowser.TheInstance;
+    Project p = pb.getProject();
+
+    try {
+
+      if (file.exists() && !overwrite) {
+        //Argo.log.info ("Are you sure you want to overwrite " + fullpath + "?");
+        String sConfirm = MessageFormat.format (
+            Argo.localize ("Actions",
+                                "template.save_project.confirm_overwrite"),
+            new Object[] {file}
+          );
+        int nResult = JOptionPane.showConfirmDialog (
+            pb,
+            sConfirm,
+            Argo.localize ("Actions", "text.save_project.confirm_overwrite_title"),
+            JOptionPane.YES_NO_OPTION,
+            JOptionPane.QUESTION_MESSAGE
+          );
+        
+        if (nResult != JOptionPane.YES_OPTION) {
+          return false;
         }
-        super.setEnabled(enabled);
-        ProjectBrowser.getInstance().showSaveIndicator();
-    }
+      }
+      
+      String sStatus = MessageFormat.format (
+          Argo.localize ("Actions", "template.save_project.status_writing"),
+          new Object[] {file}
+        );
+      pb.showStatus (sStatus);
+		
+	  
+      p.save(overwrite, file);
+      	
 
+      sStatus = MessageFormat.format (
+          Argo.localize ("Actions", "template.save_project.status_wrote"),
+          new Object[] {p.getURL()}
+        );
+      pb.showStatus (sStatus);
+      Argo.log.debug ("setting most recent project file to " +
+                      file.getCanonicalPath());
+      Configuration.setString(Argo.KEY_MOST_RECENT_PROJECT_FILE, file.getCanonicalPath());
+      
+      return true;
+    }
+    catch (FileNotFoundException fnfe) {
+      String sMessage = MessageFormat.format (
+          Argo.localize ("Actions", "template.save_project.file_not_found"),
+          new Object[] {fnfe.getMessage()}
+        );
+      
+      JOptionPane.showMessageDialog (
+          pb,
+          sMessage,
+          Argo.localize ("Actions", "text.save_project.file_not_found_title"),
+          JOptionPane.ERROR_MESSAGE
+        );
+      
+      fnfe.printStackTrace();
+    }
+    catch (IOException ioe) {
+      String sMessage = MessageFormat.format (
+          Argo.localize ("Actions", "template.save_project.io_exception"),
+          new Object[] {ioe.getMessage()}
+        );
+      
+      JOptionPane.showMessageDialog (
+          pb,
+          sMessage,
+          Argo.localize ("Actions", "text.save_project.io_exception_title"),
+          JOptionPane.ERROR_MESSAGE
+        );
+      
+      ioe.printStackTrace();
+    }
+    catch (Exception ex) {
+    	String sMessage = MessageFormat.format (
+          Argo.localize ("Actions", "template.save_project.general_exception"),
+          new Object[] {ex.getMessage()}
+        );
+      
+      JOptionPane.showMessageDialog (
+          pb,
+          sMessage,
+          Argo.localize ("Actions", "text.save_project.general_exception_title"),
+          JOptionPane.ERROR_MESSAGE
+        );
+      
+      ex.printStackTrace();
+    }
+    
+    return false;
+  }
+
+  public boolean shouldBeEnabled() {
+    URL url = ProjectBrowser.TheInstance.getProject() != null ?
+		ProjectBrowser.TheInstance.getProject().getURL() : null;
+    return super.shouldBeEnabled() && url != null;
+  }
 } /* end class ActionSaveProject */

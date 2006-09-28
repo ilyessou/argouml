@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2001 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -23,20 +22,13 @@
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 package org.argouml.application.api;
+import javax.swing.*;
 
-
-/**
- * An interface which identifies an ArgoUML plug-in as a notation.
- * Plug-ins are replacements or additions to standard Argo classes.
- *
- * @author Thierry Lach
- * @since 0.9.4
- * @deprecated by Linus Tolke (0.21.1 March 2006).
- *         Register with
- *         {@link org.argouml.uml.generator.GeneratorManager#addGenerator(
- *         Language, CodeGenerator)}
- *         from
- *         {@link org.argouml.moduleloader.ModuleInterface#enable()}.
+/**  An interface which identifies an ArgoUML plug-in as a notation.
+ *   Plug-ins are replacements or additions to standard Argo classes.
+ *   
+ *   @author Thierry Lach
+ *   @since 0.9.4
  */
 public interface PluggableNotation extends Pluggable {
 

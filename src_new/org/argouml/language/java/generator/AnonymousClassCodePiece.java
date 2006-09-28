@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,20 +21,28 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+/*
+  JavaRE - Code generation and reverse engineering for UML and Java
+  Author: Marcus Andersson andersson@users.sourceforge.net
+*/
+
+
 package org.argouml.language.java.generator;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.util.Stack;
+import org.argouml.model.uml.UmlFactory;
+
+import java.io.*;
+import java.util.*;
+
+import ru.novosoft.uml.*;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
 
 /**
- * This code piece represents an anonymous class.
- *
- * JavaRE - Code generation and reverse engineering for UML and Java
- * @author Marcus Andersson andersson@users.sourceforge.net
- */
-public class AnonymousClassCodePiece extends NamedCodePiece {
+   This code piece represents an anonymous class.
+*/
+public class AnonymousClassCodePiece extends NamedCodePiece
+{
     /** The code piece this class represents. */
     private CodePiece classDef;
 
@@ -45,72 +52,77 @@ public class AnonymousClassCodePiece extends NamedCodePiece {
     /**
        Constructor.
 
-       @param def The code piece to represent.
-       @param seqNumber The sequence number of this anonymous class.
+       @param classDef The code piece to represent.
+       @param number The sequence number of this anonymous class.
     */
-    public AnonymousClassCodePiece(CodePiece def,
-                                   int seqNumber) {
-	classDef = def;
-	number = seqNumber;
+    public AnonymousClassCodePiece(CodePiece classDef,
+                                   int number)
+    {
+	this.classDef = classDef;
+	this.number = number;
     }
 
     /**
-     * @return the string representation for this piece of code.
-     */
-    public StringBuffer getText() {
+       Return the string representation for this piece of code.
+    */
+    public StringBuffer getText()
+    {
 	return classDef.getText();
     }
 
     /**
-     * @return the start position.
-     */
-    public int getStartPosition() {
+       Return the start position.
+    */
+    public int getStartPosition()
+    {
 	return classDef.getStartPosition();
     }
 
     /**
-     * @return the end position.
-     */
-    public int getEndPosition() {
+       Return the end position.
+    */
+    public int getEndPosition()
+    {
 	return classDef.getEndPosition();
     }
 
     /**
-     * @return the start line
-     */
-    public int getStartLine() {
+	Return the start line
+    */
+    public int getStartLine()
+    {
 	return classDef.getStartLine();
     }
 
     /**
-     * @return the end line
-     */
-    public int getEndLine() {
+	Return the end line
+    */
+    public int getEndLine()
+    {
 	return classDef.getEndLine();
     }
 
     /**
-     * @see org.argouml.language.java.generator.NamedCodePiece#write(
-     *         java.io.BufferedReader, java.io.BufferedWriter, java.util.Stack)
-     *
-     * Write the code this piece represents to file. This will add a
-     * new level to the tree stacks.
-     */
-    public void write(BufferedReader reader,
-                      BufferedWriter writer,
-                      Stack parseStateStack) throws IOException {
-        ParseState parseState = (ParseState) parseStateStack.peek();
-        Object mClass = /*(MClass)*/
-            parseState.newClassifier((new Integer(number)).toString());
+       Write the code this piece represents to file. This will add a
+       new level to the tree stacks.
+    */
+    public void write(Writer writer,
+                      Stack parseStateStack,
+                      int column)
+	throws Exception
+    {
+	ParseState parseState = (ParseState)parseStateStack.peek();
+	MClass mClass = (MClass)
+	    parseState.newClassifier((new Integer(number)).toString());
 
-        if (mClass != null) {
-            parseStateStack.push(new ParseState(mClass));
-            writer.write(classDef.getText().toString());
-            // dispose code piece in reader
-            ffCodePiece(reader, null);
-        } else {
-            // not in model, so write the original code
-            ffCodePiece(reader, writer);
-        }
+	if(mClass == null) {
+	    // Removed
+	    mClass = UmlFactory.getFactory().getCore().buildClass();
+	    writer.write("REMOVED ");
+	}
+
+	parseStateStack.push(new ParseState(mClass));
+
+	writer.write(classDef.getText().toString());
     }
 }

@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,302 +21,136 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: ClassDiagramRenderer.java
+// Classes: ClassDiagramRenderer
+// Original jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.diagram.static_structure.ui;
 
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 
-import org.apache.log4j.Logger;
-import org.argouml.model.Model;
-import org.argouml.ui.GraphChangeAdapter;
-import org.argouml.uml.diagram.UmlDiagramRenderer;
-import org.argouml.uml.diagram.ui.FigAssociation;
-import org.argouml.uml.diagram.ui.FigAssociationClass;
-import org.argouml.uml.diagram.ui.FigAssociationEnd;
-import org.argouml.uml.diagram.ui.FigDependency;
-import org.argouml.uml.diagram.ui.FigEdgeModelElement;
-import org.argouml.uml.diagram.ui.FigGeneralization;
-import org.argouml.uml.diagram.ui.FigNodeAssociation;
-import org.argouml.uml.diagram.ui.FigNodeModelElement;
-import org.argouml.uml.diagram.ui.FigPermission;
-import org.argouml.uml.diagram.ui.FigRealization;
-import org.argouml.uml.diagram.ui.FigUsage;
-import org.tigris.gef.base.Layer;
-import org.tigris.gef.graph.GraphModel;
-import org.tigris.gef.presentation.FigEdge;
-import org.tigris.gef.presentation.FigNode;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.model_management.*;
+import ru.novosoft.uml.behavior.common_behavior.*;
 
-/**
- * This class defines a renderer object for UML Class Diagrams. In a
- * Class Diagram the following UML objects are displayed with the
- * following Figs: <p>
- *
+import org.tigris.gef.base.*;
+import org.tigris.gef.presentation.*;
+import org.tigris.gef.graph.*;
+
+import org.argouml.uml.diagram.ui.*;
+import org.apache.log4j.Category;
+import org.argouml.uml.MMUtil;
+
+// could be singleton
+
+
+/** This class defines a renderer object for UML Class Diagrams. In a
+ *  Class Diagram the following UML objects are displayed with the
+ *  following Figs: <p>
  * <pre>
- *  UML Object       ---  Fig
+ *  UML Object      ---  Fig
  *  ---------------------------------------
- *  Class            ---  FigClass
- *  Interface        ---  FigInterface
- *  Instance         ---  FigInstance
- *  Model            ---  FigModel
- *  Subsystem        ---  FigSubsystem
- *  Package          ---  FigPackage
- *  Comment          ---  FigComment
- *  (CommentEdge)    ---  FigEdgeNote
- *  Generalization   ---  FigGeneralization
- *  Realization      ---  FigRealization
- *  Permission       ---  FigPermission
- *  Usage            ---  FigUsage
- *  Dependency       ---  FigDependency
- *  Association      ---  FigAssociation
- *  AssociationClass ---  FigAssociationClass
- *  Dependency       ---  FigDependency
- *  Link             ---  FigLink
- *  DataType         ---  FigDataType
- *  Stereotype       ---  FigStereotypeDeclaration
- * </pre>
- *
- * @author jrobbins
+ *  MClass         ---  FigClass
+ *  MInterface       ---  FigClass (needs-more-work?)
+ *  MGeneralization  ---  FigGeneralization
+ *  Realization     ---  FigDependency (needs-more-work)
+ *  MAssociation     ---  FigAssociation
+ *  MDependency      ---  FigDependency
+ *  </pre>
  */
-public class ClassDiagramRenderer extends UmlDiagramRenderer {
-    
-    /**
-     * The UID.
-     */
-    static final long serialVersionUID = 675407719309039112L;
 
-    /**
-     * Logger.
-     */
-    private static final Logger LOG =
-        Logger.getLogger(ClassDiagramRenderer.class);
+public class ClassDiagramRenderer
+implements GraphNodeRenderer, GraphEdgeRenderer {
 
-    /**
-     * @see org.tigris.gef.graph.GraphNodeRenderer#getFigNodeFor(
-     *         org.tigris.gef.graph.GraphModel,
-     *         org.tigris.gef.base.Layer, java.lang.Object, java.util.Map)
-     *
-     * Return a Fig that can be used to represent the given node.
-     */
-    public FigNode getFigNodeFor(GraphModel gm, Layer lay,
-				 Object node, Map styleAttributes) {
+    protected static Category cat = Category.getInstance(ClassDiagramRenderer.class);
+  /** Return a Fig that can be used to represent the given node */
+  public FigNode getFigNodeFor(GraphModel gm, Layer lay, Object node) {
+    if (node instanceof MClass) return new FigClass(gm, node);
+    else if (node instanceof MInterface) return new FigInterface(gm, node);
+    else if (node instanceof MInstance) return new FigInstance(gm, node);
+    else if (node instanceof MPackage) return new FigPackage(gm, node);
+    else if (node instanceof MModel) return new FigPackage(gm, node);
+    cat.debug("needs-more-work ClassDiagramRenderer getFigNodeFor "+node);
+    return null;
+  }
 
-        FigNodeModelElement figNode = null;
-
-        if (node == null) {
-            throw new IllegalArgumentException("A node must be supplied");
-        }
-        if (Model.getFacade().isAClass(node)) {
-            figNode = new FigClass(gm, node);
-        } else if (Model.getFacade().isAInterface(node)) {
-            figNode = new FigInterface(gm, node);
-        } else if (Model.getFacade().isAInstance(node)) {
-            figNode = new FigInstance(gm, node);
-        } else if (Model.getFacade().isAModel(node)) {
-            figNode = new FigModel(gm, node);
-        } else if (Model.getFacade().isASubsystem(node)) {
-            figNode = new FigSubsystem(gm, node);
-        } else if (Model.getFacade().isAPackage(node)) {
-            figNode = new FigPackage(gm, node);
-        } else if (Model.getFacade().isAComment(node)) {
-            figNode = new FigComment(gm, node);
-        } else if (Model.getFacade().isAAssociation(node)) {
-            figNode = new FigNodeAssociation(gm, node);
-        } else if (Model.getFacade().isAEnumeration(node)) {
-            figNode = new FigEnumeration(gm, node);
-        } else if (Model.getFacade().isADataType(node)) {
-            figNode = new FigDataType(gm, node);
-        } else if (Model.getFacade().isAStereotype(node)) {
-            figNode = new FigStereotypeDeclaration(gm, node);
-        } else {
-            LOG.error("TODO: ClassDiagramRenderer getFigNodeFor " + node);
-            throw new IllegalArgumentException(
-                    "Node is not a recognised type. Received "
-                    + node.getClass().getName());
-        }
-
-        figNode.setDiElement(
-                GraphChangeAdapter.getInstance().createElement(gm, node));
-
-
-        return figNode;
-
+  /** Return a Fig that can be used to represent the given edge */
+  public FigEdge getFigEdgeFor(GraphModel gm, Layer lay, Object edge) {
+    cat.debug("making figedge for " + edge);
+    if (edge instanceof MAssociation) {
+      MAssociation asc = (MAssociation) edge;
+      FigAssociation ascFig = new FigAssociation(asc, lay);
+      return ascFig;
     }
-
-    /**
-     * Return a Fig that can be used to represent the given edge.
-     * Throws IllegalArgumentException if the edge is not of an expected type.
-     * Throws IllegalStateException if the edge generated has no source
-     *                               or dest port.
-     *
-     * @see org.tigris.gef.graph.GraphEdgeRenderer#getFigEdgeFor(
-     *         org.tigris.gef.graph.GraphModel, org.tigris.gef.base.Layer,
-     *         java.lang.Object, java.util.Map)
-     */
-    public FigEdge getFigEdgeFor(GraphModel gm, Layer lay,
-				 Object edge, Map styleAttribute) {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("making figedge for " + edge);
-        }
-        if (edge == null) {
-            throw new IllegalArgumentException("A model edge must be supplied");
-        }
-        FigEdgeModelElement newEdge = null;
-        if (Model.getFacade().isAAssociationClass(edge)) {
-            newEdge = new FigAssociationClass(edge, lay);
-        } else if (Model.getFacade().isAAssociationEnd(edge)) {
-            FigAssociationEnd asend = new FigAssociationEnd(edge, lay);
-            Model.getFacade().getAssociation(edge);
-            FigNode associationFN =
-                (FigNode) lay.presentationFor(
-			Model.getFacade().getAssociation(edge));
-            FigNode classifierFN =
-                (FigNode) lay.presentationFor(Model.getFacade().getType(edge));
-
-            asend.setSourcePortFig(associationFN);
-            asend.setSourceFigNode(associationFN);
-            asend.setDestPortFig(classifierFN);
-            asend.setDestFigNode(classifierFN);
-            newEdge = asend;
-        } else if (Model.getFacade().isAAssociation(edge)) {
-            newEdge = new FigAssociation(edge, lay);
-        } else if (Model.getFacade().isALink(edge)) {
-            Object lnk = /*(MLink)*/ edge;
-            FigLink lnkFig = new FigLink(lnk);
-            Collection linkEndsColn = Model.getFacade().getConnections(lnk);
-
-            Object[] linkEnds = linkEndsColn.toArray();
-            Object fromInst = Model.getFacade().getInstance(linkEnds[0]);
-            Object toInst = Model.getFacade().getInstance(linkEnds[1]);
-
-            FigNode fromFN = (FigNode) lay.presentationFor(fromInst);
-            FigNode toFN = (FigNode) lay.presentationFor(toInst);
-            lnkFig.setSourcePortFig(fromFN);
-            lnkFig.setSourceFigNode(fromFN);
-            lnkFig.setDestPortFig(toFN);
-            lnkFig.setDestFigNode(toFN);
-            lnkFig.getFig().setLayer(lay);
-            newEdge = lnkFig;
-        } else if (Model.getFacade().isAGeneralization(edge)) {
-            newEdge = new FigGeneralization(edge, lay);
-        } else if (Model.getFacade().isAPermission(edge)) {
-            newEdge = new FigPermission(edge, lay);
-        } else if (Model.getFacade().isAUsage(edge)) {
-            newEdge = new FigUsage(edge, lay);
-        } else if (Model.getFacade().isAAbstraction(edge)) {
-            newEdge = new FigRealization(edge);
-        } else if (Model.getFacade().isADependency(edge)) {
-
-            Collection c = Model.getFacade().getStereotypes(edge);
-            Iterator i = c.iterator();
-            String name = "";
-            while (i.hasNext()) {
-                Object o = i.next();
-                name = Model.getFacade().getName(o);
-                if ("realize".equals(name)) {
-                    break;
-                }
-            }
-            if ("realize".equals(name)) {
-                FigRealization realFig = new FigRealization(edge);
-
-                Object supplier =
-                    ((Model.getFacade().getSuppliers(edge).toArray())[0]);
-                Object client =
-                    ((Model.getFacade().getClients(edge).toArray())[0]);
-
-                FigNode supFN = (FigNode) lay.presentationFor(supplier);
-                FigNode cliFN = (FigNode) lay.presentationFor(client);
-
-                realFig.setSourcePortFig(cliFN);
-                realFig.setSourceFigNode(cliFN);
-                realFig.setDestPortFig(supFN);
-                realFig.setDestFigNode(supFN);
-                realFig.getFig().setLayer(lay);
-                newEdge = realFig;
-            } else {
-                FigDependency depFig = new FigDependency(edge, lay);
-                newEdge = depFig;
-            }
-        } else if (edge instanceof CommentEdge) {
-            newEdge = new FigEdgeNote(edge, lay);
-        }
-
-        if (newEdge == null) {
-            throw new IllegalArgumentException(
-                    "Don't know how to create FigEdge for model type "
-                    + edge.getClass().getName());
-        }
-
-        if (newEdge.getSourcePortFig() == null) {
-            Object source;
-            if (edge instanceof CommentEdge) {
-                source = ((CommentEdge) edge).getSource();
-            } else {
-                source = Model.getUmlHelper().getSource(edge);
-            }
-            setSourcePort(newEdge, getNodePresentationFor(lay, source));
-        }
-
-        if (newEdge.getDestPortFig() == null) {
-            Object dest;
-            if (edge instanceof CommentEdge) {
-                dest = ((CommentEdge) edge).getDestination();
-            } else {
-                dest = Model.getUmlHelper().getDestination(edge);
-            }
-            setDestPort(newEdge, getNodePresentationFor(lay, dest));
-        }
-
-        if (newEdge.getSourcePortFig() == null
-                || newEdge.getDestPortFig() == null) {
-            throw new IllegalStateException("Edge of type "
-                    + newEdge.getClass().getName()
-                    + " created with no source or destination port");
-        }
-
-        newEdge.setDiElement(
-            GraphChangeAdapter.getInstance().createElement(gm, edge));
-
-        assert newEdge != null : "There has been no FigEdge created";
-        assert (newEdge.getDestFigNode() != null) : "The FigEdge has no dest node";
-        assert (newEdge.getDestPortFig() != null) : "The FigEdge has no dest port";
-        assert (newEdge.getSourceFigNode() != null) : "The FigEdge has no source node";;
-        assert (newEdge.getSourcePortFig() != null) : "The FigEdge has no source port";;
-        
-        return newEdge;
+    if (edge instanceof MLink) {
+      MLink lnk = (MLink) edge;
+      FigLink lnkFig = new FigLink(lnk);
+      Collection linkEnds = lnk.getConnections();
+      if (linkEnds == null) cat.debug("null linkRoles....");
+	  Object[] leArray = linkEnds.toArray();
+      MLinkEnd fromEnd = (MLinkEnd) leArray[0];
+      MInstance fromInst = fromEnd.getInstance();
+      MLinkEnd toEnd = (MLinkEnd) leArray[1];
+      MInstance toInst = toEnd.getInstance();
+      FigNode fromFN = (FigNode) lay.presentationFor(fromInst);
+      FigNode toFN = (FigNode) lay.presentationFor(toInst);
+      lnkFig.setSourcePortFig(fromFN);
+      lnkFig.setSourceFigNode(fromFN);
+      lnkFig.setDestPortFig(toFN);
+      lnkFig.setDestFigNode(toFN);
+      lnkFig.getFig().setLayer(lay);
+      return lnkFig;
     }
+    if (edge instanceof MGeneralization) {
+      MGeneralization gen = (MGeneralization) edge;
+      FigGeneralization genFig = new FigGeneralization(gen, lay);
+      return genFig;
+    }
+    if (edge instanceof MDependency) {
+	cat.debug("get fig for "+edge);
+      MDependency dep = (MDependency) edge;
+      cat.debug("stereo "+dep.getStereotype());
+      if (dep.getStereotype() != null && dep.getStereotype().getName().equals("realize")) {
+		  FigRealization realFig = new FigRealization(dep);
+		  
+		  MModelElement supplier = (MModelElement)((dep.getSuppliers().toArray())[0]);
+		  MModelElement client = (MModelElement)((dep.getClients().toArray())[0]);
+		  
+		  FigNode supFN = (FigNode) lay.presentationFor(supplier);
+		  FigNode cliFN = (FigNode) lay.presentationFor(client);
+		  
+		  realFig.setSourcePortFig(cliFN);
+		  realFig.setSourceFigNode(cliFN);
+		  realFig.setDestPortFig(supFN);
+		  realFig.setDestFigNode(supFN);
+		  realFig.getFig().setLayer(lay);
+		  realFig.getFig().setDashed(true);
+		  return realFig;
+	  }
+	  else {
+		  FigDependency depFig = new FigDependency(dep);
+		  
+		  MModelElement supplier = (MModelElement)((dep.getSuppliers().toArray())[0]);
+		  MModelElement client = (MModelElement)((dep.getClients().toArray())[0]);
+		  
+		  FigNode supFN = (FigNode) lay.presentationFor(supplier);
+		  FigNode cliFN = (FigNode) lay.presentationFor(client);
+		  
+		  depFig.setSourcePortFig(cliFN);
+		  depFig.setSourceFigNode(cliFN);
+		  depFig.setDestPortFig(supFN);
+		  depFig.setDestFigNode(supFN);
+		  depFig.getFig().setLayer(lay);
+		  depFig.getFig().setDashed(true);
+		  return depFig;
+	  }
+	}
+    cat.debug("needs-more-work ClassDiagramRenderer getFigEdgeFor");
+    return null;
+  }
 
-    private void setSourcePort(FigEdge edge, FigNode source) {
-        edge.setSourcePortFig(source);
-        edge.setSourceFigNode(source);
-    }
 
-    private void setDestPort(FigEdge edge, FigNode dest) {
-        edge.setDestPortFig(dest);
-        edge.setDestFigNode(dest);
-    }
-    
-    /**
-     * Get the FigNode from the given layer that represents the given
-     * model element.
-     * This is required to make sure that a FigNode is always returned
-     * when getting the presentation of a model element and that we do
-     * not get the edge portion of an association class.
-     * @param lay the layer containing the Fig
-     * @param modelElement the model element to find presentation for
-     * @return the FigNode presentation of the model element
-     */
-    private FigNode getNodePresentationFor(Layer lay, Object modelElement) {
-        assert modelElement != null : "A modelElement must be supplied";
-        for (Iterator it = lay.getContentsNoEdges().iterator();
-                it.hasNext(); ) {
-            Object fig = it.next();
-            if (fig instanceof FigNode
-                    && ((FigNode) fig).getOwner().equals(modelElement)) {
-                return ((FigNode) fig);
-            }
-        }
-        return null;
-    }
+  static final long serialVersionUID = 675407719309039112L;
+
 } /* end class ClassDiagramRenderer */

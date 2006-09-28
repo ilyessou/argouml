@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,58 +21,51 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: ActionCreatePseudostate.java
+// Classes: ActionCreatePseudostate
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.diagram.state.ui;
 
-import java.util.Hashtable;
+import java.util.*;
+import java.beans.*;
 
-import org.argouml.model.Model;
 import org.argouml.ui.CmdCreateNode;
 
-/**
- * An Action to create a Pseudostate of some kind.
- *
- *
- * @author jrobbins
- */
+import ru.novosoft.uml.behavior.state_machines.*;
+import ru.novosoft.uml.foundation.data_types.*;
+
+
+
+/**  */
+
 public class ActionCreatePseudostate extends CmdCreateNode {
 
-    ////////////////////////////////////////////////////////////////
-    // constructors
+  ////////////////////////////////////////////////////////////////
+  // constructors
 
-    /**
-     * Construct a new Cmd with the given classes for the NetNode
-     * and its FigNode.
-     *
-     * @param kind the pseudostatekind
-     * @param name the name of this kind of pseudostate
-     */
-    public ActionCreatePseudostate(Object kind, String name) {
-	super(new Hashtable(), name);
+  /** Construct a new Cmd with the given classes for the NetNode
+   *  and its FigNode. */
+  public ActionCreatePseudostate(MPseudostateKind kind, String name) {
+    super(new Hashtable(), name);
+    setArg("className", MPseudostate.class);
+	//??? don't know, Toby, nsuml
+    setArg("kind", kind);
+  }
 
-        if (!Model.getFacade().isAPseudostateKind(kind)) {
-            throw new IllegalArgumentException();
-	}
+  ////////////////////////////////////////////////////////////////
+  // Cmd API
 
-	setArg("className", Model.getMetaTypes().getPseudostate());
-	setArg("kind", kind);
-    }
+  /** Actually instanciate the NetNode and FigNode objects and
+   * set the global next mode to ModePlace */
+  // needs-more-work: should call super, reduce code volume!
+  public Object makeNode() {
+    Object newNode = super.makeNode();
+    MPseudostateKind kind = (MPseudostateKind) _args.get("kind");
+    ((MPseudostate)newNode).setKind(kind);
 
-    ////////////////////////////////////////////////////////////////
-    // Cmd API
-
-    /**
-     * Actually instanciate the NetNode and FigNode objects and
-     * set the global next mode to ModePlace
-     * TODO: should call super, reduce code volume!
-     *
-     * @see org.tigris.gef.graph.GraphFactory#makeNode()
-     */
-    public Object makeNode() {
-	Object newNode = super.makeNode();
-	Object kind = getArg("kind");
-	Model.getCoreHelper().setKind(newNode, kind);
-
-	return newNode;
-    }
+    return newNode;
+  }
 
 } /* end class ActionCreatePseudostate */

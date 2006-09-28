@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -23,155 +22,117 @@
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 package org.argouml.ui;
+import org.argouml.application.ArgoVersion;
+import org.argouml.application.api.*;
+import org.argouml.application.helpers.*;
+import org.argouml.kernel.*;
+import org.argouml.uml.ui.UMLAction;
+import java.awt.*;
+import java.awt.event.*;
+import java.beans.*;
+import javax.swing.*;
+import java.util.*;
+import org.tigris.gef.util.*;
 
-import java.awt.BorderLayout;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
-
-import javax.swing.JCheckBox;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JTextField;
-
-import org.argouml.application.api.Argo;
-import org.argouml.application.api.Configuration;
-import org.argouml.i18n.Translator;
-import org.argouml.kernel.ProjectManager;
-import org.argouml.uml.ProfileException;
-
-/**
- * Settings tab panel for handling ArgoUML application related settings.
+/** Action object for handling Argo settings
  *
- * @author Thierry Lach
- * @since  0.9.4
+ *  @author Thierry Lach
+ *  @since  0.9.4
  */
-class SettingsTabPreferences extends JPanel
-    implements GUISettingsTabInterface {
+public class SettingsTabPreferences extends SettingsTabHelper
+implements SettingsTabPanel {
 
-    private JCheckBox chkSplash;
-    private JCheckBox chkPreload;
-    private JCheckBox chkReloadRecent;
-    private JCheckBox chkStripDiagrams;
-    private JTextField defaultProfile;
+    JCheckBox _splash = null;
+    JCheckBox _preload = null;
+    JCheckBox _edem = null;
+    JCheckBox _profile = null;
+    JCheckBox _reloadRecent = null;
 
-    /**
-     * The constructor.
-     *
-     */
-    SettingsTabPreferences() {
+    public SettingsTabPreferences() {
+        super();
         setLayout(new BorderLayout());
 	JPanel top = new JPanel();
-    	top.setLayout(new GridBagLayout());
+    	top.setLayout(new GridBagLayout()); 
 
 	GridBagConstraints checkConstraints = new GridBagConstraints();
-	checkConstraints.anchor = GridBagConstraints.LINE_START;
+	checkConstraints.anchor = GridBagConstraints.WEST;
 	checkConstraints.gridy = 0;
 	checkConstraints.gridx = 0;
 	checkConstraints.gridwidth = 1;
 	checkConstraints.gridheight = 1;
-	checkConstraints.insets = new Insets(4, 10, 0, 10);
+	checkConstraints.insets = new Insets(0, 30, 0, 4);
+
+	GridBagConstraints labelConstraints = new GridBagConstraints();
+	labelConstraints.anchor = GridBagConstraints.EAST;
+	labelConstraints.gridy = 0;
+	labelConstraints.gridx = 0;
+	labelConstraints.gridwidth = 1;
+	labelConstraints.gridheight = 1;
+	labelConstraints.insets = new Insets(2, 10, 2, 4);
+
+	GridBagConstraints fieldConstraints = new GridBagConstraints();
+	fieldConstraints.anchor = GridBagConstraints.WEST;
+	fieldConstraints.fill = GridBagConstraints.HORIZONTAL;
+	fieldConstraints.gridy = 0;
+	fieldConstraints.gridx = 1;
+	fieldConstraints.gridwidth = 3;
+	fieldConstraints.gridheight = 1;
+	fieldConstraints.weightx = 1.0;
+	fieldConstraints.insets = new Insets(0, 4, 0, 20);
+
+	checkConstraints.gridy = 0;
+	labelConstraints.gridy = 0;
+	fieldConstraints.gridy = 0;
+        _splash = createCheckBox("label.splash");
+	top.add(_splash, checkConstraints);
+	top.add(new JLabel(""), labelConstraints);
+	top.add(new JLabel(""), fieldConstraints);
+
+	checkConstraints.gridy = 1;
+        _preload = createCheckBox("label.preload");
+ 	top.add(_preload, checkConstraints);
 
 	checkConstraints.gridy = 2;
-	JCheckBox j = new JCheckBox(Translator.localize("label.splash"));
-        chkSplash = j;
-	top.add(chkSplash, checkConstraints);
+        _edem = createCheckBox("label.edem");
+ 	top.add(_edem, checkConstraints);
 
-	checkConstraints.gridy++;
-        JCheckBox j1 = new JCheckBox(Translator.localize("label.preload"));
-        chkPreload = j1;
- 	top.add(chkPreload, checkConstraints);
+	checkConstraints.gridy = 3;
+        _profile = createCheckBox("label.profile");
+ 	top.add(_profile, checkConstraints);
 
-	checkConstraints.gridy++;
-        JCheckBox j2 =
-            new JCheckBox(Translator.localize("label.reload-recent"));
-        chkReloadRecent = j2;
- 	top.add(chkReloadRecent, checkConstraints);
-
-        checkConstraints.gridy++;
-        JCheckBox j3 =
-            new JCheckBox(Translator.localize("label.strip-diagrams"));
-        chkStripDiagrams = j3;
-        top.add(chkStripDiagrams, checkConstraints);
-
-        // TODO: Profile field is currently read-only, need a selector
-        checkConstraints.gridy++;
-        top.add(new JLabel(Translator.localize("label.default-profile")),
-                checkConstraints);
-        defaultProfile = new JTextField();
-        checkConstraints.gridy++;
-        checkConstraints.fill = GridBagConstraints.HORIZONTAL;
-        top.add(defaultProfile, checkConstraints);
-        //defaultProfile.setEnabled(false);
+	checkConstraints.gridy = 4;
+        _reloadRecent = createCheckBox("label.reload-recent");
+ 	top.add(_reloadRecent, checkConstraints);
 
 	add(top, BorderLayout.NORTH);
     }
 
-    /**
-     * @see GUISettingsTabInterface#handleSettingsTabRefresh()
-     */
     public void handleSettingsTabRefresh() {
-        chkSplash.setSelected(Configuration.getBoolean(Argo.KEY_SPLASH, true));
-        chkPreload.setSelected(Configuration.getBoolean(Argo.KEY_PRELOAD,
-                true));
-        chkReloadRecent.setSelected(
-		Configuration.getBoolean(Argo.KEY_RELOAD_RECENT_PROJECT,
-					 false));
-        chkStripDiagrams.setSelected(
-                Configuration.getBoolean(Argo.KEY_XMI_STRIP_DIAGRAMS,
-                                         false));
-        defaultProfile.setText(ProjectManager.getManager().getCurrentProject()
-                .getProfile().getProfileModelFilename());
+        _splash.setSelected(Configuration.getBoolean(Argo.KEY_SPLASH, true));
+        _preload.setSelected(Configuration.getBoolean(Argo.KEY_PRELOAD, true));
+        _edem.setSelected(Configuration.getBoolean(Argo.KEY_EDEM, true));
+        _profile.setSelected(Configuration.getBoolean(Argo.KEY_PROFILE, false));
+        _reloadRecent.setSelected(Configuration.getBoolean(Argo.KEY_RELOAD_RECENT_PROJECT, false));
     }
 
-    /**
-     * @see GUISettingsTabInterface#handleSettingsTabSave()
-     */
     public void handleSettingsTabSave() {
-        Configuration.setBoolean(Argo.KEY_SPLASH, chkSplash.isSelected());
-        Configuration.setBoolean(Argo.KEY_PRELOAD, chkPreload.isSelected());
-        Configuration.setBoolean(Argo.KEY_RELOAD_RECENT_PROJECT,
-				 chkReloadRecent.isSelected());
-        Configuration.setBoolean(Argo.KEY_XMI_STRIP_DIAGRAMS,
-                 chkStripDiagrams.isSelected());
-        try {
-            ProjectManager.getManager().getCurrentProject().getProfile()
-                    .setProfileModelFilename(defaultProfile.getText());
-        } catch (ProfileException e) {
-            // shouldn't happen if profile was validated when selected
-            JOptionPane.showMessageDialog(this, "Setting UML profile failed",
-                    "Profile save error", JOptionPane.ERROR_MESSAGE);
-        }
+        Configuration.setBoolean(Argo.KEY_SPLASH, _splash.isSelected());
+        Configuration.setBoolean(Argo.KEY_PRELOAD, _preload.isSelected());
+        Configuration.setBoolean(Argo.KEY_EDEM, _edem.isSelected());
+        Configuration.setBoolean(Argo.KEY_PROFILE, _profile.isSelected());
+        Configuration.setBoolean(Argo.KEY_RELOAD_RECENT_PROJECT, _reloadRecent.isSelected());
     }
 
-    /**
-     * @see GUISettingsTabInterface#handleSettingsTabCancel()
-     */
     public void handleSettingsTabCancel() {
         handleSettingsTabRefresh();
     }
 
-    /**
-     * @see org.argouml.ui.GUISettingsTabInterface#handleResetToDefault()
-     */
-    public void handleResetToDefault() {
-        // Do nothing - these buttons are not shown.
-    }
+    public String getModuleName() { return "SettingsTabPreferences"; }
+    public String getModuleDescription() { return "Settings Tab for Preferences"; }
+    public String getModuleAuthor() { return "ArgoUML Core"; }
+    public String getModuleVersion() { return ArgoVersion.VERSION; }
+    public String getModuleKey() { return "module.settings.preferences"; }
 
-    /**
-     * @see GUISettingsTabInterface#getTabPanel()
-     */
-    public JPanel getTabPanel() { return this; }
-
-    /**
-     * @see GUISettingsTabInterface#getTabKey()
-     */
     public String getTabKey() { return "tab.preferences"; }
-
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = -340220974967836979L;
 }
 

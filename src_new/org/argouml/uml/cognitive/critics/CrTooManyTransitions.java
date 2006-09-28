@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,58 +21,56 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: CrTooManyTransitions.java
+// Classes: CrTooManyTransitions
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.cognitive.critics;
 
-import java.util.Collection;
+import java.util.*;
+import javax.swing.*;
 
-import org.argouml.cognitive.Designer;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
+import ru.novosoft.uml.behavior.state_machines.*;
 
-/**
- * A critic to detect when a state has too many ingoing and
- * outgoing transitions.
- */
-public class CrTooManyTransitions extends AbstractCrTooMany {
-    /**
-     * Threshold.
-     */
-    private static final int TRANSITIONS_THRESHOLD = 10;
+import org.argouml.cognitive.*;
 
-    /**
-     * The constructor.
-     */
-    public CrTooManyTransitions() {
-        setupHeadAndDesc();
-	addSupportedDecision(UMLDecision.STATE_MACHINES);
-	setThreshold(TRANSITIONS_THRESHOLD);
-	addTrigger("incoming");
-	addTrigger("outgoing");
+/** A critic to detect when a class can never have instances (of
+ *  itself of any subclasses). */
 
-    }
+public class CrTooManyTransitions extends CrUML {
 
-    /**
-     * @see org.argouml.uml.cognitive.critics.CrUML#predicate2(
-     *         java.lang.Object, org.argouml.cognitive.Designer)
-     */
-    public boolean predicate2(Object dm, Designer dsgr) {
-	if (!(Model.getFacade().isAStateVertex(dm))) {
-            return NO_PROBLEM;
-        }
+  ////////////////////////////////////////////////////////////////
+  // constants
+  public static String THRESHOLD = "Threshold";
 
-	Collection in = Model.getFacade().getIncomings(dm);
-	Collection out = Model.getFacade().getOutgoings(dm);
-	int inSize = (in == null) ? 0 : in.size();
-	int outSize = (out == null) ? 0 : out.size();
-	if (inSize + outSize <= getThreshold()) {
-            return NO_PROBLEM;
-        }
-	return PROBLEM_FOUND;
-    }
+  ////////////////////////////////////////////////////////////////
+  // constructor
+  public CrTooManyTransitions() {
+    setHeadline("Reduce Transitions on <ocl>self</ocl>");
+    addSupportedDecision(CrUML.decSTATE_MACHINES);
+    setArg(THRESHOLD, new Integer(10));
+    addTrigger("incoming");
+    addTrigger("outgoing");
 
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = -5732942378849267065L;
+  }
+
+  ////////////////////////////////////////////////////////////////
+  // critiquing API
+  public boolean predicate2(Object dm, Designer dsgr) {
+    if (!(dm instanceof MStateVertex)) return NO_PROBLEM;
+    MStateVertex sv = (MStateVertex) dm;
+
+    int threshold = ((Integer)getArg(THRESHOLD)).intValue();
+    Collection in = sv.getIncomings();
+    Collection out = sv.getOutgoings();
+    int inSize = (in == null) ? 0 : in.size();
+    int outSize = (out == null) ? 0 : out.size();
+    if (inSize + outSize <= threshold) return NO_PROBLEM;
+    return PROBLEM_FOUND;
+  }
 
 } /* end class CrTooManyTransitions */
+

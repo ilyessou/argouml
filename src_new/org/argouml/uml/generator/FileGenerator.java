@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 2002-2006 The Regents of the University of California. All
+// Copyright (c) 2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,25 +23,31 @@
 
 package org.argouml.uml.generator;
 
+import ru.novosoft.uml.foundation.core.*;
+//import ru.novosoft.uml.foundation.data_types.*;
+//import ru.novosoft.uml.foundation.extension_mechanisms.*;
+//import ru.novosoft.uml.foundation.data_types.MMultiplicity;
+//import ru.novosoft.uml.foundation.data_types.MExpression;
+//import ru.novosoft.uml.behavior.common_behavior.*;
+//import ru.novosoft.uml.behavior.collaborations.*;
+//import ru.novosoft.uml.behavior.state_machines.*;
+//import ru.novosoft.uml.model_management.*;
+import java.util.*;
+
 /** This class is the interface that tells that a certain generator
  * can generate a file.
  */
 public interface FileGenerator {
-
-    /**
-     * The fileseperation for this operating system.
-     */
-    public static final String FILE_SEPARATOR =
-	System.getProperty("file.separator");
-
+	
+   /**
+   * The fileseperation for this operating system.
+   */
+	public final static String FILE_SEPARATOR = System.getProperty("file.separator");
     /** Generates a file for this classifier.
-     * TODO:
+     * Needs-more-work:
      * This will only work for languages that have each node
      * in a separate files (one or more).
-     *
-     * @param node the node
-     * @param path the path
-     * @return filename the generated file
+     * @returns filename
      */
-    public String generateFile2(Object node, String path);
+    public String GenerateFile(MClassifier node, String path);
 }

@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,46 +21,53 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: CrTooManyAssoc.java
+// Classes: CrTooManyAssoc
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.cognitive.critics;
 
-import java.util.Collection;
+import java.util.*;
+import javax.swing.*;
 
-import org.argouml.cognitive.Designer;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
+import ru.novosoft.uml.foundation.extension_mechanisms.*;
 
-/** A critic to detect when a classifier has too many associations.
- */
-public class CrTooManyAssoc extends AbstractCrTooMany {
+import org.argouml.cognitive.*;
 
-    /**
-     * The initial threshold.
-     */
-    private static final int ASSOCIATIONS_THRESHOLD = 7;
+/** A critic to detect when a class can never have instances (of
+ *  itself of any subclasses). */
 
-    /**
-     * The constructor.
-     */
-    public CrTooManyAssoc() {
-        setupHeadAndDesc();
-	addSupportedDecision(UMLDecision.RELATIONSHIPS);
-	setThreshold(ASSOCIATIONS_THRESHOLD);
-	addTrigger("associationEnd");
-    }
+public class CrTooManyAssoc extends CrUML {
 
-    /**
-     * @see org.argouml.uml.cognitive.critics.CrUML#predicate2(
-     * java.lang.Object, org.argouml.cognitive.Designer)
-     */
-    public boolean predicate2(Object dm, Designer dsgr) {
-	if (!(Model.getFacade().isAClassifier(dm))) return NO_PROBLEM;
+  ////////////////////////////////////////////////////////////////
+  // constants
+  public static String THRESHOLD = "Threshold";
 
-	// TODO: consider inherited associations?
-	// TODO: self loops are double counted
-	int threshold = getThreshold();
-	Collection aes = Model.getFacade().getAssociationEnds(dm);
-	if (aes == null || aes.size() <= threshold) return NO_PROBLEM;
-	return PROBLEM_FOUND;
-    }
+  ////////////////////////////////////////////////////////////////
+  // constructor
+  public CrTooManyAssoc() {
+    setHeadline("Reduce Associations on <ocl>self</ocl>");
+
+    addSupportedDecision(CrUML.decRELATIONSHIPS);
+    setArg(THRESHOLD, new Integer(7));
+    addTrigger("associationEnd");
+  }
+
+  ////////////////////////////////////////////////////////////////
+  // critiquing API
+  public boolean predicate2(Object dm, Designer dsgr) {
+    if (!(dm instanceof MClassifier)) return NO_PROBLEM;
+    MClassifier cls = (MClassifier) dm;
+    // needs-more-work: consider inherited associations?
+    // needs-more-work: self loops are double counted
+    int threshold = ((Integer)getArg(THRESHOLD)).intValue();
+    Collection aes = cls.getAssociationEnds();
+    if (aes == null || aes.size() <= threshold) return NO_PROBLEM;
+    return PROBLEM_FOUND;
+  }
 
 } /* end class CrTooManyAssoc */
+

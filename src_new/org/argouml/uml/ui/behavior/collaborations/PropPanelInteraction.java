@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,57 +23,80 @@
 
 package org.argouml.uml.ui.behavior.collaborations;
 
+import java.awt.Color;
+
 import javax.swing.JList;
 import javax.swing.JScrollPane;
 
-import org.argouml.i18n.Translator;
-import org.argouml.uml.ui.ActionNavigateContext;
-import org.argouml.uml.ui.UMLLinkedList;
+import org.argouml.application.api.Argo;
+import org.argouml.uml.ui.PropPanelButton;
+import org.argouml.uml.ui.UMLList;
+import org.argouml.uml.ui.UMLMessagesInteractionListModel;
 import org.argouml.uml.ui.foundation.core.PropPanelModelElement;
-import org.argouml.uml.ui.foundation.extension_mechanisms.ActionNewStereotype;
-import org.argouml.util.ConfigLoader;
+import ru.novosoft.uml.behavior.collaborations.MInteraction;
 
 /**
- * Proppanel for interactions.
- *
+ * Proppanel for interactions. 
  * @author jaap.branderhorst@xs4all.nl
  */
 public class PropPanelInteraction extends PropPanelModelElement {
 
-    /**
-     * The serial version.
-     */
-    private static final long serialVersionUID = 8965284617441796326L;
+	public PropPanelInteraction() {
+		super("Interaction", _interactionIcon, 2);
+		
+		addCaption(Argo.localize("UMLMenu", "label.name"),1,0,0);
+    	addField(nameField,1,0,0);
+    	
+    	addCaption(Argo.localize("UMLMenu", "label.stereotype"),2,0,1);
+    	addField(stereotypeBox,2,0,0);
 
-    /**
-     * Construct a property panel for an Interaction.
-     */
-    public PropPanelInteraction() {
-        super("Interaction", ConfigLoader.getTabPropsOrientation());
+		// no namespace since this should not be altered
+    	// addCaption(Argo.localize("UMLMenu", "label.namespace"),3,0,1);
+    	// addField(namespaceScroll,3,0,0);
+    	
+    	addCaption(Argo.localize("UMLMenu", "label.messages"),1,1,0);
+            
+        JList messagesList = new UMLList(new UMLMessagesInteractionListModel(this,"messages",true),true);
+      	messagesList.setBackground(getBackground());
+      	messagesList.setForeground(Color.blue);
+      	JScrollPane messagesScroll= new JScrollPane(messagesList,JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED); 	
+        addField(messagesScroll,1,1,1);
+    	
+    	new PropPanelButton(this,buttonPanel,_navUpIcon, Argo.localize("UMLMenu", "button.go-up"),"navigateUp",null);
+        new PropPanelButton(this,buttonPanel,_navBackIcon, Argo.localize("UMLMenu", "button.go-back"),"navigateBackAction","isNavigateBackEnabled");
+        new PropPanelButton(this,buttonPanel,_navForwardIcon, Argo.localize("UMLMenu", "button.go-forward"),"navigateForwardAction","isNavigateForwardEnabled");
+        new PropPanelButton(this,buttonPanel,_deleteIcon, Argo.localize("UMLMenu", "button.delete-attribute"),"removeElement",null);
+    	
+    	/*
+    	addCaption("Messages:",0,1,0);
+    	JList messageList = new UMLList(new UMLMessagesListModel(this,"message",true), true);
+    	messageList.setBackground(getBackground());
+    	messageList.setForeground(Color.blue);
+    	addField(new JScrollPane(messageList),0,1,1);
+    	*/
+	
 
-    	addField(Translator.localize("label.name"),
-                getNameTextField());
-        addField(Translator.localize("label.namespace"),
-		 getNamespaceScroll());
+	}
 
-        JList contextList =
-	    new UMLLinkedList(new UMLInteractionContextListModel());
-        contextList.setVisibleRowCount(1);
-        JScrollPane contextScroll = new JScrollPane(contextList);
-        addField(Translator.localize("label.context"),
-                contextScroll);
+	
 
-        addSeparator();
-
-        JList messagesList =
-	    new UMLLinkedList(new UMLInteractionMessagesListModel());
-      	JScrollPane messagesScroll = new JScrollPane(messagesList);
-        addField(Translator.localize("label.messages"),
-                messagesScroll);
-
-        addAction(new ActionNavigateContext());
-        addAction(new ActionNewStereotype());
-        addAction(getDeleteAction());
-    }
+	/**
+	 * Used to determine which stereotypes are legal with an interaction. At 
+     * the moment, only the stereotypes of namespace and generlizable elements
+     * are shown.
+	 * @see org.argouml.uml.ui.PropPanel#isAcceptibleBaseMetaClass(String)
+	 */
+	protected boolean isAcceptibleBaseMetaClass(String baseClass) {
+		return (baseClass.equals("Interaction") || baseClass.equals("Modelelement"));
+	}
+	
+	/**
+	 * Navigates to the owning collaboration
+	 * @see org.argouml.uml.ui.foundation.core.PropPanelModelElement#navigateUp()
+	 */
+	public void navigateUp() {
+		navigateTo(((MInteraction)getTarget()).getContext());
+	}
 
 }
+

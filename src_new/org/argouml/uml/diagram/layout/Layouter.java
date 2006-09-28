@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-01 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -59,7 +58,6 @@ public interface Layouter {
      * Operation getObject returns one object from the diagram.
      *
      * @param index represents the index of this object.
-     * @return the object
      */
     LayoutedObject getObject(int index);
 
@@ -72,8 +70,6 @@ public interface Layouter {
      * Operation getMinimumDiagramSize returns the minimum
      * diagram size after the layout, so the diagram could
      * be resized to this size.
-     *
-     * @return the size/dimension
      */
     Dimension getMinimumDiagramSize();
 }

@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-01 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,107 +23,43 @@
 
 package org.argouml.uml.ui;
 
-import java.awt.Toolkit;
-import java.awt.datatransfer.DataFlavor;
-import java.awt.datatransfer.UnsupportedFlavorException;
-import java.awt.event.ActionEvent;
-import java.io.IOException;
+import org.tigris.gef.base.*;
+import java.awt.event.*;
 
-import javax.swing.AbstractAction;
-import javax.swing.Action;
-import javax.swing.Icon;
-import javax.swing.event.CaretEvent;
-import javax.swing.event.CaretListener;
-import javax.swing.text.JTextComponent;
 
-import org.argouml.application.helpers.ResourceLoaderWrapper;
-import org.argouml.i18n.Translator;
-import org.tigris.gef.base.CmdCopy;
-import org.tigris.gef.base.Globals;
-
-/**
- * The Copy Action.
- */
-public class ActionCopy extends AbstractAction implements CaretListener {
+public class ActionCopy extends UMLChangeAction {
 
     ////////////////////////////////////////////////////////////////
     // static variables
+    
+    public static ActionCopy SINGLETON = new ActionCopy(); 
 
-    private static ActionCopy instance = new ActionCopy();
-
-    private static final String LOCALIZE_KEY = "action.copy";
-
+  
     ////////////////////////////////////////////////////////////////
     // constructors
-    /**
-     * Constructor.
-     */
-    public ActionCopy() {
-        super(Translator.localize(LOCALIZE_KEY));
-        Icon icon = ResourceLoaderWrapper.lookupIcon(LOCALIZE_KEY);
-        if (icon != null) {
-            putValue(Action.SMALL_ICON, icon);
+
+    public ActionCopy() { super("Copy"); }
+
+
+    ////////////////////////////////////////////////////////////////
+    // main methods
+
+    public boolean shouldBeEnabled() {
+	int size = 0;
+	try {
+	    size = Globals.curEditor().getSelectionManager().selections().size();
 	}
-        putValue(
-		 Action.SHORT_DESCRIPTION,
-		 Translator.localize(LOCALIZE_KEY) + " ");
+	//
+	//   this can happen when running in a debugger, not sure why
+	//
+	catch(Exception e) {
+	    size = 0;
+	}
+	return (size > 0);
     }
-
-    /**
-     * @return the singleton
-     */
-    public static ActionCopy getInstance() {
-        return instance;
-    }
-
-    private JTextComponent textSource;
-
-    /**
-     * Copies some text or a fig.
-     *
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-     */
     public void actionPerformed(ActionEvent ae) {
-        if (textSource != null) {
-            textSource.copy();
-            Globals.clipBoard = null;
-        } else {
-            CmdCopy cmd = new CmdCopy();
-            cmd.doIt();
-        }
-        if (isSystemClipBoardEmpty()
-            && (Globals.clipBoard == null
-		|| Globals.clipBoard.isEmpty())) {
-            ActionPaste.getInstance().setEnabled(false);
-        } else {
-            ActionPaste.getInstance().setEnabled(true);
-        }
+	CmdCopy cmd = new CmdCopy();
+	cmd.doIt();
+	super.actionPerformed(ae);
     }
-
-    /**
-     * @see
-     * javax.swing.event.CaretListener#caretUpdate(javax.swing.event.CaretEvent)
-     */
-    public void caretUpdate(CaretEvent e) {
-        if (e.getMark() != e.getDot()) { // there is a selection
-            setEnabled(true);
-            textSource = (JTextComponent) e.getSource();
-        } else {
-            setEnabled(false);
-            textSource = null;
-        }
-    }
-
-    private boolean isSystemClipBoardEmpty() {
-        try {
-            Object text =
-                Toolkit.getDefaultToolkit().getSystemClipboard()
-		    .getContents(null).getTransferData(DataFlavor.stringFlavor);
-            return text == null;
-        } catch (IOException ignorable) {
-        } catch (UnsupportedFlavorException ignorable) {
-        }
-        return true;
-    }
-
 } /* end class ActionCopy */

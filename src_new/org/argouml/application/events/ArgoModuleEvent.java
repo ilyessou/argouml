@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2001 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -23,29 +22,18 @@
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 package org.argouml.application.events;
-import org.argouml.application.api.ArgoModule;
+import org.argouml.application.api.*;
 
-/**
- * ArgoModuleEvent is used to notify interested parties
- * that the module which is the event source
- * has been posted, selected, or canceled.
+/** ArgoModuleEvent is used to notify interested parties
+ *  that the module which is the event source
+ *  has been posted, selected, or canceled.
  */
+
 public class ArgoModuleEvent extends ArgoEvent {
 
-    /**
-     * Instantiates a specific module event.
-     *
-     * @param eventType that occurred
-     * @param src the module that caused it to happen
-     */
     public ArgoModuleEvent(int eventType, ArgoModule src) {
         super(eventType, src);
     }
 
-    /**
-     * Indicates the start of the range for events.
-     *
-     * @return the first id reserved for module events.
-     */
     public int getEventStartRange() { return ANY_MODULE_EVENT; }
 }

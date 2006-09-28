@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,32 +21,40 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+
+// File: CrDupRoleNames.java
+// Classes: CrDupRoleNames
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
+// 12 Mar 2002: Jeremy Bennett (mail@jeremybennett.com). Code corrected as part
+// of fix to issue 619.
+
+
 package org.argouml.uml.cognitive.critics;
 
-import java.util.Iterator;
-import java.util.Vector;
+import java.util.*;
 
-import org.argouml.cognitive.Designer;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
+import ru.novosoft.uml.behavior.collaborations.*;
 
-
-// Use Model through Facade
+import org.argouml.cognitive.*;
 
 /**
- * A critic to check that the ends of an association all have distinct
- * names.<p>
+ * <p> A critic to check that the ends of an association all have distinct
+ *   names.</p>
  *
- * This is the first well-formedness rule for associations in the UML 1.3
- * standard (see section 2.5.3 of the standard).<p>
+ * <p>This is the first well-formedness rule for associations in the UML 1.3
+ *   standard (see section 2.5.3 of the standard).</p>
  *
- * See <a href=
- * "http://argouml.tigris.org/documentation/snapshots/manual/argouml.html/
- * #s2.ref.critics_dup_role_names">
- * ArgoUML User Manual: Duplicate end (role) names for &lt;association&gt;</a>
+ * <p>Internally we use some of the static utility methods of the {@link
+ * org.argouml.cognitive.critics.CriticUtils CriticUtils} class.</p>
  *
- * @author Jason Robbins
+ * @see <a href="http://argouml.tigris.org/documentation/snapshots/manual/argouml.html/#s2.ref.critics_dup_role_names">ArgoUML User Manual: Duplicate end (role) names for &lt;association&gt;</a>
  */
+
 public class CrDupRoleNames extends CrUML {
 
     /**
@@ -59,8 +66,10 @@ public class CrDupRoleNames extends CrUML {
      */
 
     public CrDupRoleNames() {
-        setupHeadAndDesc();
-        addSupportedDecision(UMLDecision.NAMING);
+
+        setResource("CrDupRoleNames");
+
+        addSupportedDecision(CrUML.decNAMING);
 
         // These may not actually make any difference at present (the code
         // behind addTrigger needs more work).
@@ -97,47 +106,57 @@ public class CrDupRoleNames extends CrUML {
      *               development of ArgoUML.
      *
      * @return       {@link #PROBLEM_FOUND PROBLEM_FOUND} if the critic is
-     *               triggered, otherwise {@link #NO_PROBLEM NO_PROBLEM}.
+     *               triggered, otherwise {@link #NO_PROBLEM NO_PROBLEM}.  
      */
-
+    
     public boolean predicate2(Object dm, Designer dsgr) {
 
         // Only work for associations
 
-        if (!(Model.getFacade().isAAssociation(dm))) {
+        if (!(dm instanceof MAssociation)) {
             return NO_PROBLEM;
         }
 
-	// No problem if this is an association role.
-	if (Model.getFacade().isAAssociationRole(dm)) {
-	    return NO_PROBLEM;
-	}
+        // Get the assocations and connections. No problem if there are no
+        // connections defined, or this is an association role.
+
+        MAssociation asc = (MAssociation) dm;
+
+        if (asc instanceof MAssociationRole) {
+            return NO_PROBLEM;
+        }
+
+        Collection   conns = asc.getConnections();
+
+        if (conns == null) {
+            return NO_PROBLEM;
+        }
 
         // Loop through all the ends, comparing the name against those already
         // seen (ignoring any with no name).
-        // No problem if there are no connections defined, we will fall
-	// through immediatly.
 
         Vector   namesSeen = new Vector();
+        Iterator enum      = conns.iterator();
 
-        Iterator conns = Model.getFacade().getConnections(dm).iterator();
-        while (conns.hasNext()) {
-            String name = Model.getFacade().getName(conns.next());
+        while (enum.hasNext()) {
+
+            MAssociationEnd ae     = (MAssociationEnd) enum.next();
+            String          aeName = ae.getName();
 
             // Ignore non-existent and empty names
 
-            if ((name == null) || name.equals("")) {
+            if ((aeName == null) || aeName.equals("")) {
                 continue;
             }
 
             // Is the name already in the vector of those seen, if not add it
             // and go on round.
 
-            if (namesSeen.contains(name)) {
+            if (namesSeen.contains(aeName)) {
                 return PROBLEM_FOUND;
             }
 
-            namesSeen.addElement(name);
+            namesSeen.addElement(aeName);
         }
 
         // If we drop out there were no clashes

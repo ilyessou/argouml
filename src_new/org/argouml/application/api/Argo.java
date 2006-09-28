@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2001 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -21,273 +20,172 @@
 // PROVIDED HEREUNDER IS ON AN "AS IS" BASIS, AND THE UNIVERSITY OF
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
-
 package org.argouml.application.api;
 
-import java.util.ArrayList;
-
-import javax.swing.Icon;
-
-import org.apache.log4j.Category;
-import org.apache.log4j.Level;
-import org.argouml.application.helpers.ResourceLoaderWrapper;
-import org.argouml.application.modules.ModuleLoader;
+import org.argouml.application.configuration.*;
+import org.argouml.application.modules.*;
+import org.argouml.application.events.*;
+import org.argouml.util.logging.*;
+import org.apache.log4j.*;
+import org.apache.log4j.helpers.*;
+import org.apache.log4j.or.*;
+import org.apache.log4j.spi.*;
+import java.util.*;
+import java.io.*;
+import javax.swing.*;
 
 /**
  * The <code>Argo</code> class provides static methods and definitions
- * that can be used as helpers throughout the Argo code.<p>
+ * that can be used as helpers throughout the Argo code.
  *
- * This class is a variation of the <em>Expert</em> design pattern
- * [Grand].  By incorporating a number of unrelated but commonly
+ * This class is a variation of the <i>Expert</i> design pattern
+ * <cite>[Grand]</cite>.  By incorporating a number of unrelated
+ * but commonly
  * used methods in a single class, it attempts to decrease the
- * complexity of the overall code while increasing its own complexity.<p>
+ * complexity of the overall code while increasing its own complexity.
+ *
+ * The
  *
  * These include
  * <ul>
- * <li>definitions of configuration keys
- * <li>definitions of resource bundle identifier strings
- * <li>methods for localization using <code>gef</code>
- * <li>methods for environment manipulation
+ * <li>definitions of configuration keys</li>
+ * <li>definitions of resource bundle identifier strings</li>
+ * <li>methods for localization using <code>gef</code></li>
+ * <li>methods for environment manipulation</li>
+ * <li>methods for console <code>log4j</code> logging</li>
  * </ul>
  *
  */
-public final class Argo {
+public class Argo
+{
 
-    /**
-     * Key for argo resource directory.
+    /** Key for argo resource directory.
      */
     public static final String RESOURCEDIR = "/org/argouml/resource/";
 
-    /**
-     * argo.ini path.
+    /** argo.ini path
      */
     public static final String ARGOINI = "/org/argouml/argo.ini";
 
-    /**
-     * Key for default startup directory.
+    /** Key for menu resource bundle.
+     */
+    public static final String MENU_BUNDLE = "CoreMenu";
+
+    /** Key for default startup directory.
      */
     public static final ConfigurationKey KEY_STARTUP_DIR =
 	Configuration.makeKey("default", "user", "dir");
 
-    /**
-     * Key to show splash screen.
+    /** Key to show splash screen.
      */
     public static final ConfigurationKey KEY_SPLASH =
 	Configuration.makeKey("init", "splash");
 
-    /**
-     * Key to preload classes.
+    /** Key to preload classes.
      */
     public static final ConfigurationKey KEY_PRELOAD =
 	Configuration.makeKey("init", "preload");
 
-    /**
-     * Key to report usage statistics.
+    /** Key to report usage statistics.
      */
-    public static final ConfigurationKey KEY_EDEM =
-	Configuration.makeKey("init", "edem");
+    public static final ConfigurationKey KEY_EDEM = Configuration.makeKey("init", "edem");
 
-    /**
-     * Key for last saved project URI.
+    /** Key to profile initialization.
+     */
+    public static final ConfigurationKey KEY_PROFILE =
+	Configuration.makeKey("init", "profile");
+
+    /** Key for last saved project URL.
      */
     public static final ConfigurationKey KEY_MOST_RECENT_PROJECT_FILE =
 	Configuration.makeKey("project", "mostrecent", "file");
 
-    /**
-     * Key for last generated class/classes directory.
-     */
-    public static final ConfigurationKey KEY_MOST_RECENT_EXPORT_DIRECTORY =
-        Configuration.makeKey("project", "mostrecent", "exportdirectory");
-
-    /**
-     * Key to reload last saved project on startup.
+    /** Key to reload last saved project on startup.
      */
     public static final ConfigurationKey KEY_RELOAD_RECENT_PROJECT =
 	Configuration.makeKey("init", "project", "loadmostrecent");
 
-    /**
-     * Key for number of last recently used file entries in menu list.
-     */
-    public static final ConfigurationKey KEY_NUMBER_LAST_RECENT_USED =
-	Configuration.makeKey("project", "mostrecent", "maxNumber");
-
-    /**
-     * Key for screen top.
+    /** Key for screen top
      */
     public static final ConfigurationKey KEY_SCREEN_TOP_Y =
 	Configuration.makeKey("screen", "top");
 
-    /**
-     * Key for screen left.
+    /** Key for screen left
      */
     public static final ConfigurationKey KEY_SCREEN_LEFT_X =
 	Configuration.makeKey("screen", "left");
 
-    /**
-     * Key for screen width.
+    /** Key for screen width
      */
     public static final ConfigurationKey KEY_SCREEN_WIDTH =
 	Configuration.makeKey("screen", "width");
 
-    /**
-     * Key for screen height.
+    /** Key for screen height
      */
     public static final ConfigurationKey KEY_SCREEN_HEIGHT =
 	Configuration.makeKey("screen", "height");
 
-    /**
-     * Key for southwest pane width.
+    /** Key for southwest pane width
      */
     public static final ConfigurationKey KEY_SCREEN_SOUTHWEST_WIDTH =
 	Configuration.makeKey("screen", "southwest", "width");
 
-    /**
-     * Key for northwest pane width.
-     */
-    public static final ConfigurationKey KEY_SCREEN_NORTHWEST_WIDTH =
-	Configuration.makeKey("screen", "northwest", "width");
-
-    /**
-     * Key for southeast pane width.
-     */
-    public static final ConfigurationKey KEY_SCREEN_SOUTHEAST_WIDTH =
-	Configuration.makeKey("screen", "southeast", "width");
-
-    /**
-     * Key for northeast pane width.
-     */
-    public static final ConfigurationKey KEY_SCREEN_NORTHEAST_WIDTH =
-	Configuration.makeKey("screen", "northeast", "width");
-
-    /**
-     * Key for west pane width.
+    /** Key for west pane width
      */
     public static final ConfigurationKey KEY_SCREEN_WEST_WIDTH =
 	Configuration.makeKey("screen", "west", "width");
 
-    /**
-     * Key for east pane width.
-     */
-    public static final ConfigurationKey KEY_SCREEN_EAST_WIDTH =
-	Configuration.makeKey("screen", "east", "width");
-
-    /**
-     * Key for south pane height.
+    /** Key for south pane height
      */
     public static final ConfigurationKey KEY_SCREEN_SOUTH_HEIGHT =
 	Configuration.makeKey("screen", "south", "height");
 
-    /**
-     * Key for north pane height.
-     */
-    public static final ConfigurationKey KEY_SCREEN_NORTH_HEIGHT =
-	Configuration.makeKey("screen", "north", "height");
-
-    /**
-     * Key for theme.
+    /** Key for theme
      */
     public static final ConfigurationKey KEY_SCREEN_THEME =
 	Configuration.makeKey("screen", "theme");
 
-    /**
-     * Key for look and feel class name.
-     */
-    public static final ConfigurationKey KEY_LOOK_AND_FEEL_CLASS =
-        Configuration.makeKey("screen", "lookAndFeelClass");
-
-    /**
-     * Key for theme class name.
-     */
-    public static final ConfigurationKey KEY_THEME_CLASS =
-        Configuration.makeKey("screen", "themeClass");
-
-    /**
-     * Key to enable smooth edges of diagram text and lines (anti-aliasing).
-     */
-    public static final ConfigurationKey KEY_SMOOTH_EDGES =
-        Configuration.makeKey("screen", "diagram-antialiasing");
-
-    /**
-     * Key for user email address.
+    /** Key for user email address
      */
     public static final ConfigurationKey KEY_USER_EMAIL =
 	Configuration.makeKey("user", "email");
 
-    /**
-     * Key for user full name.
+    /** Key for user full name
      */
     public static final ConfigurationKey KEY_USER_FULLNAME =
 	Configuration.makeKey("user", "fullname");
 
-    /**
-     * Key for user java reverse engineering classpath.
-     */
-    public static final ConfigurationKey KEY_USER_IMPORT_CLASSPATH =
-	Configuration.makeKey("import", "clazzpath");
-
-    /**
-     * Key for input source file encoding used in RE.
-     *  Will be used for generated file also.
-     */
-    public static final ConfigurationKey KEY_INPUT_SOURCE_ENCODING =
-	Configuration.makeKey("import", "file", "encoding");
-    
-    /**
-     * Key to store setting of stripping diagrams on XMI import.
-     */
-    public static final ConfigurationKey KEY_XMI_STRIP_DIAGRAMS =
-        Configuration.makeKey("import", "xmi", "stripDiagrams");
-
-    /**
-     * Key to store profile/default model.
-     */
-    public static final ConfigurationKey KEY_DEFAULT_MODEL =
-        Configuration.makeKey("defaultModel");
-
-    /**
-     * Key for user explorer perspectives.
-     *<pre>
-     * format:
-     * perspective name,rule,rule,rule;perspective name, etc
-     *</pre>
-     */
-    public static final ConfigurationKey KEY_USER_EXPLORER_PERSPECTIVES =
-	Configuration.makeKey("explorer", "perspectives");
-
-    /**
-     * Key for selecting the locale.
-     */
-    public static final ConfigurationKey KEY_LOCALE =
-        Configuration.makeKey("locale");
-
-    /**
-     * Standard definition of the logging category for the console.
+    /** Standard definition of the logging category for the console.
      */
     public static final String CONSOLE_LOG = "argo.console.log";
 
-    /**
-     * Standard definition of the logging category for the console.
+    /** Standard definition of the logging category for the console.
      */
     public static final String ARGO_CONSOLE_SUPPRESS = "argo.console.suppress";
 
-    /**
-     * Standard definition of system variable to add text prefix to
-     * console log.
+    /** Standard definition of system variable to add text prefix to console log.
      */
     public static final String ARGO_CONSOLE_PREFIX = "argo.console.prefix";
 
-    /**
-     * Don't let this class be instantiated.
+    /** Define a static log4j category variable for ArgoUML to log to
+     *  the console.  This would be used in preference to System.out.println
+     *  for console output because this information can be intercepted
+     *  by <code>log4j</code> and included in other logs.  This also allows
+     *  custom <code>log4j</code> formatters
+     *  to be used on objects displayed on the console log.
      */
-    private Argo() {
+    public final static Category log;
+
+    /** Don't let this class be instantiated. */
+    private Argo()
+    {
+
     }
 
-    /**
-     * Change the default startup directory.
-     *
-     * @param dir the directory to save
+    /** Change the default startup directory.
      */
-    public static void setDirectory(String dir) {
+    public static void setDirectory(String dir)
+    {
 	// Store in the user configuration, and
 	// let gef know also.
 	org.tigris.gef.base.Globals.setLastDirectory(dir);
@@ -295,107 +193,93 @@ public final class Argo {
 	// Configuration.setString(KEY_STARTUP_DIR, dir);
     }
 
-    /**
-     * Get the default startup directory.
-     *
-     * @return the startup directory
+    /** Get the default startup directory.
      */
-    public static String getDirectory() {
+    public static String getDirectory()
+    {
 	// Use the configuration if it exists, otherwise
 	// use what gef thinks.
-	return Configuration.getString(KEY_STARTUP_DIR,
-				       org.tigris.gef.base.Globals
-				           .getLastDirectory());
+	return Configuration.getString(
+				       KEY_STARTUP_DIR,
+				       org.tigris.gef.base.Globals.getLastDirectory());
     }
 
-    /**
-     * Returns a vector of plugins of the class type passed
-     * which satisfy both of the contexts required.
-     *
-     * If no plugins are available, returns null.
-     *
-     * @param pluginType class of the plugin to search for
-     * @param context plugin-specific query parameters
-     * @return a vector of plugins or null
-     * @deprecated by Linus Tolke for 0.21.3. This is replaced by the
-     *         new module loader.
+    /** Helper for localization to eliminate the need to import
+     *  the gef util library.
      */
-    public static ArrayList getPlugins(Class pluginType,
-                                       Object[] context) {
+    public static String localize(String bundle, String key)
+    {
+	return org.tigris.gef.util.Localizer.localize(bundle, key);
+    }
+
+    /** Returns a vector of plugins of the class type passed
+     *  which satisfy both of the contexts required.
+     *
+     *  If no plugins are available, returns null.
+     */
+    public static final ArrayList getPlugins(Class pluginType, Object[] context)
+    {
 	return ModuleLoader.getInstance().getPlugins(pluginType, context);
     }
 
-    /**
-     * Returns a vector of all plugins of the class type passed.
+    /** Returns a vector of all plugins of the class type passed.
      *
-     * If no plugins are available, returns null.
-     *
-     * @param pluginType class of the plugin to search for
-     * @return a vector of plugins or null
-     * @deprecated by Linus Tolke for 0.21.3. This is replaced by the
-     *         new module loader.
+     *  If no plugins are available, returns null.
      */
-    public static ArrayList getPlugins(Class pluginType) {
+    public static final ArrayList getPlugins(Class pluginType)
+    {
 	return ModuleLoader.getInstance().getPlugins(pluginType, null);
     }
 
-    /**
-     * Initializes the module loader.  Multiple calls are ignored.
-     * @deprecated by Linus Tolke for 0.21.3. There is no reason to
-     *         let this call go through the Argo class.
+    /** Initializes the module loader.  Multiple calls are ignored.
      */
-    public static void initializeModules() {
+    public static final void initializeModules()
+    {
 	ModuleLoader.getInstance().initialize();
     }
 
-    /**
-     * Convenience helper to access the argo home directory.
-     *
-     * @return the argo home directory
-     * @deprecated by Linus Tolke for 0.21.3. I don't think there is
-     *         a reason to let this call go through the Argo class.
-     */
-    public static String getArgoHome() {
+    public static String getArgoHome()
+    {
 	return ModuleLoader.getInstance().getArgoHome();
     }
 
-    /**
-     * Convenience helper to access the argo root directory.
-     *
-     * @return the argo root directory
-     * @deprecated by Linus Tolke for 0.21.3. I don't think there is
-     *         a reason to let this call go through the Argo class.
-     */
-    public static String getArgoRoot() {
+    public static String getArgoRoot()
+    {
 	return ModuleLoader.getInstance().getArgoRoot();
     }
 
-    /**
-     * Look up an icon resource.
-     *
-     * @param arg1 the name of the resource to find.
-     * @return an Icon
-     * @deprecated by tfmorris for 0.22.1.  Use ResourceLoaderWrapper directly.
-     */
-    public static Icon lookupIconResource(String arg1) {
-	return ResourceLoaderWrapper.lookupIconResource(arg1);
+    public static Icon lookupIconResource(String arg1)
+    {
+	return org.tigris.gef.util.ResourceLoader.lookupIconResource(arg1);
     }
 
-    /**
-     * Look up an icon resource.
-     *
-     * @param arg1 the name of the resource to find.
-     * @param arg2 the description of the resource
-     * @return an Icon
-     * @deprecated by tfmorris for 0.22.1.  Use ResourceLoaderWrapper directly.
-     */
-    public static Icon lookupIconResource(String arg1, String arg2) {
-	return ResourceLoaderWrapper.lookupIconResource(arg1, arg2);
+    public static Icon lookupIconResource(String arg1, String arg2)
+    {
+	return org.tigris.gef.util.ResourceLoader.lookupIconResource(arg1, arg2);
     }
 
     static {
+	// Create a throwable renderer
+	ThrowableRenderer tr = new ThrowableRenderer();
+	// Create a separate hierarchy for the argo logger
+	Hierarchy hier = new Hierarchy(new RootCategory(Priority.INFO));
+	// Add the ThrowableRenderer
+	hier.getRendererMap().put(Throwable.class, tr);
+	// Set up the argo console logger in its own hierarchy
+	Category cat = hier.getInstance(CONSOLE_LOG);
+	cat.addAppender(new ConsoleAppender(
+	    new PatternLayout(System.getProperty(ARGO_CONSOLE_PREFIX, "")
+			      + "%m%n"),
+	    ConsoleAppender.SYSTEM_OUT));
+
+	// Add the throwable renderer
+	cat.getRoot().getHierarchy().getRendererMap().put(Throwable.class, tr);
+
 	if (System.getProperty(ARGO_CONSOLE_SUPPRESS) != null) {
-            Category.getRoot().getLoggerRepository().setThreshold(Level.OFF);
+	    cat.getRoot().getHierarchy().disableAll();
 	}
+
+	// Set log here.  No going back.
+	log = cat;
     }
 }

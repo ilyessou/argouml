@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,95 +21,344 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: PropPanelUseCase.java
+// Classes: PropPanelUseCase
+// Original Author: your email address here
+// $Id$
+
+// 21 Mar 2002: Jeremy Bennett (mail@jeremybennett.com). Changed to use the
+// labels "Generalizes:" for inheritance (needs Specializes some time).
+
+// 21 Mar 2002: Jeremy Bennett (mail@jeremybennett.com). Specializes field
+// added. Factoring to use PropPanelModifiers and tidying up of layout.
+
+// 4 Apr 2002: Jeremy Bennett (mail@jeremybennett.com). Tool tip changed to
+// "Add use case".
+
 package org.argouml.uml.ui.behavior.use_cases;
 
-
-import javax.swing.JList;
-import javax.swing.JScrollPane;
-
-import org.argouml.i18n.Translator;
-import org.argouml.ui.targetmanager.TargetManager;
-import org.argouml.uml.ui.ActionNavigateNamespace;
-import org.argouml.uml.ui.UMLLinkedList;
-import org.argouml.uml.ui.UMLMutableLinkedList;
-import org.argouml.uml.ui.foundation.core.PropPanelClassifier;
-import org.argouml.uml.ui.foundation.extension_mechanisms.ActionNewStereotype;
+import org.argouml.application.api.*;
+import org.argouml.model.uml.behavioralelements.usecases.UseCasesFactory;
+import org.argouml.model.uml.behavioralelements.usecases.UseCasesHelper;
+import org.argouml.swingext.LabelledLayout;
+import org.argouml.ui.ProjectBrowser;
+import org.argouml.uml.ui.*;
+import org.argouml.uml.ui.foundation.core.*;
 import org.argouml.util.ConfigLoader;
 
+import java.awt.*;
+import java.awt.event.*;
+import java.util.Vector;
+
+import javax.swing.*;
+
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
+import ru.novosoft.uml.behavior.use_cases.*;
+import ru.novosoft.uml.model_management.*;
+
+
 /**
- * Builds the property panel for a use case.<p>
+ * <p>Builds the property panel for a use case.</p>
  *
- * This is a type of Classifier, and like other Classifiers can have
- * attributes and operations (some processes use these to define
- * requirements).<p>
- * <em>Note</em>. ArgoUML does not currently support separate
- * compartments on the display for this.<p>
+ * <p>This is a type of Classifier, and like other Classifiers can have
+ *   attributes and operations (some processes use these to define
+ *   requirements). <em>Note</em>. ArgoUML does not currently support separate
+ *   compartments on the display for this.</p>
  */
+
 public class PropPanelUseCase extends PropPanelClassifier {
 
+
     /**
-     * Construct a property panel for a UseCase.
+     * <p>Constructor. Builds up the various fields required.</p>
      */
+
     public PropPanelUseCase() {
-        super("UseCase",
-            lookupIcon("UseCase"),
-            ConfigLoader.getTabPropsOrientation());
 
-        addField(Translator.localize("label.name"),
-                getNameTextField());
-    	addField(Translator.localize("label.namespace"),
-                getNamespaceSelector());
+        // Invoke the Classifier constructor, but passing in our name and
+        // representation and requesting 3 columns
 
-        add(getModifiersPanel());
+        super("UseCase", _useCaseIcon, ConfigLoader.getTabPropsOrientation());
+        
+        addField(Argo.localize("UMLMenu", "label.name"), nameField);
+    	addField(Argo.localize("UMLMenu", "label.stereotype"), new UMLComboBoxNavigator(this, Argo.localize("UMLMenu", "tooltip.nav-stereo"),stereotypeBox));
+    	addField(Argo.localize("UMLMenu", "label.namespace"),namespaceScroll);
+		
+		PropPanelModifiers mPanel = new PropPanelModifiers(3);
+        Class              mclass = MUseCase.class;
 
-	addSeparator();
+        mPanel.add("isAbstract", mclass, "isAbstract", "setAbstract",
+                   Argo.localize("UMLMenu", "checkbox.abstract-lc"), this);
+        mPanel.add("isLeaf", mclass, "isLeaf", "setLeaf",
+                   Argo.localize("UMLMenu", "checkbox.final-lc"), this);
+        mPanel.add("isRoot", mclass, "isRoot", "setRoot",
+                   localize("root"), this);
+		addField(Argo.localize("UMLMenu", "label.modifiers"),mPanel);
+		
+		JList extensionPoints =
+            new UMLList(new UMLExtensionPointListModel(this, true, false),
+                        true);
+        extensionPoints.setForeground(Color.blue);
+        JScrollPane extensionPointsScroll =
+            new JScrollPane(extensionPoints,
+                            JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                            JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        addField(Argo.localize("UMLMenu", "label.extensionpoints"), extensionPointsScroll);
+		
+		add(LabelledLayout.getSeperator());
+		
+		addField(Argo.localize("UMLMenu", "label.generalizations"), extendsScroll);
+    	addField(Argo.localize("UMLMenu", "label.specializations"), derivedScroll);
+    	
+    	JList extendsList =
+            new UMLList(new UMLExtendListModel(this, "extend", true), true);
+        extendsList.setBackground(getBackground());
+        extendsList.setForeground(Color.blue);
+        JScrollPane extendsScroll =
+            new JScrollPane(extendsList,
+                            JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                            JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		addField(Argo.localize("UMLMenu", "label.extends"), extendsScroll);
+		
+		JList includeList =
+            new UMLList(new UMLIncludeListModel(this, "include", true), true);
+        includeList.setBackground(getBackground());
+        includeList.setForeground(Color.blue);
+        JScrollPane includeScroll =
+            new JScrollPane(includeList,
+                            JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                            JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		addField(Argo.localize("UMLMenu", "label.includes"), includeScroll);
+		
+		add(LabelledLayout.getSeperator());
+		
+		JList connectList = new UMLList(new UMLUseCaseAssociationListModel(this,null,true),true);
+      	connectList.setForeground(Color.blue);
+      	connectList.setVisibleRowCount(3);
+      	connectScroll= new JScrollPane(connectList,JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		addField(Argo.localize("UMLMenu", "label.associations"), connectScroll);
+    	addField(Argo.localize("UMLMenu", "label.operations"), opsScroll);
+   	 	addField(Argo.localize("UMLMenu", "label.attributes"), attrScroll);	
+		
+	
+		/*
+        // The first column. All single line entries, so we just let the label
+        // at the bottom (modifiers) take the vertical weighting.
 
-	addField(Translator.localize("label.generalizations"),
-            getGeneralizationScroll());
-	addField(Translator.localize("label.specializations"),
-            getSpecializationScroll());
+        // nameField, stereotypeBox and namespaceScroll are all set up by
+        // PropPanelModelElement
 
-	JList extendsList = new UMLLinkedList(new UMLUseCaseExtendListModel());
-	addField(Translator.localize("label.extends"),
-		 new JScrollPane(extendsList));
+        addCaption(Argo.localize("UMLMenu", "label.name"), 1, 0, 0);
+        addField(nameField, 1, 0, 0);
 
-	JList includesList =
-            new UMLLinkedList(
-                    new UMLUseCaseIncludeListModel());
-	addField(Translator.localize("label.includes"),
-		 new JScrollPane(includesList));
+        addCaption(Argo.localize("UMLMenu", "label.stereotype"), 2, 0, 0);
+        addField(new UMLComboBoxNavigator(this, Argo.localize("UMLMenu", "tooltip.nav-stereo"),stereotypeBox),
+                 2, 0, 0);
 
-	addSeparator();
+        addCaption(Argo.localize("UMLMenu", "label.namespace"), 3, 0, 0);
+        addField(namespaceScroll, 3, 0, 0);
 
-        addField(Translator.localize("label.attributes"),
-                getAttributeScroll());
+        // For modifiers we create a grid with two columns. We really ought to
+        // inherit this from GeneralizableElement, but since Java can't do
+        // multiple inheritance, it gets done here (it would at least be better
+        // in PropPanelClassifier).
 
-        addField(Translator.localize("label.association-ends"),
-                getAssociationEndScroll());
+        PropPanelModifiers mPanel = new PropPanelModifiers(2);
+        Class              mclass = MUseCase.class;
 
-        addField(Translator.localize("label.operations"),
-                getOperationScroll());
+        mPanel.add("isAbstract", mclass, "isAbstract", "setAbstract",
+                   Argo.localize("UMLMenu", "checkbox.abstract-lc"), this);
+        mPanel.add("isLeaf", mclass, "isLeaf", "setLeaf",
+                   Argo.localize("UMLMenu", "checkbox.final-lc"), this);
+        mPanel.add("isRoot", mclass, "isRoot", "setRoot",
+                   localize("root"), this);
 
-	JList extensionPoints =
-	    new UMLMutableLinkedList(
-	            new UMLUseCaseExtensionPointListModel(), null,
-	            ActionNewUseCaseExtensionPoint.SINGLETON);
-        addField(Translator.localize("label.extension-points"),
-            new JScrollPane(extensionPoints));
+        addCaption(Argo.localize("UMLMenu", "label.modifiers"), 4, 0, 1);
+        addField(mPanel, 4, 0, 0);
 
 
-        addAction(new ActionNavigateNamespace());
-        addAction(new ActionNewUseCase());
-        addAction(new ActionNewExtensionPoint());
-        addAction(TargetManager.getInstance().getAddAttributeAction());
-        addAction(TargetManager.getInstance().getAddOperationAction());
-        addAction(getActionNewReception());
-        addAction(new ActionNewStereotype());
-        addAction(getDeleteAction());
+        // The second column. These are all potentially multi-valued, so share
+        // the vertical weighting.
+
+        // Generalization and specialization are inherited from
+        // PropPanelClassifier
+
+        addCaption("Generalizations:", 0, 1, 1);
+        addField(extendsScroll, 0, 1, 1);
+
+        addCaption("Specializations:", 1, 1, 1);
+        addField(derivedScroll, 1, 1, 1);
+
+        // Build up a panel for extend relationships
+
+        JList extendList =
+            new UMLList(new UMLExtendListModel(this, "extend", true), true);
+
+        extendList.setBackground(getBackground());
+        extendList.setForeground(Color.blue);
+
+        JScrollPane extendScroll =
+            new JScrollPane(extendList,
+                            JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                            JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+
+        addCaption(Argo.localize("UMLMenu", "label.extends"), 2, 1, 1);
+        addField(extendScroll, 2, 1, 1);
+
+        // Build up a panel for include relationships
+
+        JList includeList =
+            new UMLList(new UMLIncludeListModel(this, "include", true), true);
+
+        includeList.setBackground(getBackground());
+        includeList.setForeground(Color.blue);
+
+        JScrollPane includeScroll =
+            new JScrollPane(includeList,
+                            JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                            JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+
+        addCaption("Includes:", 3, 1, 1);
+        addField(includeScroll, 3, 1, 1);
+
+        // Build up a panel for extension points.
+
+        JList extensionPoints =
+            new UMLList(new UMLExtensionPointListModel(this, true, false),
+                        true);
+
+        extensionPoints.setForeground(Color.blue);
+        extensionPoints.setVisibleRowCount(1);
+
+        JScrollPane extensionPointsScroll =
+            new JScrollPane(extensionPoints,
+                            JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                            JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+
+
+        addCaption("Extension Points:",4,1,1);
+        addField(extensionPointsScroll,4,1,1);
+
+        // The third column
+
+        // The details of assocations, operations and attributes are all
+        // inherited from PropPanelClassifier. Note that these last two ARE
+        // allowed for use cases by the UML 1.3 standard.
+
+        addCaption(Argo.localize("UMLMenu", "label.associations"), 0, 2, 1);
+        addField(connectScroll, 0, 2, 1);
+
+        addCaption(Argo.localize("UMLMenu", "label.operations"), 1, 2, 1);
+        addField(opsScroll, 1, 2, 1);
+
+        addCaption(Argo.localize("UMLMenu", "label.attributes"), 2, 2, 1);
+        addField(attrScroll, 2, 2, 1);
+
+        // The toolbar buttons that go at the top.
+
+		*/
+        new PropPanelButton(this, buttonPanel, _navUpIcon,
+                            Argo.localize("UMLMenu", "button.go-up"), "navigateNamespace",
+                            null);
+        new PropPanelButton(this, buttonPanel, _navBackIcon,
+                            Argo.localize("UMLMenu", "button.go-back"), "navigateBackAction",
+                            "isNavigateBackEnabled");
+        new PropPanelButton(this, buttonPanel, _navForwardIcon,
+                            Argo.localize("UMLMenu", "button.go-forward"), "navigateForwardAction",
+                            "isNavigateForwardEnabled");
+        new PropPanelButton(this, buttonPanel, _useCaseIcon,
+                            Argo.localize("UMLMenu", "button.add-usecase"), "newUseCase",
+                            null);
+        new PropPanelButton(this, buttonPanel, _extensionPointIcon,
+                            localize("Add extension point"),
+                            "newExtensionPoint",
+                            null);
+        new PropPanelButton(this, buttonPanel, _deleteIcon,
+                            localize("Delete"), "removeElement",
+                            null);
+
     }
 
+
     /**
-     * The UID.
+     * <p>Invoked by the "Add use case" toolbar button to create a new use case
+     *   property panel in the same namespace as the current use case.</p>
+     *
+     * <p>This code uses getFactory and adds the use case explicitly to the
+     *   namespace. Extended to actually navigate to the new use case.</p>
      */
-    private static final long serialVersionUID = 8352300400553000518L;
+
+    public void newUseCase() {
+        Object target = getTarget();
+
+        if(target instanceof MUseCase) {
+            MNamespace ns = ((MUseCase) target).getNamespace();
+
+            if(ns != null) {
+                MUseCase useCase = UseCasesFactory.getFactory().createUseCase();
+
+                ns.addOwnedElement(useCase);
+                navigateTo(useCase);
+            }
+        }
+    }
+
+
+    /**
+     * <p>Invoked by the "Add extension point" toolbar button to create a new
+     *   extension point for this use case in the same namespace as the current
+     *   use case.</p>
+     *
+     * <p>This code uses getFactory and adds the extension point explicitly to
+     *   the, making its associated use case the current use case.</p>
+     */
+
+    public void newExtensionPoint() {
+        Object target = getTarget();
+
+        if(target instanceof MUseCase) {
+            MUseCase   useCase = (MUseCase) target;
+            MNamespace ns      = useCase.getNamespace();
+
+            MExtensionPoint extensionPoint =
+                    UseCasesFactory.getFactory().buildExtensionPoint(useCase);
+            navigateTo(extensionPoint);
+            
+        }
+    }
+
+
+    /**
+     * <p>A predicate to test if a given base class (below ModelElement) is
+     *   appropriate to us.</p>
+     *
+     * <p>For us this means UseCase, Classifier, Namespace or
+     *   GeneralizableElement.</p>
+     *
+     * @param baseClass  a string with the name of a UML MetaClass (no leading
+     *                   M)
+     *
+     * @return           <code>true</code> if this is a suitable base class for
+     *                   us. <code>false</code> otherwise.
+     */
+
+    protected boolean isAcceptibleBaseMetaClass(String baseClass) {
+
+        return baseClass.equals("UseCase") ||
+            baseClass.equals("Classifier") ||
+            baseClass.equals("GeneralizableElement") ||
+            baseClass.equals("Namespace");
+    }
+    
+    /**
+     * @see org.argouml.model.uml.behavioralelements.usecases.UseCasesHelper#getAllUseCases()
+     */
+	protected Vector getGeneralizationChoices() {
+		Vector choices = new Vector();
+		choices.addAll(UseCasesHelper.getHelper().getAllUseCases());
+		return choices;
+	}
+
+
 } /* end class PropPanelUseCase */

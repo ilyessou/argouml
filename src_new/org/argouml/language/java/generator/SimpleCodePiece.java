@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2001 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -48,82 +47,65 @@ public class SimpleCodePiece extends CodePiece
     private int endPosition;
 
     /**
-     *  Create a simple piece of code.
-     *
-     * @param t the text
-     * @param lne the line
-     * @param sp the start position
-     * @param ep the end position
-     */
-    public SimpleCodePiece(StringBuffer t,
-                           int lne,
-                           int sp,
-                           int ep)
+       Create a simple piece of code.
+    */
+    public SimpleCodePiece(StringBuffer text,
+                           int line,
+                           int startPosition,
+                           int endPosition)
     {
-	this.text = t;
-	this.line = lne;
-	this.startPosition = sp;
-	this.endPosition = ep;
+	this.text = text;
+	this.line = line;
+	this.startPosition = startPosition;
+	this.endPosition = endPosition;
     }
 
     /**
-     * Create a simple piece of code from a token.
-     *
-     * @param token the given token
-     */
+       Create a simple piece of code from a token.
+    */
     public SimpleCodePiece(antlr.Token token)
     {
 	this(new StringBuffer(token.getText()),
-	     token.getLine() - 1,
-	     token.getColumn() - 1,
-	     token.getColumn() + token.getText().length() - 1);
+	     token.getLine()-1,
+	     token.getColumn()-1,
+	     token.getColumn()+token.getText().length()-1);
     }
 
     /**
-     * Return the string representation for this piece of code.
-     *
-     * @see org.argouml.language.java.generator.CodePiece#getText()
-     */
+       Return the string representation for this piece of code.
+    */
     public StringBuffer getText()
     {
 	return text;
     }
 
     /**
-     * Return the start position.
-     *
-     * @see org.argouml.language.java.generator.CodePiece#getStartPosition()
-     */
+       Return the start position.
+    */
     public int getStartPosition()
     {
 	return startPosition;
     }
 
     /**
-     * Return the end position.
-     *
-     * @see org.argouml.language.java.generator.CodePiece#getEndPosition()
-     */
+       Return the end position.
+    */
     public int getEndPosition()
     {
 	return endPosition;
     }
 
     /**
-     * Return the start line
-     *
-     * @see org.argouml.language.java.generator.CodePiece#getStartLine()
-     */
+	Return the start line
+    */
     public int getStartLine()
     {
 	return line;
     }
 
     /**
-     * Return the end line
-     *
-     * @see org.argouml.language.java.generator.CodePiece#getEndLine()
-     */
+	Return the end line
+    */
     public int getEndLine()
     {
 	return line;

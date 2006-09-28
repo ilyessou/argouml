@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2005 The Regents of the University of California. All
+// Copyright (c) 1996-2001 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,38 +23,31 @@
 
 package org.argouml.ui.test;
 
-import java.awt.event.ActionEvent;
-import java.util.Vector;
+import org.argouml.application.api.*;
+import org.argouml.uml.ui.*;
 
-import javax.swing.JMenuItem;
+import java.awt.event.*;
+import java.lang.reflect.*;
+import java.util.*;
 
-import org.apache.log4j.Logger;
-import org.argouml.application.api.PluggableMenu;
-import org.argouml.uml.ui.UMLAction;
+import javax.swing.*;
 
 
-/**
- * Plugin that exposes itself to all JMenuItem contexts and provides
- * a text message based upon the string argument of the context.<p>
+/** Plugin that exposes itself to all JMenuItem contexts and provides
+ *  a text message based upon the string argument of the context.
  *
- * This is primarily designed to be able to test PluggableMenu
- * requestors.<p>
+ *  This is primarily designed to be able to test PluggableMenu
+ *  requestors.
  *
- * @author Thierry Lach
- * @since  0.9.4
+ *  @author Thierry Lach
+ *  @since  0.9.4
  */
-public final class ActionTestMenuPlugins extends UMLAction
-    implements PluggableMenu {
-    /**
-     * Logger.
-     */
-    private static final Logger LOG =
-        Logger.getLogger(ActionTestMenuPlugins.class);
-
+public class ActionTestMenuPlugins extends UMLAction
+implements PluggableMenu {
     /**
      * This is not publicly creatable.
      */
-    private ActionTestMenuPlugins() {
+    protected ActionTestMenuPlugins() {
 	super("Plugin menu test entry", false);
     }
 
@@ -63,104 +55,45 @@ public final class ActionTestMenuPlugins extends UMLAction
     // Main methods.
 
     /**
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-     *
      * Just let the tester know that we got executed.
      */
     public void actionPerformed(ActionEvent event) {
-        LOG.info("User clicked on '" + event.getActionCommand() + "'");
+        Argo.log.info("User clicked on '" + event.getActionCommand() + "'");
     }
 
-    /**
-     * @see org.argouml.application.api.ArgoModule#setModuleEnabled(boolean)
-     */
     public void setModuleEnabled(boolean v) { }
-
-    /**
-     * @see org.argouml.application.api.ArgoModule#initializeModule()
-     */
     public boolean initializeModule() {
-        LOG.info("Plugin Menu tester enabled!");
+        Argo.log.info ("+-----------------------------+");
+        Argo.log.info ("| Plugin Menu tester enabled! |");
+        Argo.log.info ("+-----------------------------+");
         return true;
     }
 
-    /**
-     * @see org.argouml.application.api.PluggableMenu#buildContext(
-     *         javax.swing.JMenuItem, java.lang.String)
-     */
     public Object[] buildContext(JMenuItem a, String b) {
-        return new Object[] {
-	    a, b
-	};
+        return new Object[] { a, b };
     }
 
-    /**
-     * @see org.argouml.application.api.Pluggable#inContext(java.lang.Object[])
-     */
     public boolean inContext(Object[] o) {
-        if (o.length < 2) {
-            return false;
-        }
+        if (o.length < 2) return false;
         // We are in context for any JMenuItem.
 	if (o[0] instanceof JMenuItem) {
 	    return true;
 	}
         return false;
     }
-
-    /**
-     * @see org.argouml.application.api.ArgoModule#isModuleEnabled()
-     */
     public boolean isModuleEnabled() { return true; }
-
-    /**
-     * @see org.argouml.application.api.ArgoModule#getModulePopUpActions(
-     *         java.util.Vector, java.lang.Object)
-     */
     public Vector getModulePopUpActions(Vector v, Object o) { return null; }
-
-    /**
-     * @see org.argouml.application.api.ArgoModule#shutdownModule()
-     */
     public boolean shutdownModule() { return true; }
 
-    /**
-     * @see org.argouml.application.api.ArgoModule#getModuleName()
-     */
     public String getModuleName() { return "ActionTestMenuPlugins"; }
-
-    /**
-     * @see org.argouml.application.api.ArgoModule#getModuleDescription()
-     */
-    public String getModuleDescription() {
-        return "Menu Item for JUnit Testing";
-    }
-
-    /**
-     * @see org.argouml.application.api.ArgoModule#getModuleAuthor()
-     */
+    public String getModuleDescription() { return "Menu Item for JUnit Testing"; }
     public String getModuleAuthor() { return "Thierry Lach"; }
-
-    /**
-     * @see org.argouml.application.api.ArgoModule#getModuleVersion()
-     */
     public String getModuleVersion() { return "0.9.4"; }
-
-    /**
-     * @see org.argouml.application.api.ArgoModule#getModuleKey()
-     */
     public String getModuleKey() { return "module.test.menu.plugins"; }
 
-    /**
-     * @see org.argouml.application.api.PluggableMenu#getMenuItem(java.lang.Object[])
-     */
-    public JMenuItem getMenuItem(Object [] context) {
-        if (!inContext(context)) {
-	    return null;
-	}
-
-        JMenuItem menuItem = new JMenuItem("Plugin menu for " + context[1]);
-	menuItem.addActionListener(this);
-        return menuItem;
+    public JMenuItem getMenuItem(JMenuItem mi, String s) {
+        JMenuItem _menuItem = new JMenuItem("Plugin menu for " + s);
+	_menuItem.addActionListener(this);
+        return _menuItem;
     }
 }

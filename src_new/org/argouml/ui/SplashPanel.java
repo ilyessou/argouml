@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -23,66 +22,74 @@
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 package org.argouml.ui;
-
-import java.awt.BorderLayout;
-import java.awt.Graphics;
-
-import javax.swing.ImageIcon;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.SwingConstants;
-
 import org.argouml.application.ArgoVersion;
-import org.argouml.application.helpers.ResourceLoaderWrapper;
 
-/**
- * This panel is used in the splash-screen and the aboutbox.
- * It contains an image and a version text.
- * 
- * @author mvw@tigris.org
- */
+import java.awt.*;
+import java.util.*;
+import javax.swing.*;
+import javax.swing.border.*;
+
+import org.tigris.gef.util.ResourceLoader;
+
 class SplashPanel extends JPanel {
 
-    private ImageIcon splashImage = null;
-    
-    /**
-     * The constructor.
-     * 
-     * @param iconName the name of the image to be shown
-     */
-    public SplashPanel(String iconName) {
-	super();
-	splashImage =
-	    ResourceLoaderWrapper.lookupIconResource(iconName);
+  ImageIcon splashImage = null;
+  public SplashPanel(String iconName) {
+    super();
+    splashImage = ResourceLoader.lookupIconResource(iconName);
 
-	JLabel splashLabel = new JLabel("", SwingConstants.LEFT) {
+    //
+    // JWindow does not allow setting title or icon.
+    //
+    // ImageIcon argoImage = ResourceLoader.lookupIconResource("Model");
+    // this.setIconImage(argoImage.getImage());
+    // if (title != null) setTitle(title);
 
-	    /**
-             * The following values were determined experimentally:
-             * left margin 10, top margin 18.
-             * 
-	     * @see javax.swing.JComponent#paint(java.awt.Graphics)
-	     */
-	    public void paint(Graphics g) {
-	        super.paint(g);
-	        g.drawString("v" + ArgoVersion.getVersion(), 
-	                getInsets().left + 10, getInsets().top + 18);
-	    }
-	    
-        };
-        
-        if (splashImage != null) {
-	    splashLabel.setIcon(splashImage);
-	}
-	setLayout(new BorderLayout(0, 0));
-	add(splashLabel, BorderLayout.CENTER);
+    JPanel topNorth = new JPanel(new BorderLayout());
+    topNorth.setPreferredSize(new Dimension(6,6));
+    topNorth.setBorder(new BevelBorder(BevelBorder.RAISED));
+    topNorth.add(new JLabel(""), BorderLayout.CENTER);
+
+    JPanel topSouth = new JPanel(new BorderLayout());
+    topSouth.setPreferredSize(new Dimension(6,6));
+    topSouth.setBorder(new BevelBorder(BevelBorder.RAISED));
+    topSouth.add(new JLabel(""), BorderLayout.CENTER);
+
+    JLabel topCenter = new JLabel("ArgoUML v" + ArgoVersion.VERSION,
+		                  SwingConstants.CENTER);
+    // 40 works for 0.10
+    topCenter.setFont(new Font("SansSerif", Font.BOLD, 35));
+    topCenter.setPreferredSize(new Dimension(60, 60));
+    topCenter.setOpaque(false);
+    topCenter.setForeground(Color.white);
+
+    JPanel top = new JPanel(new BorderLayout());
+    top.setBackground(Color.darkGray);
+    top.add(topNorth, BorderLayout.NORTH);
+    top.add(topCenter, BorderLayout.CENTER);
+    top.add(topSouth, BorderLayout.SOUTH);
+
+    JLabel splashButton = new JLabel("");
+    if (splashImage != null) {
+      // int imgWidth = splashImage.getIconWidth();
+      // int imgHeight = splashImage.getIconHeight();
+      // Dimension scrSize = Toolkit.getDefaultToolkit().getScreenSize();
+      // setLocation(scrSize.width/2 - imgWidth/2,
+		       // scrSize.height/2 - imgHeight/2);
+      splashButton.setIcon(splashImage);
     }
+    // setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+    setLayout(new BorderLayout(0, 0));
+    //splashButton.setMargin(new Insets(0, 0, 0, 0));
+    // JPanel main = new JPanel(new BorderLayout());
+    // setBorder(new EtchedBorder(EtchedBorder.RAISED));
+    add(top, BorderLayout.NORTH);
+    add(splashButton, BorderLayout.CENTER);
+    // add(_statusBar, BorderLayout.SOUTH);
+  }
 
-    /**
-     * @return the image of the splash
-     */
-    public ImageIcon getImage() {
-	return splashImage;
-    }
+  public ImageIcon getImage() {
+     return splashImage;
+  }
 
 } /* end class SplashPanel */

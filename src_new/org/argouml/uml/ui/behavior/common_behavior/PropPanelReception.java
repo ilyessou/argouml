@@ -1,96 +1,157 @@
-// $Id$
-// Copyright (c) 2002-2006 The Regents of the University of California. All
-// Rights Reserved. Permission to use, copy, modify, and distribute this
-// software and its documentation without fee, and without a written
-// agreement is hereby granted, provided that the above copyright notice
-// and this paragraph appear in all copies.  This software program and
-// documentation are copyrighted by The Regents of the University of
-// California. The software program and documentation are supplied "AS
-// IS", without any accompanying services from The Regents. The Regents
-// does not warrant that the operation of the program will be
-// uninterrupted or error-free. The end-user understands that the program
-// was developed for research purposes and is advised not to rely
-// exclusively on the program for any reason.  IN NO EVENT SHALL THE
-// UNIVERSITY OF CALIFORNIA BE LIABLE TO ANY PARTY FOR DIRECT, INDIRECT,
-// SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, INCLUDING LOST PROFITS,
-// ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN IF
-// THE UNIVERSITY OF CALIFORNIA HAS BEEN ADVISED OF THE POSSIBILITY OF
-// SUCH DAMAGE. THE UNIVERSITY OF CALIFORNIA SPECIFICALLY DISCLAIMS ANY
-// WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
-// MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. THE SOFTWARE
-// PROVIDED HEREUNDER IS ON AN "AS IS" BASIS, AND THE UNIVERSITY OF
-// CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
-// UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
-
 package org.argouml.uml.ui.behavior.common_behavior;
 
+import java.awt.Color;
+import java.awt.GridLayout;
+import javax.swing.ImageIcon;
+import javax.swing.JList;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 
-import org.argouml.i18n.Translator;
-import org.argouml.ui.LookAndFeelMgr;
-import org.argouml.uml.ui.ActionNavigateContainerElement;
-import org.argouml.uml.ui.UMLTextArea2;
+import org.argouml.application.api.Argo;
+import org.argouml.uml.ui.PropPanel;
+import org.argouml.uml.ui.PropPanelButton;
+import org.argouml.uml.ui.UMLCheckBox;
+import org.argouml.uml.ui.UMLComboBox;
+import org.argouml.uml.ui.UMLComboBoxModel;
+import org.argouml.uml.ui.UMLList;
+import org.argouml.uml.ui.UMLListMenuItem;
+import org.argouml.uml.ui.UMLModelElementListModel;
+import org.argouml.uml.ui.UMLReflectionBooleanProperty;
+import org.argouml.uml.ui.UMLTextArea;
+import org.argouml.uml.ui.UMLTextField;
+import org.argouml.uml.ui.UMLTextProperty;
+import org.argouml.uml.ui.UMLUserInterfaceContainer;
 import org.argouml.uml.ui.foundation.core.PropPanelModelElement;
-import org.argouml.uml.ui.foundation.core.UMLGeneralizableElementAbstractCheckBox;
-import org.argouml.uml.ui.foundation.core.UMLGeneralizableElementLeafCheckBox;
-import org.argouml.uml.ui.foundation.core.UMLGeneralizableElementRootCheckBox;
-import org.argouml.uml.ui.foundation.extension_mechanisms.ActionNewStereotype;
-import org.argouml.util.ConfigLoader;
+import ru.novosoft.uml.behavior.common_behavior.MReception;
+import ru.novosoft.uml.foundation.core.MClassifier;
+import ru.novosoft.uml.foundation.core.MDataType;
+import ru.novosoft.uml.foundation.core.MModelElement;
+import ru.novosoft.uml.foundation.core.MNamespace;
 
 /**
- * PropertyPanel for a Reception.
+ * @author Jaap
+ *
+ * To change this generated comment edit the template variable "typecomment":
+ * Window>Preferences>Java>Templates.
+ * To enable and disable the creation of type comments go to
+ * Window>Preferences>Java>Code Generation.
  */
 public class PropPanelReception extends PropPanelModelElement {
+	
+	public PropPanelReception() {
+		super("Reception", _receptionIcon,2);
+		
+		Class mclass = MReception.class;
+		 
+		addCaption(Argo.localize("UMLMenu", "label.name"),1,0,0);
+        addField(new UMLTextField(this,new UMLTextProperty(mclass,"name","getName","setName")),1,0,0);
 
-    /**
-     * The serial version.
-     */
-    private static final long serialVersionUID = -8572743081899344540L;
-    
-    private JPanel modifiersPanel;
+        addCaption(Argo.localize("UMLMenu", "label.stereotype"),2,0,0);
+        addField(stereotypeBox,2,0,0);
 
-    /**
-     * Construct a property panel for a Reception.
-     */
-    public PropPanelReception() {
-        super("Reception", lookupIcon("Reception"), ConfigLoader
-                .getTabPropsOrientation());
+        addCaption(Argo.localize("UMLMenu", "label.namespace"),3,0,0);
+        addField(namespaceScroll,3,0,0);
+        
+        addCaption(Argo.localize("UMLMenu", "label.modifiers"),4,0,1);
+        JPanel modPanel = new JPanel(new GridLayout(0,3));
+        // next line does not contain typing errors, NSUML is not correct (isabstarct instead of isabstract)
+        modPanel.add(new UMLCheckBox(Argo.localize("UMLMenu", "checkbox.abstract-lc"),this,new UMLReflectionBooleanProperty("isAbstarct",mclass,"isAbstarct","setAbstarct")));
+        modPanel.add(new UMLCheckBox(Argo.localize("UMLMenu", "checkbox.final-lc"),this,new UMLReflectionBooleanProperty("isLeaf",mclass,"isLeaf","setLeaf")));
+        modPanel.add(new UMLCheckBox(localize("root"),this,new UMLReflectionBooleanProperty("isRoot",mclass,"isRoot","setRoot")));
+        addField(modPanel,4,0,0);
+        
+        addCaption(Argo.localize("UMLMenu", "label.signal"),1,1,0);
+        addField(new UMLSignalComboBox(this, new UMLSignalComboBoxModel(this)),1,1,0);
+        
+        // TODO: make it possible to select a classifier that has this reception
+        addCaption(Argo.localize("UMLMenu", "label.owner"),2,1,0);
+        addField(new UMLClassifierComboBox(this),2,1,0);
+        
+        addCaption(Argo.localize("UMLMenu", "label.specification"),3,1,0);
+        JScrollPane specificationScroll = new JScrollPane(new UMLTextArea(this, new UMLTextProperty(mclass, "specification", "getSpecification" , "setSpecification")),JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        addField(specificationScroll, 3, 1, 1);
+        
+        new PropPanelButton(this,buttonPanel,_navUpIcon, Argo.localize("UMLMenu", "button.go-up"),"navigateUp",null);
+	new PropPanelButton(this,buttonPanel,_navBackIcon, Argo.localize("UMLMenu", "button.go-back"),"navigateBackAction","isNavigateBackEnabled");
+	new PropPanelButton(this,buttonPanel,_navForwardIcon, Argo.localize("UMLMenu" ,"button.go-forward"),"navigateForwardAction","isNavigateForwardEnabled");
+	new PropPanelButton(this,buttonPanel,_deleteIcon, Argo.localize("UMLMenu", "button.delete-operation"),"removeElement",null);		
+		
+        
+	}
 
-        addField(Translator.localize("label.name"),
-                getNameTextField());
-        addField(Translator.localize("label.namespace"),
-                getNamespaceSelector());
+	
 
-        modifiersPanel = createBorderPanel(Translator.localize(
-                    "label.modifiers"));
+	/**
+	 * @see org.argouml.uml.ui.PropPanel#isAcceptibleBaseMetaClass(String)
+	 */
+	protected boolean isAcceptibleBaseMetaClass(String baseClass) {
+		return false;
+	}
+	
+	/**
+	 * Returns true if a given modelelement is an acceptable owner of this reception.
+	 * Only classifiers that are no datatype are acceptable.
+	 * @param element
+	 * @return boolean
+	 */
+	public boolean isAcceptibleClassifier(MModelElement element) {
+		return (element instanceof MClassifier && !(element instanceof MDataType));
+	}
+	
+	/**
+	 * Returns the owner of the reception. Necessary for the MClassifierComboBox.
+	 * @return MClassifier
+	 */
+	public MClassifier getOwner() {
+		Object target = getTarget();
+		if (target instanceof MReception) {
+			return ((MReception)target).getOwner();
+		}
+		return null;
+	}
+	
+	/**
+	 * Sets the owner of the reception. Necessary for the MClassifierComboBox.
+	 * @param owner
+	 */
+	public void setOwner(MClassifier owner) {
+		Object target = getTarget();
+		if (target instanceof MReception) {
+			MReception rec = (MReception)target;
+			if (rec.getOwner() != null) {
+				rec.setOwner(null);
+			}
+			rec.setOwner(owner);
+		}
+	}
 
-        modifiersPanel.add(
-                            new UMLGeneralizableElementAbstractCheckBox());
-        modifiersPanel.add(
-                            new UMLGeneralizableElementLeafCheckBox());
-        modifiersPanel.add(
-                            new UMLGeneralizableElementRootCheckBox());
-
-        add(modifiersPanel);
-
-        addSeparator();
-
-        addField(Translator.localize("label.signal"),
-                new UMLReceptionSignalComboBox(this,
-                        new UMLReceptionSignalComboBoxModel()));
-
-        UMLTextArea2 specText = new UMLTextArea2(
-                new UMLReceptionSpecificationDocument());
-        specText.setLineWrap(true);
-        specText.setRows(5);
-        specText.setFont(LookAndFeelMgr.getInstance().getStandardFont());
-        JScrollPane specificationScroll = new JScrollPane(specText);
-        addField(Translator.localize("label.specification"),
-                specificationScroll);
-
-        addAction(new ActionNavigateContainerElement());
-        addAction(new ActionNewStereotype());
-        addAction(getDeleteAction());
-    }
 }
+
+class UMLClassifierComboBox extends UMLComboBox {
+	/**
+     * <p>Constructor for the box.</p>
+     *
+     * <p>Creates a model ({@link UMLComboBoxModel} and invokes the superclass
+     *   with that. Then sets a third party listener.</p>
+     *
+     * @param container  The container (invariably a {@link PropPanel}) that
+     *                   contains this box.
+     */
+
+    public UMLClassifierComboBox(UMLUserInterfaceContainer container) {
+
+        super(new UMLComboBoxModel(container, "isAcceptibleClassifier",
+                                   "owner", "getOwner",
+                                   "setOwner", true, MClassifier.class,
+                                   true));
+
+        // Only add a listener if we have a prop panel
+
+        if (container instanceof PropPanel) {
+            Object [] eventsToWatch = { MClassifier.class, "name" };
+            ((PropPanel) container).addThirdPartyEventListening(eventsToWatch);
+        }
+    }
+
+} 

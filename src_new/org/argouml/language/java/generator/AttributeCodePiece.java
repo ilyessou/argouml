@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2001 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,37 +21,36 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+/*
+  JavaRE - Code generation and reverse engineering for UML and Java
+  Author: Marcus Andersson andersson@users.sourceforge.net
+*/
+
+
 package org.argouml.language.java.generator;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.util.Iterator;
-import java.util.Stack;
-import java.util.Vector;
-
-import org.argouml.model.Model;
+import java.io.*;
+import java.util.*;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
 
 /**
- * This code piece represents an attribute. Even though the code can
- * handle several attributes in the same statement, the code generated
- * will be separate statements and initialization code for all but the
- * last will be removed.
- *
- * JavaRE - Code generation and reverse engineering for UML and Java
- *
- * @author Marcus Andersson andersson@users.sourceforge.net
- */
-public class AttributeCodePiece extends NamedCodePiece {
-    /**
-     * The code piece this attribute represents.
-     */
+   This code piece represents an attribute. Even though the code can
+   handle several attributes in the same statement, the code generated
+   will be separate statements and initialization code for all but the
+   last will be removed.
+*/
+public class AttributeCodePiece extends NamedCodePiece
+{
+    /** The code piece this attribute represents. */
     private CompositeCodePiece attributeDef;
 
-    /**
-     * The names of declared attributes.
-     */
+    /** The names of declared attributes. */
     private Vector attributeNames;
+
+    /** Indicating that the type name is fully qualified in the
+        original source code. */
+    private boolean typeFullyQualified;
 
     /**
        Constructor.
@@ -63,164 +61,129 @@ public class AttributeCodePiece extends NamedCodePiece {
     */
     public AttributeCodePiece(CodePiece modifiers,
                               CodePiece type,
-                              Vector names) {
+                              Vector names)
+    {
 	attributeNames = new Vector();
 	attributeDef = new CompositeCodePiece(modifiers);
 	attributeDef.add(type);
-	for (Iterator i = names.iterator(); i.hasNext();) {
-	    CodePiece cp = (CodePiece) i.next();
-	    String cpText = cp.getText().toString().trim();
-            if (cpText.indexOf('\n') > 0) {
-                cpText = cpText.substring(0, cpText.indexOf('\n')).trim();
-            }
+	for(Iterator i = names.iterator(); i.hasNext(); ) {
+	    CodePiece cp = (CodePiece)i.next();
+	    String cpText = cp.getText().toString();
 	    attributeDef.add(cp);
-	    int pos = 0;
-	    if ((pos = cpText.indexOf('[')) != -1) {
+	    int pos=0;
+	    if((pos=cpText.indexOf('[')) != -1) {
 		attributeNames.add(cpText.substring(0, pos));
-	    } else {
+	    }
+	    else {
 		attributeNames.add(cpText);
 	    }
 	}
+	typeFullyQualified = (type.getText().toString().indexOf('.') != -1);
     }
 
     /**
-     * @see org.argouml.language.java.generator.CodePiece#getText()
-     *
-     * Return the string representation for this piece of code.
-     */
-    public StringBuffer getText() {
+       Return the string representation for this piece of code.
+    */
+    public StringBuffer getText()
+    {
 	return attributeDef.getText();
     }
 
     /**
-     * @see org.argouml.language.java.generator.CodePiece#getStartPosition()
-     *
-     * Return the start position.
-     */
-    public int getStartPosition() {
+       Return the start position.
+    */
+    public int getStartPosition()
+    {
 	return attributeDef.getStartPosition();
     }
 
     /**
-     * @see org.argouml.language.java.generator.CodePiece#getEndPosition()
-     *
-     * Return the end position.
-     */
-    public int getEndPosition() {
+       Return the end position.
+    */
+    public int getEndPosition()
+    {
 	return attributeDef.getEndPosition();
     }
 
     /**
-     * @see org.argouml.language.java.generator.CodePiece#getStartLine()
-     *
-     * Return the start line
-     */
-    public int getStartLine() {
+	Return the start line
+    */
+    public int getStartLine()
+    {
 	return attributeDef.getStartLine();
     }
 
     /**
-     * @see org.argouml.language.java.generator.CodePiece#getEndLine()
-     *
-     * Return the end line
-     */
-    public int getEndLine() {
+	Return the end line
+    */
+    public int getEndLine()
+    {
 	return attributeDef.getEndLine();
     }
 
     /**
-     * @see org.argouml.language.java.generator.NamedCodePiece#write(
-     *         java.io.BufferedReader, java.io.BufferedWriter, java.util.Stack)
-     *
-     * Write the code this piece represents to file.
-     * (Does not check for uniqueness of names.)
-     */
-    public void write(BufferedReader reader,
-                      BufferedWriter writer,
-                      Stack parseStateStack) throws IOException {
-	ParseState parseState = (ParseState) parseStateStack.peek();
+       Write the code this piece represents to file. Remove this
+       feature from the top vector in newFeaturesStack.
+    */
+    public void write(Writer writer,
+                      Stack parseStateStack,
+                      int column)
+	throws Exception
+    {
+	ParseState parseState = (ParseState)parseStateStack.peek();
 	Vector features = parseState.getNewFeatures();
-	int k = 1, count = attributeNames.size();
-	boolean found = false;
-	// there might be multiple variable declarations in one line, so loop:
-	for (Iterator i = attributeNames.iterator(); i.hasNext(); k++) {
-	    boolean checkAssociations = true;
-	    String name = (String) i.next();
-	    Iterator j;
-	    // now find the matching feature
-	    for (j = features.iterator(); j.hasNext();) {
-		Object mFeature = /*(MFeature)*/ j.next();
-		if (Model.getFacade().isAAttribute(mFeature)
-		        && Model.getFacade().getName(mFeature).equals(name)) {
-		    // feature found, so it's an attribute (and no
-		    // association end)
-		    found = true;
-		    checkAssociations = false;
-		    // deletes feature from current ParseState
+
+	for(Iterator i = attributeNames.iterator(); i.hasNext(); ) {
+	    String name = (String)i.next();
+	    for(Iterator j = features.iterator(); j.hasNext(); ) {
+		MFeature mFeature = (MFeature)j.next();
+		if(mFeature.getName().equals(name)) {
 		    parseState.newFeature(mFeature);
-
-		    Object attr = /*(MAttribute)*/ mFeature;
-		    writer.write(generator().generateCoreAttribute(attr));
-
-		    if (k < count) {
-			writer.write("; "); // fixed comma separated attributes
+		    MAttribute mAttribute = (MAttribute)mFeature;
+		    /*
+		     * 2002-11-07
+		     * Jaap Branderhorst
+		     * Made the static reference to generateConstraintEnrichedDocComment a non-static one.
+		     * Reason: the method generateConstraintEnrichedDocComment has become a non-static method.
+		     */
+		    String docComment = GeneratorJava.getInstance().generateConstraintEnrichedDocComment(mAttribute,false,GeneratorJava.INDENT);
+		    if(docComment != null) {
+              writer.write (docComment);
+              writer.write ("\n");
+			  for(int k=0; k<column; k++) {
+			    writer.write(" ");
+			  }
 		    }
-		    break;
-		}
-	    }
-	    if (checkAssociations) {
-		// feature not found: we need to check associations,
-		// because the parser can't distinguish between attributes
-		// and associations represented as class variables:
-		Vector ends = parseState.getAssociationEnds();
-		if (!ends.isEmpty()) {
-		    // now find the first matching association end
-		    for (j = ends.iterator(); j.hasNext();) {
-			Object associationEnd = /*(MAssociationEnd)*/ j.next();
-			Object association =
-			    Model.getFacade().getAssociation(associationEnd);
-			Iterator connEnum =
-			    Model.getFacade()
-			    	.getConnections(association).iterator();
-			while (connEnum.hasNext()) {
-			    Object associationEnd2 =
-				/*(MAssociationEnd)*/ connEnum.next();
-			    if (associationEnd2 != associationEnd
-				&& Model.getFacade()
-					.isNavigable(associationEnd2)
-				&& !Model.getFacade().isAbstract(
-				        Model.getFacade().getAssociation(
-				                associationEnd2))
-				&& generator().generateAscEndName(
-				        associationEnd2)
-				        .equals(name)) {
-				// association end found
-				found = true;
-				writer.write(
-				        generator().generateCoreAssociationEnd(
-				                associationEnd2));
-				break;
-			    }
-			}
+
+		    if(mAttribute.getChangeability() ==
+		       MChangeableKind.FROZEN) {
+			writer.write("final ");
 		    }
+		    if(mAttribute.getOwnerScope() ==
+		       MScopeKind.CLASSIFIER) {
+			writer.write("static ");
+		    }
+		    if(mAttribute.getVisibility() ==
+		       MVisibilityKind.PUBLIC) {
+			writer.write("public ");
+		    }
+		    else if(mAttribute.getVisibility() ==
+			    MVisibilityKind.PROTECTED) {
+			writer.write("protected ");
+		    }
+		    else if(mAttribute.getVisibility() ==
+			    MVisibilityKind.PRIVATE) {
+			writer.write("private ");
+		    }
+
+		    if(typeFullyQualified) {
+			writer.write(mAttribute.getType()
+				     .getNamespace().getName() + ".");
+		    }
+		    writer.write(mAttribute.getType().getName() + " " +
+				     mAttribute.getName());
 		}
 	    }
 	}
-	if (found) {
-	    // fast forward original code (overwriting)
-	    ffCodePiece(reader, null);
-	} else {
-	    // not in model, so write the original code
-	    ffCodePiece(reader, writer);
-	}
-    }
-
-    /**
-     * Get the generator.
-     *
-     * @return the generator.
-     */
-    private GeneratorJava generator() {
-	return GeneratorJava.getInstance();
     }
 }

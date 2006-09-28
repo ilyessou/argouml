@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,47 +21,52 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+
+// File: PropPanelFinalState.java
+// Classes: PropPanelFinalState
+// Original Author: 5heyden
+// $Id:
+
 package org.argouml.uml.ui.behavior.state_machines;
 
-import org.argouml.i18n.Translator;
-import org.argouml.util.ConfigLoader;
+import java.awt.*;
+import java.util.*;
 
-/**
- * The properties panel for a FinalState.
- *
- * @author 5heyden
- */
-public class PropPanelFinalState extends AbstractPropPanelState {
+import javax.swing.*;
 
-    /**
-     * The serial version.
-     */
-    private static final long serialVersionUID = 4111793068615402073L;
+import org.argouml.application.api.*;
+import org.argouml.uml.ui.*;
 
-    /**
-     * Construct a new property panel for a Final State.
-     */
+import ru.novosoft.uml.MFactory;
+import ru.novosoft.uml.behavior.state_machines.*;
+import ru.novosoft.uml.foundation.data_types.*;
+import ru.novosoft.uml.behavior.common_behavior.*;
+import ru.novosoft.uml.foundation.core.*;
+
+public class PropPanelFinalState extends PropPanelState {
+
     public PropPanelFinalState() {
-        super("Final State", lookupIcon("FinalState"),
-                ConfigLoader.getTabPropsOrientation());
+        super("Final State",_finalStateIcon, 2);
 
-        addField(Translator.localize("label.name"),
-                getNameTextField());
-        addField(Translator.localize("label.container"),
-                getContainerScroll());
-        addField(Translator.localize("label.entry"),
-                getEntryScroll());
-        addField(Translator.localize("label.do-activity"),
-                getDoScroll());
+        Class mclass = MFinalState.class;
 
-        addSeparator();
+        addCaption(Argo.localize("UMLMenu", "label.name"),1,0,0);
+        addField(nameField,1,0,0);
 
-        addField(Translator.localize("label.incoming"),
-                getIncomingScroll());
-        addField(Translator.localize("label.internal-transitions"),
-                getInternalTransitionsScroll());
+        addCaption(Argo.localize("UMLMenu", "label.stereotype"),2,0,1);
+	addField(new UMLComboBoxNavigator(this, Argo.localize("UMLMenu", "tooltip.nav-stereo"),stereotypeBox),2,0,0);
 
+        addCaption(Argo.localize("UMLMenu", "label.incoming"),0,1,1);
+	addField(incomingScroll,0,1,1);
+
+ }
+
+    protected boolean isAcceptibleBaseMetaClass(String baseClass) {
+        return baseClass.equals("FinalState");
     }
+
+
 
 } /* end class PropPanelFinalState */
 

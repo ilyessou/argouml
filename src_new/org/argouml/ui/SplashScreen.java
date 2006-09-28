@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -23,116 +22,65 @@
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 package org.argouml.ui;
+import org.argouml.application.ArgoVersion;
 
-import java.awt.BorderLayout;
-import java.awt.Cursor;
-import java.awt.Dimension;
-import java.awt.Graphics;
-import java.awt.GraphicsEnvironment;
-import java.awt.Point;
-
-import javax.swing.JPanel;
-import javax.swing.JWindow;
-import javax.swing.border.EtchedBorder;
+import java.awt.*;
+import java.util.*;
+import javax.swing.*;
+import javax.swing.border.*;
 
 import org.tigris.gef.ui.IStatusBar;
+// import org.tigris.gef.util.*;
 
-/**
- * The splash screen.
- *
- * TODO: JWindow? I don't want a frame or close widgets.
- *
- */
-public class SplashScreen extends JWindow implements IStatusBar {
+// JWindow? I don't want a frame or close widgets
+public class SplashScreen extends JWindow
+implements IStatusBar {
 
-    private StatusBar statusBar = new StatusBar();
-    
-    /**
-     * Flag indicating that the splash screen has been painted.
-     */
-    private boolean paintCalled = false;
+  protected StatusBar _statusBar = new StatusBar();
 
-    /**
-     * The constructor.
-     */
-    public SplashScreen() {
-        this("Loading ArgoUML...", "Splash");
+
+  public SplashScreen(String title, String iconName) {
+    super();
+
+    setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+    getContentPane().setLayout(new BorderLayout(0, 0));
+    //splashButton.setMargin(new Insets(0, 0, 0, 0));
+
+    SplashPanel panel = new SplashPanel(iconName);
+    if (panel.getImage() != null) {
+      int imgWidth = panel.getImage().getIconWidth();
+      int imgHeight = panel.getImage().getIconHeight();
+      Dimension scrSize = Toolkit.getDefaultToolkit().getScreenSize();
+      setLocation(scrSize.width/2 - imgWidth/2,
+		       scrSize.height/2 - imgHeight/2);
     }
 
-    /**
-     * The constructor.
-     *
-     * @param title the title of the window
-     * @param iconName the icon for the window
-     */
-    private SplashScreen(String title, String iconName) {
-	super();
+    JPanel splash = new JPanel(new BorderLayout());
+    splash.setBorder(new EtchedBorder(EtchedBorder.RAISED));
+    splash.add(panel, BorderLayout.CENTER);
+    splash.add(_statusBar, BorderLayout.SOUTH);
+    getContentPane().add(splash);
+    // add preloading progress bar?
+    Dimension contentPaneSize = getContentPane().getPreferredSize();
+    setSize(contentPaneSize.width, contentPaneSize.height);
+    //setResizable(false);
+    pack();
+  }
 
-	setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-	getContentPane().setLayout(new BorderLayout(0, 0));
 
-	SplashPanel panel = new SplashPanel(iconName);
-	if (panel.getImage() != null) {
-	    int imgWidth = panel.getImage().getIconWidth();
-	    int imgHeight = panel.getImage().getIconHeight();
-            Point scrCenter = GraphicsEnvironment.getLocalGraphicsEnvironment()
-                    .getCenterPoint();
-	    setLocation(scrCenter.x - imgWidth / 2,
-			scrCenter.y - imgHeight / 2);
-	}
+  public void preload(Vector classnames) {
+    //preload classes?
+  }
 
-	JPanel splash = new JPanel(new BorderLayout());
-	splash.setBorder(new EtchedBorder(EtchedBorder.RAISED));
-	splash.add(panel, BorderLayout.CENTER);
-	splash.add(statusBar, BorderLayout.SOUTH);
-	getContentPane().add(splash);
-	// add preloading progress bar?
-	Dimension contentPaneSize = getContentPane().getPreferredSize();
-	setSize(contentPaneSize.width, contentPaneSize.height);
-	pack();
-    }
 
-    /**
-     * @return the status bar of this dialog
-     */
-    public StatusBar getStatusBar() { return statusBar; }
-
-    ////////////////////////////////////////////////////////////////
-    // IStatusBar
-
-    /**
-     * @see org.tigris.gef.ui.IStatusBar#showStatus(java.lang.String)
-     */
-    public void showStatus(String s) { statusBar.showStatus(s); }
-    
-    /**
-     * Override paint so we can set a flag the first time we're called
-     * and notify any waiting threads that the splash screen has been
-     * painted.
-     * @see java.awt.Component#paint(java.awt.Graphics)
-     */
-    public void paint(Graphics g) {
-        super.paint(g);
-        if (!paintCalled) {
-            synchronized (this) {
-                paintCalled = true;
-                notifyAll();
-            }
-        }
-    }
-
-    /**
-     * @param called true if paint() is already called
-     */
-    public void setPaintCalled(boolean called) {
-        this.paintCalled = called;
-    }
-
-    /**
-     * @return true if paint() is already called
-     */
-    public boolean isPaintCalled() {
-        return paintCalled;
-    }
+  public StatusBar getStatusBar() { return _statusBar; }
+  
+  ////////////////////////////////////////////////////////////////
+  // IStatusBar
+  public void showStatus(String s) { _statusBar.showStatus(s); }
+  
+  public void setVisible(boolean b) {
+    super.setVisible(b);
+  }
 
 } /* end class SplashScreen */

@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-01 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,88 +23,45 @@
 
 package org.argouml.uml.ui;
 
-import org.apache.log4j.Logger;
-import org.argouml.kernel.ProjectManager;
-import org.argouml.model.Model;
-import org.argouml.uml.diagram.DiagramFactory;
-import org.argouml.uml.diagram.deployment.ui.UMLDeploymentDiagram;
-import org.argouml.uml.diagram.ui.UMLDiagram;
+import org.argouml.kernel.*;
+import org.argouml.ui.*;
+import org.argouml.uml.diagram.deployment.ui.*;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.gen.mmm.MPackage;
+import ru.novosoft.uml.model_management.*;
+import java.awt.event.*;
+import java.beans.*;
 
-/**
- * Action to trigger creation of a deployment diagram.
- */
+
 public class ActionDeploymentDiagram extends ActionAddDiagram {
 
     ////////////////////////////////////////////////////////////////
     // static variables
-    /**
-     * Logger.
-     */
-    private static final Logger LOG =
-        Logger.getLogger(ActionDeploymentDiagram.class);
+    
+    public static ActionDeploymentDiagram SINGLETON = new ActionDeploymentDiagram(); 
+
 
     ////////////////////////////////////////////////////////////////
     // constructors
 
-    /**
-     * Constructor.
-     */
-    public ActionDeploymentDiagram() {
-        super("action.deployment-diagram");
-    }
+    private ActionDeploymentDiagram() { super("DeploymentDiagram"); }
+
 
     ////////////////////////////////////////////////////////////////
     // main methods
 
     /**
-     * @see org.argouml.uml.ui.ActionAddDiagram#createDiagram(Object)
+     * @see org.argouml.uml.ui.ActionAddDiagram#createDiagram(MNamespace)
      */
-    public UMLDiagram createDiagram(Object notUsedHandle) {
-        // a deployment diagram shows something about the whole model
-        // according to the uml spec
-	Object handle =
-            ProjectManager.getManager().getCurrentProject().getRoot();
-        if (!Model.getFacade().isANamespace(handle)) {
-            LOG.error("No namespace as argument");
-            LOG.error(handle);
-            throw new IllegalArgumentException(
-					       "The argument " + handle
-					       + "is not a namespace.");
-        }
-        return (UMLDiagram) DiagramFactory.getInstance().createDiagram(
-                UMLDeploymentDiagram.class,
-                handle,
-                null);
+    public ArgoDiagram createDiagram(MNamespace ns, Object target) {
+        return new UMLDeploymentDiagram(ns);
     }
 
     /**
-     * @see org.argouml.uml.ui.ActionAddDiagram#isValidNamespace(Object)
+     * @see org.argouml.uml.ui.ActionAddDiagram#isValidNamespace(MNamespace)
      */
-    public boolean isValidNamespace(Object notUsedHandle) {
-        // a deployment diagram shows something about the whole model
-        // according to the uml spec
-        Object handle =
-            ProjectManager.getManager().getCurrentProject().getRoot();
-        if (!Model.getFacade().isANamespace(handle)) {
-            LOG.error("No namespace as argument");
-            LOG.error(handle);
-            throw new IllegalArgumentException(
-					       "The argument " + handle
-					       + "is not a namespace.");
-        }
-        // may only occur as child of the model or in a package
-        if (handle
-                == ProjectManager.getManager().getCurrentProject().getModel()) {
-            return true;
-        }
-        if (Model.getFacade().isAPackage(handle)) {
-            return true;
-        }
-        return false;
+    public boolean isValidNamespace(MNamespace ns) {
+        return false; // may only occur as child of the model
     }
 
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = 9027235104963895167L;
 } /* end class ActionDeploymentDiagram */

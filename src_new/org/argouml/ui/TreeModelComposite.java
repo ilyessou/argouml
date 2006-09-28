@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,47 +23,94 @@
 
 package org.argouml.ui;
 
-import javax.swing.tree.TreeModel;
-import javax.swing.tree.TreePath;
+import java.util.*;
+import javax.swing.*;
+import javax.swing.event.*;
+import javax.swing.tree.*;
 
-import org.apache.log4j.Logger;
+import org.apache.log4j.Category;
+import org.argouml.application.api.Argo;
+import org.argouml.cognitive.ToDoItem;
 
-/**
- * This class is the TreeModel for the navigator and todo list panels.<p>
- *
- * It is called <strong>Composite</strong> because there are a set of rules
- * that determine how to link parents to children in the tree. Those
- * rules can now be found in PerspectiveSupport.<p>
- */
-public class TreeModelComposite extends TreeModelSupport implements TreeModel {
+public class TreeModelComposite
+implements TreeModel, Cloneable {
+    protected static Category cat = 
+        Category.getInstance(TreeModelComposite.class);
 
-    private static final Logger LOG =
-        Logger.getLogger(TreeModelComposite.class);
+  ////////////////////////////////////////////////////////////////
+  // instance variables
 
-    /** The root of the model. */
-    private Object root;
+  protected Vector _subTreeModels = new Vector();
+  //protected Vector _treeListeners = null;
+  protected Object _root;
+  protected boolean _flat;
+  protected Vector _flatChildren = new Vector();
+  protected String _name;
+  
+  ////////////////////////////////////////////////////////////////
+  // contructors
 
-    ////////////////////////////////////////////////////////////////
-    // contructors
+  public TreeModelComposite(String name) {
+    setName(Argo.localize("Tree", name));
+  }
 
-    /**
-     * The constructor.
-     *
-     * @param name the name that will be localized
-     */
-    public TreeModelComposite(String name) {
-        super(name);
+  public TreeModelComposite(String name, Vector subs) {
+    this(name);
+    _subTreeModels = subs;
+  }
+
+
+  ////////////////////////////////////////////////////////////////
+  // accessors
+
+  public void setFlat(boolean b) {
+    _flat = false;
+    if (b) calcFlatChildren();
+    _flat = b;
+  }
+  public boolean getFlat() { return _flat; }
+
+  public void addSubTreeModel(TreeModel tm) {
+    if (_subTreeModels.contains(tm)) return;
+    _subTreeModels.addElement(tm);
+  }
+
+  public void removeSubTreeModel(TreeModel tm) {
+    // needs-more-work: check for dangling prereqs
+    _subTreeModels.removeElement(tm);
+  }
+  
+  public Vector getSubTreeModels() { return _subTreeModels; }
+
+  public void calcFlatChildren() {
+    _flatChildren.removeAllElements();
+    addFlatChildren(_root);
+  }
+
+  public void addFlatChildren(Object node) {
+    if (node == null) return;
+    cat.debug("addFlatChildren");
+    // hack for to do items only, should check isLeaf(node), but that
+    // includes empty folders. Really I need alwaysLeaf(node).
+    if ((node instanceof ToDoItem) && !_flatChildren.contains(node)) 
+      _flatChildren.addElement(node);
+    
+    int nKids = getChildCount(node);
+    for (int i = 0; i <nKids; i++) {
+      addFlatChildren(getChild(node, i));
     }
+  }
 
-    ////////////////////////////////////////////////////////////////
-    // TreeModel implementation
+  public String getName() { return _name; }
+  public void setName(String s) { _name = s; }
+  
+  ////////////////////////////////////////////////////////////////
+  // TreeModel implementation
+  
+  public Object getRoot() { return _root; }
 
-    /** Getter for the root of the model.
-     * @see javax.swing.tree.TreeModel#getRoot()
-     */
-    public Object getRoot() {
-        return root;
-    }
+  public void setRoot(Object r) { _root = r; }
+
 
     /**
      * Finds the each of the children of a parent in the tree.
@@ -73,98 +119,109 @@ public class TreeModelComposite extends TreeModelSupport implements TreeModel {
      * @param index of child to find
      * @return the child found at index. Null if index is out of bounds.
      */
-    public Object getChild(Object parent, int index) {
-
-        int nSubs = getGoRules().size();
-        for (int i = 0; i < nSubs; i++) {
-            TreeModel tm = (TreeModel) getGoRules().elementAt(i);
-            int childCount = tm.getChildCount(parent);
-            if (index < childCount) {
-                return tm.getChild(parent, index);
-            }
-            index -= childCount;
-        }
-        return null;
+  public Object getChild(Object parent, int index) {
+    if (_flat && parent == _root) {
+      return _flatChildren.elementAt(index);
     }
-
-    /**
-     * @see javax.swing.tree.TreeModel#getChildCount(java.lang.Object)
-     */
-    public int getChildCount(Object parent) {
-
-        int childCount = 0;
-        int nSubs = getGoRules().size();
-        for (int i = 0; i < nSubs; i++) {
-            TreeModel tm = (TreeModel) getGoRules().elementAt(i);
-            childCount += tm.getChildCount(parent);
-        }
-        return childCount;
+    int nSubs = _subTreeModels.size();
+    for (int i = 0; i < nSubs; i++) {
+      TreeModel tm = (TreeModel) _subTreeModels.elementAt(i);
+      int childCount = tm.getChildCount(parent);
+      if (index < childCount) return tm.getChild(parent, index);
+      index -= childCount;
     }
+    return null;
+  }
 
-    /**
-     * @see javax.swing.tree.TreeModel#getIndexOfChild(java.lang.Object,
-     * java.lang.Object)
-     */
-    public int getIndexOfChild(Object parent, Object child) {
-
-        int childCount = 0;
-        int nSubs = getGoRules().size();
-        for (int i = 0; i < nSubs; i++) {
-            TreeModel tm = (TreeModel) getGoRules().elementAt(i);
-            int childIndex = tm.getIndexOfChild(parent, child);
-            if (childIndex != -1) {
-                return childIndex + childCount;
-            }
-            childCount += tm.getChildCount(parent);
-        }
-        LOG.debug("child not found!");
-
-        //The child is sometimes not found when the tree is being updated
-        return -1;
+  public int getChildCount(Object parent) {
+    if (_flat && parent == _root) {
+      return _flatChildren.size();
     }
-
-    /**
-     * Returns true if <I>node</I> is a leaf.  It is possible for this method
-     * to return false even if <I>node</I> has no children.  A directory in a
-     * filesystem, for example, may contain no files; the node representing
-     * the directory is not a leaf, but it also has no children.
-     * <P>
-     * If none of the subTreeModels is not a leaf, then we are not a leaf.
-     *
-     * @param   node    a node in the tree, obtained from this data source
-     * @return  true if <I>node</I> is a leaf
-     */
-    public boolean isLeaf(Object node) {
-        int nSubs = getGoRules().size();
-        for (int i = 0; i < nSubs; i++) {
-            TreeModel tm = (TreeModel) getGoRules().elementAt(i);
-            if (!tm.isLeaf(node))
-                return false;
-        }
-        return true;
+    int childCount = 0;
+    int nSubs = _subTreeModels.size();
+    for (int i = 0; i < nSubs; i++) {
+      TreeModel tm = (TreeModel) _subTreeModels.elementAt(i);
+      childCount += tm.getChildCount(parent);
     }
+    return childCount;
+  }
 
-    /**
-     * Empty implementation - not used.<p>
-     *
-     * Messaged when the user has altered the value for the item identified
-     * by <I>path</I> to <I>newValue</I>.  If <I>newValue</I> signifies
-     * a truly new value the model should post a treeNodesChanged
-     * event.<p>
-     *
-     * @param path path to the node that the user has altered.
-     * @param newValue the new value from the TreeCellEditor.
-     */
-    public void valueForPathChanged(TreePath path, Object newValue) { }
-
-    ////////////////////////////////////////////////////////////////
-    // other methods
-
-    /**
-     * @param r the root of the model
-     */
-    public void setRoot(Object r) {
-        root = r;
+  public int getIndexOfChild(Object parent, Object child) {
+    if (_flat && parent == _root) {
+      return _flatChildren.indexOf(child);
     }
+    int childCount = 0;
+    int nSubs = _subTreeModels.size();
+    for (int i = 0; i < nSubs; i++) {
+      TreeModel tm = (TreeModel) _subTreeModels.elementAt(i);
+      int childIndex = tm.getIndexOfChild(parent, child);
+      if (childIndex != -1) return childIndex + childCount;
+      childCount += tm.getChildCount(parent);
+    }
+    cat.debug("child not found!");
+    //The child is sometimes not found when the tree is being updated
+    return -1;
+  }
 
+
+  /**
+   * Returns true if <I>node</I> is a leaf.  It is possible for this method
+   * to return false even if <I>node</I> has no children.  A directory in a
+   * filesystem, for example, may contain no files; the node representing
+   * the directory is not a leaf, but it also has no children.
+   * <P>
+   * If none of the subTreeModels is not a leaf, then we are not a leaf.
+   *
+   * @param   node    a node in the tree, obtained from this data source
+   * @return  true if <I>node</I> is a leaf
+   */
+  public boolean isLeaf(Object node) {
+    int nSubs = _subTreeModels.size();
+    for (int i = 0; i < nSubs; i++) {
+      TreeModel tm = (TreeModel) _subTreeModels.elementAt(i);
+      if (!tm.isLeaf(node)) return false;
+    }
+    return true;
+  }
+
+  /** Return true if this node will always be a leaf, it is not an
+   *  "empty folder" */
+  public boolean isAlwaysLeaf(Object node) { return false; }
+
+
+  /**
+   * Messaged when the user has altered the value for the item identified
+   * by <I>path</I> to <I>newValue</I>.  If <I>newValue</I> signifies
+   * a truly new value the model should post a treeNodesChanged
+   * event.
+   *
+   * @param path path to the node that the user has altered.
+   * @param newValue the new value from the TreeCellEditor.
+   */
+  public void valueForPathChanged(TreePath path, Object newValue) {
+    cat.debug("valueForPathChanged TreeModelComposite");
+  }
+
+
+  public void fireTreeStructureChanged() {
+  }
+
+  public void fireTreeStructureChanged(TreePath path) {
+  }
+
+  public void addTreeModelListener(TreeModelListener l) {
+  }
+  
+  public void removeTreeModelListener(TreeModelListener l) {
+  }
+
+
+  ////////////////////////////////////////////////////////////////
+  // debugging
+
+  public String toString() {
+    if (getName() != null) return getName();
+    else return super.toString();
+  }
+  
 } /* end class TreeModelComposite */

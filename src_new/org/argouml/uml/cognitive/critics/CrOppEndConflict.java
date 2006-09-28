@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,62 +21,71 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+
+// File: CrOppEndConflict.java
+// Classes: CrOppEndConflict
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.cognitive.critics;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
-import org.argouml.cognitive.Designer;
-import org.argouml.cognitive.critics.Critic;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
+import ru.novosoft.uml.behavior.collaborations.*;
 
-/**
- * Well-formedness rule [2] for MClassifier. See page 29 of UML 1.1
- * Semantics. OMG document ad/97-08-04.
- *
- * @author jrobbins
- */
-//TODO: split into an inherited attr critic and a local
+import org.argouml.cognitive.*;
+import org.argouml.cognitive.critics.*;
+
+/** Well-formedness rule [2] for MClassifier. See page 29 of UML 1.1
+ *  Semantics. OMG document ad/97-08-04. */
+
+//needs-more-work: split into an inherited attr critic and a local
 //attr critic
+
 public class CrOppEndConflict extends CrUML {
 
-    /**
-     * The constructor.
-     */
-    public CrOppEndConflict() {
-        setupHeadAndDesc();
-        addSupportedDecision(UMLDecision.INHERITANCE);
-        addSupportedDecision(UMLDecision.RELATIONSHIPS);
-        addSupportedDecision(UMLDecision.NAMING);
-        setKnowledgeTypes(Critic.KT_SYNTAX);
-        addTrigger("associationEnd");
-    }
+  public CrOppEndConflict() {
+    setHeadline("Rename MAssociation Roles");
+    addSupportedDecision(CrUML.decINHERITANCE);
+    addSupportedDecision(CrUML.decRELATIONSHIPS);
+    addSupportedDecision(CrUML.decNAMING);
+    setKnowledgeTypes(Critic.KT_SYNTAX);
+    addTrigger("associationEnd");
+  }
 
-    /**
-     * @see org.argouml.uml.cognitive.critics.CrUML#predicate2(
-     * java.lang.Object, org.argouml.cognitive.Designer)
-     */
-    public boolean predicate2(Object dm, Designer dsgr) {
-        boolean problem = NO_PROBLEM;
-        if (Model.getFacade().isAClassifier(dm)) {
-            Collection col = Model.getCoreHelper().getAssociations(dm);
-            List names = new ArrayList();
-            Iterator it = col.iterator();
-            String name = null;
-            while (it.hasNext()) {
-                name = Model.getFacade().getName(it.next());
-                if (name == null || name.equals("")) {
-                    continue;
-                }
-                if (names.contains(name)) {
-                    problem = PROBLEM_FOUND;
-                    break;
-                }
-            }
-        }
-        return problem;
+  public boolean predicate2(Object dm, Designer dsgr) {
+    if (!(dm instanceof MClassifier)) return NO_PROBLEM;
+    MClassifier cls = (MClassifier) dm;
+    Vector namesSeen = new Vector();
+    Collection assocEnds = cls.getAssociationEnds();
+    if (assocEnds == null) return NO_PROBLEM;
+    Iterator enum = assocEnds.iterator();
+    // warn about inheritied name conflicts, different critic?
+    while (enum.hasNext()) {
+      MAssociationEnd myAe = (MAssociationEnd) enum.next();
+      MAssociation asc = (MAssociation) myAe.getAssociation();
+      if (asc == null) continue;
+      Collection conns = asc.getConnections();
+      if (asc instanceof MAssociationRole)
+	conns = ((MAssociationRole)asc).getConnections();
+      if (conns == null) continue;
+      Iterator enum2 = conns.iterator();
+      while (enum2.hasNext()) {
+	MAssociationEnd ae = (MAssociationEnd) enum2.next();
+	if (ae.getType() == cls) continue;
+	String aeName = ae.getName();
+	if ("".equals(aeName)) continue;
+	String aeNameStr = aeName;
+	if (aeNameStr.length() == 0) continue;
+	if (namesSeen.contains(aeNameStr)) return PROBLEM_FOUND;
+	namesSeen.addElement(aeNameStr);
+      }
     }
+    return NO_PROBLEM;
+  }
+
 } /* end class CrOppEndConflict.java */
+

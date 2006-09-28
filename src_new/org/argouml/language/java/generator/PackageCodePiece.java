@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2001 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,102 +21,95 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+/*
+  JavaRE - Code generation and reverse engineering for UML and Java
+  Author: Marcus Andersson andersson@users.sourceforge.net
+*/
+
+
 package org.argouml.language.java.generator;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.util.Stack;
-
-import org.argouml.model.Model;
+import java.io.*;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.model_management.*;
+import java.util.*;
 
 /**
- * This code piece represents a package declaration.
- *
- * JavaRE - Code generation and reverse engineering for UML and Java.
- *
- * @author Marcus Andersson andersson@users.sourceforge.net
- */
-public class PackageCodePiece extends NamedCodePiece {
-    /**
-     * The code piece for the package identifier.
-     */
+   This code piece represents a package declaration.
+*/
+public class PackageCodePiece extends NamedCodePiece
+{
+    /** The code piece for the package identifier. */
     private CodePiece identifier;
 
     /**
-     * Constructor.
-     *
-     * @param id Code piece for the package identifier.
-     */
-    public PackageCodePiece(CodePiece id) {
-	identifier = id;
+       Constructor.
+
+       @param identifier Code piece for the package identifier.
+    */
+    public PackageCodePiece(CodePiece identifier)
+    {
+	this.identifier = identifier;
     }
 
     /**
-     * @see org.argouml.language.java.generator.CodePiece#getText()
-     *
-     * Return the string representation for this piece of code.
-     */
-    public StringBuffer getText() {
+       Return the string representation for this piece of code.
+    */
+    public StringBuffer getText()
+    {
 	return identifier.getText();
     }
 
     /**
-     * @see org.argouml.language.java.generator.CodePiece#getStartPosition()
-     *
-     * Return the start position.
-     */
-    public int getStartPosition() {
+       Return the start position.
+    */
+    public int getStartPosition()
+    {
 	return identifier.getStartPosition();
     }
 
     /**
-     * @see org.argouml.language.java.generator.CodePiece#getEndPosition()
-     *
-     * Return the end position.
-     */
-    public int getEndPosition() {
+       Return the end position.
+    */
+    public int getEndPosition()
+    {
 	return identifier.getEndPosition();
     }
 
     /**
-     * @see org.argouml.language.java.generator.CodePiece#getStartLine()
-     *
-     * Return the start line
-     */
-    public int getStartLine() {
+	Return the start line
+    */
+    public int getStartLine()
+    {
 	return identifier.getStartLine();
     }
 
     /**
-     * @see org.argouml.language.java.generator.CodePiece#getEndLine()
-     *
-     * Return the end line
-     */
-    public int getEndLine() {
+	Return the end line
+    */
+    public int getEndLine()
+    {
 	return identifier.getEndLine();
     }
 
     /**
-     * @see org.argouml.language.java.generator.NamedCodePiece#write(
-     *         java.io.BufferedReader, java.io.BufferedWriter, java.util.Stack)
-     *
-     * Write the code this piece represents to file.
-     */
-    public void write(BufferedReader reader,
-                      BufferedWriter writer,
-                      Stack parseStateStack) throws IOException {
+       Write the code this piece represents to file.
+    */
+    public void write(Writer writer,
+                      Stack parseStateStack,
+                      int column)
+	throws Exception
+    {
+	ParseState parseState = (ParseState)parseStateStack.peek();
+	MNamespace mNamespace = parseState.getNamespace();
 
-	ParseState parseState = (ParseState) parseStateStack.peek();
-	Object mNamespace = parseState.getNamespace();
-
-	if (!(Model.getFacade().isAModel(mNamespace))) {
-	    writer.write("package ");
-	    writer.write(GeneratorJava.getInstance()
-			 .getPackageName(mNamespace));
-	    writer.write(";");
+	if(mNamespace instanceof MModel) {
+	    writer.write("// No package");
 	}
-	// fast forward original code (overwriting)
-	ffCodePiece(reader, null);
+	else {
+	    writer.write("package " +
+			 mNamespace.getName() +
+			 ";");
+	}
     }
 }

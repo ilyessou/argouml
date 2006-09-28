@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,382 +21,321 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: FigComponentInstance.java
+// Classes: FigComponentInstance
+// Original Author: 5eichler@informatik.uni-hamburg.de
+// $Id$
+
 package org.argouml.uml.diagram.deployment.ui;
 
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Rectangle;
-import java.awt.event.MouseEvent;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyVetoException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.*;
+import java.beans.*;
+import javax.swing.*;
+import javax.swing.plaf.metal.MetalLookAndFeel;
 
-import org.argouml.model.AssociationChangeEvent;
-import org.argouml.model.AttributeChangeEvent;
-import org.argouml.model.Model;
-import org.argouml.notation.NotationProviderFactory2;
-import org.argouml.uml.diagram.ui.FigEdgeModelElement;
-import org.argouml.uml.diagram.ui.FigNodeModelElement;
-import org.argouml.uml.notation.NotationProvider;
-import org.tigris.gef.base.Editor;
-import org.tigris.gef.base.Globals;
-import org.tigris.gef.base.Selection;
-import org.tigris.gef.graph.GraphModel;
-import org.tigris.gef.presentation.Fig;
-import org.tigris.gef.presentation.FigRect;
-import org.tigris.gef.presentation.FigText;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
+import ru.novosoft.uml.behavior.common_behavior.*;
+import ru.novosoft.uml.model_management.*;
+import ru.novosoft.uml.foundation.extension_mechanisms.*;
 
-/**
- * Class to display graphics for a UML ComponentInstance in a diagram.
- *
- * @author 5eichler
- */
+import org.tigris.gef.base.*;
+import org.tigris.gef.presentation.*;
+import org.tigris.gef.graph.*;
+
+import org.apache.log4j.Category;
+import org.argouml.application.api.*;
+import org.argouml.uml.diagram.ui.*;
+import org.argouml.uml.generator.*;
+
+/** Class to display graphics for a UML ComponentInstance in a diagram. */
+
 public class FigComponentInstance extends FigNodeModelElement {
+    protected static Category cat = Category.getInstance(FigComponentInstance.class);
+  ////////////////////////////////////////////////////////////////
+  // instance variables
 
-    /**
-     * The distance between the left edge of the fig and the left edge of the
-     * main rectangle.
-     * Originally named BIGPORT_X (which explains what BX stands for).
-     */
-    private static final int BX = 10;
+  public static int OVERLAP = 4;
 
-    private static final int OVERLAP = 0;
+  protected FigRect _cover;
+  protected FigRect _upperRect;
+  protected FigRect _lowerRect;
 
-    private FigRect cover;
-    private FigRect upperRect;
-    private FigRect lowerRect;
 
-    private NotationProvider notationProvider;
+  ////////////////////////////////////////////////////////////////
+  // constructors
 
-    /**
-     * Constructor.
-     */
-    public FigComponentInstance() {
-        cover = new FigRect(BX, 10, 120, 80, Color.black, Color.white);
-        upperRect =
-            new FigRect(0, 2 * BX, 2 * BX, BX, Color.black, Color.white);
-        lowerRect =
-            new FigRect(0, 4 * BX, 2 * BX, BX, Color.black, Color.white);
+  public FigComponentInstance() {
+    _cover = new FigRect(10, 10, 120, 80, Color.black, Color.white);
+    _upperRect = new FigRect(0, 20, 20, 10, Color.black, Color.white);
+    _lowerRect = new FigRect(0, 40, 20, 10, Color.black, Color.white);
 
-        getNameFig().setLineWidth(0);
-        getNameFig().setFilled(false);
-        getNameFig().setUnderline(true);
+    _name.setLineWidth(0);
+    _name.setFilled(false);
+    _name.setUnderline(true);
 
-        addFig(getBigPort());
-        addFig(cover);
-        addFig(getStereotypeFig());
-        addFig(getNameFig());
-        addFig(upperRect);
-        addFig(lowerRect);
+    addFig(_bigPort);
+    addFig(_cover);
+    addFig(_stereo);
+    addFig(_name);
+    addFig(_upperRect);
+    addFig(_lowerRect);
+  }
+
+  public FigComponentInstance(GraphModel gm, Object node) {
+    this();
+    setOwner(node);
+    if (node instanceof MClassifier && (((MClassifier)node).getName() != null))
+	_name.setText(((MModelElement)node).getName());
+    updateBounds();
+  }
+
+  public String placeString() {
+    return "new ComponentInstance";
+  }
+
+  public Object clone() {
+    FigComponentInstance figClone = (FigComponentInstance) super.clone();
+    Vector v = figClone.getFigs();
+    figClone._bigPort = (FigRect) v.elementAt(0);
+    figClone._cover = (FigRect) v.elementAt(1);
+    figClone._stereo = (FigText) v.elementAt(2);
+    figClone._name = (FigText) v.elementAt(3);
+    figClone._upperRect = (FigRect) v.elementAt(4);
+    figClone._lowerRect = (FigRect) v.elementAt(5);
+
+    return figClone;
+  }
+
+  ////////////////////////////////////////////////////////////////
+  // acessors
+
+  public void setLineColor(Color c) {
+//     super.setLineColor(c);
+     _cover.setLineColor(c);
+     _stereo.setFilled(false);
+     _stereo.setLineWidth(0);
+     _name.setFilled(false);
+     _name.setLineWidth(0);
+     _upperRect.setLineColor(c);
+     _lowerRect.setLineColor(c);
+  }
+
+
+  public Selection makeSelection() {
+      return new SelectionComponentInstance(this);
+  }
+
+  public Dimension getMinimumSize() {
+    Dimension stereoDim = _stereo.getMinimumSize();
+    Dimension nameDim = _name.getMinimumSize();
+
+    int h = stereoDim.height + nameDim.height - OVERLAP;
+    int w = Math.max(stereoDim.width, nameDim.width);
+    return new Dimension(w, h);
+  }
+
+  public void setBounds(int x, int y, int w, int h) {
+    if (_name == null) return;
+
+    Rectangle oldBounds = getBounds();
+    _bigPort.setBounds(x, y, w, h);
+    _cover.setBounds(x, y, w, h);
+
+    Dimension stereoDim = _stereo.getMinimumSize();
+    Dimension nameDim = _name.getMinimumSize();
+
+    if (h<50) {
+      _upperRect.setBounds(x - 10, y + h / 6, 20, 10);
+      _lowerRect.setBounds(x - 10, y + 3*h / 6, 20, 10);
+    }
+    else {
+      _upperRect.setBounds(x - 10, y + 13, 20, 10);
+      _lowerRect.setBounds(x - 10, y + 39, 20, 10);
     }
 
-    /**
-     * Constructor that hooks the Fig into an existing UML element.
-     *
-     * @param gm ignored
-     * @param node the UML element
-     */
-    public FigComponentInstance(GraphModel gm, Object node) {
-        this();
-        setOwner(node);
-        if (Model.getFacade().isAClassifier(node)
-                && (Model.getFacade().getName(node) != null)) {
-            getNameFig().setText(Model.getFacade().getName(node));
+    _stereo.setBounds(x+1, y+1, w-2, stereoDim.height);
+    _name.setBounds(x+1, y + stereoDim.height - OVERLAP + 1, w-2, nameDim.height);
+    _x = x; _y = y; _w = w; _h = h;
+    firePropChange("bounds", oldBounds, getBounds());
+    updateEdges();
+  }
+
+  ////////////////////////////////////////////////////////////////
+  // user interaction methods
+
+  public void mouseClicked(MouseEvent me) {
+    super.mouseClicked(me);
+    setLineColor(Color.black);
+  }
+
+  public void mousePressed(MouseEvent me) {
+    super.mousePressed(me);
+    Editor ce = Globals.curEditor();
+    Selection sel = ce.getSelectionManager().findSelectionFor(this);
+    if (sel instanceof SelectionComponentInstance)
+      ((SelectionComponentInstance)sel).hideButtons();
+  }
+
+
+  public void setEnclosingFig(Fig encloser) {
+    
+    if (encloser != null && encloser.getOwner() instanceof MNodeInstance && getOwner() != null) {
+        MNodeInstance node = (MNodeInstance)encloser.getOwner();
+        MComponentInstance comp = (MComponentInstance)getOwner();
+        if (comp.getNodeInstance() != node) {
+            comp.setNodeInstance(node);
         }
-        updateBounds();
-    }
+        super.setEnclosingFig(encloser);
+        
 
-    /**
-     * @see org.argouml.uml.diagram.ui.FigNodeModelElement#initNotationProviders(java.lang.Object)
-     */
-    protected void initNotationProviders(Object own) {
-        super.initNotationProviders(own);
-        if (Model.getFacade().isAComponentInstance(own)) {
-            notationProvider =
-                NotationProviderFactory2.getInstance().getNotationProvider(
-                    NotationProviderFactory2.TYPE_COMPONENTINSTANCE, own);
-        }
-    }
-
-    /**
-     * @see org.argouml.uml.diagram.ui.FigNodeModelElement#placeString()
-     */
-    public String placeString() {
-        return "new ComponentInstance";
-    }
-
-    /**
-     * @see java.lang.Object#clone()
-     */
-    public Object clone() {
-        FigComponentInstance figClone = (FigComponentInstance) super.clone();
-        Iterator it = figClone.getFigs().iterator();
-        figClone.setBigPort((FigRect) it.next());
-        figClone.cover = (FigRect) it.next();
-        it.next();
-        figClone.setNameFig((FigText) it.next());
-        figClone.upperRect = (FigRect) it.next();
-        figClone.lowerRect = (FigRect) it.next();
-
-        return figClone;
-    }
-
-    /**
-     * @see org.argouml.uml.diagram.ui.FigNodeModelElement#modelChanged(java.beans.PropertyChangeEvent)
-     */
-    protected void modelChanged(PropertyChangeEvent mee) {
-        super.modelChanged(mee);
-        if (mee instanceof AssociationChangeEvent 
-                || mee instanceof AttributeChangeEvent) {
-            renderingChanged();
-            updateListeners(getOwner(), getOwner());
-            damage();
-        }
-    }
-
-    /**
-     * @see org.argouml.uml.diagram.ui.FigNodeModelElement#updateListeners(java.lang.Object, java.lang.Object)
-     */
-    protected void updateListeners(Object oldOwner, Object newOwner) {
-        if (oldOwner != null) {
-            removeAllElementListeners();
-        }
-        if (newOwner != null) {
-            // add the listeners to the newOwner
-            addElementListener(newOwner);
-            Collection c = Model.getFacade().getStereotypes(newOwner);
-            Iterator i = c.iterator();
-            while (i.hasNext()) {
-                Object st = i.next();
-                addElementListener(st, "name");
+        Vector figures = getEnclosedFigs();
+    
+        if (getLayer() != null) {
+          // elementOrdering(figures);
+          Vector contents = getLayer().getContents();
+          int contentsSize = contents.size();
+          for (int j=0; j<contentsSize; j++) {
+            Object o = contents.elementAt(j);
+            if (o instanceof FigEdgeModelElement) {
+              FigEdgeModelElement figedge = (FigEdgeModelElement) o;
+              figedge.getLayer().bringToFront(figedge);
             }
-            c = Model.getFacade().getClassifiers(newOwner);
-            i = c.iterator();
-            while (i.hasNext()) {
-                Object st = i.next();
-                addElementListener(st, "name");
-            }
+          }
         }
+    } else
+    if (encloser == null && getEnclosingFig() != null) {
+        if (getEnclosingFig() instanceof FigNodeModelElement)
+            ((FigNodeModelElement)getEnclosingFig()).getEnclosedFigs().removeElement(this);
+        _encloser = null;
     }
+    /*
+    super.setEnclosingFig(encloser);
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#setLineColor(java.awt.Color)
-     */
-    public void setLineColor(Color c) {
-        cover.setLineColor(c);
-        getStereotypeFig().setFilled(false);
-        getStereotypeFig().setLineWidth(0);
-        getNameFig().setFilled(false);
-        getNameFig().setLineWidth(0);
-        upperRect.setLineColor(c);
-        lowerRect.setLineColor(c);
-    }
+    Vector figures = getEnclosedFigs();
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#makeSelection()
-     */
-    public Selection makeSelection() {
-        return new SelectionComponentInstance(this);
-    }
-
-    /**
-     * @see org.tigris.gef.presentation.Fig#getMinimumSize()
-     */
-    public Dimension getMinimumSize() {
-        Dimension stereoDim = getStereotypeFig().getMinimumSize();
-        Dimension nameDim = getNameFig().getMinimumSize();
-
-        int h = Math.max(stereoDim.height + nameDim.height - OVERLAP, 4 * BX);
-        int w = Math.max(stereoDim.width, nameDim.width) + 2 * BX;
-
-        return new Dimension(w, h);
-    }
-
-    /**
-     * @see org.tigris.gef.presentation.Fig#setBounds(int, int, int, int)
-     */
-    protected void setBoundsImpl(int x, int y, int w, int h) {
-        if (getNameFig() == null) {
-            return;
+    if (getLayer() != null) {
+      // elementOrdering(figures);
+      Vector contents = getLayer().getContents();
+      int contentsSize = contents.size();
+      for (int j=0; j<contentsSize; j++) {
+        Object o = contents.elementAt(j);
+        if (o instanceof FigEdgeModelElement) {
+          FigEdgeModelElement figedge = (FigEdgeModelElement) o;
+          figedge.getLayer().bringToFront(figedge);
         }
+      }
+    }
 
-        Rectangle oldBounds = getBounds();
-        getBigPort().setBounds(x + BX, y, w - BX, h);
-        cover.setBounds(x + BX, y, w - BX, h);
+    if (!(getOwner() instanceof MModelElement)) return;
+    if (getOwner() instanceof MComponentInstance) {
+      MComponentInstance me = (MComponentInstance) getOwner();
+      MNodeInstance mnode = null;
 
-        Dimension stereoDim = getStereotypeFig().getMinimumSize();
-        Dimension nameDim = getNameFig().getMinimumSize();
-        if (h < (6 * BX)) {
-            upperRect.setBounds(x, y + 2 * h / 6, 20, 10);
-            lowerRect.setBounds(x, y + 4 * h / 6, 20, 10);
-        } else {
-            upperRect.setBounds(x, y + 2 * BX, 2 * BX, BX);
-            lowerRect.setBounds(x, y + 4 * BX, 2 * BX, BX);
+      if (encloser != null && (encloser.getOwner() instanceof MNodeInstance)) {
+        mnode = (MNodeInstance) encloser.getOwner();
+      }
+      if (encloser != null && (encloser.getOwner() instanceof MComponentInstance)) {
+        MComponentInstance comp = (MComponentInstance) encloser.getOwner();
+        mnode = (MNodeInstance) comp.getNodeInstance();
+      }
+      try {
+        if(mnode != null) {
+          me.setNodeInstance(mnode);
         }
-
-        getStereotypeFig().setBounds(x + 2 * BX + 1,
-                y + 1,
-                w - 2 * BX - 2,
-                stereoDim.height);
-        getNameFig().setBounds(x + 2 * BX + 1,
-                y + stereoDim.height - OVERLAP + 1,
-                w - 2 * BX - 2,
-                nameDim.height);
-        _x = x;
-        _y = y;
-        _w = w;
-        _h = h;
-        firePropChange("bounds", oldBounds, getBounds());
-        updateEdges();
-    }
-
-    /**
-     * @see java.awt.event.MouseListener#mouseClicked(java.awt.event.MouseEvent)
-     */
-    public void mouseClicked(MouseEvent me) {
-        super.mouseClicked(me);
-        setLineColor(Color.black);
-    }
-
-    /**
-     * @see java.awt.event.MouseListener#mousePressed(java.awt.event.MouseEvent)
-     */
-    public void mousePressed(MouseEvent me) {
-        super.mousePressed(me);
-        Editor ce = Globals.curEditor();
-        Selection sel = ce.getSelectionManager().findSelectionFor(this);
-        if (sel instanceof SelectionComponentInstance) {
-            ((SelectionComponentInstance) sel).hideButtons();
+        else {
+          if (me.getNodeInstance() != null) {
+            me.setNodeInstance(null);
+          }
         }
+        setNode(figures);
+      }
+      catch (Exception e) {
+        cat.error("could not set package", e);
+       
+      }
     }
+    */
+  }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#setEnclosingFig(org.tigris.gef.presentation.Fig)
-     */
-    public void setEnclosingFig(Fig encloser) {
-
-        if (getOwner() != null) {
-            Object comp = getOwner();
-            if (encloser != null) {
-                Object nodeOrComp = encloser.getOwner();
-                if (Model.getFacade().isANodeInstance(nodeOrComp)) {
-                    if (Model.getFacade()
-                            .getNodeInstance(comp) != nodeOrComp) {
-                        Model.getCommonBehaviorHelper()
-                                .setNodeInstance(comp, nodeOrComp);
-                        super.setEnclosingFig(encloser);
-                    }
-                } else if (Model.getFacade().isAComponentInstance(nodeOrComp)) {
-                    if (Model.getFacade()
-                            .getComponentInstance(comp) != nodeOrComp) {
-                        Model.getCommonBehaviorHelper()
-                                .setComponentInstance(comp, nodeOrComp);
-                        super.setEnclosingFig(encloser);
-                    }
-                } else if (Model.getFacade().isANode(nodeOrComp)) {
-                    super.setEnclosingFig(encloser);
-                }
-
-                if (getLayer() != null) {
-                    // elementOrdering(figures);
-                    List contents = new ArrayList(getLayer().getContents());
-                    Iterator it = contents.iterator();
-                    while (it.hasNext()) {
-                        Object o = it.next();
-                        if (o instanceof FigEdgeModelElement) {
-                            FigEdgeModelElement figedge =
-                                    (FigEdgeModelElement) o;
-                            figedge.getLayer().bringToFront(figedge);
-                        }
-                    }
-                }
-            } else if (encloser == null && getEnclosingFig() != null) {
-                if (Model.getFacade().getNodeInstance(comp) != null) {
-                    Model.getCommonBehaviorHelper()
-                            .setNodeInstance(comp, null);
-                }
-                if (Model.getFacade().getComponentInstance(comp) != null) {
-                    Model.getCommonBehaviorHelper()
-                            .setComponentInstance(comp, null);
-                }
-                super.setEnclosingFig(encloser);
-            }
+  public void setNode(Vector figures) {
+    int size = figures.size();
+    if (figures != null && (size > 0)) {
+      for (int i=0; i<size; i++) {
+        Object o = figures.elementAt(i);
+        if (o instanceof FigComponentInstance) {
+          FigComponentInstance figcomp = (FigComponentInstance) o;
+          figcomp.setEnclosingFig(this);
         }
+      }
+    }
+  }
+
+  public boolean getUseTrapRect() { return true; }
+
+  ////////////////////////////////////////////////////////////////
+  // internal methods
+
+  protected void textEdited(FigText ft) throws PropertyVetoException {
+      //super.textEdited(ft);
+    MComponentInstance coi = (MComponentInstance) getOwner();
+    if (ft == _name) {
+      String s = ft.getText().trim();
+      //why this???
+//       if (s.length()>0) {
+//         s = s.substring(0, (s.length() - 1));
+//       }
+      ParserDisplay.SINGLETON.parseComponentInstance(coi, s);
+    }
+  }
+
+
+  protected void updateStereotypeText() {
+    MModelElement me = (MModelElement) getOwner();
+    if (me == null) return;
+    MStereotype stereo = me.getStereotype();
+    if (stereo == null || stereo.getName() == null || stereo.getName().length() == 0)
+        _stereo.setText("");
+     else {
+        _stereo.setText(Notation.generateStereotype(this, stereo));
+     }
+  }
+
+  protected void modelChanged() {
+    super.modelChanged();
+    MComponentInstance coi = (MComponentInstance) getOwner();
+    if (coi == null) return;
+    String nameStr = "";
+    if (coi.getName() != null) {
+      nameStr = coi.getName().trim();
     }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#getUseTrapRect()
-     */
-    public boolean getUseTrapRect() {
-        return true;
+    // construct bases string (comma separated)
+    String baseStr = "";
+    Collection col = coi.getClassifiers();
+    if (col != null && col.size() > 0){
+	Iterator it = col.iterator();
+	baseStr = ((MClassifier)it.next()).getName();
+	while (it.hasNext()) {
+	    baseStr += ", "+((MClassifier)it.next()).getName();
+	}
     }
-
-    /**
-     * @see org.argouml.uml.diagram.ui.FigNodeModelElement#textEdited(org.tigris.gef.presentation.FigText)
-     */
-    protected void textEdited(FigText ft) throws PropertyVetoException {
-        if (ft == getNameFig()) {
-            notationProvider.parse(getOwner(), ft.getText());
-            ft.setText(notationProvider.toString(getOwner(), null));
-        }
+    if (_readyToEdit) {
+      if( nameStr == "" && baseStr == "")
+	_name.setText("");
+      else
+	_name.setText(nameStr.trim() + " : " + baseStr);
     }
+    Dimension nameMin = _name.getMinimumSize();
+    Rectangle r = getBounds();
+    setBounds(r.x, r.y, r.width, r.height);
 
-    /**
-     * @see org.argouml.uml.diagram.ui.FigNodeModelElement#textEditStarted(org.tigris.gef.presentation.FigText)
-     */
-    protected void textEditStarted(FigText ft) {
-        if (ft == getNameFig()) {
-            showHelp(notationProvider.getParsingHelp());
-        }
-    }
+    updateStereotypeText();
+  }
 
-    /**
-     * @see org.argouml.uml.diagram.ui.FigNodeModelElement#updateStereotypeText()
-     */
-    protected void updateStereotypeText() {
-        getStereotypeFig().setOwner(getOwner());
-    }
-
-    /**
-     * @see org.argouml.uml.diagram.ui.FigNodeModelElement#updateNameText()
-     */
-    protected void updateNameText() {
-        if (isReadyToEdit()) {
-            getNameFig().setText(notationProvider.toString(getOwner(), null));
-        }
-        Rectangle r = getBounds();
-        setBounds(r.x, r.y, r.width, r.height);
-    }
-
-    /**
-     * @see org.tigris.gef.presentation.Fig#getHandleBox()
-     *
-     * Get the rectangle on whose corners the dragging handles are to
-     * be drawn.  Used by Selection Resize.
-     */
-    public Rectangle getHandleBox() {
-
-        Rectangle r = getBounds();
-        return new Rectangle(r.x + BX, r.y, r.width - BX,
-                r.height);
-
-    }
-
-    /**
-     * @see org.tigris.gef.presentation.Fig#setHandleBox(int, int, int, int)
-     */
-    public void setHandleBox(int x, int y, int w, int h) {
-
-        setBounds(x - BX, y, w + BX, h);
-
-    }
-
-    /**
-     * The UID.
-     */
-    static final long serialVersionUID = 1647392857462847651L;
+  static final long serialVersionUID = 1647392857462847651L;
 
 } /* end class FigComponentInstance */
+

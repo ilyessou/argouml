@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,57 +21,50 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+
+
+
+// File: CrEmptyPackage.java
+// Classes: CrEmptyPackage
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.cognitive.critics;
 
-import java.util.Collection;
+import java.util.*;
 
-import org.apache.log4j.Logger;
-import org.argouml.cognitive.Designer;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
+import ru.novosoft.uml.foundation.extension_mechanisms.*;
+import ru.novosoft.uml.model_management.*;
 
+import org.apache.log4j.Category;
+import org.argouml.cognitive.*;
 
-/**
- * A critic whether a package/subsystem/model is empty.
- *
- * @author Jason Robbins
- */
-
-//TODO: different critic for packages consisting only
-//of references to elements of other packages?
+/** A critic to detect when a class can never have instances (of
+ *  itself of any subclasses). */
 
 public class CrEmptyPackage extends CrUML {
-    /**
-     * Logger.
-     */
-    private static final Logger LOG = Logger.getLogger(CrEmptyPackage.class);
+    protected static Category cat = Category.getInstance(CrEmptyPackage.class);
 
-    /**
-     * The constructor.
-     *
-     */
-    public CrEmptyPackage() {
-        setupHeadAndDesc();
-	addSupportedDecision(UMLDecision.MODULARITY);
-	addTrigger("ownedElement");
-    }
+  public CrEmptyPackage() {
+    setHeadline("Add Elements to Package <ocl>self</ocl>");
+       
+    addSupportedDecision(CrUML.decMODULARITY);
+    addTrigger("ownedElement");
+  }
 
-    /**
-     * @see org.argouml.uml.cognitive.critics.CrUML#predicate2(
-     * java.lang.Object, org.argouml.cognitive.Designer)
-     */
-    public boolean predicate2(Object dm, Designer dsgr) {
-//	LOG.debug("predicate2 on " + dm);
-	if (!(Model.getFacade().isAPackage(dm))) {
-	    return NO_PROBLEM;
-	}
-	Collection elems = Model.getFacade().getOwnedElements(dm);
-	if (elems.size() == 0) {
-            LOG.debug("PROBLEM_FOUND on " + dm);
-            return PROBLEM_FOUND;
-        }
-	return NO_PROBLEM;
-    }
+  public boolean predicate2(Object dm, Designer dsgr) {
+    cat.debug("predicate2 on " + dm);
+    if (!(dm instanceof MModel)) return NO_PROBLEM;
+    MModel mod = (MModel) dm;
+    Collection elms = mod.getOwnedElements();
+    if (elms == null || elms.size() == 0) return PROBLEM_FOUND;
+    return NO_PROBLEM;
+    //needs-more-work: different critic for packages consisting only
+    //of references to elements of other packages?
+  }
 
 } /* end class CrEmptyPackage */
 

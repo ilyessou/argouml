@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,39 +21,33 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: SelectionEdgeClarifiers.java
+// Classes: SelectionEdgeClarifiers
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.diagram.ui;
 
-import java.awt.Graphics;
+import java.util.*;
+import java.awt.*;
 
-import org.tigris.gef.base.SelectionReshape;
-import org.tigris.gef.presentation.Fig;
+import org.tigris.gef.base.*;
+import org.tigris.gef.presentation.*;
 
-/**
- *
- *
- *
- * @author jrobbins
- */
 public class SelectionEdgeClarifiers extends SelectionReshape {
 
-    ////////////////////////////////////////////////////////////////
-    // constructors
+  ////////////////////////////////////////////////////////////////
+  // constructors
 
-    /** Construct a new SelectionEdgeClarifiers for the given Fig
-     *
-     * @param f the given fig
-     */
-    public SelectionEdgeClarifiers(Fig f) { super(f); }
+  /** Construct a new SelectionEdgeClarifiers for the given Fig */
+  public SelectionEdgeClarifiers(Fig f) { super(f); }
 
-    /** Paint the handles at the four corners and midway along each edge
-     * of the bounding box.
-     *
-     * @see org.tigris.gef.base.Selection#paint(java.awt.Graphics)
-     */
-    public void paint(Graphics g) {
-	((FigEdgeModelElement) getContent()).paintClarifiers(g);
-	super.paint(g);
-    }
-
+  /** Paint the handles at the four corners and midway along each edge
+   * of the bounding box.  */
+  public void paint(Graphics g) {
+    ((FigEdgeModelElement)_content).paintClarifiers(g);
+    super.paint(g);
+  }  
+  
 } /* end class SelectionEdgeClarifiers */
 

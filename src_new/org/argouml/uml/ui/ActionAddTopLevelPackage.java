@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,55 +23,47 @@
 
 package org.argouml.uml.ui;
 
-import java.awt.event.ActionEvent;
+import org.argouml.kernel.*;
+import org.argouml.model.uml.UmlFactory;
+import org.argouml.ui.*;
 
-import javax.swing.Action;
+import ru.novosoft.uml.*;
+import ru.novosoft.uml.model_management.*;
 
-import org.argouml.i18n.Translator;
-import org.argouml.kernel.Project;
-import org.argouml.kernel.ProjectManager;
-import org.argouml.model.Model;
-import org.tigris.gef.undo.UndoableAction;
+import java.awt.event.*;
+import java.beans.*;
 
-/**
- * Add a new package at the top level, i.e. a model.<p>
- *
- * TODO: ArgoUML currently only supports one model.
- */
-public class ActionAddTopLevelPackage extends UndoableAction {
+
+public class ActionAddTopLevelPackage extends UMLChangeAction {
+
+    ////////////////////////////////////////////////////////////////
+    // static variables
+    
+    public static ActionAddTopLevelPackage SINGLETON = new ActionAddTopLevelPackage(); 
+
 
     ////////////////////////////////////////////////////////////////
     // constructors
 
-    /**
-     *  The constructor.
-     */
     public ActionAddTopLevelPackage() {
-        super(Translator.localize("action.add-top-level-package"), null);
-        // Set the tooltip string:
-        putValue(Action.SHORT_DESCRIPTION, 
-                Translator.localize("action.add-top-level-package"));
+	super("Add Top-Level Package", NO_ICON);
     }
 
 
     ////////////////////////////////////////////////////////////////
     // main methods
 
-    /**
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-     */
     public void actionPerformed(ActionEvent ae) {
-    	super.actionPerformed(ae);
-	Project p = ProjectManager.getManager().getCurrentProject();
-        int numPacks = p.getUserDefinedModels().size();
-        String nameStr = "package_" + (numPacks + 1);
-        Object/*MModel*/ model =
-	    Model.getModelManagementFactory().createModel();
-        Model.getCoreHelper().setName(model, nameStr);
-        p.addMember(model);
-        super.actionPerformed(ae);
-        new ActionClassDiagram().actionPerformed(ae);
-
-
+	Project p = ProjectBrowser.TheInstance.getProject();
+	try {
+	    int numPacks = p.getModels().size();
+	    String nameStr = "package_" + (numPacks + 1);
+	    MModel model = UmlFactory.getFactory().getModelManagement().createModel();
+	    model.setName(nameStr);
+	    p.addMember(model);
+	    super.actionPerformed(ae);
+	    ActionClassDiagram.SINGLETON.actionPerformed(ae);
+	}
+	catch (PropertyVetoException pve) { }
     }
 } /* end class ActionAddTopLevelPackage */

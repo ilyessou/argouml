@@ -1,16 +1,15 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
-// and this paragraph appear in all copies. This software program and
+// and this paragraph appear in all copies.  This software program and
 // documentation are copyrighted by The Regents of the University of
 // California. The software program and documentation are supplied "AS
 // IS", without any accompanying services from The Regents. The Regents
 // does not warrant that the operation of the program will be
 // uninterrupted or error-free. The end-user understands that the program
 // was developed for research purposes and is advised not to rely
-// exclusively on the program for any reason. IN NO EVENT SHALL THE
+// exclusively on the program for any reason.  IN NO EVENT SHALL THE
 // UNIVERSITY OF CALIFORNIA BE LIABLE TO ANY PARTY FOR DIRECT, INDIRECT,
 // SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, INCLUDING LOST PROFITS,
 // ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN IF
@@ -22,165 +21,113 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: FigJoinState.java
+// Classes: FigJoinState
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.diagram.state.ui;
 
-import java.awt.Color;
-import java.awt.Rectangle;
-import java.awt.event.MouseEvent;
-import java.util.Iterator;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.*;
+import java.beans.*;
+import javax.swing.*;
 
-import org.tigris.gef.graph.GraphModel;
-import org.tigris.gef.presentation.FigRect;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.behavior.state_machines.*;
 
-/**
- * Class to display graphics for a UML Join State in a diagram.
- *
- * @author jrobbins
- */
+import org.tigris.gef.presentation.*;
+import org.tigris.gef.graph.*;
+
+/** Class to display graphics for a UML MState in a diagram. */
+
 public class FigJoinState extends FigStateVertex {
 
-    ////////////////////////////////////////////////////////////////
-    // constants
+  ////////////////////////////////////////////////////////////////
+  // constants
 
-    private static final int X = 10;
-    private static final int Y = 10;
-    private static final int WIDTH = 80;
-    private static final int HEIGHT = 7;
+  public static final int MARGIN = 2;
+  public static final int X = 10;
+  public static final int Y = 10;
+  public static final int WIDTH = 80;
+  public static final int HEIGHT = 9;
 
-    ////////////////////////////////////////////////////////////////
-    // instance variables
+  ////////////////////////////////////////////////////////////////
+  // instance variables
 
-    private FigRect head;
+  FigRect _bigPort;
+  FigRect _head;
 
-    ////////////////////////////////////////////////////////////////
-    // constructors
+  ////////////////////////////////////////////////////////////////
+  // constructors
 
-    /**
-     * The main constructor.
-     */
-    public FigJoinState() {
-        setEditable(false);
-        setBigPort(new FigRect(X, Y, WIDTH, HEIGHT, Color.cyan, Color.cyan));
-        head = new FigRect(X, Y, WIDTH, HEIGHT, Color.black, Color.black);
-        // add Figs to the FigNode in back-to-front order
-        addFig(getBigPort());
-        addFig(head);
+  public FigJoinState() {
+    _bigPort = new FigRect(X,Y,WIDTH,HEIGHT, Color.cyan, Color.cyan);
+    _head = new FigRect(X,Y,WIDTH,HEIGHT, Color.black, Color.black);
+    // add Figs to the FigNode in back-to-front order
+    addFig(_bigPort);
+    addFig(_head);
 
-        setBlinkPorts(false); //make port invisble unless mouse enters
-    }
+    setBlinkPorts(false); //make port invisble unless mouse enters
+    Rectangle r = getBounds();
+  }
 
-    /**
-     * The constructor which links the Fig into the existing UML element.
-     *
-     * @param gm ignored
-     * @param node the UML element
-     */
-    public FigJoinState(GraphModel gm, Object node) {
-        this();
-        setOwner(node);
-    }
+  public FigJoinState(GraphModel gm, Object node) {
+    this();
+    setOwner(node);
+  }
 
-    /**
-     * @see java.lang.Object#clone()
-     */
-    public Object clone() {
-        FigJoinState figClone = (FigJoinState) super.clone();
-        Iterator it = figClone.getFigs().iterator();
-        figClone.setBigPort((FigRect) it.next());
-        figClone.head = (FigRect) it.next();
-        return figClone;
-    }
+  public Object clone() {
+    FigJoinState figClone = (FigJoinState) super.clone();
+    Vector v = figClone.getFigs();
+    figClone._bigPort = (FigRect) v.elementAt(0);
+    figClone._head = (FigRect) v.elementAt(1);
+    return figClone;
+  }
 
-    ////////////////////////////////////////////////////////////////
-    // Fig accessors
+  ////////////////////////////////////////////////////////////////
+  // Fig accessors
 
-    /**
-     * Override setBounds to keep shapes looking right.
-     *
-     * @see org.tigris.gef.presentation.Fig#setBounds(int, int, int, int)
-     */
-    protected void setBoundsImpl(int x, int y, int w, int h) {
-        Rectangle oldBounds = getBounds();
-        if (w > h) {
-            h = HEIGHT;
-        } else {
-            w = HEIGHT;
-        }
-        getBigPort().setBounds(x, y, w, h);
-        head.setBounds(x, y, w, h);
+  public void setOwner(Object node) {
+    super.setOwner(node);
+    bindPort(node, _bigPort);
+  }
 
-        calcBounds();
-        updateEdges();
-        firePropChange("bounds", oldBounds, getBounds());
-    }
+  /** Initial states are fixed size. */
+  //public boolean isResizable() { return false; }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#setLineColor(java.awt.Color)
-     */
-    public void setLineColor(Color col) {
-        head.setLineColor(col);
-    }
+  /* Override setBounds to keep shapes looking right */
+  public void setBounds(int x, int y, int w, int h) {
+    Rectangle oldBounds = getBounds();
+    if (w > h) h = 9; else w = 9;
+    _bigPort.setBounds(x, y, w, h);
+    _head.setBounds(x, y, w, h);
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#getLineColor()
-     */
-    public Color getLineColor() {
-        return head.getLineColor();
-    }
+    calcBounds(); //_x = x; _y = y; _w = w; _h = h;
+    updateEdges();
+    firePropChange("bounds", oldBounds, getBounds());
+  }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#setFillColor(java.awt.Color)
-     */
-    public void setFillColor(Color col) {
-        head.setFillColor(col);
-    }
+  public void setLineColor(Color col) { _head.setLineColor(col); }
+  public Color getLineColor() { return _head.getLineColor(); }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#getFillColor()
-     */
-    public Color getFillColor() {
-        return head.getFillColor();
-    }
+  public void setFillColor(Color col) { _head.setFillColor(col); }
+  public Color getFillColor() { return _head.getFillColor(); }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#setFilled(boolean)
-     */
-    public void setFilled(boolean f) {
-    }
+  public void setFilled(boolean f) { }
+  public boolean getFilled() { return true; }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#getFilled()
-     */
-    public boolean getFilled() {
-        return true;
-    }
+  public void setLineWidth(int w) { _head.setLineWidth(w); }
+  public int getLineWidth() { return _head.getLineWidth(); }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#setLineWidth(int)
-     */
-    public void setLineWidth(int w) {
-        head.setLineWidth(w);
-    }
+  ////////////////////////////////////////////////////////////////
+  // Event handlers
+  
+  public void mouseClicked(MouseEvent me) { }
+  public void keyPressed(KeyEvent ke) { }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#getLineWidth()
-     */
-    public int getLineWidth() {
-        return head.getLineWidth();
-    }
 
-    ////////////////////////////////////////////////////////////////
-    // Event handlers
-
-    /**
-     * @see java.awt.event.MouseListener#mouseClicked(java.awt.event.MouseEvent)
-     */
-    public void mouseClicked(MouseEvent me) {
-    }
-
-    /**
-     * The UID.
-     */
-    static final long serialVersionUID = 2075803883819230367L;
+  static final long serialVersionUID = 2075803883819230367L;
 
 } /* end class FigJoinState */

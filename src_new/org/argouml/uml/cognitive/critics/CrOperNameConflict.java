@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,55 +21,67 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+
+// File: CrOperNameConflict.java
+// Classes: CrOperNameConflict
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
+// 5 Mar 2002: Jeremy Bennett (mail@jeremybennett.com). Bug in detection of
+// matching signatures fixed (was checking for matching parameter names, not
+// just types). signaturesMatch() moved to CriticUtils.
+
+// 8 Mar 2002: Jeremy Bennett (mail@jeremybennett.com). Signature simplified to
+// ignore return types (like Java and C++). Javadoc notes this.
+
+
 package org.argouml.uml.cognitive.critics;
 
-import java.util.Iterator;
-import java.util.Vector;
+import java.util.*;
+import javax.swing.*;
 
-import javax.swing.Icon;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
 
-import org.argouml.cognitive.Designer;
-import org.argouml.cognitive.critics.Critic;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
+import org.argouml.cognitive.*;
+import org.argouml.cognitive.critics.*;
+
 
 /**
- * A critic to detect when a class has operations with two matching
- * signatures.<p>
+ * <p> A critic to detect when a class has operations with two matching
+ *   signatures.</p>
  *
- * Takes each operation in turn and compares its signature with all
- * earlier operations. This version corrects and earlier bug, which
- * checked for matching names as well as types in the parameter
- * list.<p>
+ * <p>Takes each operation in turn and compares its signature with all earlier
+ *   operations. This version corrects and earlier bug, which checked for
+ *   matching names as well as types in the parameter list.</p>
  *
- * <em>Warning</em>. The algorithm in is quadratic in the number of
- * operations. It could be computationally demanding on a design where
- * classes have a lot of operations. See the {@link #predicate2}
- * method for possible solutions.<p>
+ * <p><em>Warning</em>. The algorithm in is quadratic in the
+ *   number of operations. It could be computationally demanding on a design
+ *   where classes have a lot of operations. See the {@link
+ *   #predicate2} method for possible solutions.</p>
  *
- * See <a href=
- * "http://argouml.tigris.org/documentation/printablehtml/manual/argouml.html/
- * #s2.ref.oper_name_conflict">
- * ArgoUML User Manual: Change Names or Signatures in &lt;artifact&gt;
- * </a>
- * @author jrobbins@ics.uci.edu
+ * @see <a href="http://argouml.tigris.org/documentation/snapshots/manual/argouml.html/#s2.ref.oper_name_conflict">ArgoUML User Manual: Change Names or Signatures in &lt;artifact&gt;</a>
  */
 
 public class CrOperNameConflict extends CrUML {
 
     /**
-     * Constructor for the critic.<p>
+     * <p>Constructor for the critic.</p>
      *
-     * Sets up the resource name, which will allow headline and
-     * description to found for the current locale. Provides design
-     * issue categories (METHODS, NAMING), sets a knowledge type
-     * (SYNTAX) and adds triggers for metaclasses "behaviouralFeature"
-     * and feature_name".<p>
+     * <p>Sets up the resource name, which will allow headline and description
+     *   to found for the current locale. Provides design issue categories
+     *   (METHODS, NAMING), sets a knowledge type (SYNTAX) and adds triggers
+     *   for metaclasses "behaviouralFeature" and feature_name".</p>
+     *
+     * @return  nothing returned since this is a constructor
      */
     public CrOperNameConflict() {
-        setupHeadAndDesc();
-        addSupportedDecision(UMLDecision.METHODS);
-        addSupportedDecision(UMLDecision.NAMING);
+
+        setResource("CrOperNameConflict");
+
+        addSupportedDecision(CrUML.decMETHODS);
+        addSupportedDecision(CrUML.decNAMING);
 
         setKnowledgeTypes(Critic.KT_SYNTAX);
 
@@ -83,61 +94,79 @@ public class CrOperNameConflict extends CrUML {
 
 
     /**
-     * The trigger for the critic.<p>
+     * <p>The trigger for the critic.</p>
      *
-     * Finds all the operations for the given classifier. Takes each
-     * operation in turn and compares its signature with all earlier
-     * operations. This version corrects an earlier bug, which checked
-     * for matching names as well as types in the parameter list.<p>
+     * <p>Finds all the operations for the given classifier. Takes each
+     *   operation in turn and compares its signature with all earlier
+     *   operations. This version corrects an earlier bug, which checked for
+     *   matching names as well as types in the parameter list.</p>
      *
-     * <em>Note</em>. The signature ignores any return parameters in
-     * looking for a match. This is in line with Java/C++.<p>
+     * <p><em>Note</em>. The signature ignores any return parameters in looking
+     *   for a match. This is in line with Java/C++.</p>
      *
-     * We do not need to worry about signature clashes that are
-     * inherited (overloading). This is something encouraged in many
-     * OO environments to facilitate polymorphism.<p>
+     * <p>We do not need to worry about signature clashes that are inherited
+     *   (overloading). This is something encouraged in many OO environments to
+     *   facilitate polymorphism.</p>
      *
-     * This algorithm is quadratic in the number of operations. If
-     * this became a problem, we would have to consider sorting the
-     * operations vector and comparing only adjacent pairs
-     * (potentially O(n log n) performance).<p>
+     * <p>This algorithm is quadratic in the number of operations. If this
+     *   became a problem, we would have to consider sorting the operations
+     *   vector and comparing only adjacent pairs (potentially O(n log n)
+     *   performance).</p>
      *
-     * @param  dm    the {@link Object} to be checked against the critic.
+     * @param  dm    the {@link java.lang.Object Object} to be checked against
+     *               the critic.
      *
-     * @param  dsgr  the {@link Designer} creating the model. Not used,
-     *               this is for future development of ArgoUML.
+     * @param  dsgr  the {@link org.argouml.cognitive.Designer Designer}
+     *               creating the model. Not used, this is for future
+     *               development of ArgoUML.
      *
      * @return       {@link #PROBLEM_FOUND PROBLEM_FOUND} if the critic is
-     *               triggered, otherwise {@link #NO_PROBLEM NO_PROBLEM}.
-     */
+     *               triggered, otherwise {@link #NO_PROBLEM NO_PROBLEM}.  */
+    
     public boolean predicate2(Object dm, Designer dsgr) {
 
         // Only do this for classifiers
 
-        if (!(Model.getFacade().isAClassifier(dm))) {
+        if (!(dm instanceof MClassifier)) {
             return NO_PROBLEM;
         }
 
-	Iterator ops = Model.getFacade().getOperations(dm).iterator();
+        MClassifier cls = (MClassifier) dm;
 
         // Get all the features (giving up if there are none). Then loop
         // through finding all operations. Each time we find one, we compare
         // its signature with all previous (held in vector operSeen), and then
         // if it doesn't match add it to the vector.
 
+        Collection str = cls.getFeatures();
+
+        if (str == null) {
+            return NO_PROBLEM;
+        }
+
+        Iterator enum   = str.iterator();
         Vector operSeen = new Vector();
 
-        while (ops.hasNext()) {
+        while (enum.hasNext()) {
 
-	    Object op = ops.next();
+            // Skip on if its not an operation
+
+            MFeature f = (MFeature) enum.next();
+
+            if (!(f instanceof MOperation)) {
+                continue;
+            }
 
             // Compare against all earlier operations. If there's a match we've
             // found the problem
 
+            MOperation op   = (MOperation) f;
             int        size = operSeen.size();
 
             for (int i = 0; i < size; i++) {
-                if (signaturesMatch(op, operSeen.get(i))) {
+                MOperation otherOp = (MOperation) operSeen.elementAt(i);
+
+                if (CriticUtils.signaturesMatch(op, otherOp)) {
                     return PROBLEM_FOUND;
                 }
             }
@@ -154,121 +183,26 @@ public class CrOperNameConflict extends CrUML {
 
 
     /**
-     * Return the icon to be used for the clarifier for this critic.<p>
+     * <p>Return the icon to be used for the clarifier for this critic.</p>
      *
-     * A clarifier is the graphical highlight used to show the
-     * presence of a critique. For example wavy colored underlines
-     * beneath operations.<p>
+     * <p>A clarifier is the graphical highlight used to show the presence of a
+     *   critique. For example wavy colored underlines beneath operations.</p>
      *
-     * In this case it will be a wavy line under the second of the
-     * clashing operations.<p>
+     * <p>In this case it will be a wavy line under the second of the clashing
+     *   operations.</p>
      *
-     * @return       The {@link javax.swing.Icon Icon} to use.
-     */
+     * @return       The {@link javax.swing.Icon Icon} to use.  */
+    
     public Icon getClarifier() {
-        return ClOperationCompartment.getTheInstance();
-    }
-
-
-    /**
-     * Sees if the signatures of two Operations are the same.<p>
-     *
-     * Checks for matching operation name, and list of parameter
-     * types. The order of the parameters is significant.
-     *
-     * This version also checks for the parameter kind, since
-     * otherwise, "op(int a)" and "op():int" appear to have the same
-     * signature. Purists would probably suggest that the kind should
-     * match exactly. However we only differentiate the return
-     * parameter(s). It is unlikely that any practical OO language
-     * would be able to distinguish instantiation of in from out from
-     * inout parameters.<p>
-     *
-     * We ignore return parameters completely. This is in line with
-     * Java/C++ which regard <code>int x(int, int)</code> and
-     * <code>double x(int, int)</code> as having the same
-     * signature.<p>
-     *
-     * If you need to modify this method, take care, since there are
-     * numerous "telegraph pole" problems involved in working through
-     * pairs of mixed lists.<p>
-     *
-     * @param op1 the first operation whose signature is being compared.
-     * @param op2 the second operation whose signature is being compared.
-     *
-     * @return    <code>true</code> if the signatures match, <code>false</code>
-     *            otherwise.
-     */
-    private boolean signaturesMatch(Object op1, Object op2) {
-
-	// Check that the names match.
-
-	String name1 = Model.getFacade().getName(op1);
-	if (name1 == null)
-	    return false;
-
-	String name2 = Model.getFacade().getName(op2);
-	if (name2 == null)
-	    return false;
-
-	if (!name1.equals(name2))
-	    return false;
-
-	// Check that the parameter lists match.
-
-	Iterator params1 = Model.getFacade().getParameters(op1).iterator();
-	Iterator params2 = Model.getFacade().getParameters(op2).iterator();
-
-	while (params1.hasNext()
-	       && params2.hasNext()) {
-
-	    // Get the next non-return parameter. Null if non left.
-	    Object p1 = null;
-	    while (p1 == null && params1.hasNext()) {
-		p1 = params1.next();
-		if (Model.getFacade().isReturn(p1))
-		    p1 = null;
-	    }
-
-	    Object p2 = null;
-	    while (p2 == null && params1.hasNext()) {
-		p2 = params1.next();
-		if (Model.getFacade().isReturn(p2))
-		    p2 = null;
-	    }
-
-	    if (p1 == null && p2 == null)
-		return true;	// Both lists have the same length
-
-	    // Different lengths:
-	    if (p1 == null)
-		return false;
-	    if (p2 == null)
-		return false;
-
-	    // Compare the type of the parameters. If any of the types is
-	    // null, then we have a match.
-	    Object p1type = Model.getFacade().getType(p1);
-	    if (p1type == null)
-		continue;
-
-	    Object p2type = Model.getFacade().getType(p2);
-	    if (p2type == null)
-		continue;
-
-	    if (!p1type.equals(p2type))
-		return false;
-
-	    // This pair of params where the same. Lets check the next pair.
-	}
-
-	if (!params1.hasNext()
-	    && !params2.hasNext()) {
-	    // Both lists have the same length.
-	    return true;
-	}
-
-	return false;
+        return ClOperationCompartment.TheInstance;
     }
 
 } /* end class CrOperNameConflict.java */
+
+
+
+
+
+
+
+

@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,88 +23,75 @@
 
 package org.argouml.uml.ui;
 
-import java.awt.event.ActionEvent;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.Vector;
+import org.argouml.ui.*;
+import org.argouml.uml.generator.ui.*;
+import org.tigris.gef.base.*;
+import org.tigris.gef.presentation.*;
+import ru.novosoft.uml.foundation.core.*;
+import java.awt.event.*;
+import java.util.*;
 
-import javax.swing.Action;
 
-import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
-import org.argouml.ui.targetmanager.TargetManager;
-import org.argouml.uml.generator.ui.ClassGenerationDialog;
-import org.tigris.gef.presentation.Fig;
-import org.tigris.gef.undo.UndoableAction;
+public class ActionGenerateOne extends UMLAction {
 
-/**
- * Action to trigger generation of source
- * for all selected classes and interfaces.
- *
- * @stereotype singleton
- */
-public class ActionGenerateOne extends UndoableAction {
+    ////////////////////////////////////////////////////////////////
+    // static variables
+
+    public static ActionGenerateOne SINGLETON = new ActionGenerateOne(); 
+
 
     ////////////////////////////////////////////////////////////////
     // constructors
 
-    /**
-     * The constructor.
-     */
-    public ActionGenerateOne() {
-        super(Translator.localize("action.generate-selected-classes"), null);
-        // Set the tooltip string:
-        putValue(Action.SHORT_DESCRIPTION, 
-                Translator.localize("action.generate-selected-classes"));
+    protected ActionGenerateOne() {
+	super("Generate Selected Classes", NO_ICON);
     }
+
 
     ////////////////////////////////////////////////////////////////
     // main methods
 
-    /**
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-     */
     public void actionPerformed(ActionEvent ae) {
-    	super.actionPerformed(ae);
-        Vector classes = getCandidates();
-        // There is no need to test if classes is empty because
-        // the shouldBeEnabled mechanism blanks out the possibility to
-        // choose this alternative in this case.
-        ClassGenerationDialog cgd = new ClassGenerationDialog(classes);
-        cgd.setVisible(true);
-    }
-
-    /**
-     * @return true if the action is enabled and there is at least a 
-     * candidate class
-     * @see org.tigris.gef.undo.UndoableAction#isEnabled()
-     */
-    public boolean isEnabled() {
-        if (!super.isEnabled()) {
-            return false;
+	ProjectBrowser pb = ProjectBrowser.TheInstance;
+	Editor ce = org.tigris.gef.base.Globals.curEditor();
+	Vector sels = ce.getSelectionManager().getFigs();
+	java.util.Enumeration enum = sels.elements();
+	Vector classes = new Vector();
+	while (enum.hasMoreElements()) {
+	    Fig f = (Fig) enum.nextElement();
+	    Object owner = f.getOwner();
+	    if (!(owner instanceof MClass) && !(owner instanceof MInterface))
+		continue;
+	    MClassifier cls = (MClassifier) owner;
+	    String name = cls.getName();
+	    if (name == null || name.length() == 0) continue;
+	    classes.addElement(cls);
 	}
-        Vector classes = getCandidates();
-        return classes.size() > 0;
+	// There is no need to test if classes is empty because
+	// the shouldBeEnabled mechanism blanks out the possibility to
+	// choose this alternative in this case.
+	ClassGenerationDialog cgd = new ClassGenerationDialog(classes);
+	cgd.show();
     }
 
-    /**
-     * @return the candidates for generation
-     */
-    private Vector getCandidates() {
-        Vector classes = new Vector();
-        Collection targets = TargetManager.getInstance().getTargets();
-        Iterator it = targets.iterator();
-        while (it.hasNext()) {
-            Object target = it.next();
-            if (target instanceof Fig) {
-                target = ((Fig) target).getOwner();
-            }
-            if (Model.getFacade().isAClass(target)
-                || Model.getFacade().isAInterface(target)) {
-                classes.add(target);
-            }
-        }
-        return classes;
+    public boolean shouldBeEnabled() {
+	if (!super.shouldBeEnabled()) return false;
+	boolean foundOne = false;
+	Editor ce = org.tigris.gef.base.Globals.curEditor();
+	if(ce != null) {
+	    Vector sels = ce.getSelectionManager().getFigs();
+	    java.util.Enumeration enum = sels.elements();
+	    while (enum.hasMoreElements()) {
+		Fig f = (Fig) enum.nextElement();
+		Object owner = f.getOwner();
+		if (!(owner instanceof MClass) && !(owner instanceof MInterface))
+		    continue;
+		MClassifier cls = (MClassifier) owner;
+		String name = cls.getName();
+		if (name == null || name.length() == 0) return false;
+		foundOne = true;
+	    }
+	}
+	return foundOne;
     }
-
 } /* end class ActionGenerateOne */

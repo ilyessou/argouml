@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,508 +23,397 @@
 
 package org.argouml.cognitive.critics.ui;
 
-import java.awt.BorderLayout;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
-import java.beans.PropertyChangeEvent;
-import java.beans.VetoableChangeListener;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Observable;
-import java.util.Observer;
+import java.beans.*;
+import java.util.*;
+import java.awt.*;
+import java.awt.event.*;
+import javax.swing.*;
+import javax.swing.event.*;
+import javax.swing.table.*;
+import javax.swing.text.*;
+import javax.swing.plaf.metal.MetalLookAndFeel;
 
-import javax.swing.BorderFactory;
-import javax.swing.JButton;
-import javax.swing.JComboBox;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTable;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import javax.swing.ListSelectionModel;
-import javax.swing.SwingUtilities;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
-import javax.swing.event.TableModelEvent;
-import javax.swing.event.TableModelListener;
-import javax.swing.table.AbstractTableModel;
-import javax.swing.table.TableColumn;
-import javax.swing.text.Document;
+import org.argouml.kernel.*;
+import org.argouml.ui.ProjectBrowser;
+import org.argouml.cognitive.*;
+import org.argouml.cognitive.critics.*;
 
-import org.apache.log4j.Logger;
-import org.argouml.cognitive.ToDoItem;
-import org.argouml.cognitive.Translator;
-import org.argouml.cognitive.critics.Agency;
-import org.argouml.cognitive.critics.Critic;
-import org.argouml.ui.ArgoDialog;
-import org.argouml.util.osdep.StartBrowser;
-import org.tigris.swidgets.BorderSplitPane;
+import org.apache.log4j.Category;
+import org.argouml.application.api.*;
 
-/**
- * Dialog box to list all critics and allow editing of some of their
- * properties. <p>
- *
- * TODO: knowledge type, supported goals,
- * supported decisions, critic network.
- */
-public class CriticBrowserDialog extends ArgoDialog
-    implements ActionListener,
-	       ListSelectionListener,
-	       ItemListener,
-	       DocumentListener,
-               TableModelListener,
-               Observer {
-    private static final Logger LOG =
-	Logger.getLogger(CriticBrowserDialog.class);
-
-    private static int numCriticBrowser = 0;
-
-    ////////////////////////////////////////////////////////////////
-    // constants
-    private static final String DESC_WIDTH_TEXT =
-	"This is Sample Text for determining Column Width";
-
-    private static final int NUM_COLUMNS = 25;
-
-    private static final String HIGH =
-        Translator.localize("misc.level.high");
-    private static final String MEDIUM =
-        Translator.localize("misc.level.medium");
-    private static final String LOW =
-        Translator.localize("misc.level.low");
-    private static final String[] PRIORITIES = {
-	HIGH, MEDIUM, LOW,
-    };
-
-    private static final String ALWAYS =
-        Translator.localize("dialog.browse.use-clarifier.always");
-    private static final String IF_ONLY_ONE =
-        Translator.localize("dialog.browse.use-clarifier.if-only-one");
-    private static final String NEVER =
-        Translator.localize("dialog.browse.use-clarifier.never");
-    private static final String[] USE_CLAR = {
-	ALWAYS, IF_ONLY_ONE, NEVER,
-    };
-
-    private static final int INSET_PX = 3;
-
-    ////////////////////////////////////////////////////////////////
-    // instance variables
-
-    private JLabel criticsLabel   = new JLabel(
-            Translator.localize("dialog.browse.label.critics"));
-    private JLabel clsNameLabel   = new JLabel(
-            Translator.localize("dialog.browse.label.critic-class"));
-    private JLabel headlineLabel  = new JLabel(
-            Translator.localize("dialog.browse.label.headline"));
-    private JLabel priorityLabel  = new JLabel(
-            Translator.localize("dialog.browse.label.priority"));
-    private JLabel moreInfoLabel  = new JLabel(
-            Translator.localize("dialog.browse.label.more-info"));
-    private JLabel descLabel      = new JLabel(
-            Translator.localize("dialog.browse.label.description"));
-    private JLabel clarifierLabel = new JLabel(
-            Translator.localize("dialog.browse.label.use-clarifier"));
-
-    private TableModelCritics tableModel  = new TableModelCritics();
-    private JTable table        = new JTable();
-    private JTextField className = new JTextField("", NUM_COLUMNS);
-    private JTextField headline = new JTextField("", NUM_COLUMNS);
-    private JComboBox priority  = new JComboBox(PRIORITIES);
-    private JTextField moreInfo = new JTextField("", NUM_COLUMNS - 4);
-    private JTextArea desc      = new JTextArea("", 6, NUM_COLUMNS);
-    private JComboBox useClar   = new JComboBox(USE_CLAR);
-
-    private JButton wakeButton    = new JButton(
-            Translator.localize("dialog.browse.button.wake"));
-    private JButton configButton  = new JButton(
-            Translator.localize("dialog.browse.button.configure"));
-    private JButton networkButton = new JButton(
-            Translator.localize("dialog.browse.button.edit-network"));
-    private JButton goButton      = new JButton(
-            Translator.localize("dialog.browse.button.go"));
-
-    private Critic target;
-
-    private List   critics;
-
-    /**
-     * The constructor.
-     *
-     */
-    public CriticBrowserDialog() {
-	super(Translator.localize("dialog.browse.label.critics"), false);
-
-	JPanel mainContent = new JPanel();
-	mainContent.setLayout(new BorderLayout(10, 10));
-        BorderSplitPane bsp = new BorderSplitPane();
-       
-	// Critics Table
-	JPanel tablePanel = new JPanel(new BorderLayout(5, 5));
-
-	critics = new ArrayList(Agency.getCritics());
-	Collections.sort(critics, new Comparator() {
-	    public int compare(Object o1, Object o2) {
-		return ((Critic) o1).getHeadline().compareTo(((Critic) o2)
-		                                            .getHeadline());
-	    }
-	});
-	tableModel.setTarget(critics);
-	table.setModel(tableModel);
-	table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-	table.setShowVerticalLines(false);
-	table.getSelectionModel().addListSelectionListener(this);
-        table.getModel().addTableModelListener(this);
-	table.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
-	TableColumn checkCol = table.getColumnModel().getColumn(0);
-	TableColumn descCol = table.getColumnModel().getColumn(1);
-	TableColumn actCol = table.getColumnModel().getColumn(2);
-	checkCol.setMinWidth(35);
-	checkCol.setMaxWidth(35);
-	checkCol.setWidth(30);
-	int descWidth = table.getFontMetrics(table.getFont())
-	        .stringWidth(DESC_WIDTH_TEXT);
-	descCol.setMinWidth(descWidth);
-	descCol.setWidth(descWidth); // no maximum set, so it will stretch...
-	actCol.setMinWidth(50);
-	actCol.setMaxWidth(50);
-	actCol.setWidth(50);
-
-	tablePanel.add(criticsLabel, BorderLayout.NORTH);
-	JScrollPane tableSP = new JScrollPane(table);
-	tablePanel.add(tableSP, BorderLayout.CENTER);
-
-	// Set tableSP's preferred height to 0 so that details height
-	// is used in pack()
-	tableSP.setPreferredSize(new Dimension(checkCol.getWidth()
-					       + descCol.getWidth()
-					       + actCol.getWidth() + 20,
-					       0));
-        bsp.add(tablePanel, BorderSplitPane.CENTER);
-        
-	// Critic Details panel
-        JPanel detailsPanel = new JPanel(new GridBagLayout());
-        detailsPanel.setBorder(BorderFactory.createTitledBorder(
-                Translator.localize(
-                        "dialog.browse.titled-border.critic-details")));
-        
-	GridBagConstraints labelConstraints = new GridBagConstraints();
-	labelConstraints.anchor = GridBagConstraints.EAST;
-        labelConstraints.fill = GridBagConstraints.BOTH;
-	labelConstraints.gridy = 0;
-	labelConstraints.gridx = 0;
-	labelConstraints.gridwidth = 1;
-	labelConstraints.gridheight = 1;
-	labelConstraints.insets = new Insets(0, 10, 5, 4);
-
-	GridBagConstraints fieldConstraints = new GridBagConstraints();
-	fieldConstraints.anchor = GridBagConstraints.WEST;
-	fieldConstraints.fill = GridBagConstraints.BOTH;
-	fieldConstraints.gridy = 0;
-	fieldConstraints.gridx = 1;
-	fieldConstraints.gridwidth = 3;
-	fieldConstraints.gridheight = 1;
-        fieldConstraints.weightx = 1.0;
-	fieldConstraints.insets = new Insets(0, 4, 5, 10);
-
-	className.setBorder(null);
-	labelConstraints.gridy = 0;
-	fieldConstraints.gridy = 0;
-	detailsPanel.add(clsNameLabel, labelConstraints);
-	detailsPanel.add(className, fieldConstraints);
-
-	labelConstraints.gridy = 1;
-	fieldConstraints.gridy = 1;
-	detailsPanel.add(headlineLabel, labelConstraints);
-	detailsPanel.add(headline, fieldConstraints);
-
-	labelConstraints.gridy = 2;
-	fieldConstraints.gridy = 2;
-	detailsPanel.add(priorityLabel, labelConstraints);
-	detailsPanel.add(priority, fieldConstraints);
-
-	labelConstraints.gridy = 3;
-	fieldConstraints.gridy = 3;
-	detailsPanel.add(moreInfoLabel, labelConstraints);
-	JPanel moreInfoPanel =
-	    new JPanel(new GridBagLayout());
-        GridBagConstraints gridConstraints = new GridBagConstraints();
-        gridConstraints.anchor = GridBagConstraints.WEST;
-        gridConstraints.gridx = 0;
-        gridConstraints.gridy = 0;
-        gridConstraints.weightx = 100;
-        gridConstraints.fill = GridBagConstraints.BOTH;
-        gridConstraints.insets = new Insets(0, 0, 5, 0);
-	moreInfoPanel.add(moreInfo, gridConstraints);
-
-        gridConstraints.anchor = GridBagConstraints.EAST;
-        gridConstraints.gridx = 1;
-        gridConstraints.fill = GridBagConstraints.NONE;
-        gridConstraints.insets = new Insets(0, 10, 5, 0);
-        gridConstraints.weightx = 0;
-	moreInfoPanel.add(goButton, gridConstraints);
-        moreInfoPanel.setMinimumSize(new Dimension(priority.getWidth(),
-                priority.getHeight()));
-	detailsPanel.add(moreInfoPanel, fieldConstraints);
-
-	labelConstraints.gridy = 4;
-	fieldConstraints.gridy = 4;
-        fieldConstraints.weighty = 3.0;
-	labelConstraints.anchor = GridBagConstraints.NORTHEAST;
-	detailsPanel.add(descLabel, labelConstraints);
-	detailsPanel.add(new JScrollPane(desc), fieldConstraints);
-	desc.setLineWrap(true);
-	desc.setWrapStyleWord(true);
-	desc.setMargin(new Insets(INSET_PX, INSET_PX, INSET_PX, INSET_PX));
-
-	labelConstraints.anchor = GridBagConstraints.EAST;
-	labelConstraints.gridy = 5;
-	fieldConstraints.gridy = 5;
-        fieldConstraints.weighty = 0;
-	detailsPanel.add(clarifierLabel, labelConstraints);
-	detailsPanel.add(useClar, fieldConstraints);
-
-	labelConstraints.gridy = 6;
-	fieldConstraints.gridy = 6;
-	JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-	buttonPanel.add(wakeButton);
-	buttonPanel.add(configButton);
-	buttonPanel.add(networkButton);
-	detailsPanel.add(new JLabel(""), labelConstraints);
-	detailsPanel.add(buttonPanel, fieldConstraints);
-        bsp.add(detailsPanel, BorderSplitPane.EAST);
-        
-	this.addListeners();
-        this.enableFieldsAndButtons();
-
-        mainContent.add(bsp);
-	setResizable(true);
-	setContent(mainContent);
-	numCriticBrowser++;
-    }
-
-    private void addListeners() {
-        goButton.addActionListener(this);
-        networkButton.addActionListener(this);
-        wakeButton.addActionListener(this);
-        configButton.addActionListener(this);
-        headline.getDocument().addDocumentListener(this);
-        moreInfo.getDocument().addDocumentListener(this);
-        desc.getDocument().addDocumentListener(this);
-        priority.addItemListener(this);
-        useClar.addItemListener(this);
-    }
-
-    private void enableFieldsAndButtons() {
-        className.setEditable(false);
-        headline.setEditable(false);
-        priority.setEnabled(false);
-        desc.setEditable(false);
-        moreInfo.setEditable(false);
-        
-        goButton.setEnabled(false);
-        wakeButton.setEnabled(false);
-        networkButton.setEnabled(false);
-        configButton.setEnabled(false);
-    }
+/** Dialog box to list all critics and allow editing of some of their
+ *  properties.  Needs-More-Work: knowledge type, supported goals,
+ *  supported decisions, critic network. */
+public class CriticBrowserDialog extends JDialog
+implements ActionListener, ListSelectionListener, ItemListener, DocumentListener {
     
-    /**
-     * @param t the new target
-     */
-    private void setTarget(Object t) {
-	target = (Critic) t;
-        updateButtonsEnabled();
-	className.setText(target.getClass().getName());
-	headline.setText(target.getHeadline());
-
-	int p = target.getPriority();
-	if (p == ToDoItem.HIGH_PRIORITY) {
-	    priority.setSelectedItem(HIGH);
-	} else if (p == ToDoItem.MED_PRIORITY) {
-	    priority.setSelectedItem(MEDIUM);
-	} else {
-	    priority.setSelectedItem(LOW);
-	}
-	priority.repaint();
-
-	moreInfo.setText(target.getMoreInfoURL());
-	desc.setText(target.getDescriptionTemplate());
-	desc.setCaretPosition(0);
-	useClar.setSelectedItem(ALWAYS);
-	useClar.repaint();
-    }
-
-    /**
-     * Updates the states of the buttons
-     *
-     */
-    protected void updateButtonsEnabled() {
-        this.configButton.setEnabled(false);
-        this.goButton.setEnabled(this.target != null 
-                && this.target.getMoreInfoURL() != null 
-                && this.target.getMoreInfoURL().length() > 0);
-        this.networkButton.setEnabled(false);
-        this.wakeButton.setEnabled(this.target != null
-                               && (this.target.isSnoozed() 
-                                       || !this.target.isEnabled()));
-    }
+    protected static Category cat = Category.getInstance(CriticBrowserDialog.class);
     
-    private void setTargetHeadline() {
-	if (target == null) return;
-	String h = headline.getText();
-	target.setHeadline(h);
+  public static int _numCriticBrowser = 0;
+
+  ////////////////////////////////////////////////////////////////
+  // constants
+  private static final String BUNDLE = "Cognitive";
+
+  static final String high = Argo.localize(BUNDLE, "level.high");
+  static final String medium = Argo.localize(BUNDLE, "level.medium");
+  static final String low = Argo.localize(BUNDLE, "level.low");
+
+  public static final String PRIORITIES[] = { high, medium, low };
+  public static final String USE_CLAR[] = { "Always", "If Only One", "Never" };
+
+
+  ////////////////////////////////////////////////////////////////
+  // instance variables
+
+  protected JLabel _criticsLabel   = new JLabel("Critics");
+  protected JLabel _clsNameLabel   = new JLabel("Critic Class: ");
+  protected JLabel _headlineLabel  = new JLabel("Headline: ");
+  protected JLabel _priorityLabel  = new JLabel("Priority: ");
+  protected JLabel _moreInfoLabel  = new JLabel("MoreInfo: ");
+  protected JLabel _descLabel      = new JLabel("Description: ");
+  protected JLabel _clarifierLabel = new JLabel("Use Clarifier: ");
+
+  TableModelCritics _tableModel  = new TableModelCritics();
+  protected JTable _table        = new JTable(30, 3);
+  protected JLabel _className    = new JLabel("");
+  protected JTextField _headline = new JTextField("", 40);
+  protected JComboBox _priority  = new JComboBox(PRIORITIES);
+  protected JTextField _moreInfo = new JTextField("", 35);
+  protected JTextArea _desc      = new JTextArea("", 6, 40);
+  protected JComboBox _useClar   = new JComboBox(USE_CLAR);
+
+  protected JButton _okButton      = new JButton("OK");
+  protected JButton _wakeButton    = new JButton("Wake");
+  protected JButton _configButton  = new JButton("Configure");
+  protected JButton _networkButton = new JButton("Edit Network");
+  protected JButton _goButton      = new JButton("Go");
+
+  protected Critic _target;
+
+  ////////////////////////////////////////////////////////////////
+  // constructors
+
+  public CriticBrowserDialog() {
+    super(ProjectBrowser.TheInstance, "Critics");
+
+    Container mainContent = getContentPane();
+//     GridBagLayout gb = new GridBagLayout();
+//     GridBagConstraints c = new GridBagConstraints();
+//     c.fill = GridBagConstraints.BOTH;
+//     c.weightx = 0.0;
+//     c.ipadx = 3; c.ipady = 3;
+
+
+    JPanel content = new JPanel();
+    mainContent.add(content, BorderLayout.CENTER);
+    //content.setLayout(gb);
+    content.setLayout(null);
+
+    _tableModel.setTarget(Agency.getCritics());
+    _table.setModel(_tableModel);
+    _table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+    Font labelFont = MetalLookAndFeel.getSubTextFont();
+    _table.setFont(labelFont);
+
+//     _table.setMinimumSize(new Dimension(150, 80));
+//     _table.setPreferredSize(new Dimension(200, 150));
+//     _table.setSize(new Dimension(200, 150));
+
+    //_table.setRowSelectionAllowed(false);
+    _table.setIntercellSpacing(new Dimension(0, 1));
+    _table.setShowVerticalLines(false);
+    _table.getSelectionModel().addListSelectionListener(this);
+    _table.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
+
+    TableColumn checkCol = _table.getColumnModel().getColumn(0);
+    TableColumn descCol = _table.getColumnModel().getColumn(1);
+    TableColumn actCol = _table.getColumnModel().getColumn(2);
+    checkCol.setMinWidth(30);
+    checkCol.setMaxWidth(30);
+    checkCol.setWidth(30);
+    descCol.setMinWidth(200);
+    descCol.setWidth(200);
+    actCol.setMinWidth(80);
+    actCol.setMaxWidth(80);
+    actCol.setWidth(80);
+
+    _criticsLabel.setBounds(2, 2, 300, 25);
+    content.add(_criticsLabel);
+//     c.gridy = 1;
+//     c.gridheight = 11; //GridBagConstraints.REMAINDER
+    JScrollPane tableSP = new JScrollPane(_table);
+    JPanel p = new JPanel();
+    p.setLayout(new BorderLayout());
+    p.setPreferredSize(new Dimension(310, 150));
+    p.setSize(new Dimension(310, 150));
+    p.setMaximumSize(new Dimension(310, 150));
+    p.add(tableSP, BorderLayout.CENTER);
+//     tableSP.setPreferredSize(new Dimension(310, 100));
+//     tableSP.setSize(new Dimension(310, 100));
+//     tableSP.setMaximumSize(new Dimension(310, 100));
+//     gb.setConstraints(p, c);
+    p.setBounds(2, 2 + 2 + 25, 340, 300);
+    content.add(p);
+
+//     c.gridx = 1;
+//     c.gridy = 0;
+//     c.gridwidth = 1;
+//     c.gridheight = 1;
+//     SpacerPanel spacer = new SpacerPanel();
+//     gb.setConstraints(spacer, c);
+//     content.add(spacer);
+
+//     c.weightx = 0.0;
+//     c.gridx = 2;
+//     c.gridy = 1;
+//     gb.setConstraints(_clsNameLabel, c);
+    _clsNameLabel.setBounds(360, 2, 100, 25);
+    content.add(_clsNameLabel);
+
+//     c.gridy = 2;
+//     gb.setConstraints(_headlineLabel, c);
+    _headlineLabel.setBounds(360, 2+25+2, 100, 25);
+    content.add(_headlineLabel);
+
+//     c.gridy = 3;
+//     gb.setConstraints(_priorityLabel, c);
+    _priorityLabel.setBounds(360, 2*3+25*2, 100, 25);
+    content.add(_priorityLabel);
+
+//     c.gridy = 4;
+//     gb.setConstraints(_moreInfoLabel, c);
+    _moreInfoLabel.setBounds(360, 2*4 + 25*3, 100, 25);
+    content.add(_moreInfoLabel);
+
+//     c.gridy = 5;
+//     gb.setConstraints(_descLabel, c);
+    _descLabel.setBounds(360, 2*5 + 25*4, 100, 25);
+    content.add(_descLabel);
+
+//     c.gridy = 8;
+//     gb.setConstraints(_clarifierLabel, c);
+    _clarifierLabel.setBounds(360, 2 + (2+25)*5 + 85, 100, 25);
+    content.add(_clarifierLabel);
+
+
+//     c.weightx = 1.0;
+//     c.gridx = 3;
+//     c.gridy = 1;
+//     c.gridwidth = 2;
+//     gb.setConstraints(_className, c);
+    _className.setBounds(465, 2, 320, 25);
+    content.add(_className);
+
+//     c.gridy = 2;
+//     gb.setConstraints(_headline, c);
+    _headline.setBounds(465, 2 + (2+25)*1, 320, 25);
+    content.add(_headline);
+
+//     c.gridy = 3;
+//     gb.setConstraints(_priority, c);
+    _priority.setBounds(465, 2 + (2+25)*2, 320, 25);
+    content.add(_priority);
+
+//     c.gridy = 4;
+//     c.gridwidth = 1;
+//     gb.setConstraints(_moreInfo, c);
+    _moreInfo.setBounds(465, 2 + (2+25)*3, 320-60, 25);
+    content.add(_moreInfo);
+
+//     c.weightx = 0.0;
+//     c.gridx = 4;
+//     c.gridy = 4;
+//     c.gridwidth = 1;
+//     gb.setConstraints(_goButton, c);
+    _goButton.setBounds(465+320-60, 2 + (2+25)*3, 60, 25);
+    content.add(_goButton);
+
+//     c.weightx = 1.0;
+//     c.gridx = 3;
+//     c.gridy = 5;
+//     c.gridwidth = 2;
+    JScrollPane descSP = new JScrollPane(_desc);
+//     gb.setConstraints(descSP, c);
+    descSP.setBounds(465, 2 + (2+25)*4, 320, 25+85);
+    content.add(descSP);
+
+//     c.gridy = 8;
+//     gb.setConstraints(_useClar, c);
+    _useClar.setBounds(465, 2 + (2+25)*5 + 85, 320, 25);
+    content.add(_useClar);
+
+//     c.gridy = 9;
+    JPanel buttonPanel = new JPanel();
+    //buttonPanel.setLayout(new GridLayout(1, 3));
+    buttonPanel.add(_wakeButton);
+    buttonPanel.add(_configButton);
+    buttonPanel.add(_networkButton);
+//     gb.setConstraints(buttonPanel, c);
+    buttonPanel.setBounds(465, 2 + (2+25)*6+85, 320, 25+5+5);
+    content.add(buttonPanel);
+
+//     c.gridx = 2;
+//     c.gridy = 10;
+//     c.gridwidth = GridBagConstraints.REMAINDER;
+    JPanel buttonPane = new JPanel();
+    buttonPane.setLayout(new FlowLayout(FlowLayout.RIGHT));
+    buttonPane.add(_okButton);
+//     gb.setConstraints(buttonPane, c);
+//     buttonPane.setBounds(465, 2 + (2+25)*7 + 5+85, 320, 25+5);
+    buttonPane.setBounds(465, 360 - (25 + 5) - 35, 320, 25+5+5);
+    content.add(buttonPane);
+
+    _goButton.addActionListener(this);
+    _okButton.addActionListener(this);
+    _networkButton.addActionListener(this);
+    _wakeButton.addActionListener(this);
+    _configButton.addActionListener(this);
+    _headline.getDocument().addDocumentListener(this);
+    _moreInfo.getDocument().addDocumentListener(this);
+    _desc.getDocument().addDocumentListener(this);
+    _priority.addItemListener(this);
+    _useClar.addItemListener(this);
+
+    _wakeButton.setEnabled(false);
+    _networkButton.setEnabled(false);
+    _configButton.setEnabled(false);
+
+    _desc.setLineWrap(true);
+    _desc.setWrapStyleWord(true);
+
+    setLocation(100, 150);
+    setSize(465+320+10, 360);
+    setResizable(false);
+    _numCriticBrowser++;
+  }
+
+  public void setTarget(Object t) {
+    _target = (Critic) t;
+    _goButton.setEnabled(false);
+    _networkButton.setEnabled(false);
+    _wakeButton.setEnabled(_target != null &&
+			   _target.snoozeOrder().getSnoozed());
+    _configButton.setEnabled(false);
+    _className.setText(_target.getClass().getName());
+    _headline.setText(_target.getHeadline());
+
+    int p = _target.getPriority();
+    if (p == ToDoItem.HIGH_PRIORITY)
+	_priority.setSelectedItem(high);
+    else if (p == ToDoItem.MED_PRIORITY)
+	_priority.setSelectedItem(medium);
+    else
+	_priority.setSelectedItem(low);
+    _priority.repaint();
+
+    _moreInfo.setText(_target.getMoreInfoURL());
+    _desc.setText(_target.getDescriptionTemplate());
+    _desc.setCaretPosition(0);
+    _useClar.setSelectedItem("Always");
+    _useClar.repaint();
+  }
+
+  public void setTargetHeadline() {
+    if (_target == null) return;
+    String h = _headline.getText();
+    _target.setHeadline(h);
+  }
+
+  public void setTargetPriority() {
+    if (_target == null) return;
+    String p = (String) _priority.getSelectedItem();
+    if (p == null) return;
+    if (p.equals(PRIORITIES[0])) _target.setPriority(ToDoItem.HIGH_PRIORITY);
+    if (p.equals(PRIORITIES[1])) _target.setPriority(ToDoItem.MED_PRIORITY);
+    if (p.equals(PRIORITIES[2])) _target.setPriority(ToDoItem.LOW_PRIORITY);
+  }
+
+  public void setTargetMoreInfo() {
+    if (_target == null) return;
+    String mi = _moreInfo.getText();
+    _target.setMoreInfoURL(mi);
+  }
+
+  public void setTargetDesc() {
+    if (_target == null) return;
+    String d = _desc.getText();
+    _target.setDescription(d);
+  }
+
+  public void setTargetUseClarifiers() {
+    cat.debug("setting clarifier usage rule");
+  }
+
+  ////////////////////////////////////////////////////////////////
+  // event handlers
+
+
+  public void actionPerformed(ActionEvent e) {
+    if (e.getSource() == _okButton) {
+      setVisible(false);
+      dispose();
+      return;
     }
-
-    private void setTargetPriority() {
-	if (target == null) return;
-	String p = (String) priority.getSelectedItem();
-	if (p == null) return;
-	if (p.equals(PRIORITIES[0]))
-	    target.setPriority(ToDoItem.HIGH_PRIORITY);
-	if (p.equals(PRIORITIES[1]))
-	    target.setPriority(ToDoItem.MED_PRIORITY);
-	if (p.equals(PRIORITIES[2]))
-	    target.setPriority(ToDoItem.LOW_PRIORITY);
+    if (e.getSource() == _goButton) {
+      cat.debug("needs-more-work go!");
+      return;
     }
-
-    private void setTargetMoreInfo() {
-	if (target == null) return;
-	String mi = moreInfo.getText();
-	target.setMoreInfoURL(mi);
+    if (e.getSource() == _networkButton) {
+      cat.debug("needs-more-work network!");
+      return;
     }
-
-    private void setTargetDesc() {
-	if (target == null) return;
-	String d = desc.getText();
-	target.setDescription(d);
+    if (e.getSource() == _configButton) {
+      cat.debug("needs-more-work config!");
+      return;
     }
-
-    private void setTargetUseClarifiers() {
-	LOG.debug("setting clarifier usage rule");
+    if (e.getSource() == _wakeButton) {
+      _target.unsnooze();
+      return;
     }
+    cat.debug("unknown src in CriticBrowserDialog: " + e.getSource());
+  }
 
-    ////////////////////////////////////////////////////////////////
-    // event handlers
-
-
-    /**
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-     */
-    public void actionPerformed(ActionEvent e) {
-	super.actionPerformed(e);
-	if (e.getSource() == goButton) {
-	    StartBrowser.openUrl(moreInfo.getText());
-	    return;
-	}
-	if (e.getSource() == networkButton) {
-	    LOG.debug("TODO: network!");
-	    return;
-	}
-	if (e.getSource() == configButton) {
-	    LOG.debug("TODO: config!");
-	    return;
-	}
-	if (e.getSource() == wakeButton) {
-            target.unsnooze();
-            target.setEnabled(true);
-            table.repaint();
-	    return;
-	}
-	LOG.debug("unknown src in CriticBrowserDialog: " + e.getSource());
+  public void valueChanged(ListSelectionEvent lse) {
+    if (lse.getValueIsAdjusting()) return;
+    Object src = lse.getSource();
+    if (src != _table.getSelectionModel()) {
+      cat.debug("src = " + src);
+      return;
     }
+    cat.debug("got valueChanged from " + src);
+    int row = _table.getSelectedRow();
+    Vector critics = Agency.getCritics();
+    setTarget(critics.elementAt(row));
+  }
 
-    /**
-     * @see javax.swing.event.ListSelectionListener#valueChanged(javax.swing.event.ListSelectionEvent)
-     */
-    public void valueChanged(ListSelectionEvent lse) {
-	if (lse.getValueIsAdjusting()) return;
-	Object src = lse.getSource();
-	if (src != table.getSelectionModel()) {
-	    LOG.debug("src = " + src);
-	    return;
-	}
-	LOG.debug("got valueChanged from " + src);
-	int row = table.getSelectedRow();
-        if (this.target != null) {
-            this.target.deleteObserver(this);
-        }
-	setTarget(critics.get(row));
-        if (this.target != null) {
-            this.target.addObserver(this);
-        }
-    }
+  public void insertUpdate(DocumentEvent e) {
+    cat.debug(getClass().getName() + " insert");
+    Document hDoc = _headline.getDocument();
+    Document miDoc = _moreInfo.getDocument();
+    Document dDoc = _desc.getDocument();
+    if (e.getDocument() == hDoc) setTargetHeadline();
+    if (e.getDocument() == miDoc) setTargetMoreInfo();
+    if (e.getDocument() == dDoc) setTargetDesc();
+  }
 
-    /**
-     * Updates the button if the current row changes
-     * 
-     * @see javax.swing.event.TableModelListener#tableChanged(javax.swing.event.TableModelEvent)
-     */
-    public void tableChanged(TableModelEvent e) {
-        updateButtonsEnabled();
-        table.repaint();
-    }
-    
-    /**
-     * @see javax.swing.event.DocumentListener#insertUpdate(javax.swing.event.DocumentEvent)
-     */
-    public void insertUpdate(DocumentEvent e) {
-	LOG.debug(getClass().getName() + " insert");
-	Document hDoc = headline.getDocument();
-	Document miDoc = moreInfo.getDocument();
-	Document dDoc = desc.getDocument();
-	if (e.getDocument() == hDoc) setTargetHeadline();
-	if (e.getDocument() == miDoc) setTargetMoreInfo();
-	if (e.getDocument() == dDoc) setTargetDesc();
-    }
+  public void removeUpdate(DocumentEvent e) { insertUpdate(e); }
 
-    /**
-     * @see javax.swing.event.DocumentListener#removeUpdate(javax.swing.event.DocumentEvent)
-     */
-    public void removeUpdate(DocumentEvent e) { insertUpdate(e); }
+  public void changedUpdate(DocumentEvent e) {
+    cat.debug(getClass().getName() + " changed");
+    // Apparently, this method is never called.
+  }
 
-    /**
-     * @see javax.swing.event.DocumentListener#changedUpdate(javax.swing.event.DocumentEvent)
-     */
-    public void changedUpdate(DocumentEvent e) {
-	LOG.debug(getClass().getName() + " changed");
-	// Apparently, this method is never called.
+  public void itemStateChanged(ItemEvent e) {
+    Object src = e.getSource();
+    if (src == _priority) {
+      setTargetPriority();
     }
-
-    /**
-     * @see java.awt.event.ItemListener#itemStateChanged(java.awt.event.ItemEvent)
-     */
-    public void itemStateChanged(ItemEvent e) {
-	Object src = e.getSource();
-	if (src == priority) {
-	    setTargetPriority();
-	}
-	else if (src == useClar) {
-	    setTargetUseClarifiers();
-	} else {
-	    LOG.debug("unknown itemStateChanged src: " + src);
-	}
+    else if (src == _useClar) {
+      setTargetUseClarifiers();
     }
-
-    /**
-     * Refresh the table when a critique is enabled/disabled
-     * 
-     * @see java.util.Observer#update(java.util.Observable, java.lang.Object)
-     */
-    public void update(Observable o, Object arg) {
-        table.repaint();
-    }
+    else cat.debug("unknown itemStateChanged src: "+ src);
+  }
 
 } /* end class CriticBrowserDialog */
 
@@ -533,106 +421,79 @@ public class CriticBrowserDialog extends ArgoDialog
 
 
 class TableModelCritics extends AbstractTableModel
-    implements VetoableChangeListener {
-    private static final Logger LOG =
-	Logger.getLogger(TableModelCritics.class);
+implements VetoableChangeListener, DelayedVChangeListener {
+    protected static Category cat = Category.getInstance(TableModelCritics.class);
+  ////////////////
+  // instance varables
+  Vector _target;
 
-    ////////////////
-    // instance varables
-    private List target;
+  ////////////////
+  // constructor
+  public TableModelCritics() { }
 
-    /**
-     * Constructor.
-     */
-    public TableModelCritics() { }
+  ////////////////
+  // accessors
+  public void setTarget(Vector critics) {
+    _target = critics;
+    //fireTableStructureChanged();
+  }
 
-    ////////////////
-    // accessors
-    public void setTarget(List critics) {
-	target = critics;
-	//fireTableStructureChanged();
-    }
+  ////////////////
+  // TableModel implemetation
+  public int getColumnCount() { return 3; }
 
-    ////////////////
-    // TableModel implemetation
-    /**
-     * @see javax.swing.table.TableModel#getColumnCount()
-     */
-    public int getColumnCount() { return 3; }
+  public String  getColumnName(int c) {
+    if (c == 0) return "X";
+    if (c == 1) return "Headline";
+    if (c == 2) return "Active";
+    return "XXX";
+  }
 
-    /**
-     * @see javax.swing.table.TableModel#getColumnName(int)
-     */
-    public String getColumnName(int c) {
-	if (c == 0)
-	    return Translator.localize("dialog.browse.column-name.active");
-	if (c == 1)
-	    return Translator.localize("dialog.browse.column-name.headline");
-	if (c == 2)
-	    return Translator.localize("dialog.browse.column-name.snoozed");
-	return "XXX";
-    }
+  public Class getColumnClass(int c) {
+    if (c == 0) return Boolean.class;
+    if (c == 1) return String.class;
+    if (c == 2) return String.class;
+    return String.class;
+  }
 
-    /**
-     * @see javax.swing.table.TableModel#getColumnClass(int)
-     */
-    public Class getColumnClass(int c) {
-	if (c == 0) return Boolean.class;
-	if (c == 1) return String.class;
-	if (c == 2) return String.class;
-	return String.class;
-    }
+  public boolean isCellEditable(int row, int col) {
+    return col == 0;
+  }
 
-    /**
-     * @see javax.swing.table.TableModel#isCellEditable(int, int)
-     */
-    public boolean isCellEditable(int row, int col) {
-	return col == 0;
-    }
+  public int getRowCount() {
+    if (_target == null) return 0;
+    return _target.size();
+  }
 
-    /**
-     * @see javax.swing.table.TableModel#getRowCount()
-     */
-    public int getRowCount() {
-	if (target == null) return 0;
-	return target.size();
-    }
+  public Object getValueAt(int row, int col) {
+    Critic cr = (Critic) _target.elementAt(row);
+    if (col == 0) return cr.isEnabled() ? Boolean.TRUE : Boolean.FALSE;
+    if (col == 1) return cr.getHeadline();
+    if (col == 2) return cr.isActive() ? "Active" : "Inactive";
+    return "CR-" + row*2+col; // for debugging
+  }
 
-    /**
-     * @see javax.swing.table.TableModel#getValueAt(int, int)
-     */
-    public Object getValueAt(int row, int col) {
-	Critic cr = (Critic) target.get(row);
-	if (col == 0) return cr.isEnabled() ? Boolean.TRUE : Boolean.FALSE;
-	if (col == 1) return cr.getHeadline();
-	if (col == 2) return cr.isActive() ? "no" : "yes";
-	return "CR-" + row * 2 + col; // for debugging
-    }
+  public void setValueAt(Object aValue, int rowIndex, int columnIndex)  {
+    cat.debug("setting table value " + rowIndex + ", " + columnIndex);
+    if (columnIndex != 0) return;
+    if (!(aValue instanceof Boolean)) return;
+    Boolean enable = (Boolean) aValue;
+    Critic cr = (Critic) _target.elementAt(rowIndex);
+    cr.setEnabled(enable.booleanValue());
+    fireTableRowsUpdated(rowIndex, rowIndex); //needs-more-work
+  }
 
-    /**
-     * @see javax.swing.table.TableModel#setValueAt(java.lang.Object, int, int)
-     */
-    public void setValueAt(Object aValue, int rowIndex, int columnIndex)  {
-	LOG.debug("setting table value " + rowIndex + ", " + columnIndex);
-	if (columnIndex != 0) return;
-	if (!(aValue instanceof Boolean)) return;
-	Boolean enable = (Boolean) aValue;
-	Critic cr = (Critic) target.get(rowIndex);
-	cr.setEnabled(enable.booleanValue());
-	fireTableRowsUpdated(rowIndex, rowIndex); //TODO:
-    }
+  ////////////////
+  // event handlers
 
-    ////////////////
-    // event handlers
+  public void vetoableChange(PropertyChangeEvent pce) {
+    DelayedChangeNotify delayedNotify = new DelayedChangeNotify(this, pce);
+    SwingUtilities.invokeLater(delayedNotify);
+  }
 
-    /**
-     * @see java.beans.VetoableChangeListener#vetoableChange(java.beans.PropertyChangeEvent)
-     */
-    public void vetoableChange(PropertyChangeEvent pce) {
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                fireTableStructureChanged();
-            }
-        });
-    }
+  public void delayedVetoableChange(PropertyChangeEvent pce) {
+    fireTableStructureChanged();
+  }
+
+
 } /* end class TableModelCritics */

@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -23,36 +22,73 @@
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 package org.argouml.uml.ui;
+import org.argouml.model.uml.UmlFactory;
 
-import org.argouml.uml.diagram.DiagramFactory;
-import org.argouml.uml.diagram.collaboration.ui.UMLCollaborationDiagram;
+import org.argouml.application.api.Argo;
+import org.argouml.kernel.*;
+import org.argouml.model.uml.UmlFactory;
+import org.argouml.uml.*;
+import org.argouml.uml.diagram.collaboration.ui.*;
 import org.argouml.uml.diagram.ui.UMLDiagram;
+import org.argouml.ui.*;
 
-/**
- * Action to trigger creation of new collaboration diagram.
- */
-public class ActionCollaborationDiagram extends ActionNewDiagram {
+import ru.novosoft.uml.*;
+import ru.novosoft.uml.behavior.collaborations.*;
+import ru.novosoft.uml.foundation.core.MClassifier;
+import ru.novosoft.uml.foundation.core.MNamespace;
+import ru.novosoft.uml.foundation.core.MOperation;
+import ru.novosoft.uml.model_management.MModel;
+
+import java.awt.event.*;
+import java.beans.*;
+
+
+public class ActionCollaborationDiagram extends ActionAddDiagram {
+
+    public static ActionCollaborationDiagram SINGLETON = new ActionCollaborationDiagram(); 
+    
+    private ActionCollaborationDiagram() { super("CollaborationDiagram"); }
 
     /**
-     * Constructor.
+     * @see org.argouml.uml.ui.ActionAddDiagram#createDiagram(MNamespace)
      */
-    public ActionCollaborationDiagram() {
-        super("action.collaboration-diagram");
+    public ArgoDiagram createDiagram(MNamespace ns, Object target) {
+        MCollaboration c = null;
+        if (target instanceof MOperation) {
+            c = UmlFactory.getFactory().getCollaborations().buildCollaboration(ns);
+            c.setRepresentedOperation((MOperation)target);
+        } else 
+        if (target instanceof MClassifier) {
+            c = UmlFactory.getFactory().getCollaborations().buildCollaboration(ns);
+            c.setRepresentedClassifier((MClassifier)target);
+        } else 
+        if (target instanceof MModel) {
+            c = UmlFactory.getFactory().getCollaborations().buildCollaboration((MModel)target);
+        } else 
+        if (target instanceof MInteraction) {
+            c = ((MInteraction)target).getContext();
+        } else
+        if (target instanceof UMLCollaborationDiagram) {
+            Object o = ((UMLCollaborationDiagram)target).getOwner();
+            if (o instanceof MCollaboration) { //preventing backward compat problems
+                c = (MCollaboration)o;
+            } 
+        } else 
+        if (target instanceof MCollaboration) {
+            c = (MCollaboration)target;
+        } else {
+            c =  UmlFactory.getFactory().getCollaborations().buildCollaboration(ns);
+        }   
+        UMLCollaborationDiagram d  = new UMLCollaborationDiagram(c);
+        return d;
     }
 
     /**
-     * @see org.argouml.uml.ui.ActionNewDiagram#createDiagram()
+     * @see org.argouml.uml.ui.ActionAddDiagram#isValidNamespace(MNamespace)
      */
-    public UMLDiagram createDiagram() {
-        return (UMLDiagram) DiagramFactory.getInstance().createDiagram(
-                UMLCollaborationDiagram.class,
-                createCollaboration(),
-                null);
+    public boolean isValidNamespace(MNamespace ns) {
+        if (ns instanceof MCollaboration) return true;
+        return false;
     }
-
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = -1089352213298998155L;
 
 } /* end class ActionCollaborationDiagram */

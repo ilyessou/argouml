@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,121 +21,83 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+
+// File: CrOppEndVsAttr.java
+// Classes: CrOppEndVsAttr
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.cognitive.critics;
 
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.Vector;
+import java.util.*;
 
-import org.argouml.cognitive.Designer;
-import org.argouml.cognitive.critics.Critic;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
+import ru.novosoft.uml.behavior.collaborations.*;
 
-/**
- * Well-formedness rule [2] for MClassifier. See page 29 of UML 1.1
- * Semantics. OMG document ad/97-08-04.
- *
- * @author jrobbins
- */
-//TODO: split into one critic for inherited problems and
+import org.argouml.cognitive.*;
+import org.argouml.cognitive.critics.*;
+
+/** Well-formedness rule [2] for MClassifier. See page 29 of UML 1.1
+ *  Semantics. OMG document ad/97-08-04. */
+
+//needs-more-work: split into one critic for inherited problems and
 //one for pproblems directly in this class.
+
 public class CrOppEndVsAttr extends CrUML {
 
-    /**
-     * The constructor.
-     */
-    public CrOppEndVsAttr() {
-        setupHeadAndDesc();
-        addSupportedDecision(UMLDecision.INHERITANCE);
-        addSupportedDecision(UMLDecision.RELATIONSHIPS);
-        addSupportedDecision(UMLDecision.NAMING);
-        setKnowledgeTypes(Critic.KT_SYNTAX);
-        addTrigger("associationEnd");
-        addTrigger("structuralFeature");
+  public CrOppEndVsAttr() {
+    setHeadline("Rename Role or MAttribute");
+    addSupportedDecision(CrUML.decINHERITANCE);
+    addSupportedDecision(CrUML.decRELATIONSHIPS);
+    addSupportedDecision(CrUML.decNAMING);
+    setKnowledgeTypes(Critic.KT_SYNTAX);
+    addTrigger("associationEnd");
+    addTrigger("structuralFeature");
+  }
+
+  public boolean predicate2(Object dm, Designer dsgr) {
+    if (!(dm instanceof MClassifier)) return NO_PROBLEM;
+    MClassifier cls = (MClassifier) dm;
+    Vector namesSeen = new Vector();
+    Collection str = cls.getFeatures();
+    Iterator enum = str.iterator();
+    // warn about inheritied name conflicts, different critic?
+    while (enum.hasNext()) {
+      Object o = enum.next();
+      if (!(o instanceof MStructuralFeature))
+        continue;
+      MStructuralFeature sf = (MStructuralFeature) o;
+      String sfName = sf.getName();
+      if ("".equals(sfName)) continue;
+      String nameStr = sfName;
+      if (nameStr.length() == 0) continue;
+      namesSeen.addElement(nameStr);
     }
-
-    /**
-     * @see org.argouml.uml.cognitive.critics.CrUML#predicate2(
-     *         java.lang.Object, org.argouml.cognitive.Designer)
-     */
-    public boolean predicate2(Object dm, Designer dsgr) {
-        if (!(Model.getFacade().isAClassifier(dm))) {
-            return NO_PROBLEM;
-        }
-        Object cls = /*(MClassifier)*/ dm;
-        Vector namesSeen = new Vector();
-        Collection str = Model.getFacade().getFeatures(cls);
-
-
-        // warn about inheritied name conflicts, different critic?
-        Iterator features = str.iterator();
-        while (features.hasNext()) {
-            Object o = features.next();
-
-            if (!(Model.getFacade().isAStructuralFeature(o))) {
-                continue;
-            }
-
-            Object sf = /*(MStructuralFeature)*/ o;
-
-            String sfName = Model.getFacade().getName(sf);
-            if ("".equals(sfName)) {
-                continue;
-            }
-
-            String nameStr = sfName;
-            if (nameStr.length() == 0) {
-                continue;
-            }
-
-            namesSeen.addElement(nameStr);
-
-        }
-
-        Collection assocEnds = Model.getFacade().getAssociationEnds(cls);
-
-        // warn about inheritied name conflicts, different critic?
-        Iterator myEnds = assocEnds.iterator();
-        while (myEnds.hasNext()) {
-            Object myAe = /*(MAssociationEnd)*/ myEnds.next();
-            Object asc =
-                /*(MAssociation)*/
-                Model.getFacade().getAssociation(myAe);
-            Collection conn = Model.getFacade().getConnections(asc);
-
-            if (Model.getFacade().isAAssociationRole(asc)) {
-                conn = Model.getFacade().getConnections(asc);
-            }
-            if (conn == null) {
-                continue;
-            }
-
-            Iterator ascEnds = conn.iterator();
-            while (ascEnds.hasNext()) {
-                Object ae = /*(MAssociationEnd)*/ ascEnds.next();
-                if (Model.getFacade().getType(ae) == cls) {
-                    continue;
-                }
-                String aeName = Model.getFacade().getName(ae);
-                if ("".equals(aeName)) {
-                    continue;
-                }
-                String aeNameStr = aeName;
-                if (aeNameStr == null || aeNameStr.length() == 0) {
-                    continue;
-                }
-
-                if (namesSeen.contains(aeNameStr)) {
-                    return PROBLEM_FOUND;
-                }
-            }
-        }
-        return NO_PROBLEM;
+    Collection assocEnds = cls.getAssociationEnds();
+    enum = assocEnds.iterator();
+    // warn about inheritied name conflicts, different critic?
+    while (enum.hasNext()) {
+      MAssociationEnd myAe = (MAssociationEnd) enum.next();
+      MAssociation asc = (MAssociation) myAe.getAssociation();
+      Collection conn = asc.getConnections();
+      if (asc instanceof MAssociationRole)
+      conn = ((MAssociationRole)asc).getConnections();
+      if (conn == null) continue;
+      Iterator enum2 = conn.iterator();
+      while (enum2.hasNext()) {
+	MAssociationEnd ae = (MAssociationEnd) enum2.next();
+	if (ae.getType() == cls) continue;
+	String aeName = ae.getName();
+	if ("".equals(aeName)) continue;
+	String aeNameStr = aeName;
+	if (aeNameStr == null || aeNameStr.length() == 0) continue;
+	if (namesSeen.contains(aeNameStr)) return PROBLEM_FOUND;
+      }
     }
+    return NO_PROBLEM;
+  }
 
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = 5784567698177480475L;
 } /* end class CrOppEndVsAttr.java */
+

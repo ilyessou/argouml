@@ -85,7 +85,7 @@ options {
 	codeGenMakeSwitchThreshold = 2;  // Some optimizations
 	codeGenBitsetTestThreshold = 3;
 	defaultErrorHandler = false;     // Don't generate parser error handlers
-	buildAST = false;
+	buildAST = true;
 }
 
 tokens {
@@ -102,10 +102,6 @@ tokens {
 	private CodePieceCollector cpc;
 
 	private int anonymousNumber;
-	
-	// A flag to indicate if we are inside a compoundStatement
-	private boolean      _inCompoundStatement  = false;
-
 }
 
 // Compilation Unit: In Java, this is a single file.  This is the start
@@ -246,9 +242,25 @@ identifier returns [CompositeCodePiece codePiece=null]
 		)*
 	;
 
-identifierStar
-	:	IDENT ( DOT IDENT )*
-		( DOT STAR )?
+identifierStar returns [CompositeCodePiece codePiece=null]
+	:	t1:IDENT
+	{codePiece = new CompositeCodePiece(new SimpleCodePiece(t1));}
+
+		( t2:DOT
+	{codePiece.add(new SimpleCodePiece(t2));}
+		
+		t3:IDENT 
+	{codePiece.add(new SimpleCodePiece(t3));}
+		
+		)*
+
+		( t4:DOT 
+	{codePiece.add(new SimpleCodePiece(t4));}
+
+		t5:STAR
+	{codePiece.add(new SimpleCodePiece(t5));}
+		
+		)?
 	;
 
 
@@ -272,14 +284,14 @@ modifier returns [CodePiece codePiece=null]
 classDefinition[CodePiece preCode] 
 	{CodePiece sc=null, ic=null; 
 	 CompositeCodePiece codePiece = new CompositeCodePiece(preCode);}
-	:	t1:"class" {if(!_inCompoundStatement) {codePiece.add(new SimpleCodePiece(t1));}}
-		t2:IDENT {if(!_inCompoundStatement) {codePiece.add(new SimpleCodePiece(t2));}}
+	:	t1:"class" {codePiece.add(new SimpleCodePiece(t1));}
+		t2:IDENT {codePiece.add(new SimpleCodePiece(t2));}
 		// it _might_ have a superclass...
 		sc=superClassClause {codePiece.add(sc);}
 		// it might implement some interfaces...
-		ic=implementsClause
-		{if(!_inCompoundStatement) {codePiece.add(ic);
-		 cpc.add(new ClassCodePiece(codePiece, t2.getText().toString()));}}
+		ic=implementsClause 
+		{codePiece.add(ic);
+		 cpc.add(new ClassCodePiece(codePiece, t2.getText()));}
 		// now parse the body of the class
 		classBlock[codePiece]
 	;
@@ -303,7 +315,7 @@ interfaceDefinition[CodePiece preCode]
 		// it might extend some other interfaces
 		ie=interfaceExtends 
 		{codePiece.add(ie);
-		 cpc.add(new InterfaceCodePiece(codePiece, t2.getText().toString()));}
+		 cpc.add(new InterfaceCodePiece(codePiece, t2.getText()));}
 		// now parse the body of the interface (looks like a class...)
 		classBlock[codePiece]
 	;
@@ -316,8 +328,8 @@ interfaceDefinition[CodePiece preCode]
 classBlock[CompositeCodePiece header]
 	:	t0:LCURLY {if (header != null) {header.add (new SimpleCodePiece (t0));}}
 			( field | SEMI )*
-		t1:RCURLY
-		{if(!_inCompoundStatement) {cpc.add(new ClassifierEndCodePiece(new SimpleCodePiece(t1)));}}
+		t1:RCURLY 
+		{cpc.add(new ClassifierEndCodePiece(new SimpleCodePiece(t1)));}
 	;
 
 // An interface can extend several other interfaces...
@@ -397,7 +409,7 @@ field
 				 cpc.add(new OperationCodePiece(
 						doccp,
 						cp, 
-						t1.getText().toString()));
+						t1.getText()));
 				}
 
 				// get the list of exceptions that this method is declared to throw
@@ -432,12 +444,11 @@ variableDefinitions returns [Vector codePieces=new Vector()]
  * It can also include possible initialization.
  */
 variableDeclarator returns [CompositeCodePiece cp=null]
-	{CodePiece db=null, vin=null;}
+	{CodePiece db=null;}
 	:	t1:IDENT {cp = new CompositeCodePiece(
 				new SimpleCodePiece(t1));}
 		db=declaratorBrackets {cp.add(db);}
-		vin=varInitializer
-                {if (vin!=null) cp.add(vin);}
+		varInitializer
 	;
 
 declaratorBrackets returns [CompositeCodePiece cp=null]
@@ -455,19 +466,14 @@ declaratorBrackets returns [CompositeCodePiece cp=null]
 	;
 
 varInitializer returns [CompositeCodePiece cp=null]
-	:	( t1:ASSIGN {
-                                //cp = new CompositeCodePiece(
-				//new SimpleCodePiece(t1));
-                            }
+	:	( t1:ASSIGN {cp = new CompositeCodePiece(
+				new SimpleCodePiece(t1));}
 		initializer
-		{
-                    t1=LT(1);
-                    cp = new CompositeCodePiece(new SimpleCodePiece(
-			new StringBuffer(""), 
-			t1.getLine()-1,
-			t1.getColumn()-1,
-			t1.getColumn()-1));
-                }
+		{cp.add(new SimpleCodePiece(
+			new StringBuffer("@"), 
+			t1.getLine(),
+			t1.getColumn()+1,
+			t1.getColumn()+2));}
 		)?
 	;
 
@@ -512,7 +518,7 @@ ctorHead[CompositeCodePiece doccp, CompositeCodePiece cp]
 		{cp.add(new SimpleCodePiece(t1));
 		 cp.add(pdl);
 		 cp.add(new SimpleCodePiece(t2));
-		 cpc.add(new OperationCodePiece(doccp, cp, t1.getText().toString()));
+		 cpc.add(new OperationCodePiece(doccp, cp, t1.getText()));
 		}
 
 		// get the list of exceptions that this method is declared to throw
@@ -579,9 +585,7 @@ parameterModifier
 compoundStatement
 	:	LCURLY
 			// include the (possibly-empty) list of statements
-			{_inCompoundStatement = true;}
 			(statement)*
-			{_inCompoundStatement = false;}
 		RCURLY
 	;
 
@@ -1067,7 +1071,6 @@ options {
 	exportVocab=Java;      // call the vocabulary "Java"
 	testLiterals=false;    // don't automatically test for literals
 	k=4;                   // four characters of lookahead
-	charVocabulary='\u0003'..'\uFFFE';
 }
 
 
@@ -1269,7 +1272,7 @@ VOCAB
 // if it's a literal or really an identifer
 IDENT
 	options {testLiterals=true;}
-	:	('a'..'z'|'A'..'Z'|'_'|'$'|'\u0080'..'\uFFFE') ('a'..'z'|'A'..'Z'|'_'|'0'..'9'|'$'|'\u0080'..'\uFFFE')*
+	:	('a'..'z'|'A'..'Z'|'_'|'$') ('a'..'z'|'A'..'Z'|'_'|'0'..'9'|'$')*
 	;
 
 

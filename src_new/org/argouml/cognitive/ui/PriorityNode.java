@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,82 +23,56 @@
 
 package org.argouml.cognitive.ui;
 
-import java.util.Vector;
-import org.argouml.cognitive.ToDoItem;
-import org.argouml.cognitive.Translator;
+import java.util.*;
 
-/**
- * This class represents a "priority". Which is a classification for critics.
- *
- */
+import org.argouml.cognitive.*;
+
+import org.argouml.application.api.*;
+
+
 public class PriorityNode {
-
     // Private members.
-    private static final String HIGH =
-        Translator.localize("misc.level.high");
-    private static final String MEDIUM =
-        Translator.localize("misc.level.medium");
-    private static final String LOW =
-        Translator.localize("misc.level.low");
+    private static final String BUNDLE = "Cognitive";
 
-    ////////////////////////////////////////////////////////////////
-    // static variables and methods
-    private static Vector priorities = null;
+    static final String high = Argo.localize(BUNDLE, "level.high");
+    static final String medium = Argo.localize(BUNDLE, "level.medium");
+    static final String low = Argo.localize(BUNDLE, "level.low");
 
+  ////////////////////////////////////////////////////////////////
+  // static variables and methods
+  protected static Vector _PRIORITIES = null;
 
-    ////////////////////////////////////////////////////////////////
-    // instance variables
-
-    private String name;
-    private int priority;
-
-    ////////////////////////////////////////////////////////////////
-    // contrsuctors
-
-    /**
-     * The constructor.
-     *
-     * @param n the name of this priority
-     * @param pri the priority number
-     */
-    public PriorityNode(String n, int pri) {
-	name = n;
-	priority = pri;
+  public static Vector getPriorities() {
+    if (_PRIORITIES == null) {
+      _PRIORITIES = new Vector();
+      _PRIORITIES.addElement(new PriorityNode(high, ToDoItem.HIGH_PRIORITY));
+      _PRIORITIES.addElement(new PriorityNode(medium, ToDoItem.MED_PRIORITY));
+      _PRIORITIES.addElement(new PriorityNode(low, ToDoItem.LOW_PRIORITY));
     }
-
-    /**
-     * @return the list of all the priorities
-     */
-    public static Vector getPriorities() {
-        if (priorities == null) {
-            priorities = new Vector();
-            priorities.addElement(new PriorityNode(HIGH,
-                    ToDoItem.HIGH_PRIORITY));
-            priorities.addElement(new PriorityNode(MEDIUM,
-                    ToDoItem.MED_PRIORITY));
-            priorities.addElement(new PriorityNode(LOW,
-                    ToDoItem.LOW_PRIORITY));
-        }
-    return priorities;
-    }
+    return _PRIORITIES;
+  }
 
 
-    ////////////////////////////////////////////////////////////////
-    // accessors
+  ////////////////////////////////////////////////////////////////
+  // instance variables
 
-    /**
-     * @return the name
-     */
-    public String getName() { return name; }
+  protected String _name;
+  protected int _priority;
+  
+  ////////////////////////////////////////////////////////////////
+  // contrsuctors
 
-    /**
-     * @return the priority
-     */
-    public int getPriority() { return priority; }
+  public PriorityNode(String name, int pri) {
+    _name = name;
+    _priority = pri;
+  }
 
-    /**
-     * @see java.lang.Object#toString()
-     */
-    public String toString() { return getName(); }
+  ////////////////////////////////////////////////////////////////
+  // accessors
 
+  public String getName() { return _name; }
+  public int getPriority() { return _priority; }
+
+  public String toString() { return getName(); }
+  
 } /* end class PriorityNode */

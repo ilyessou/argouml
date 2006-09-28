@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,145 +23,120 @@
 
 package org.argouml.cognitive.ui;
 
-import java.util.Enumeration;
-import java.util.Vector;
+import java.util.*;
 
-import org.apache.log4j.Logger;
-import org.argouml.cognitive.Designer;
-import org.argouml.cognitive.Goal;
-import org.argouml.cognitive.ToDoItem;
-import org.argouml.cognitive.ToDoListEvent;
-import org.argouml.cognitive.ToDoListListener;
+import ru.novosoft.uml.model_management.*;
+import ru.novosoft.uml.foundation.core.*;
 
-/**
- * Represents a perspective for ToDo items: grouping by goal type.
- *
- */
+import org.apache.log4j.Category;
+import org.argouml.cognitive.*;
+
 public class ToDoByGoal extends ToDoPerspective
-    implements ToDoListListener {
-    private static final Logger LOG =
-        Logger.getLogger(ToDoByGoal.class);
+implements ToDoListListener {
+    protected static Category cat = 
+        Category.getInstance(ToDoByGoal.class);
 
 
-    /**
-     * The constructor.
-     *
-     */
-    public ToDoByGoal() {
-	super("combobox.todo-perspective-goal");
-	addSubTreeModel(new GoListToGoalsToItems());
+  public ToDoByGoal() {
+    super("todo.perspective.goal");
+    addSubTreeModel(new GoListToGoalsToItems());
+  }
+
+  ////////////////////////////////////////////////////////////////
+  // ToDoListListener implementation
+
+  public void toDoItemsChanged(ToDoListEvent tde) {
+    cat.debug("toDoItemsChanged");
+    Vector items = tde.getToDoItems();
+    int nItems = items.size();
+    Object path[] = new Object[2];
+    path[0] = Designer.TheDesigner.getToDoList();
+
+    Vector goals = Designer.TheDesigner.getGoals();
+    java.util.Enumeration enum = goals.elements();
+    while (enum.hasMoreElements()) {
+      Goal g = (Goal) enum.nextElement();
+      path[1] = g;
+      int nMatchingItems = 0;
+      for (int i = 0; i < nItems; i++) {
+	ToDoItem item = (ToDoItem) items.elementAt(i);
+	if (!item.supports(g)) continue;
+	nMatchingItems++;
+      }
+      if (nMatchingItems == 0) continue;
+      int childIndices[] = new int[nMatchingItems];
+      Object children[] = new Object[nMatchingItems];
+      nMatchingItems = 0;
+      for (int i = 0; i < nItems; i++) {
+	ToDoItem item = (ToDoItem) items.elementAt(i);
+	if (!item.supports(g)) continue;
+	childIndices[nMatchingItems] = getIndexOfChild(g, item);
+	children[nMatchingItems] = item;
+	nMatchingItems++;
+      }
+      fireTreeNodesChanged(this, path, childIndices, children);
     }
+  }
 
-    ////////////////////////////////////////////////////////////////
-    // ToDoListListener implementation
+  public void toDoItemsAdded(ToDoListEvent tde) {
+    cat.debug("toDoItemAdded");
+    Vector items = tde.getToDoItems();
+    int nItems = items.size();
+    Object path[] = new Object[2];
+    path[0] = Designer.TheDesigner.getToDoList();
 
-    /**
-     * @see org.argouml.cognitive.ToDoListListener#toDoItemsChanged(org.argouml.cognitive.ToDoListEvent)
-     */
-    public void toDoItemsChanged(ToDoListEvent tde) {
-	LOG.debug("toDoItemsChanged");
-	Vector items = tde.getToDoItems();
-	int nItems = items.size();
-	Object[] path = new Object[2];
-	path[0] = Designer.theDesigner().getToDoList();
-
-	Vector goals = Designer.theDesigner().getGoals();
-	Enumeration elems = goals.elements();
-	while (elems.hasMoreElements()) {
-	    Goal g = (Goal) elems.nextElement();
-	    path[1] = g;
-	    int nMatchingItems = 0;
-	    for (int i = 0; i < nItems; i++) {
-		ToDoItem item = (ToDoItem) items.elementAt(i);
-		if (!item.supports(g)) continue;
-		nMatchingItems++;
-	    }
-	    if (nMatchingItems == 0) continue;
-	    int[] childIndices = new int[nMatchingItems];
-	    Object[] children = new Object[nMatchingItems];
-	    nMatchingItems = 0;
-	    for (int i = 0; i < nItems; i++) {
-		ToDoItem item = (ToDoItem) items.elementAt(i);
-		if (!item.supports(g)) continue;
-		childIndices[nMatchingItems] = getIndexOfChild(g, item);
-		children[nMatchingItems] = item;
-		nMatchingItems++;
-	    }
-	    fireTreeNodesChanged(this, path, childIndices, children);
-	}
+    Vector goals = Designer.TheDesigner.getGoals();
+    java.util.Enumeration enum = goals.elements();
+    while (enum.hasMoreElements()) {
+      Goal g = (Goal) enum.nextElement();
+      path[1] = g;
+      int nMatchingItems = 0;
+      for (int i = 0; i < nItems; i++) {
+	ToDoItem item = (ToDoItem) items.elementAt(i);
+	if (!item.supports(g)) continue;
+	nMatchingItems++;
+      }
+      if (nMatchingItems == 0) continue;
+      int childIndices[] = new int[nMatchingItems];
+      Object children[] = new Object[nMatchingItems];
+      nMatchingItems = 0;
+      for (int i = 0; i < nItems; i++) {
+	ToDoItem item = (ToDoItem) items.elementAt(i);
+	if (!item.supports(g)) continue;
+	childIndices[nMatchingItems] = getIndexOfChild(g, item);
+	children[nMatchingItems] = item;
+	nMatchingItems++;
+      }
+      fireTreeNodesInserted(this, path, childIndices, children);
     }
+  }
 
-    /**
-     * @see org.argouml.cognitive.ToDoListListener#toDoItemsAdded(org.argouml.cognitive.ToDoListEvent)
-     */
-    public void toDoItemsAdded(ToDoListEvent tde) {
-	LOG.debug("toDoItemAdded");
-	Vector items = tde.getToDoItems();
-	int nItems = items.size();
-	Object[] path = new Object[2];
-	path[0] = Designer.theDesigner().getToDoList();
+  public void toDoItemsRemoved(ToDoListEvent tde) {
+    cat.debug("toDoItemAdded");
+    ToDoList list = Designer.TheDesigner.getToDoList(); //source?
+    Vector items = tde.getToDoItems();
+    int nItems = items.size();
+    Object path[] = new Object[2];
+    path[0] = Designer.TheDesigner.getToDoList();
 
-	Vector goals = Designer.theDesigner().getGoals();
-	Enumeration elems = goals.elements();
-	while (elems.hasMoreElements()) {
-	    Goal g = (Goal) elems.nextElement();
-	    path[1] = g;
-	    int nMatchingItems = 0;
-	    for (int i = 0; i < nItems; i++) {
-		ToDoItem item = (ToDoItem) items.elementAt(i);
-		if (!item.supports(g)) {
-		    continue;
-		}
-		nMatchingItems++;
-	    }
-	    if (nMatchingItems == 0) {
-		continue;
-	    }
-	    int[] childIndices = new int[nMatchingItems];
-	    Object[] children = new Object[nMatchingItems];
-	    nMatchingItems = 0;
-	    for (int i = 0; i < nItems; i++) {
-		ToDoItem item = (ToDoItem) items.elementAt(i);
-		if (!item.supports(g)) continue;
-		childIndices[nMatchingItems] = getIndexOfChild(g, item);
-		children[nMatchingItems] = item;
-		nMatchingItems++;
-	    }
-	    fireTreeNodesInserted(this, path, childIndices, children);
-	}
+    Vector goals = Designer.TheDesigner.getGoals();
+    java.util.Enumeration enum = goals.elements();
+    while (enum.hasMoreElements()) {
+      Goal g = (Goal) enum.nextElement();
+      cat.debug("toDoItemRemoved updating decision node!");
+      boolean anyInGoal = false;
+      for (int i = 0; i < nItems; i++) {
+	ToDoItem item = (ToDoItem) items.elementAt(i);
+	if (item.supports(g)) anyInGoal = true;
+      }
+      if (!anyInGoal) continue;
+      path[1] = g;
+      //fireTreeNodesChanged(this, path, childIndices, children);
+      fireTreeStructureChanged(path);
     }
+  }
 
-    /**
-     * @see org.argouml.cognitive.ToDoListListener#toDoItemsRemoved(org.argouml.cognitive.ToDoListEvent)
-     */
-    public void toDoItemsRemoved(ToDoListEvent tde) {
-	LOG.debug("toDoItemAdded");
-	Vector items = tde.getToDoItems();
-	int nItems = items.size();
-	Object[] path = new Object[2];
-	path[0] = Designer.theDesigner().getToDoList();
-
-	Vector goals = Designer.theDesigner().getGoals();
-	Enumeration elems = goals.elements();
-	while (elems.hasMoreElements()) {
-	    Goal g = (Goal) elems.nextElement();
-	    LOG.debug("toDoItemRemoved updating decision node!");
-	    boolean anyInGoal = false;
-	    for (int i = 0; i < nItems; i++) {
-		ToDoItem item = (ToDoItem) items.elementAt(i);
-		if (item.supports(g)) anyInGoal = true;
-	    }
-	    if (!anyInGoal) continue;
-	    path[1] = g;
-	    //fireTreeNodesChanged(this, path, childIndices, children);
-	    fireTreeStructureChanged(path);
-	}
-    }
-
-    /**
-     * @see org.argouml.cognitive.ToDoListListener#toDoListChanged(org.argouml.cognitive.ToDoListEvent)
-     */
-    public void toDoListChanged(ToDoListEvent tde) { }
+  public void toDoListChanged(ToDoListEvent tde) { }
 
 
 } /* end class ToDoByGoal */

@@ -1,7 +1,6 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
-// software and its documentation without fee, and without a written
+// software and its documentation without fee, and without ga written
 // agreement is hereby granted, provided that the above copyright notice
 // and this paragraph appear in all copies.  This software program and
 // documentation are copyrighted by The Regents of the University of
@@ -22,174 +21,211 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: PropPanel.java
+// Classes: PropPanel
+// Original Author:
+// $Id$
+
+// 23 Apr 2002: Jeremy Bennett (mail@jeremybennett.com). Added the third party
+// event listener.
+
+// 25 Apr 2002: Jeremy Bennett (mail@jeremybennett.com). Reworked
+// setNameEventListener to use third party event listeners, and removed the
+// promiscuous listener stuff.
+
+
 package org.argouml.uml.ui;
 
-import java.awt.Component;
-import java.awt.Container;
-import java.awt.Dimension;
-import java.awt.Font;
+import org.argouml.application.api.*;
+import org.argouml.model.uml.UmlFactory;
+import org.argouml.ui.*;
+import org.argouml.uml.*;
+import org.argouml.swingext.*;
+import java.util.*;
+import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.util.Iterator;
 
-import javax.swing.Action;
-import javax.swing.Icon;
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JToolBar;
-import javax.swing.SwingConstants;
-import javax.swing.SwingUtilities;
-import javax.swing.border.TitledBorder;
-import javax.swing.event.EventListenerList;
+import javax.swing.*;
+import javax.swing.plaf.metal.MetalLookAndFeel;
+import org.argouml.util.ConfigLoader;
 
-import org.apache.log4j.Logger;
-import org.argouml.application.helpers.ResourceLoaderWrapper;
-import org.argouml.kernel.ProjectManager;
-import org.argouml.model.Model;
-import org.argouml.ui.AbstractArgoJPanel;
-import org.argouml.ui.LookAndFeelMgr;
-import org.argouml.ui.targetmanager.TargetEvent;
-import org.argouml.ui.targetmanager.TargetListener;
-import org.argouml.ui.targetmanager.TargetManager;
-import org.argouml.ui.targetmanager.TargettableModelView;
-import org.argouml.uml.Profile;
-import org.tigris.gef.presentation.Fig;
-import org.tigris.swidgets.GridLayout2;
-import org.tigris.swidgets.LabelledLayout;
-import org.tigris.swidgets.Orientation;
-import org.tigris.swidgets.Vertical;
-import org.tigris.toolbar.ToolBar;
+import ru.novosoft.uml.*;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.extension_mechanisms.*;
+import ru.novosoft.uml.behavior.use_cases.*;
+import java.lang.reflect.*;
+
+import org.tigris.gef.util.*;
 
 /**
- * This abstract class provides the basic layout and event dispatching support
- * for all Property Panels.
- * <p>
- * The property panel is {@link org.tigris.swidgets.LabelledLayout} layed out as
- * a number (specified in the constructor) of equally sized panels that split
- * the available space. Each panel has a column of "captions" and matching
- * column of "fields" which are laid out indepently from the other panels.
- * <p>
- * The Properties panels for UML Model Elements are structured in an inheritance
- * hierarchy that matches the UML metamodel.
+ *   This abstract class provides the basic layout and event dispatching
+ *   support for all Property Panels.  The property panel is layed out
+ *   as a number (specified in the constructor) of equally sized panels
+ *   that split the available space.  Each panel has a column of
+ *   "captions" and matching column of "fields" which are laid out
+ *   indepently from the other panels.
  */
-public abstract class PropPanel extends AbstractArgoJPanel implements
-        TabModelTarget, UMLUserInterfaceContainer {
+abstract public class PropPanel extends TabSpawnable
+implements TabModelTarget, MElementListener, UMLUserInterfaceContainer {
+    ////////////////////////////////////////////////////////////////
+    // instance vars
+    private Object _target;
+    private MModelElement _modelElement;
+    private static Profile _profile;
+    private LinkedList _navListeners = new LinkedList();
+    private ResourceBundle _bundle = null;
+
+    private Vector _panels = new Vector();
+    private UMLNameEventListener _nameListener;
+
+    private int lastRow;
+    /**
+     * <p>The third party listener (if we have set one up. We use this to shut
+     *   down listeners when a new listener is set up.</p>
+     */
+
+    private UMLThirdPartyEventListener _thirdPartyListener = null;
+
 
     /**
-     * Logger.
+     * <p>The metaclass/property pairs for the third party listener (if we have
+     *   set one up. We use this when creating a new listener on target
+     *   change.</p>
      */
-    private static final Logger LOG = Logger.getLogger(PropPanel.class);
 
-    private Object target;
+    private Vector _targetList = null;
+    private JPanel center;
 
-    private Object modelElement;
+    protected JPanel buttonPanel=new JPanel();
+    private JPanel buttonPanelWithFlowLayout=new JPanel();
+    private JPanel captionPanel=new JPanel();
 
-    private EventListenerList listenerList;
+    protected static ImageIcon _navBackIcon = ResourceLoader.lookupIconResource("NavigateBack");
+    protected static ImageIcon _navForwardIcon = ResourceLoader.lookupIconResource("NavigateForward");
+    protected static ImageIcon _deleteIcon = ResourceLoader.lookupIconResource("RedDelete");
+    protected static ImageIcon _navUpIcon = ResourceLoader.lookupIconResource("NavigateUp");
 
-    private JToolBar buttonPanel;
+    protected Font smallFont = MetalLookAndFeel.getSubTextFont();
 
-    private JLabel titleLabel;
 
-    protected static Font stdFont = LookAndFeelMgr.getInstance().getStandardFont();
+    ////////////////////////////////////////////////////////////////
+    // constructors
 
     /**
-     * Construct new PropPanel using LabelledLayout.
-     * <p>
-     *
-     * @param icon
-     *            The icon to display for the panel
-     * @param title
-     *            The title of the panel
-     * @param orientation
-     *            the orientation
+     *    Constructs the PropPanel.
+     *    @param title Title of panel
+     *    @param panelCount number of horizontal panels
      */
-    public PropPanel(String title, ImageIcon icon, Orientation orientation) {
-        super(title);
-        setOrientation(orientation);
-        buttonPanel = new ToolBar();
-        buttonPanel.setFloatable(false);
+    public PropPanel(String title,int panelCount) {
+	this(title, null, panelCount);
+    }
 
-        LabelledLayout layout = 
-            new LabelledLayout(orientation == Vertical.getInstance());
-        layout.setHgap(5);
-        setLayout(layout);
-
-        if (icon != null) {
-            setTitleLabel(new JLabel(title, icon, SwingConstants.LEFT));
-        } else {
-            setTitleLabel(new JLabel(title));
+    public PropPanel(String title, ImageIcon icon, int panelCount) {
+	super(title);
+        setLayout(new BorderLayout());
+        center = new JPanel();
+        center.setLayout(new GridLayout(1,0));
+        
+        JPanel panel;
+        for(long i = 0; i < panelCount; i++) {
+            panel = new JPanel(new GridBagLayout());
+            _panels.add(panel);
+            center.add(panel);
         }
-        titleLabel.setLabelFor(buttonPanel);
-        add(titleLabel);
-        add(buttonPanel);
+        add(center,BorderLayout.CENTER);
+
+	//add caption panel and button panel
+	if (icon!=null) captionPanel.add(new JLabel(icon));
+	captionPanel.add(new JLabel(localize(title)));
+	addCaption(captionPanel,0,0,0);
+
+	buttonPanel = new JPanel(new GridLayout(1,0));
+	buttonPanelWithFlowLayout = new JPanel(new FlowLayout());
+	buttonPanelWithFlowLayout.add(buttonPanel);
+	addField(buttonPanelWithFlowLayout,0,0,0);
+	
+
+	/*JPanel namePanel=new JPanel(new FlowLayout());
+
+	if (icon!=null) captionPanel.add(new JLabel(icon));
+	captionPanel.add(new JLabel(localize(title)));
+	namePanel.add(captionPanel);
+
+	buttonPanel = new JPanel(new GridLayout(1,0));
+	buttonPanelWithFlowLayout = new JPanel(new FlowLayout());
+	buttonPanelWithFlowLayout.add(buttonPanel);
+	namePanel.add(buttonPanelWithFlowLayout);
+
+	add(namePanel, BorderLayout.NORTH);*/
     }
 
-    /**
-     * Constructs a new Proppanel without an icon. If there is an icon it's
-     * updated at runtime via settarget.
-     * <p>
-     *
-     * @param title
-     *            the title
-     * @param orientation
-     *            the orientation
-     */
-    public PropPanel(String title, Orientation orientation) {
-        this(title, null, orientation);
-    }
-
-    /**
-     * Set the orientation of the panel.
-     *
-     * @see org.tigris.swidgets.Orientable#setOrientation(org.tigris.swidgets.Orientation)
-     */
     public void setOrientation(Orientation orientation) {
         super.setOrientation(orientation);
     }
 
     /**
-     * Add a button to the toolbar of a property panel using the action to
-     * control the behavior of the action.
-     *
-     * @param action
-     *            the action which will be used in the toolbar button.
+     * Construct new PropPanel using LabelledLayout
+     * @param icon The icon to display for the panel
+     * @param title The title of the panel
+     * @param sectionCount the number of sections in the proppanel
      */
-    protected void addAction(Action action) {
-        addAction(action, null);
+    public PropPanel(String title, ImageIcon icon, Orientation orientation) {
+	super(title);
+        setOrientation(orientation);
+
+        setLayout(new LabelledLayout(orientation));
+
+        JLabel titleLabel;
+	if (icon!=null) titleLabel = new JLabel(localize(title), icon, SwingConstants.LEFT);
+        else titleLabel = new JLabel(localize(title));
+        buttonPanel = new JPanel(new GridLayout2(1, 0, GridLayout2.MAXPREFERRED));
+        titleLabel.setLabelFor(buttonPanel);
+	add(titleLabel);
+        add(buttonPanel);
+    }
+
+
+    /**
+     *   Adds a component to the captions of the specified panel.
+     *   @param component Component to be added (typically a JLabel)
+     *   @param row row index, zero-based.
+     *   @param panel panel index, zero-based.
+     *   @param weighty specifies how to distribute extra vertical space,
+     *      see GridBagConstraint for details on usage.
+     */
+    public void addCaption(Component component,int row,int panel,double weighty)
+    {
+        if (orientation == Vertical.getInstance()) {
+            row = lastRow;
+            panel = 0;
+        }
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridy = row;
+        gbc.weighty = weighty;
+        gbc.anchor = GridBagConstraints.NORTHWEST;
+        gbc.gridheight = 1;
+        gbc.gridwidth = 1;
+        gbc.gridx = 0;
+        gbc.weightx = 0;
+        gbc.fill = GridBagConstraints.NONE;
+
+        JPanel pane = (JPanel) _panels.elementAt(panel);
+        GridBagLayout layout = (GridBagLayout) pane.getLayout();
+        layout.setConstraints(component,gbc);
+        pane.add(component);
+    }
+
+    public void addCaption(String label,int row, int panel,double weighty) {
+        addCaption(new JLabel(localize(label)),row,panel,weighty);
     }
 
     /**
-     * Add a button to the toolbar of a property panel using the action to
-     * control the behavior of the action.
-     *
-     * @param action
-     *            the action which will be used in the toolbar button.
-     * @param tooltip
-     *            the tooltip to set, or null to skip setting of a new tooltip.
-     */
-    protected void addAction(Action action, String tooltip) {
-        JButton button = new JButton(action);
-        if (tooltip != null) button.setToolTipText(tooltip);
-        button.setText("");
-        button.setFocusable(false);
-        buttonPanel.add(button);
-    }
-
-    /**
-     * Add a component with the specified label.
-     * <p>
-     *
-     * @param label
-     *            the label for the component
-     * @param component
-     *            the component
-     * @return the label added
+     * Add a component with the specified label
+     * @param label the label for the component
+     * @param component the component
      */
     public JLabel addField(String label, Component component) {
-        JLabel jlabel = new JLabel(label);
-        jlabel.setFont(stdFont);
-        component.setFont(stdFont);
+        JLabel jlabel = new JLabel(localize(label));
         jlabel.setLabelFor(component);
         add(jlabel);
         add(component);
@@ -197,25 +233,15 @@ public abstract class PropPanel extends AbstractArgoJPanel implements
     }
 
     /**
-     * Add a component with the specified label positioned after another
-     * component.
-     *
-     * @param label
-     *            the label for the component
-     * @param component
-     *            the component
-     * @param afterComponent
-     *            the component before
-     * @return the newly added label
+     * Add a component with the specified label positioned after another component
+     * @param label the label for the component
+     * @param component the component
      */
-    public JLabel addFieldAfter(String label, Component component,
-            Component afterComponent) {
+    public JLabel addFieldAfter(String label, Component component, Component afterComponent) {
         int nComponent = this.getComponentCount();
-        for (int i = 0; i < nComponent; ++i) {
+        for (int i=0; i < nComponent; ++i) {
             if (getComponent(i) == afterComponent) {
-                JLabel jlabel = new JLabel(label);
-                jlabel.setFont(stdFont);
-                component.setFont(stdFont);
+                JLabel jlabel = new JLabel(localize(label));
                 jlabel.setLabelFor(component);
                 add(jlabel, ++i);
                 add(component, ++i);
@@ -226,29 +252,19 @@ public abstract class PropPanel extends AbstractArgoJPanel implements
     }
 
     /**
-     * Add a component with the specified label positioned before another
-     * component.
-     * <p>
-     *
-     * @param label
-     *            the label for the component
-     * @param component
-     *            the to be added component
-     * @param beforeComponent
-     *            the component before its label we add
-     * @return the newly added component
+     * Add a component with the specified label positioned before another component
+     * @param label the label for the component
+     * @param component the component
+     * @param beforeComponent the component
      */
-    public JLabel addFieldBefore(String label, Component component,
-            Component beforeComponent) {
+    public JLabel addFieldBefore(String label, Component component, Component beforeComponent) {
         int nComponent = this.getComponentCount();
-        for (int i = 0; i < nComponent; ++i) {
+        for (int i=0; i < nComponent; ++i) {
             if (getComponent(i) == beforeComponent) {
-                JLabel jlabel = new JLabel(label);
-                jlabel.setFont(stdFont);
-                component.setFont(stdFont);
+                JLabel jlabel = new JLabel(localize(label));
                 jlabel.setLabelFor(component);
-                add(jlabel, i - 1);
-                add(component, i++);
+                add(jlabel, i);
+                add(component, ++i);
                 return jlabel;
             }
         }
@@ -256,324 +272,459 @@ public abstract class PropPanel extends AbstractArgoJPanel implements
     }
 
     /**
-     * Add a separator.
+     *   Adds a component to the fields of the specified panel
+     *     and sets the background and color to indicate
+     *     the field is a link.
+     *   @param label the required string label
+     *   @param component Component to be added
      */
-    protected final void addSeparator() {
-        // Note: the mispelling is in a foreign component's method name
-        // so can't be corrected. - tfm
-        add(LabelledLayout.getSeperator());
+    public final void addLinkField(String label, Component component) {
+        component.setBackground(getBackground());
+        component.setForeground(Color.blue);
+        addField(label, component);
     }
-    
+
+    final public String localize(String key) {
+        String localized = key;
+        if(_bundle == null) {
+            _bundle = getResourceBundle();
+        }
+        if(_bundle != null) {
+            try {
+                localized = _bundle.getString(key);
+            }
+            catch(MissingResourceException e) {}
+            if(localized == null) {
+                localized = key;
+            }
+        }
+        return localized;
+    }
+
+    public ResourceBundle getResourceBundle() {
+        return null;
+    }
+
     /**
-     * Set the target to be associated with a particular property panel.
-     * <p>
-     * This involves resetting the third party listeners.
-     * 
-     * @param t
-     *            The object to be set as a target.
+     *   Adds a component to the fields of the specified panel.
+     *   @param component Component to be added
+     *   @param row row index, zero-based.
+     *   @param panel panel index, zero-based.
+     *   @param weighty specifies how to distribute extra vertical space,
+     *      see GridBagConstraint for details on usage.
      */
+   public void addField(Component component,int row,int panel,double weighty)
+    {
+        if (orientation == Vertical.getInstance()) {
+            row = lastRow;
+            panel = 0;
+            ++lastRow;
+        }
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridy = row;
+        gbc.weighty = weighty;
+        gbc.anchor = GridBagConstraints.NORTHWEST;
+        gbc.gridheight = 1;
+        gbc.gridwidth = 1;
+        gbc.gridx = 1;
+        gbc.weightx = 1;
+        if(weighty == 0)
+            gbc.fill = GridBagConstraints.HORIZONTAL;
+        else
+            gbc.fill = GridBagConstraints.BOTH;
+
+        JPanel pane = (JPanel) _panels.elementAt(panel);
+        GridBagLayout layout = (GridBagLayout) pane.getLayout();
+        layout.setConstraints(component,gbc);
+        pane.add(component);
+    }
+
+    /**
+     *   Adds a component to the fields of the specified panel
+     *     and sets the background and color to indicate
+     *     the field is a link.
+     *   @param component Component to be added
+     *   @param row row index, zero-based.
+     *   @param panel panel index, zero-based.
+     *   @param weighty specifies how to distribute extra vertical space,
+     *      see GridBagConstraint for details on usage.
+     */
+    final public void addLinkField(Component component,int row,int panel,double weighty)
+    {
+        component.setBackground(getBackground());
+        component.setForeground(Color.blue);
+        addField(component,row,panel,weighty);
+    }
+
+
+
+    public Profile getProfile() {
+        if(_profile == null) {
+            _profile = ProfileJava.getInstance();
+        }
+        return _profile;
+    }
+
+    /**
+        This method (and addMElementListener) can be overriden if the
+        prop panel wants to monitor additional objects.
+
+        @param target target of prop panel
+
+    */
+    protected void removeMElementListener(MBase target) {
+        target.removeMElementListener(this);
+    }
+
+    /**
+        This method (and removeMElementListener) can be overriden if the
+        prop panel wants to monitor additional objects.  This method
+        is public only since it is called from a Runnable object.
+
+        @param target target of prop panel
+    */
+    public void addMElementListener(MBase target) {
+        target.addMElementListener(this);
+    }
+
+    /**
+     * <p>Set the target to be associated with a particular property panel.</p>
+     *
+     * <p>This involves resetting the third party listeners.</p>
+     *
+     * @param t  The object to be set as a target.
+     */
+
     public void setTarget(Object t) {
-        LOG.debug("setTarget called with " + t + " as parameter (not target!)");
-        t = (t instanceof Fig) ? ((Fig) t).getOwner() : t;
 
         // If the target has changed notify the third party listener if it
-        // exists and dispatch a new element event listener to
+        // exists and dispatch a new NSUML element listener to
         // ourself. Otherwise dispatch a target reasserted to ourself.
-        Runnable dispatch = null;
-        if (t != target) {
+
+        if(t != _target) {
 
             // Set up the target and its model element variant.
 
-            target = t;
-            modelElement = null;
-            if (listenerList == null) {
-                listenerList = registrateTargetListeners(this);
+            _target = t;
+            _modelElement = null;
+
+            if(_target instanceof MModelElement) {
+                _modelElement = (MModelElement) _target;
             }
 
-            if (Model.getFacade().isAModelElement(target)) {
-                modelElement = target;
+            // Tell the third party listener if it exists
+
+            if (_thirdPartyListener != null) {
+                _thirdPartyListener.targetChanged();
             }
 
-            // This will add a new ModelElement event listener
-            // after update is complete
+            // This will add a new MElement listener after update is complete
 
-            dispatch = new UMLChangeDispatch(this,
-                    UMLChangeDispatch.TARGET_CHANGED_ADD);
-
-        } else {
-            dispatch = new UMLChangeDispatch(this,
-                    UMLChangeDispatch.TARGET_REASSERTED);
-
+            SwingUtilities.invokeLater(
+                new UMLChangeDispatch(this,
+                                      UMLChangeDispatch.TARGET_CHANGED_ADD));
         }
-        SwingUtilities.invokeLater(dispatch);
-
-        // update the titleLabel
-        // MVW: This overrules the icon set initiallly... Why do we need this?
-        if (titleLabel != null) {
-            Icon icon = null;
-            if (t != null) { 
-                icon = ResourceLoaderWrapper.getInstance().lookupIcon(t);
-            }
-            if (icon != null) {
-                titleLabel.setIcon(icon);
-            }
+        else {
+            UMLChangeDispatch dispatch =
+                new UMLChangeDispatch(this,
+                                      UMLChangeDispatch.TARGET_REASSERTED);
+            dispatch.targetReasserted();
+            SwingUtilities.invokeLater(dispatch);
         }
     }
 
-    /**
-     * Builds a eventlistenerlist of all targetlisteners that are part of this
-     * container and its children.
-     *
-     * @param container
-     *            the container to search for targetlisteners
-     * @return an EventListenerList with all TargetListeners on this container
-     *         and its children.
-     */
-    private EventListenerList registrateTargetListeners(Container container) {
-        Component[] components = container.getComponents();
-        EventListenerList list = new EventListenerList();
-        for (int i = 0; i < components.length; i++) {
-            if (components[i] instanceof TargetListener) {
-                list.add(TargetListener.class, (TargetListener) components[i]);
-            }
-            if (components[i] instanceof TargettableModelView) {
-                list.add(TargetListener.class,
-                        ((TargettableModelView) components[i])
-                                .getTargettableModel());
-            }
-            if (components[i] instanceof Container) {
-                EventListenerList list2 = registrateTargetListeners(
-                                                (Container) components[i]);
-                Object[] objects = list2.getListenerList();
-                for (int j = 1; j < objects.length; j += 2) {
-                    list.add(TargetListener.class, (TargetListener) objects[j]);
-                }
-            }
-        }
-        return list;
+    public final Object getTarget() { return _target; }
+
+    public final MModelElement getModelElement() {
+        return _modelElement;
     }
 
-    /**
-     * @see org.argouml.ui.TabTarget#getTarget()
-     */
-    public final Object getTarget() {
-        return target;
-    }
-
-    /**
-     * @see org.argouml.ui.TabTarget#refresh()
-     */
     public void refresh() {
-        SwingUtilities.invokeLater(new UMLChangeDispatch(this, 0));
+        SwingUtilities.invokeLater(new UMLChangeDispatch(this,0));
+    }
+
+    public boolean shouldBeEnabled() { return (_modelElement != null); }
+
+
+    public void propertySet(MElementEvent mee) {
+        UMLChangeDispatch dispatch = new UMLChangeDispatch(this,0);
+        dispatch.propertySet(mee);
+        SwingUtilities.invokeLater(dispatch);
+    }
+
+    public void listRoleItemSet(MElementEvent mee) {
+        UMLChangeDispatch dispatch = new UMLChangeDispatch(this,0);
+        dispatch.listRoleItemSet(mee);
+        SwingUtilities.invokeLater(dispatch);
+    }
+
+    public void recovered(MElementEvent mee) {
+        UMLChangeDispatch dispatch = new UMLChangeDispatch(this,0);
+        dispatch.recovered(mee);
+        SwingUtilities.invokeLater(dispatch);
+    }
+
+    public void removed(MElementEvent mee) {
+        UMLChangeDispatch dispatch = new UMLChangeDispatch(this,0);
+        dispatch.removed(mee);
+        SwingUtilities.invokeLater(dispatch);
+    }
+
+    public void roleAdded(MElementEvent mee) {
+        UMLChangeDispatch dispatch = new UMLChangeDispatch(this,0);
+        dispatch.roleAdded(mee);
+        SwingUtilities.invokeLater(dispatch);
+    }
+
+    public void roleRemoved(MElementEvent mee) {
+        UMLChangeDispatch dispatch = new UMLChangeDispatch(this,0);
+        dispatch.roleRemoved(mee);
+        SwingUtilities.invokeLater(dispatch);
     }
 
     /**
-     * @see org.argouml.ui.TabTarget#shouldBeEnabled(java.lang.Object)
+     *   This method can be overriden in derived Panels where the
+     *   appropriate namespace for display may not be the same as
+     *   the namespace of the target
      */
-    public boolean shouldBeEnabled(Object t) {
-        t = (t instanceof Fig) ? ((Fig) t).getOwner() : t;
-        return Model.getFacade().isAModelElement(t);
+    protected MNamespace getDisplayNamespace() {
+      MNamespace ns = null;
+      Object target = getTarget();
+      if(target instanceof MModelElement) {
+        ns = ((MModelElement) target).getNamespace();
+      }
+      return ns;
     }
 
-    /**
-     * This method can be overriden in derived Panels where the appropriate
-     * namespace for display may not be the same as the namespace of the target.
-     *
-     * @return the namespace
-     */
-    protected Object getDisplayNamespace() {
-        Object ns = null;
-        Object theTarget = getTarget();
-        if (Model.getFacade().isAModelElement(theTarget)) {
-            ns = Model.getFacade().getNamespace(theTarget);
-        }
-        return ns;
+
+    public String formatElement(MModelElement element) {
+        return getProfile().formatElement(element,getDisplayNamespace());
     }
 
-    /**
-     * @see org.argouml.uml.ui.UMLUserInterfaceContainer#getProfile()
-     */
-    public Profile getProfile() {
-        return ProjectManager.getManager().getCurrentProject().getProfile();
+    public String formatNamespace(MNamespace ns) {
+        return getProfile().formatElement(ns,null);
     }
 
-    /**
-     * @see org.argouml.uml.ui.UMLUserInterfaceContainer#getModelElement()
-     */
-    public final Object getModelElement() {
-        return modelElement;
-    }
 
-    /**
-     * @see org.argouml.uml.ui.UMLUserInterfaceContainer#formatElement(java.lang.Object)
-     */
-    public String formatElement(/* MModelElement */Object element) {
-        return getProfile().formatElement(element, getDisplayNamespace());
-    }
 
-    /**
-     * @see org.argouml.uml.ui.UMLUserInterfaceContainer#formatNamespace(java.lang.Object)
-     */
-    public String formatNamespace(/* MNamespace */Object namespace) {
-        return getProfile().formatElement(namespace, null);
-    }
-
-    /**
-     * @see org.argouml.uml.ui.UMLUserInterfaceContainer#formatCollection(java.util.Iterator)
-     */
     public String formatCollection(Iterator iter) {
-        Object namespace = getDisplayNamespace();
-        return getProfile().formatCollection(iter, namespace);
+        MNamespace ns = getDisplayNamespace();
+        return getProfile().formatCollection(iter,ns);
     }
 
-    /**
-     * Remove this element.
+    public void navigateTo(Object element) {
+        Iterator iter = _navListeners.iterator();
+        while(iter.hasNext()) {
+            ((NavigationListener) iter.next()).navigateTo(element);
+        }
+    }
+    public void open(Object element) {
+        Iterator iter = _navListeners.iterator();
+        while(iter.hasNext()) {
+            ((NavigationListener) iter.next()).open(element);
+        }
+    }
+
+
+    public boolean navigateBack(boolean attempt) {
+        boolean navigated = false;
+        Iterator iter = _navListeners.iterator();
+	    while(iter.hasNext()) {
+	        navigated = ((NavigationListener) iter.next()).navigateBack(attempt);
+            if(navigated) attempt = false;
+	    }
+        return navigated;
+    }
+
+    public void navigateBackAction() {
+        boolean attempt = true;
+        navigateBack(attempt);
+    }
+
+    public boolean navigateForward(boolean attempt) {
+        boolean navigated = false;
+        Iterator iter = _navListeners.iterator();
+	    while(iter.hasNext()) {
+	        navigated = ((NavigationListener) iter.next()).navigateForward(attempt);
+            if(navigated) attempt = false;
+	    }
+        return navigated;
+    }
+
+    public void navigateForwardAction() {
+        boolean attempt = true;
+        navigateForward(attempt);
+    }
+
+    public boolean isNavigateForwardEnabled() {
+        boolean enabled = false;
+        Iterator iter = _navListeners.iterator();
+	    while(iter.hasNext() && !enabled) {
+	        enabled = ((NavigationListener) iter.next()).isNavigateForwardEnabled();
+	    }
+        return enabled;
+    }
+
+    public boolean isNavigateBackEnabled() {
+        boolean enabled = false;
+        Iterator iter = _navListeners.iterator();
+	    while(iter.hasNext() && !enabled) {
+	        enabled = ((NavigationListener) iter.next()).isNavigateBackEnabled();
+	    }
+        return enabled;
+    }
+
+
+
+    /**    Registers a listener for navigation events.
      */
-//final public void removeElement() {
-//        Object theTarget = getTarget();
-//        if (Model.getFacade().isAModelElement(theTarget)) {
-//            Object newTarget = Model.getFacade().getModelElementContainer(
-//                    theTarget);
-//            Object base = theTarget;
-//            TargetManager.getInstance().setTarget(base);
-//            ActionEvent event = new ActionEvent(this, 1, "delete");
-//            new ActionDeleteSingleModelElement().actionPerformed(event);
-//            if (newTarget != null) {
-//                TargetManager.getInstance().setTarget(newTarget);
-//            }
-//        }
-//    }
-    
-    final protected Action getDeleteAction() {
-        return TargetManager.getInstance().getDeleteAction();
+    public void addNavigationListener(NavigationListener navListener) {
+        _navListeners.add(navListener);
+    }
+
+    public void removeNavigationListener(NavigationListener navListener) {
+        _navListeners.remove(navListener);
     }
 
     /**
-     * Check whether this element can be deleted. Currently it only checks
-     * whether we delete the main model. ArgoUML does not like that.
+     * <p>Calling this method with an array of metaclasses (for example,
+     *   MClassifier.class) will result in the prop panel propagating any name
+     *   changes or removals on any object that on the same event queue as the
+     *   target that is assignable to one of the metaclasses.</p>
      *
-     * @since 0.13.2
-     * @return whether this element can be deleted
-     */
-    public boolean isRemovableElement() {
-        return ((getTarget() != null) && (getTarget() != (ProjectManager
-                .getManager().getCurrentProject().getModel())));
-    }
-
-    /**
-     * @see TargetListener#targetAdded(TargetEvent)
-     */
-    public void targetAdded(TargetEvent e) {
-        if (listenerList == null) {
-            listenerList = registrateTargetListeners(this);
-        }
-        setTarget(e.getNewTarget());
-        fireTargetAdded(e);
-    }
-
-    /**
-     * @see TargetListener#targetRemoved(TargetEvent)
-     */
-    public void targetRemoved(TargetEvent e) {
-        setTarget(e.getNewTarget());
-        fireTargetRemoved(e);
-    }
-
-    /**
-     * @see TargetListener#targetSet(TargetEvent)
-     */
-    public void targetSet(TargetEvent e) {
-        setTarget(e.getNewTarget());
-        fireTargetSet(e);
-    }
-
-    private void fireTargetSet(TargetEvent targetEvent) {
-        if (listenerList == null)
-            listenerList = registrateTargetListeners(this);
-        // Guaranteed to return a non-null array
-        Object[] listeners = listenerList.getListenerList();
-        for (int i = listeners.length - 2; i >= 0; i -= 2) {
-            if (listeners[i] == TargetListener.class) {
-                // Lazily create the event:
-                ((TargetListener) listeners[i + 1]).targetSet(targetEvent);
-            }
-        }
-    }
-
-    private void fireTargetAdded(TargetEvent targetEvent) {
-        if (listenerList == null)
-            listenerList = registrateTargetListeners(this);
-        // Guaranteed to return a non-null array
-        Object[] listeners = listenerList.getListenerList();
-
-        for (int i = listeners.length - 2; i >= 0; i -= 2) {
-            if (listeners[i] == TargetListener.class) {
-                // Lazily create the event:
-                ((TargetListener) listeners[i + 1]).targetAdded(targetEvent);
-            }
-        }
-    }
-
-    private void fireTargetRemoved(TargetEvent targetEvent) {
-        if (listenerList == null)
-            listenerList = registrateTargetListeners(this);
-        // Guaranteed to return a non-null array
-        Object[] listeners = listenerList.getListenerList();
-        for (int i = listeners.length - 2; i >= 0; i -= 2) {
-            if (listeners[i] == TargetListener.class) {
-                // Lazily create the event:
-                ((TargetListener) listeners[i + 1]).targetRemoved(targetEvent);
-            }
-        }
-    }
-
-    /**
-     * @param theTitleLabel
-     *            the title of the panel shown at the top
-     */
-    protected void setTitleLabel(JLabel theTitleLabel) {
-        this.titleLabel = theTitleLabel;
-        titleLabel.setFont(stdFont);
-    }
-
-    /**
-     * @return the title of the panel shown at the top
-     */
-    protected JLabel getTitleLabel() {
-        return titleLabel;
-    }
-    
-    protected JPanel createBorderPanel(String title) {
-    	JPanel panel = new JPanel(new GridLayout2());
-    	TitledBorder border = new TitledBorder(title);
-    	border.setTitleFont(stdFont);
-    	panel.setBorder(border);
-    	return panel;
-    }
-    
-    /**
-     * If there are no buttons to show in the toolbar, 
-     * then set the height to e.g. 18, so that the title
-     * is aligned right by the LabelledLayout.
-     * 
-     * @param height
-     */
-    protected void setButtonPanelSize(int height) {
-        /* Set the minimum and preferred equal, 
-         * so that the size is fixed for the labelledlayout. */
-        buttonPanel.setMinimumSize(new Dimension(0, height));
-        buttonPanel.setPreferredSize(new Dimension(0, height));
-    }
-
-    /**
-     * Look up an icon.
+     * <p>Reworked to use {@link #addThirdPartyEventListening(Object[])}, so
+     *   removing the need for NSUML promiscuous listeners.</p>
      *
-     * @param name
-     *            the resource name.
-     * @return an ImageIcon corresponding to the given resource name
+     * <p><em>Note</em>. Despite the name, the old implementation tried to
+     *   listen for ownedElement and baseClass events as well as name
+     *   events. We incorporate all these.</p>
+     *
+     * @param metaclasses  The metaclass array we wish to listen to.
      */
-    protected static ImageIcon lookupIcon(String name) {
-        return ResourceLoaderWrapper.lookupIconResource(name);
+
+    public void setNameEventListening(Class[] metaclasses) {
+
+        // Convert to the third party listening pair list
+
+        Vector targetList = new Vector (metaclasses.length * 6);
+
+        for (int i = 0 ; i < metaclasses.length ; i++) {
+            Class mc = metaclasses[i];
+
+            targetList.add(mc);
+            targetList.add("name");
+
+            targetList.add(mc);
+            targetList.add("baseClass");
+
+            targetList.add(mc);
+            targetList.add("ownedElement");
+        }
+
+        addThirdPartyEventListening(targetList.toArray());
+    }
+
+
+    /**
+     * <p>Enable this prop panel to listen to further NSUML events raised by
+     *   third party objects (i.e. objects other than the target).</p>
+     *
+     * <p>Supplied with an array of pairs; {metaclass, property, ...} and will
+     *   listen to NSUML events on that metaclass affecting that property, and
+     *   propagate to this prop panel.</p>
+     *
+     * <p>Implemented by listening to all relevant objects in the current
+     *   model, and adding a listener to all the namespaces in the model, so we
+     *   can add new listeners when necessary.</p>
+     *
+     * <p><em>Note</em>. We can only do this with objects within an NSUML
+     *   model&mdash;that is {@link MModelElement} and its children.</p>
+     *
+     * @param  targetList  A list of pairs, {metaclass, property, ...} to which
+     *                     we are listening.  */
+
+    public void addThirdPartyEventListening(Object[] targetArray) {
+
+        // Create a target list if we don't have one
+
+        if (_targetList == null) {
+            _targetList = new Vector(targetArray.length);
+        }
+
+        // Add the supplied pairs to the target list.
+
+        for (int i = 0 ; i < targetArray.length ; i++) {
+            _targetList.add(targetArray[i]);
+        }
+
+        // If we don't have a third party listener at present, create one with
+        // this target list. Otherwise tell the one we have about the new list.
+
+        if (_thirdPartyListener == null) {
+            _thirdPartyListener =
+                new UMLThirdPartyEventListener(this, _targetList);
+        }
+        else {
+            _thirdPartyListener.setPairList(_targetList);
+        }
+    }
+
+
+    public void removeElement() {
+        Object target = getTarget();
+        if(target instanceof MBase) {
+            MBase base = (MBase) target;
+            Object projectTarget = ProjectBrowser.TheInstance.getTarget();
+            ProjectBrowser.TheInstance.setTarget(base);
+            ActionEvent event = new ActionEvent(this, 1, "delete");
+	        ActionRemoveFromModel.SINGLETON.actionPerformed(event);
+	       	if (!target.equals(projectTarget)) {
+        		ProjectBrowser.TheInstance.setTarget(projectTarget);
+        	}
+	   
+        }
+    }
+
+    public boolean isAcceptibleStereotype(MModelElement element) {
+        boolean isAcceptible = false;
+        if(element instanceof MStereotype) {
+            String baseClass = ((MStereotype) element).getBaseClass();
+            isAcceptible = true;
+            if(baseClass != null && !baseClass.equals("ModelElement")) {
+                isAcceptible = isAcceptibleBaseMetaClass(baseClass);
+            }
+        }
+        return isAcceptible;
+    }
+
+    /**
+     *   This function is used to determine what stereotypes are appropriate
+     *   to list in the stereotype combo box.
+     *
+     *   For example, PropPanelClass would return true for ModelElement,
+     *      Namespace, Classifier and Class and false for everything else.
+     *
+     *   @param a metaclass name such as 'Class', 'Association'.
+     *       Typically the baseClass attribute for a Stereotype.
+     *   @return true if target type of the panel is an instance
+     *       of the metaclass or a derived metaclass.
+     */
+    abstract protected boolean isAcceptibleBaseMetaClass(String baseClass);
+
+    public void setStereotype(MStereotype stereotype) {
+        Object target = getTarget();
+        if(target instanceof MModelElement) {
+            ((MModelElement) target).setStereotype(stereotype);
+        }
+    }
+
+    public MStereotype getStereotype() {
+        MStereotype stereotype = null;
+        Object target = getTarget();
+        if(target instanceof MModelElement) {
+            stereotype = ((MModelElement) target).getStereotype();
+        }
+        return stereotype;
     }
 
 } /* end class PropPanel */

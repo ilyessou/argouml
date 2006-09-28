@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,127 +21,83 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+
+// File: PropPanelCompositeState.java
+// Classes: PropPanelCompositeState
+// Original Author: 5heyden
+// $Id:
+
 package org.argouml.uml.ui.behavior.state_machines;
 
-import javax.swing.Action;
-import javax.swing.ImageIcon;
-import javax.swing.JList;
-import javax.swing.JScrollPane;
+import java.awt.*;
+import java.util.*;
 
-import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
-import org.argouml.ui.targetmanager.TargetManager;
-import org.argouml.uml.diagram.ui.ActionAddConcurrentRegion;
-import org.argouml.uml.diagram.ui.ActionDeleteConcurrentRegion;
-import org.argouml.util.ConfigLoader;
-import org.tigris.swidgets.Orientation;
+import javax.swing.*;
 
-/**
- * The properties panel for a Composite State.
- *
- * @author 5heyden
- */
-public class PropPanelCompositeState extends AbstractPropPanelState {
+import org.argouml.application.api.*;
+import org.argouml.uml.ui.*;
 
-    /**
-     * The serial version.
-     */
-    private static final long serialVersionUID = 4758716706184949796L;
-    
-    private JList subverticesList = null;
-    private Action addConcurrentRegion;
-    private Action deleteConcurrentRegion;
+import ru.novosoft.uml.MFactory;
+import ru.novosoft.uml.behavior.state_machines.*;
+import ru.novosoft.uml.foundation.data_types.*;
+import ru.novosoft.uml.behavior.common_behavior.*;
+import ru.novosoft.uml.foundation.core.*;
 
-    /**
-     * Constructor for PropPanelCompositeState.
-     * @param name the name of the properties panel
-     * @param icon the icon to be shown next to the name
-     * @param orientation the orientation of the panel
-     */
-    public PropPanelCompositeState(String name, ImageIcon icon,
-            Orientation orientation) {
-        super(name, icon, orientation);
-        initialize();
-    }
+public class PropPanelCompositeState extends PropPanelState {
 
-    /**
-     * Construct a new property panel for a CompositeState.
-     *
-     */
     public PropPanelCompositeState() {
-        super("Composite State", lookupIcon("CompositeState"),
-                ConfigLoader.getTabPropsOrientation());
-        initialize();
+        super("Composite State",_compositeStateIcon, 3);
 
-        addField(Translator.localize("label.name"),
-                getNameTextField());
-        addField(Translator.localize("label.container"),
-                getContainerScroll());
-        /*addField(Translator.localize("label.modifiers"),
-                new UMLCompositeStateConcurrentCheckBox());*/
-        addField(Translator.localize("label.entry"),
-                getEntryScroll());
-        addField(Translator.localize("label.exit"),
-                getExitScroll());
-        addField(Translator.localize("label.do-activity"),
-                getDoScroll());
+        Class mclass = MCompositeState.class;
 
-        addSeparator();
+        addCaption(Argo.localize("UMLMenu", "label.name"),1,0,0);
+        addField(nameField,1,0,0);
 
-        addField(Translator.localize("label.incoming"),
-                getIncomingScroll());
-        addField(Translator.localize("label.outgoing"),
-                getOutgoingScroll());
-        addField(Translator.localize("label.internal-transitions"),
-                getInternalTransitionsScroll());
+        addCaption(Argo.localize("UMLMenu", "label.stereotype"),2,0,0);
+	addField(new UMLComboBoxNavigator(this, Argo.localize("UMLMenu", "tooltip.nav-stereo"),stereotypeBox),2,0,0);
 
-        addSeparator();
+        addCaption("Subvertices:",3,0,1);
+        JList subsList = new UMLList(new UMLReflectionListModel(this,"subvertex",false,"getSubvertices",null,null,null),true);
+        subsList.setForeground(Color.blue);
+        subsList.setFont(smallFont);
+        JScrollPane subsScroll = new JScrollPane(subsList);
+        addField(subsScroll,3,0,1);
 
-        addField(Translator.localize("label.subvertex"),
-                new JScrollPane(subverticesList));
-    }
+        addCaption(Argo.localize("UMLMenu", "label.incoming"),0,1,0.5);
+	addField(incomingScroll,0,1,0.5);
 
-    /**
-     * @see org.argouml.uml.ui.behavior.state_machines.PropPanelStateVertex#addExtraButtons()
-     */
-    protected void addExtraButtons() {
-        super.addExtraButtons();
-        addConcurrentRegion = new ActionAddConcurrentRegion();
-        addAction(addConcurrentRegion);
-        deleteConcurrentRegion = new ActionDeleteConcurrentRegion();
-        addAction(deleteConcurrentRegion);
-    }
-    
-    protected void updateExtraButtons() {
-        addConcurrentRegion.setEnabled(addConcurrentRegion.isEnabled());
-        deleteConcurrentRegion.setEnabled(deleteConcurrentRegion.isEnabled());
-    }
+        addCaption(Argo.localize("UMLMenu", "label.outgoing"),1,1,0.5);
+	addField(outgoingScroll,1,1,0.5);
 
-    /**
-     * Initialize the panel with its specific fields, in casu
-     * the substate vertex list.
-     */
-    protected void initialize() {
-	subverticesList =
-	    new UMLCompositeStateSubvertexList(
-	            new UMLCompositeStateSubvertexListModel());
-    }
+        addCaption("Entry-Action:",0,2,0);
+	addField(entryScroll,0,2,0);
 
-    /**
-     * @see org.argouml.uml.ui.PropPanel#setTarget(java.lang.Object)
-     */
-    public void setTarget(Object t) {
-        super.setTarget(t);
-        updateExtraButtons();
-        Object target = TargetManager.getInstance().getModelTarget();
-        if (Model.getFacade().isAConcurrentRegion(target)) {
-            getTitleLabel().setText("Concurrent Region");
-        } else if (Model.getFacade().isConcurrent(target)) {
-            getTitleLabel().setText("Concurrent Composite State");
-        } else {
-            getTitleLabel().setText("Composite State");
+        addCaption("Exit-Action:",1,2,0);
+	addField(exitScroll,1,2,0);
+
+        addCaption("Do-Activity:",2,2,0);
+	addField(doScroll,2,2,0);
+
+        addCaption(Argo.localize("UMLMenu", "label.internal-transitions"),3,2,1);
+	addField(internalTransitionsScroll,3,2,1);
+  }
+
+    public java.util.List getSubvertices() {
+        java.util.Collection subs = null;
+        Object target = getTarget();
+        if(target instanceof MCompositeState) {
+            subs = ((MCompositeState) target).getSubvertices();
         }
-     }
+        return new Vector(subs);
+    }
+
+
+    protected boolean isAcceptibleBaseMetaClass(String baseClass) {
+        return baseClass.equals("CompositeState");
+    }
+
+
 
 } /* end class PropPanelCompositeState */
 

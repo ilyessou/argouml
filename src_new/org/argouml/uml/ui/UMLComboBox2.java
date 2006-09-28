@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -26,62 +25,104 @@ package org.argouml.uml.ui;
 
 import java.awt.event.ActionEvent;
 
-import javax.swing.Action;
 import javax.swing.JComboBox;
 
-import org.argouml.ui.LookAndFeelMgr;
-import org.argouml.ui.targetmanager.TargetEvent;
-import org.argouml.ui.targetmanager.TargetListener;
-import org.argouml.ui.targetmanager.TargettableModelView;
-
+import ru.novosoft.uml.MElementEvent;
 
 /**
- * ComboBox for UML modelelements. <p>
- *
- * This implementation does not use
+ * ComboBox for UML modelelements. This implementation does not use 
  * reflection and seperates Model, View and Controller better then does
- * UMLComboBox. The ancient UMLComboBoxModel and UMLComboBox are
+ * UMLComboBox. In the future UMLComboBoxModel and UMLComboBox will be
  * replaced with this implementation to improve performance.
  */
-public class UMLComboBox2
-    extends JComboBox implements TargettableModelView, TargetListener {
+public abstract class UMLComboBox2
+    extends JComboBox
+    implements UMLUserInterfaceComponent {
 
+    protected UMLUserInterfaceContainer container = null;
+    
     /**
-     * Constructor for UMLComboBox2.
-     * @deprecated As of ArgoUml version unknown (before 0.13.5),
-     * replaced by {@link #UMLComboBox2(UMLComboBoxModel2, Action, boolean)}
-     * @param arg0 the ComboBoxModel
+     * Constructor for UMLActivatorComboBox.
+     * @param arg0
      */
-    protected UMLComboBox2(UMLComboBoxModel2 arg0) {
+    public UMLComboBox2(UMLUserInterfaceContainer container, UMLComboBoxModel2 arg0) {
         super(arg0);
-        setFont(LookAndFeelMgr.getInstance().getStandardFont());
+        setContainer(container);
         addActionListener(this);
     }
 
     /**
-     * Constructor for UMLComboBox2. Via the given action, the
-     * action for this combobox is done.
-     * @param arg0 the ComboBoxModel
-     * @param action the action
-     * @param showIcon true if an icon should be shown in front of the items
+     * Returns the container.
+     * @return UMLUserInterfaceContainer
      */
-    public UMLComboBox2(UMLComboBoxModel2 arg0, Action action,
-			boolean showIcon) {
-        super(arg0);
-        setFont(LookAndFeelMgr.getInstance().getStandardFont());
-        addActionListener(action);
-        // setDoubleBuffered(true);
-        setRenderer(new UMLListCellRenderer2(showIcon));
+    public UMLUserInterfaceContainer getContainer() {
+        return container;
     }
 
     /**
-     * The constructor.
-     *
-     * @param arg0 the ComboBoxModel
-     * @param action the action
+     * Sets the container.
+     * @param container The container to set
      */
-    public UMLComboBox2(UMLComboBoxModel2 arg0, Action action) {
-        this(arg0, action, true);
+    public void setContainer(UMLUserInterfaceContainer container) {
+        this.container = container;
+    }
+
+    /**
+     * @see org.argouml.uml.ui.UMLUserInterfaceComponent#targetChanged()
+     */
+    public void targetChanged() {
+        ((UMLComboBoxModel2)getModel()).targetChanged();
+    }
+
+    /**
+     * @see org.argouml.uml.ui.UMLUserInterfaceComponent#targetReasserted()
+     */
+    public void targetReasserted() {
+        ((UMLComboBoxModel2)getModel()).targetReasserted();
+    }
+
+    /**
+     * @see ru.novosoft.uml.MElementListener#listRoleItemSet(MElementEvent)
+     */
+    public void listRoleItemSet(MElementEvent e) {
+        ((UMLComboBoxModel2)getModel()).listRoleItemSet(e);
+    }
+
+    /**
+     * @see ru.novosoft.uml.MElementListener#propertySet(MElementEvent)
+     */
+    public void propertySet(MElementEvent e) {
+        // same as itemstatechanged because they happen at the same moment
+        // therefore no action here
+        ((UMLComboBoxModel2)getModel()).propertySet(e);
+    }
+
+    /**
+     * @see ru.novosoft.uml.MElementListener#recovered(MElementEvent)
+     */
+    public void recovered(MElementEvent e) {
+        ((UMLComboBoxModel2)getModel()).recovered(e);
+    }
+
+    /**
+     * @see ru.novosoft.uml.MElementListener#removed(MElementEvent)
+     */
+    public void removed(MElementEvent e) {
+        ((UMLComboBoxModel2)getModel()).removed(e);
+    }
+
+    /**
+     * @see ru.novosoft.uml.MElementListener#roleAdded(MElementEvent)
+     */
+    public void roleAdded(MElementEvent e) {
+        ((UMLComboBoxModel2)getModel()).roleAdded(e);
+    }
+
+    /**
+     * @see ru.novosoft.uml.MElementListener#roleRemoved(MElementEvent)
+     */
+    public void roleRemoved(MElementEvent e) {
+        ((UMLComboBoxModel2)getModel()).roleRemoved(e);
     }
 
     /**
@@ -89,56 +130,11 @@ public class UMLComboBox2
      */
     public void actionPerformed(ActionEvent arg0) {
         int i = getSelectedIndex();
-        if (i >= 0) {
+        if ( i >= 0) {
             doIt(arg0);
         }
     }
+    
+    protected abstract void doIt(ActionEvent event);
 
-    /**
-     * The 'body' of the actionPerformed method. Is only called if there is
-     * actually a selection made.
-     *
-     * @param event the event
-     */
-    protected void doIt(ActionEvent event) { }
-
-    /**
-     * Utility method to get the current target.
-     *
-     * @return Object
-     */
-    public Object getTarget() {
-        return ((UMLComboBoxModel2) getModel()).getTarget();
-    }
-
-
-    /**
-     * @see TargettableModelView#getTargettableModel()
-     */
-    public TargetListener getTargettableModel() {
-        return (TargetListener) getModel();
-    }
-
-    /**
-     * @see org.argouml.ui.targetmanager.TargetListener#targetAdded(org.argouml.ui.targetmanager.TargetEvent)
-     */
-    public void targetAdded(TargetEvent e) {
-        if (e.getNewTarget() != getTarget()) {
-            removeActionListener(this);
-        }
-    }
-
-    /**
-     * @see org.argouml.ui.targetmanager.TargetListener#targetRemoved(org.argouml.ui.targetmanager.TargetEvent)
-     */
-    public void targetRemoved(TargetEvent e) {
-        removeActionListener(this);
-    }
-
-    /**
-     * @see org.argouml.ui.targetmanager.TargetListener#targetSet(org.argouml.ui.targetmanager.TargetEvent)
-     */
-    public void targetSet(TargetEvent e) {
-        addActionListener(this);
-    }
 }

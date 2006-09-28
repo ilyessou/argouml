@@ -1,158 +1,145 @@
-// $Id$
-// Copyright (c) 2002-2006 The Regents of the University of California. All
-// Rights Reserved. Permission to use, copy, modify, and distribute this
-// software and its documentation without fee, and without a written
-// agreement is hereby granted, provided that the above copyright notice
-// and this paragraph appear in all copies.  This software program and
-// documentation are copyrighted by The Regents of the University of
-// California. The software program and documentation are supplied "AS
-// IS", without any accompanying services from The Regents. The Regents
-// does not warrant that the operation of the program will be
-// uninterrupted or error-free. The end-user understands that the program
-// was developed for research purposes and is advised not to rely
-// exclusively on the program for any reason.  IN NO EVENT SHALL THE
-// UNIVERSITY OF CALIFORNIA BE LIABLE TO ANY PARTY FOR DIRECT, INDIRECT,
-// SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, INCLUDING LOST PROFITS,
-// ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN IF
-// THE UNIVERSITY OF CALIFORNIA HAS BEEN ADVISED OF THE POSSIBILITY OF
-// SUCH DAMAGE. THE UNIVERSITY OF CALIFORNIA SPECIFICALLY DISCLAIMS ANY
-// WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
-// MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. THE SOFTWARE
-// PROVIDED HEREUNDER IS ON AN "AS IS" BASIS, AND THE UNIVERSITY OF
-// CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
-// UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
-
 package org.argouml.uml.ui.behavior.collaborations;
 
-import java.beans.PropertyChangeEvent;
-import java.util.Collection;
-import java.util.Enumeration;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Vector;
 
-import org.argouml.model.AddAssociationEvent;
-import org.argouml.model.Model;
-import org.argouml.model.RemoveAssociationEvent;
-import org.argouml.uml.ui.UMLModelElementListModel2;
-import org.tigris.gef.base.Diagram;
-import org.tigris.gef.presentation.Fig;
+import javax.swing.JOptionPane;
+import javax.swing.JPopupMenu;
+
+import org.argouml.application.api.Argo;
+import org.argouml.model.uml.foundation.core.CoreHelper;
+import org.argouml.ui.ProjectBrowser;
+import org.argouml.uml.ui.UMLAddDialog;
+import org.argouml.uml.ui.UMLListMenuItem;
+import org.argouml.uml.ui.UMLModelElementListModel;
+import org.argouml.uml.ui.UMLUserInterfaceContainer;
+import ru.novosoft.uml.behavior.collaborations.MClassifierRole;
+import ru.novosoft.uml.foundation.core.MClassifier;
+import ru.novosoft.uml.foundation.core.MModelElement;
 
 /**
- * List model which implements allAvailableContents operation for a
- * ClassifierRole as described in the well formedness rules.
- *
+ * Binary relation list model for available con between classifierroles
+ * 
  * @author jaap.branderhorst@xs4all.nl
  */
 public class UMLClassifierRoleAvailableContentsListModel
-    extends UMLModelElementListModel2 {
+	extends UMLModelElementListModel {
 
-    /**
-     * Constructor for UMLClassifierRoleAvailableContentsListModel.
-     */
-    public UMLClassifierRoleAvailableContentsListModel() {
-        super();
-    }
+	
 
-    /**
-     * @see org.argouml.uml.ui.UMLModelElementListModel2#buildModelList()
-     */
-    protected void buildModelList() {
-        setAllElements(
-            Model.getCollaborationsHelper().allAvailableContents(getTarget()));
-    }
+	/**
+	 * Constructor for UMLClassifierRoleAvailableContentsListModel.
+	 * @param container
+	 * @param property
+	 * @param showNone
+	 */
+	public UMLClassifierRoleAvailableContentsListModel(
+		UMLUserInterfaceContainer container,
+		String property,
+		boolean showNone) {
+		super(container, property, showNone);
+	}
 
-    /**
-     * @see java.beans.PropertyChangeListener#propertyChange(java.beans.PropertyChangeEvent)
-     */
-    public void propertyChange(PropertyChangeEvent e) {
-        if (e instanceof AddAssociationEvent) {
-            if (e.getPropertyName().equals("base")
-                    && e.getSource() == getTarget()) {
-                Object clazz = getChangedElement(e);
-                addAll(Model.getFacade().getOwnedElements(clazz));
-                Model.getPump().addModelEventListener(
-                                      this,
-                                      clazz,
-                                      "ownedElement");
-            } else if (
-                    e.getPropertyName().equals("ownedElement")
-                    && Model.getFacade().getBases(getTarget()).contains(
-                            e.getSource())) {
-                addElement(getChangedElement(e));
-            }
-        } else if (e instanceof RemoveAssociationEvent) {
-            if (e.getPropertyName().equals("base")
-                    && e.getSource() == getTarget()) {
-                Object clazz = getChangedElement(e);
-                Model.getPump().removeModelEventListener(
-                        this,
-                        clazz,
-                    "ownedElement");
-            } else if (
-                e.getPropertyName().equals("ownedElement")
-                && Model.getFacade().getBases(getTarget()).contains(
-                       e.getSource())) {
-                removeElement(getChangedElement(e));
-            }
-        } else {
-            super.propertyChange(e);
+	/**
+	 * @see org.argouml.uml.ui.UMLModelElementListModel#buildPopup(JPopupMenu, int)
+	 */
+	public boolean buildPopup(JPopupMenu popup, int index) {
+		UMLUserInterfaceContainer container = getContainer();
+        UMLListMenuItem open = new UMLListMenuItem(container.localize("Open"),this,"open",index);
+        UMLListMenuItem delete = new UMLListMenuItem(container.localize("Delete"),this,"delete",index);
+        if(getModelElementSize() <= 0) {
+            open.setEnabled(false);
+            delete.setEnabled(false);
         }
-    }
 
-    /**
-     * @see org.argouml.uml.ui.UMLModelElementListModel2#setTarget(java.lang.Object)
-     */
-    public void setTarget(Object theNewTarget) {
-        theNewTarget = theNewTarget instanceof Fig
-            ? ((Fig) theNewTarget).getOwner() : theNewTarget;
-        if (Model.getFacade().isAModelElement(theNewTarget)
-                || theNewTarget instanceof Diagram) {
-            if (getTarget() != null) {
-                Enumeration enumeration = elements();
-                while (enumeration.hasMoreElements()) {
-                    Object base = enumeration.nextElement();
-                    Model.getPump().removeModelEventListener(
-                        this,
-                        base,
-                        "ownedElement");
-                }
-                Model.getPump().removeModelEventListener(
-                    this,
-                    getTarget(),
-                    "base");
-            }
-            setListTarget(theNewTarget);
-            if (getTarget() != null) {
-                Collection bases = Model.getFacade().getBases(getTarget());
-                Iterator it = bases.iterator();
-                while (it.hasNext()) {
-                    Object base = /*(MBase)*/ it.next();
-                    Model.getPump().addModelEventListener(
-                        this,
-                        base,
-                        "ownedElement");
-                }
-                // make sure we know it when a classifier is added as a base
-                Model.getPump().addModelEventListener(
-                    this,
-                    getTarget(),
-                    "base");
-            }
-            if (getTarget() != null) {
-                removeAllElements();
-                setBuildingModel(true);
-                buildModelList();
-                setBuildingModel(false);
-                if (getSize() > 0) {
-                    fireIntervalAdded(this, 0, getSize() - 1);
-                }
-            }
+        popup.add(open);
+        UMLListMenuItem add =new UMLListMenuItem(container.localize("Add"),this,"add",index);
+        if(_upper >= 0 && getModelElementSize() >= _upper) {
+            add.setEnabled(false);
         }
-    }
+        popup.add(add);
+        popup.add(delete);
+        return true;
+	}
 
-    /**
-     * @see org.argouml.uml.ui.UMLModelElementListModel2#isValidElement(Object)
-     */
-    protected boolean isValidElement(Object element) {
-        return false;
-    }
+	/**
+	 * @see org.argouml.uml.ui.UMLModelElementListModel#getModelElementAt(int)
+	 */
+	protected MModelElement getModelElementAt(int index) {
+		return elementAtUtil(((MClassifierRole)getTarget()).getAvailableContentses(), index, MClassifier.class);
+	}
+
+	/**
+	 * @see org.argouml.uml.ui.UMLModelElementListModel#recalcModelElementSize()
+	 */
+	protected int recalcModelElementSize() {
+		Object target = getTarget();
+		if (target instanceof MClassifierRole) {
+			MClassifierRole role = (MClassifierRole)target;
+			return role.getAvailableContentses().size();
+		}
+		return 0;
+	}
+	
+	protected List getChoices() {
+		if (getTarget() == null || !(getTarget() instanceof MClassifierRole)) 
+			throw new IllegalStateException("In getElements: target not legal");
+		MClassifierRole role = (MClassifierRole)getTarget();
+		if (role.getBases().isEmpty()) return new ArrayList();
+		List list = new ArrayList();
+		Iterator it = role.getBases().iterator();
+		while (it.hasNext()) {
+			MClassifier base = (MClassifier)it.next();
+			list.addAll(CoreHelper.getHelper().getAllContents(base));
+		}
+		return list;
+	}
+	
+	/**
+	 * @see org.argouml.uml.ui.UMLConnectionListModel#add(int)
+	 */
+	public void add(int index) {
+		Object target = getTarget();
+    	if (target instanceof MModelElement) {
+    		MClassifierRole role = (MClassifierRole)target;	
+	    	Vector choices = new Vector();
+	    	Vector selected = new Vector();
+	    	choices.addAll(getChoices());
+	    	choices.removeAll(role.getAvailableContentses());
+	    	selected.addAll(role.getAvailableContentses());
+	    	UMLAddDialog dialog = new UMLAddDialog(choices, selected, Argo.localize("UMLMenu", "dialog.title.add-available-contents"), true, true);
+	    	int returnValue = dialog.showDialog(ProjectBrowser.TheInstance);
+	    	if (returnValue == JOptionPane.OK_OPTION) {
+	    		Iterator it = dialog.getSelected().iterator();
+	    		while (it.hasNext()) {
+	    			MModelElement othermelement = (MModelElement)it.next();
+	    			if (!selected.contains(othermelement)) {
+	    				role.addAvailableContents(othermelement);
+	    			}
+	    		}
+	    		it = selected.iterator();
+	    		while (it.hasNext()) {
+	    			MModelElement othermelement = (MModelElement)it.next();
+	    			if (!dialog.getSelected().contains(othermelement)) {
+	    				role.removeAvailableContents(othermelement);
+	    			}
+	    		}
+	    	}
+    	}
+	}
+	
+	
+		
+	
+
+	/**
+	 * @see org.argouml.uml.ui.UMLModelElementListModel#delete(int)
+	 */
+	public void delete(int index) {
+		MModelElement element = elementAtUtil(((MClassifierRole)getTarget()).getAvailableContentses(), index, MClassifier.class);
+		((MClassifierRole)getTarget()).removeAvailableContents(element);
+	}
+
 }

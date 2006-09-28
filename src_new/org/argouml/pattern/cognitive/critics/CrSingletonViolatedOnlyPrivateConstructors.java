@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,41 +22,47 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// Original Author: jrobbins@ics.uci.edu
+
 package org.argouml.pattern.cognitive.critics;
 
-import java.util.Iterator;
+import java.util.*;
 
-import org.argouml.cognitive.Designer;
-import org.argouml.cognitive.ToDoItem;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
-import org.argouml.uml.cognitive.critics.CrUML;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
+import ru.novosoft.uml.foundation.extension_mechanisms.*;
+
+import org.argouml.cognitive.*;
+import org.argouml.cognitive.critics.*;
+import org.argouml.uml.*;
+import org.argouml.uml.cognitive.critics.*;
 
 /**
  * A critic to detect whether a class violates the conditions required for
- * using a Singleton Stereotype.<p>
+ * using a Singleton Stereotype.
  *
+ * <p>
  * This stereotype is used to indicate a class which only ever has a single
  * instance. The critic will trigger whenever a class has stereotype
- * &laquo;Singleton&raquo; (or &laquo;singleton&raquo;), but does not
+ * &laquo;Singleton&raquo; (or &laquo;singleton&raquo;), but does not 
  * meet the requirements of a Singleton class. These are:
  *
  * <ol>
  *   <li>An static variable to hold the sole instance of the class;
- *   <li>only private constructors to create the sole instance;
- *       (This critic) and
+ *   <li>only private constructors to create the sole instance; and (This critic)
  *   <li>At least one constructor to override the default constructor.
  * </ol>
  *
- * This version includes an implementation for the second tests above!
+ * <p>
+ * The original version would always trigger for any class with stereotype
+ * &laquo;Singleton&raquo;. This version includes an implementation for the
+ * three tests above!
  *
- * @see <a
- * href="http://argouml.tigris.org/documentation/snapshots/manual/argouml.html/
- * #s2.ref.critics_singleton_violated">
- * ArgoUML User Manual: Singleton Violated
- * </a>
+ * <p>
+ * Internally we use some of the static utility methods of the {@link
+ * org.argouml.cognitive.critics.CriticUtils CriticUtils} class.
  *
- * @author jrobbins
+ * @see <a href="http://argouml.tigris.org/documentation/snapshots/manual/argouml.html/#s2.ref.critics_singleton_violated">ArgoUML User Manual: Singleton Violated</a>
  */
 public class CrSingletonViolatedOnlyPrivateConstructors extends CrUML {
 
@@ -71,8 +77,9 @@ public class CrSingletonViolatedOnlyPrivateConstructors extends CrUML {
      */
 
     public CrSingletonViolatedOnlyPrivateConstructors() {
-        setupHeadAndDesc();
-        addSupportedDecision(UMLDecision.PATTERNS);
+        setResource("CrSingletonViolatedOnlyPrivateConstructors");
+
+        addSupportedDecision(CrUML.decPATTERNS);
         setPriority(ToDoItem.MED_PRIORITY);
 
         // These may not actually make any difference at present (the code
@@ -84,16 +91,18 @@ public class CrSingletonViolatedOnlyPrivateConstructors extends CrUML {
 
 
     /**
-     * The trigger for the critic.<p>
+     * The trigger for the critic.
      *
+     * <p>
      * First check we are actually stereotyped "Singleton" (or we will
-     * accept "singleton").<p>
+     * accept "singleton").
      *
+     * <p>
      * Then check for a static attribute with the same type as the Singleton
      * class that will hold the instance of the Singleton class when its
      * created.<p>
      *
-     * @param  dm    the {@link java.lang.Object Object} to be checked
+     * @param  dm    the {@link java.lang.Object Object} to be checked 
      *               against the critic.
      *
      * @param  dsgr  the {@link org.argouml.cognitive.Designer Designer}
@@ -101,31 +110,22 @@ public class CrSingletonViolatedOnlyPrivateConstructors extends CrUML {
      *               development of ArgoUML.
      *
      * @return       {@link #PROBLEM_FOUND PROBLEM_FOUND} if the critic is
-     *               triggered, otherwise {@link #NO_PROBLEM NO_PROBLEM}.
+     *               triggered, otherwise {@link #NO_PROBLEM NO_PROBLEM}.  
      */
     public boolean predicate2(Object dm, Designer dsgr) {
         // Only look at classes
-        if (!(Model.getFacade().isAClass(dm))) {
+        if (!(dm instanceof MClass)) {
             return NO_PROBLEM;
         }
 
-        // We only look at singletons
-        if (!(Model.getFacade().isSingleton(dm))) {
+        // Now we know it is a class, handle the object as a class
+        MClass cls = (MClass) dm;
+        if (!(CriticUtils.hasSingletonStereotype(cls))) {
             return NO_PROBLEM;
         }
 
-	Iterator operations = Model.getFacade().getOperations(dm).iterator();
-
-	while (operations.hasNext()) {
-	    Object o = operations.next();
-
-	    if (!(Model.getFacade().isConstructor(o))) {
-	        continue;
-	    }
-
-	    if (!(Model.getFacade().isPrivate(o))) {
-	        return PROBLEM_FOUND;
-	    }
+        if (!CriticUtils.hasOnlyPrivateConstructors(cls)) {
+            return PROBLEM_FOUND;
         }
 
 	return NO_PROBLEM;

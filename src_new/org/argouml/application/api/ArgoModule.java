@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2001 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,105 +21,62 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+/*
+ * ArgoModule.java
+ *
+ * Created on June 12, 2001, 6:47 AM
+ */
+
 package org.argouml.application.api;
+import org.argouml.application.modules.*;
 
 import java.util.Vector;
 
-/**
- * Interface that defines the characteristics of an external
+import org.apache.log4j.*;
+
+/** Interface that defines the characteristics of an external
  *  module usable by Argo.
  *
  * @author  Will Howery
  * @author  Thierry Lach
  * @since 0.9.4
- * @deprecated by Linus Tolke (0.21.1 March 2006).
- *         Use {@link org.argouml.moduleloader.ModuleInterface} instead.
  */
-public interface ArgoModule {
-    /**
-     * External modules are supposed to be located at
-     * <code>MODULEFILENAME</code>.
-     */
-    String MODULEFILENAME = ".argo.modules";
+public interface ArgoModule { 
 
-    /**
-     * Or, alternatively, external modules may be located at
-     * <code>MODULEFILENAME_ALTERNATE</code>.
+    /** Define a static log4j category variable for ArgoUML configuration.
      */
-    String MODULEFILENAME_ALTERNATE = "argo.modules";
+    public final static Category cat = Category.getInstance("org.argouml.application.modules");
+    // needs-more-work:  JDK 1.2 seems to not return the package name if
+    // not running from a jar.
+    //
+    // public final static Category cat = Category.getInstance(ModuleLoader.class.getPackage().getName());
 
-    /**
-     * Method called when Argo is loading a module.
-     *
-     * @return true if the module initialized properly.
-     */
-    boolean initializeModule();
 
-    /**
-     * Method called when Argo is unloading a module.
-     *
-     * @return true if the module terminated properly.
-     */
-    boolean shutdownModule();
+    public static final String MODULEFILENAME = ".argo.modules";
+    public static final String MODULEFILENAME_ALTERNATE = "argo.modules";
 
-    /**
-     * Called to enable or disable a module programmatically.
-     *
-     * @param tf true to enable module, false to disable
-     */
-    void setModuleEnabled(boolean tf);
+    public boolean initializeModule(); // called when loading module
+    
+    public boolean shutdownModule();   // called when the module is shutdown
 
-    /**
-     * Allows determination if a module is enabled or disabled.
-     *
-     * @return true if the module is enabled, otherwise false
-     */
-    boolean isModuleEnabled(); // determines if enabled-disabled
+    public void setModuleEnabled(boolean tf);  // called to enable-disable
+    
+    public boolean isModuleEnabled(); // determines if enabled-disabled
 
-    /**
-     * Display name of the module.
-     *
-     * @return the module name
-     */
-    String getModuleName();
+    /** Display name of the module. */
+    public String getModuleName();
 
-    /**
-     * Textual description of the module.
-     *
-     * @return the module description
-     */
-    String getModuleDescription();
+    /** Textual description of the module. */
+    public String getModuleDescription(); 
 
-    /**
-     * The module version.
-     *
-     * There is no specified format.
-     *
-     * @return a string containing the module version
-     */
-    String getModuleVersion();
+    public String getModuleVersion(); 
+    
+    public String getModuleAuthor(); 
+    
+    // calls all modules to let them add to a popup menu
+    public Vector getModulePopUpActions(Vector popUpActions, Object context);
 
-    /**
-     * The module author.
-     *
-     * @return a string containing the module author
-     */
-    String getModuleAuthor();
-
-    /**
-     * Calls all modules to let them add to a popup menu.
-     *
-     * @param popUpActions Vector of actions
-     * @param context which the actions are valid for
-     *
-     * @return Vector containing pop-up actions
-     */
-    Vector getModulePopUpActions(Vector popUpActions, Object context);
-
-    /**
-     * The module identifying key.
-     *
-     * @return the string key the module uses to identify itself
-     */
-    String getModuleKey();
+    public String getModuleKey();
 }
+

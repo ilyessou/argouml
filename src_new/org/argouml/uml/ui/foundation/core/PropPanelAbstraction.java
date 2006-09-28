@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,40 +23,88 @@
 
 package org.argouml.uml.ui.foundation.core;
 
-import org.argouml.i18n.Translator;
-import org.argouml.uml.ui.ActionNavigateNamespace;
-import org.argouml.util.ConfigLoader;
+import ru.novosoft.uml.foundation.core.*;
 
-/**
- * The properties panel for a Abstraction.
- */
-public class PropPanelAbstraction extends PropPanelDependency {
+import java.awt.*;
+import java.util.*;
+import javax.swing.*;
 
-    /**
-     * The serial version.
-     */
-    private static final long serialVersionUID = 595724551744206773L;
+import org.argouml.application.api.*;
+import org.argouml.uml.ui.*;
 
-    /**
-     * Construct a new property panel for an Abstraction.
-     */
+public class PropPanelAbstraction extends PropPanelModelElement {
+
+  ////////////////////////////////////////////////////////////////
+  // constructors
+
     public PropPanelAbstraction() {
-        super("Abstraction", ConfigLoader.getTabPropsOrientation());
+        super("Abstraction",_realizationIcon, 2);
 
-        addField(Translator.localize("label.name"),
-                getNameTextField());
-        addField(Translator.localize("label.namespace"),
-                getNamespaceSelector());
+        Class mclass = MDependency.class;
 
-        addSeparator();
+        addCaption(Argo.localize("UMLMenu", "label.name"),1,0,0);
+        addField(nameField,1,0,0);
 
-        addField(Translator.localize("label.suppliers"),
-                getSupplierScroll());
-        addField(Translator.localize("label.clients"),
-                getClientScroll());
+        addCaption(Argo.localize("UMLMenu", "label.stereotype"),2,0,0);
+        addField(new UMLComboBoxNavigator(this, Argo.localize("UMLMenu", "tooltip.nav-stereo"),stereotypeBox),2,0,0);
 
-        addAction(new ActionNavigateNamespace());
-        addAction(getDeleteAction());
+        addCaption(Argo.localize("UMLMenu", "label.namespace"),3,0,1);
+        addField(namespaceScroll,3,0,0);
+
+        addCaption("Suppliers:",0,1,0.5);
+        JList suppliersList = new UMLList(new UMLReflectionListModel(this,"supplier",true,"getSuppliers","setSuppliers",null,null),true);
+        suppliersList.setForeground(Color.blue);
+        suppliersList.setVisibleRowCount(1);
+        addField(new JScrollPane(suppliersList),0,1,0.5);
+
+        addCaption("Clients:",1,1,0.5);
+        JList clientsList = new UMLList(new UMLReflectionListModel(this,"client",true,"getClients","setClients",null,null),true);
+        clientsList.setForeground(Color.blue);
+        clientsList.setVisibleRowCount(1);
+        addField(new JScrollPane(clientsList),1,1,0.5);
+
+
+	new PropPanelButton(this,buttonPanel,_navUpIcon, Argo.localize("UMLMenu", "button.go-up"),"navigateNamespace",null);
+	new PropPanelButton(this,buttonPanel,_navBackIcon, Argo.localize("UMLMenu", "button.go-back"),"navigateBackAction","isNavigateBackEnabled");
+	new PropPanelButton(this,buttonPanel,_navForwardIcon, Argo.localize("UMLMenu", "button.go-forward"),"navigateForwardAction","isNavigateForwardEnabled");
+	new PropPanelButton(this,buttonPanel,_deleteIcon, Argo.localize("UMLMenu", "button.delete-association"),"removeElement",null);
+
+    }
+
+    public Collection getSuppliers() {
+        Collection suppliers = null;
+        Object target = getTarget();
+        if(target instanceof MDependency) {
+            suppliers = ((MDependency) target).getSuppliers();
+        }
+        return suppliers;
+    }
+
+    public void setSuppliers(Collection suppliers) {
+        Object target = getTarget();
+        if(target instanceof MDependency) {
+            ((MDependency) target).setSuppliers(suppliers);
+        }
+    }
+
+    public Collection getClients() {
+        Collection suppliers = null;
+        Object target = getTarget();
+        if(target instanceof MDependency) {
+            suppliers = ((MDependency) target).getClients();
+        }
+        return suppliers;
+    }
+
+    public void setClients(Collection suppliers) {
+        Object target = getTarget();
+        if(target instanceof MDependency) {
+            ((MDependency) target).setClients(suppliers);
+        }
+    }
+
+    protected boolean isAcceptibleBaseMetaClass(String baseClass) {
+        return baseClass.equals("Abstraction");
     }
 
 } /* end class PropPanelAbstraction */
