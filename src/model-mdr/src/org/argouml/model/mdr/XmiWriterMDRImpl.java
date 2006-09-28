@@ -26,6 +26,7 @@ package org.argouml.model.mdr;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.StringWriter;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -95,19 +96,9 @@ public class XmiWriterMDRImpl implements XmiWriter {
      * @param theWriter
      *            The writer to write to
      * @param version the ArgoUML version
-     * @throws IllegalArgumentException if no writer provided
      */
     public XmiWriterMDRImpl(MDRModelImplementation theParent, Object theModel,
             Writer theWriter, String version) {
-        if (theWriter == null) {
-            throw new IllegalArgumentException("A writer must be provided");
-        }
-        if (theModel == null) {
-            throw new IllegalArgumentException("A model must be provided");
-        }
-        if (theParent == null) {
-            throw new IllegalArgumentException("A parent must be provided");
-        }
         this.parent = theParent;
         this.model = theModel;
         this.writer = theWriter;
@@ -146,8 +137,8 @@ public class XmiWriterMDRImpl implements XmiWriter {
                         + " top level model elements");
             }
      
-            WriterOuputStream wos = new WriterOuputStream(writer);
-            xmiWriter.write(wos, elements, XMI_VERSION);
+            xmiWriter.write(
+                    new WriterOuputStream(writer), elements, XMI_VERSION);
         } catch (IOException e) {
             throw new UmlException(e);
         }
@@ -173,9 +164,6 @@ public class XmiWriterMDRImpl implements XmiWriter {
          * @param wrappedWriter The myWriter which will be wrapped
          */
         public WriterOuputStream(Writer wrappedWriter) {
-            if (wrappedWriter == null) {
-                throw new IllegalArgumentException("No writer provided");
-            }
             this.myWriter = wrappedWriter;
         }
 

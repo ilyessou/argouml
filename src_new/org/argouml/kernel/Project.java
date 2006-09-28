@@ -215,15 +215,20 @@ public class Project implements java.io.Serializable, TargetListener {
     }
 
     /**
-     * Get the project name. This is just the name part of the full filename.
      * @return the name of the project
      */
     public String getName() {
-        // TODO: maybe separate name
-        if (uri == null) {
+        try {
+            // TODO: maybe separate name
+            if (uri == null) {
+                return UNTITLED_FILE;
+            }
+            String name = new File(uri).getCanonicalPath();
+            int i = name.lastIndexOf('/');
+            return name.substring(i + 1);
+        } catch (IOException ioExc) {
             return UNTITLED_FILE;
         }
-        return new File(uri).getName();
     }
 
     /**

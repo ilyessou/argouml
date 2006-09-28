@@ -721,7 +721,6 @@ class FigAssociationEndAnnotation extends FigTextGroup {
             super.setOwner(owner);
             ordering.setOwner(owner);
             role.setOwner(owner);
-            role.setText();
             determineArrowHead();
             Model.getPump().addModelEventListener(this, owner, 
                     new String[] {"isNavigable", "aggregation", "participant"});

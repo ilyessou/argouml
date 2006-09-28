@@ -39,7 +39,7 @@ import org.argouml.uml.ProjectMemberModel;
  * @author Bob Tarling
  */
 class OldModelMemberFilePersister extends ModelMemberFilePersister 
-    implements XmiExtensionParser {
+    implements XmiExtensionWriter, XmiExtensionParser {
 
     /**
      * Save the project model to XMI.

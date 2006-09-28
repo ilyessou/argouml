@@ -70,7 +70,7 @@ public class ActionCreatePseudostate extends CmdCreateNode {
      */
     public Object makeNode() {
 	Object newNode = super.makeNode();
-	Object kind = getArg("kind");
+	Object kind = _args.get("kind");
 	Model.getCoreHelper().setKind(newNode, kind);
 
 	return newNode;
