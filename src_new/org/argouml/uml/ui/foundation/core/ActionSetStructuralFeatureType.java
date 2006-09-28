@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,33 +21,34 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $header$
 package org.argouml.uml.ui.foundation.core;
 
 import java.awt.event.ActionEvent;
 
-import javax.swing.Action;
-
-import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.application.api.Argo;
+import org.argouml.model.uml.modelmanagement.ModelManagementHelper;
+import org.argouml.uml.ui.UMLChangeAction;
 import org.argouml.uml.ui.UMLComboBox2;
-import org.tigris.gef.undo.UndoableAction;
+import ru.novosoft.uml.foundation.core.MAttribute;
+import ru.novosoft.uml.foundation.core.MClassifier;
+import ru.novosoft.uml.foundation.core.MStructuralFeature;
+
 /**
  * @since Nov 3, 2002
  * @author jaap.branderhorst@xs4all.nl
  */
-public class ActionSetStructuralFeatureType extends UndoableAction {
+public class ActionSetStructuralFeatureType extends UMLChangeAction {
 
-    private static final ActionSetStructuralFeatureType SINGLETON =
+    public static final ActionSetStructuralFeatureType SINGLETON =
         new ActionSetStructuralFeatureType();
 
     /**
      * Constructor for ActionSetStructuralFeatureType.
+     * @param s
      */
     protected ActionSetStructuralFeatureType() {
-        super(Translator.localize("Set"), null);
-        // Set the tooltip string:
-        putValue(Action.SHORT_DESCRIPTION, 
-                Translator.localize("Set"));
+        super(Argo.localize("CoreMenu", "Set"), true, NO_ICON);
     }
 
     /**
@@ -57,38 +57,30 @@ public class ActionSetStructuralFeatureType extends UndoableAction {
     public void actionPerformed(ActionEvent e) {
         super.actionPerformed(e);
         Object source = e.getSource();
-        Object oldClassifier = null;
-        Object newClassifier = null;
-        Object attr = null;
+        MClassifier oldClassifier = null;
+        MClassifier newClassifier = null;
+        MAttribute attr = null;
         if (source instanceof UMLComboBox2) {
-            UMLComboBox2 box = (UMLComboBox2) source;
+            UMLComboBox2 box = (UMLComboBox2)source;
             Object o = box.getTarget();
-            if (Model.getFacade().isAStructuralFeature(o)) {
-                attr = /*(MAttribute)*/ o;
-                oldClassifier = Model.getFacade().getType(attr);
+            if (o instanceof MStructuralFeature) {
+                attr = (MAttribute)o;
+                oldClassifier = attr.getType();
             }
             o = box.getSelectedItem();
-            if (Model.getFacade().isAClassifier(o)) {
-                newClassifier = /*(MClassifier)*/ o;
+            if (o instanceof MClassifier) {
+                newClassifier = (MClassifier)o;
+                if (newClassifier != oldClassifier && attr != null) {
+                    if (newClassifier != null) {
+                        ModelManagementHelper.getHelper().moveElement(
+                            newClassifier,
+                            attr.getModel());
+                    }
+                    attr.setType(newClassifier);
+                }
             }
         }
-        if (newClassifier != oldClassifier && attr != null) {
-            if (newClassifier != null) {
-                newClassifier = /*(MClassifier)*/ Model
-                    .getModelManagementHelper().getCorrespondingElement(
-                                    newClassifier,
-                                    Model.getFacade().getModel(attr));
-            }
 
-            Model.getCoreHelper().setType(attr, newClassifier);
-        }
-    }
-
-    /**
-     * @return Returns the sINGLETON.
-     */
-    public static ActionSetStructuralFeatureType getInstance() {
-        return SINGLETON;
     }
 
 }

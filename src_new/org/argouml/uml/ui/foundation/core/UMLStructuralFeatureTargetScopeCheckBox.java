@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2003 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,38 +21,43 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $Id$
 package org.argouml.uml.ui.foundation.core;
 
-import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.application.api.Argo;
 import org.argouml.uml.ui.UMLCheckBox2;
+
+import ru.novosoft.uml.foundation.core.MStructuralFeature;
+import ru.novosoft.uml.foundation.data_types.MScopeKind;
 
 /**
  * @author jaap.branderhorst@xs4all.nl
  * @since Jan 29, 2003
  */
 public class UMLStructuralFeatureTargetScopeCheckBox extends UMLCheckBox2 {
+    
 
+	/**
+	 * Constructor for UMLStructuralFeatureTargetScopeCheckBox.
+	 * @param text
+	 * @param a
+	 * @param propertySetName
+	 */
+	public UMLStructuralFeatureTargetScopeCheckBox() {
+        super(Argo.localize("UMLMenu", "label.classifier"), 
+            ActionSetStructuralFeatureTargetScope.SINGLETON, 
+            "targetScope");
+	}
 
-    /**
-     * Constructor for UMLStructuralFeatureTargetScopeCheckBox.
-     */
-    public UMLStructuralFeatureTargetScopeCheckBox() {
-        super(Translator.localize("label.classifier"),
-	      ActionSetStructuralFeatureTargetScope.getInstance(),
-	      "targetScope");
-    }
-
-    /**
-     * @see org.argouml.uml.ui.UMLCheckBox2#buildModel()
-     */
-    public void buildModel() {
+	/**
+	 * @see org.argouml.uml.ui.UMLCheckBox2#buildModel()
+	 */
+	public void buildModel() {
         // repair action for possible NP after load
-        if (Model.getFacade().getTargetScope(getTarget()) == null) {
-            Model.getCoreHelper().setTargetScope(getTarget(),
-                    Model.getScopeKind().getInstance());
+        if (((MStructuralFeature)getTarget()).getTargetScope() == null) {
+            ((MStructuralFeature)getTarget()).setTargetScope(MScopeKind.INSTANCE);
         }
-        setSelected(Model.getFacade().getTargetScope(getTarget()).equals(
-                Model.getScopeKind().getClassifier()));
-    }
+        setSelected(((MStructuralFeature)getTarget()).getTargetScope().equals(MScopeKind.CLASSIFIER));
+	}
+
 }

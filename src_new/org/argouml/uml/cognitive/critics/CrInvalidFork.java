@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,58 +21,47 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: CrInvalidFork.java
+// Classes: CrInvalidFork
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.cognitive.critics;
 
-import java.util.Collection;
+import java.util.*;
 
-import org.argouml.cognitive.Designer;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
+import ru.novosoft.uml.behavior.state_machines.*;
 
-/**
- * A critic to detect when a fork state has the wrong number of
- * transitions.  Implements constraint [5] on MPseudostate in the UML
- * Semantics v1.1, pp. 104.
- *
- * @author jrobbins
- */
+import org.argouml.cognitive.*;
+
+/** A critic to detect when a fork state has the wrong number of
+ *  transitions.  Implements constraint [5] on MPseudostate in the UML
+ *  Semantics v1.1, pp. 104. */
+
 public class CrInvalidFork extends CrUML {
 
-    /**
-     * The constructor.
-     */
-    public CrInvalidFork() {
-        setupHeadAndDesc();
-	addSupportedDecision(UMLDecision.STATE_MACHINES);
-	addTrigger("incoming");
-    }
+  public CrInvalidFork() {
+    setHeadline("Change Fork Transitions");
 
-    /**
-     * @see org.argouml.uml.cognitive.critics.CrUML#predicate2(
-     * java.lang.Object, org.argouml.cognitive.Designer)
-     */
-    public boolean predicate2(Object dm, Designer dsgr) {
-	if (!(Model.getFacade().isAPseudostate(dm))) {
-	    return NO_PROBLEM;
-	}
-	Object k = Model.getFacade().getPseudostateKind(dm);
-	if (!Model.getFacade().equalsPseudostateKind(
-	        k,
-	        Model.getPseudostateKind().getFork())) {
-	    return NO_PROBLEM;
-	}
-	Collection outgoing = Model.getFacade().getOutgoings(dm);
-	Collection incoming = Model.getFacade().getIncomings(dm);
-	int nOutgoing = outgoing == null ? 0 : outgoing.size();
-	int nIncoming = incoming == null ? 0 : incoming.size();
-	if (nIncoming > 1) {
-	    return PROBLEM_FOUND;
-	}
-	if (nOutgoing == 1) {
-	    return PROBLEM_FOUND;
-	}
-	return NO_PROBLEM;
-    }
+    addSupportedDecision(CrUML.decSTATE_MACHINES);
+    addTrigger("incoming");
+  }
+
+  public boolean predicate2(Object dm, Designer dsgr) {
+    if (!(dm instanceof MPseudostate)) return NO_PROBLEM;
+    MPseudostate ps = (MPseudostate) dm;
+    MPseudostateKind k = ps.getKind();
+    if (!MPseudostateKind.FORK.equals(k)) return NO_PROBLEM;
+    Collection outgoing = ps.getOutgoings();
+    Collection incoming = ps.getIncomings();
+    int nOutgoing = outgoing == null ? 0 : outgoing.size();
+    int nIncoming = incoming == null ? 0 : incoming.size();
+    if (nIncoming > 1) return PROBLEM_FOUND;
+    if (nOutgoing == 1) return PROBLEM_FOUND;
+    return NO_PROBLEM;
+  }
 
 } /* end class CrInvalidFork */
 

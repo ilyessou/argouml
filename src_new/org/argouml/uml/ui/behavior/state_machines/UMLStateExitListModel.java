@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,19 +21,23 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $header$
 package org.argouml.uml.ui.behavior.state_machines;
 
-import org.argouml.model.Model;
 import org.argouml.uml.ui.UMLModelElementListModel2;
+
+import ru.novosoft.uml.MBase;
+import ru.novosoft.uml.behavior.state_machines.MState;
 
 /**
  * @since Dec 14, 2002
  * @author jaap.branderhorst@xs4all.nl
  */
 public class UMLStateExitListModel extends UMLModelElementListModel2 {
-
+    
     /**
      * Constructor for UMLStateExitListModel.
+     * @param container
      */
     public UMLStateExitListModel() {
         super("exit");
@@ -45,14 +48,14 @@ public class UMLStateExitListModel extends UMLModelElementListModel2 {
      */
     protected void buildModelList() {
         removeAllElements();
-        addElement(Model.getFacade().getExit(getTarget()));
+        addElement(((MState)getTarget()).getExit());
     }
 
     /**
-     * @see org.argouml.uml.ui.UMLModelElementListModel2#isValidElement(Object)
+     * @see org.argouml.uml.ui.UMLModelElementListModel2#isValidElement(ru.novosoft.uml.MBase)
      */
-    protected boolean isValidElement(Object/*MBase*/ element) {
-        return element == Model.getFacade().getExit(getTarget());
+    protected boolean isValidElement(MBase element) {
+        return element == ((MState)getTarget()).getExit();
     }
 
 }

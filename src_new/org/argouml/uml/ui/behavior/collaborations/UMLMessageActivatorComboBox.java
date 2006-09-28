@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -26,30 +25,29 @@ package org.argouml.uml.ui.behavior.collaborations;
 
 import java.awt.event.ActionEvent;
 
-import org.argouml.model.Model;
+import org.argouml.model.uml.behavioralelements.collaborations.CollaborationsHelper;
 import org.argouml.uml.ui.UMLComboBox2;
 import org.argouml.uml.ui.UMLComboBoxModel2;
-import org.argouml.uml.ui.UMLListCellRenderer2;
 import org.argouml.uml.ui.UMLUserInterfaceContainer;
+import ru.novosoft.uml.behavior.collaborations.MMessage;
+
 /**
- * The combobox for activators on the message proppanel. The only reason this
- * combobox implements melementlistener is to conform to UMLChangeDispatch. The
- * combobox serves as a proxy for the
+ * The combobox for activators on the message proppanel. The only reason this 
+ * combobox implements melementlistener is to conform to UMLChangeDispatch. The 
+ * combobox serves as a proxy for the 
  * model (UMLMessageActivatorComboBoxModel). Kind of strange...
  */
 public class UMLMessageActivatorComboBox extends UMLComboBox2 {
 
     /**
      * Constructor for UMLMessageActivatorComboBox.
-     * @param container the UI container
-     * @param arg0 the model
+     * @param container
+     * @param arg0
      */
     public UMLMessageActivatorComboBox(
         UMLUserInterfaceContainer container,
         UMLComboBoxModel2 arg0) {
-        // TODO: This super constructor has been deprecated
         super(arg0);
-        setRenderer(new UMLListCellRenderer2(true));
     }
 
     /**
@@ -57,10 +55,10 @@ public class UMLMessageActivatorComboBox extends UMLComboBox2 {
      */
     protected void doIt(ActionEvent event) {
         Object o = getModel().getElementAt(getSelectedIndex());
-        Object activator = /*(MMessage)*/ o;
-        Object mes = /*(MMessage)*/ getTarget();
-        if (activator != Model.getFacade().getActivator(mes)) {
-            Model.getCollaborationsHelper().setActivator(mes, activator);
+        MMessage activator = (MMessage)o;
+        MMessage mes = (MMessage)getTarget();
+        if (activator != mes.getActivator()) {
+            CollaborationsHelper.getHelper().setActivator(mes, activator);
         }
     }
 

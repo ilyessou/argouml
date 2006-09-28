@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2001 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -23,29 +22,34 @@
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 package org.argouml.application.api;
+import javax.swing.*;
 
-import javax.swing.JPanel;
-
-/**
- * An interface which must be implemented as the UI for
+/**  
+ * An interface which must be implemented as the UI for 
  * tabs used on the about panel.
  *
- * @author Andreas Rueckert
- * @since 0.13.2
+ *   @author Andreas Rueckert <mail@andreas-rueckert.de>
+ *   @since 0.13.2
  */
 public interface AboutTabPanel {
 
+
     // Methods
 
-    /**
-     * @return the unlocalized settings tab name.
+    /** 
+     * Returns the unlocalized settings tab name.
      */
-    String getTabKey();
+    public String getTabKey();
 
     /**
-     * @return the JPanel which implements the tab.
+     * Returns the name of the resource bundle to use.
      */
-    JPanel getTabPanel();
+    public String getTabResourceBundleKey();
+
+    /** 
+     * Returns the JPanel which implements the tab.
+     */
+    public JPanel getTabPanel();
 
 } /* End interface AboutTabPanel */
 

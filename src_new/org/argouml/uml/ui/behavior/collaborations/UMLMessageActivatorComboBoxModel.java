@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,18 +23,25 @@
 
 package org.argouml.uml.ui.behavior.collaborations;
 
-import org.argouml.model.Model;
+import org.argouml.model.uml.UmlModelEventPump;
+import org.argouml.model.uml.behavioralelements.collaborations.CollaborationsHelper;
 import org.argouml.uml.ui.UMLComboBoxModel2;
 
+import ru.novosoft.uml.behavior.collaborations.MInteraction;
+import ru.novosoft.uml.behavior.collaborations.MMessage;
+
 /**
- * The model behind the UMLMessageActivatorComboBox.
+ * The model behind the UMLMessageActivatorComboBox. I don't use the UMLComboBoxModel
+ * since this mixes the GUI and the model too much and is much more maintainance 
+ * intensive then this implementation.
  */
 public class UMLMessageActivatorComboBoxModel extends UMLComboBoxModel2 {
+		
 
-    private Object interaction = null;
 
     /**
      * Constructor for UMLMessageActivatorComboBoxModel.
+     * @param container
      */
     public UMLMessageActivatorComboBoxModel() {
         super("activator", false);
@@ -46,25 +52,23 @@ public class UMLMessageActivatorComboBoxModel extends UMLComboBoxModel2 {
      */
     protected void buildModelList() {
         Object target = getTarget();
-        if (Model.getFacade().isAMessage(target)) {
-            Object mes = /*(MMessage)*/ target;
+        if (target instanceof MMessage) {
+            MMessage mes = (MMessage)target;
             removeAllElements();
             // fill the list with items
-            setElements(Model.getCollaborationsHelper()
-                    .getAllPossibleActivators(mes));
+            setElements(CollaborationsHelper.getHelper().getAllPossibleActivators(mes));
         }
     }
 
-
+    
     /**
-     * @see org.argouml.uml.ui.UMLComboBoxModel2#isValidElement(Object)
+     * @see org.argouml.uml.ui.UMLComboBoxModel2#isValidElement(ru.novosoft.uml.MBase)
      */
     protected boolean isValidElement(Object m) {
-        return ((Model.getFacade().isAMessage(m))
-                && m != getTarget()
-                && !Model.getFacade().getPredecessors((getTarget())).contains(m)
-                && Model.getFacade().getInteraction(m)
-                    == Model.getFacade().getInteraction((getTarget())));
+        return ((m instanceof MMessage)  && 
+            m != getTarget() && 
+            !((MMessage)(getTarget())).getPredecessors().contains(m) &&
+            ((MMessage)m).getInteraction() == ((MMessage)(getTarget())).getInteraction());
     }
 
     /**
@@ -72,30 +76,26 @@ public class UMLMessageActivatorComboBoxModel extends UMLComboBoxModel2 {
      */
     protected Object getSelectedModelElement() {
         if (getTarget() != null) {
-            return Model.getFacade().getActivator(getTarget());
+            return ((MMessage)getTarget()).getActivator();
         }
         return null;
     }
-    
+
+    /**
+     * @see org.argouml.uml.ui.UMLComboBoxModel2#setTarget(java.lang.Object)
+     */
     protected void setTarget(Object target) {
-        if (Model.getFacade().isAMessage(getTarget())) {
-            if (interaction != null) {
-                Model.getPump().removeModelEventListener(
-                    this,
-                    interaction,
-                    "message");
-            }
-        }
+        if (getTarget() instanceof MMessage) {
+            MInteraction inter = ((MMessage)getTarget()).getInteraction();
+            if (inter != null)
+                UmlModelEventPump.getPump().removeModelEventListener(this, inter, "message");
+        }   
         super.setTarget(target);
-        if (Model.getFacade().isAMessage(target)) {
-            interaction = Model.getFacade().getInteraction(target);
-            if (interaction != null) {
-                Model.getPump().addModelEventListener(
-                    this,
-                    interaction,
-                    "message");
-            }
+        if (target instanceof MMessage) {
+            MInteraction inter = ((MMessage)target).getInteraction();
+            if (inter != null)
+                UmlModelEventPump.getPump().addModelEventListener(this, inter, "message");
         }
     }
-}
 
+}

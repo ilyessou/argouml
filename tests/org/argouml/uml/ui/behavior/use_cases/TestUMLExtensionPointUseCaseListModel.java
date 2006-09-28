@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,68 +21,73 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $header$
 package org.argouml.uml.ui.behavior.use_cases;
 
 import junit.framework.TestCase;
 
-import org.argouml.model.Model;
+import org.argouml.application.security.ArgoSecurityManager;
+import org.argouml.model.uml.UmlFactory;
+import org.argouml.model.uml.behavioralelements.usecases.UseCasesFactory;
+
+import ru.novosoft.uml.MFactoryImpl;
+import ru.novosoft.uml.behavior.use_cases.MExtensionPoint;
+import ru.novosoft.uml.behavior.use_cases.MUseCase;
 
 /**
  * @since Oct 30, 2002
  * @author jaap.branderhorst@xs4all.nl
  */
 public class TestUMLExtensionPointUseCaseListModel extends TestCase {
-
-    private Object elem;
+    
+    private MExtensionPoint elem;
+    private int oldEventPolicy;
     private UMLExtensionPointUseCaseListModel model;
+    
 
     /**
      * Constructor for TestUMLExtensionPointUseCaseListModel.
-     * @param arg0 is the name of the test case.
+     * @param arg0
      */
     public TestUMLExtensionPointUseCaseListModel(String arg0) {
         super(arg0);
     }
-
+    
     /**
      * @see junit.framework.TestCase#setUp()
      */
     protected void setUp() throws Exception {
         super.setUp();
-        elem = Model.getUseCasesFactory().createExtensionPoint();
+        ArgoSecurityManager.getInstance().setAllowExit(true);
+        UmlFactory.getFactory().setGuiEnabled(false);   
+        elem = UseCasesFactory.getFactory().createExtensionPoint();
+        oldEventPolicy = MFactoryImpl.getEventPolicy();
+        MFactoryImpl.setEventPolicy(MFactoryImpl.EVENT_POLICY_IMMEDIATE);
         model = new UMLExtensionPointUseCaseListModel();
         model.setTarget(elem);
-        Model.getPump().flushModelEvents();
     }
-
+    
     /**
      * @see junit.framework.TestCase#tearDown()
      */
     protected void tearDown() throws Exception {
         super.tearDown();
-        Model.getUmlFactory().delete(elem);
+        UmlFactory.getFactory().delete(elem);
+        MFactoryImpl.setEventPolicy(oldEventPolicy);
         model = null;
     }
-
-    /**
-     * Test setUseCase().
-     */
+    
     public void testSetUseCase() {
-        Object usecase = Model.getUseCasesFactory().createUseCase();
-        Model.getUseCasesHelper().setUseCase(elem, usecase);
-        Model.getPump().flushModelEvents();
+        MUseCase usecase = UseCasesFactory.getFactory().createUseCase();
+        elem.setUseCase(usecase);
         assertEquals(1, model.getSize());
         assertEquals(usecase, model.getElementAt(0));
     }
-
-    /**
-     * Test setUseCase() with null argument.
-     */
+    
     public void testRemoveUseCase() {
-        Object usecase = Model.getUseCasesFactory().createUseCase();
-        Model.getUseCasesHelper().setUseCase(elem, usecase);
-        Model.getUseCasesHelper().setUseCase(elem, null);
-        Model.getPump().flushModelEvents();
+        MUseCase usecase = UseCasesFactory.getFactory().createUseCase();
+        elem.setUseCase(usecase);
+        elem.setUseCase(null);
         assertEquals(0, model.getSize());
     }
 

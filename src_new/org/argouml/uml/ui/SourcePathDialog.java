@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,167 +23,201 @@
 
 package org.argouml.uml.ui;
 
+import java.awt.Dimension;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.LinkedList;
+import java.util.Collection;
+import java.util.Iterator;
 
 import javax.swing.JButton;
-import javax.swing.JOptionPane;
+import javax.swing.JDialog;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
-import javax.swing.ListSelectionModel;
-import javax.swing.event.ListSelectionListener;
+import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
 
-import org.argouml.i18n.Translator;
-import org.argouml.ui.ArgoDialog;
+import org.argouml.application.api.Argo;
+import org.argouml.kernel.ProjectManager;
+import org.argouml.model.uml.modelmanagement.ModelManagementHelper;
+import org.argouml.ui.ProjectBrowser;
+import org.argouml.uml.generator.Generator;
+
+import ru.novosoft.uml.foundation.core.MClass;
+import ru.novosoft.uml.foundation.core.MInterface;
+import ru.novosoft.uml.foundation.core.MModelElement;
+import ru.novosoft.uml.foundation.core.MNamespace;
+import ru.novosoft.uml.model_management.MModel;
+import ru.novosoft.uml.model_management.MPackage;
 
 /**
- * This dialog appears when selecting
- * <code>Generation -> Settings for Generate for Project...</code>
- * in the menu.<p>
- *
- * Provides support for setting a "src_path" tagged value used in Java
+ * Provides support for setting a "src_path" tagged value used in Java 
  * round trip engineering.
  */
-public class SourcePathDialog extends ArgoDialog implements ActionListener {
+public class SourcePathDialog extends JDialog implements ActionListener {
 
-    private SourcePathController srcPathCtrl = new SourcePathControllerImpl();
+  ////////////////////////////////////////////////////////////////
+  // instance variables
+  private SrcPathTableModel _srcPathTableModel = new SrcPathTableModel();
 
-    private SourcePathTableModel srcPathTableModel =
-        srcPathCtrl.getSourcePathSettings();
+  protected JTable _srcPathTable;
+  protected JButton _cancelButton;
+  protected JButton _okButton;
+  protected JScrollPane _srcPathScrollPane;
 
-    private JTable srcPathTable;
+  ////////////////////////////////////////////////////////////////
+  // constructors
 
-    private JButton delButton;
+  public SourcePathDialog() {
+    super(ProjectBrowser.getInstance(), Argo.localize("CoreMenu", "action.generate-code-for-project"));
 
-    private ListSelectionModel rowSM;
+    GridBagConstraints gridBagConstraints;
 
-    /**
-     * The constructor.
-     *
-     */
-    public SourcePathDialog() {
-        super(
-            Translator.localize("action.generate-code-for-project"),
-            ArgoDialog.OK_CANCEL_OPTION,
-            true);
+    _cancelButton = new JButton();
+    _okButton = new JButton();
+    _srcPathScrollPane = new JScrollPane();
+    _srcPathTable = new JTable();
 
-        srcPathTable = new JTable();
-        srcPathTable.setModel(srcPathTableModel);
-        srcPathTable.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
-        // Hack: don't show first column, where the model element object is
-        // placed.
-        TableColumn elemCol = srcPathTable.getColumnModel().getColumn(0);
-        elemCol.setMinWidth(0);
-        elemCol.setMaxWidth(0);
+    getContentPane().setLayout(new GridBagLayout());
 
-        delButton = new JButton(Translator.localize("button.delete"));
-        delButton.setEnabled(false);
-        addButton(delButton, 0);
+    _cancelButton.setText("Cancel");
+    gridBagConstraints = new GridBagConstraints();
+    gridBagConstraints.gridx = 0;
+    gridBagConstraints.gridy = 1;
+    gridBagConstraints.insets = new Insets(5, 5, 5, 5);
+    gridBagConstraints.anchor = GridBagConstraints.EAST;
+    getContentPane().add(_cancelButton, gridBagConstraints);
 
-        rowSM = srcPathTable.getSelectionModel();
-        rowSM.addListSelectionListener(new SelectionListener());
-        delButton.addActionListener(this);
+    _okButton.setText("Ok");
+    gridBagConstraints = new GridBagConstraints();
+    gridBagConstraints.gridx = 1;
+    gridBagConstraints.gridy = 1;
+    gridBagConstraints.insets = new Insets(5, 5, 5, 5);
+    gridBagConstraints.anchor = GridBagConstraints.EAST;
+    getContentPane().add(_okButton, gridBagConstraints);
 
-        setContent(new JScrollPane(srcPathTable));
+    _srcPathTable.setModel(_srcPathTableModel);
+    _srcPathTable.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
+    _srcPathTable.setShowVerticalLines(false);
+    _srcPathTable.setIntercellSpacing(new Dimension(0, 1));
+    TableColumn elemCol = _srcPathTable.getColumnModel().getColumn(0);
+    elemCol.setMinWidth(0);
+    elemCol.setMaxWidth(0);
+    elemCol = null;
+    _srcPathScrollPane.setViewportView(_srcPathTable);
+
+    gridBagConstraints = new GridBagConstraints();
+    gridBagConstraints.gridx = 0;
+    gridBagConstraints.gridy = 0;
+    gridBagConstraints.gridwidth = GridBagConstraints.REMAINDER;
+    gridBagConstraints.fill = GridBagConstraints.BOTH;
+    gridBagConstraints.insets = new Insets(5, 5, 5, 5);
+    gridBagConstraints.weighty = 2.0;
+    getContentPane().add(_srcPathScrollPane, gridBagConstraints);
+
+    pack();
+
+    // Center Dialog on Screen -- todo: this should be a support function
+    ProjectBrowser pb = ProjectBrowser.getInstance();
+    Rectangle pbBox = pb.getBounds();
+    setLocation(pbBox.x + (pbBox.width - this.getWidth())/2,
+    		pbBox.y + (pbBox.height - this.getHeight())/2);
+
+    getRootPane().setDefaultButton(_okButton);
+    _okButton.addActionListener(this);
+    _cancelButton.addActionListener(this);
+  }
+
+
+  ////////////////////////////////////////////////////////////////
+  // event handlers
+
+  public void actionPerformed(ActionEvent e) {
+    // Cancel Button ------------------------------------------
+    if (e.getSource() == _cancelButton) {
+      buttonCancelActionPerformed();
     }
-
-    ////////////////////////////////////////////////////////////////
-    // event handlers
-
-    /**
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-     */
-    public void actionPerformed(ActionEvent e) {
-        super.actionPerformed(e);
-
-        // OK Button ------------------------------------------
-        if (e.getSource() == getOkButton()) {
-            buttonOkActionPerformed();
-        }
-        // Delete Button
-        if (e.getSource() == delButton) {
-            deleteSelectedSettings();
-        }
+    // Ok Button ------------------------------------------
+    if (e.getSource() == _okButton) {
+      buttonOkActionPerformed();
     }
+  }
 
-    /**
-     * The OK button is pressed.
-     */
-    private void buttonOkActionPerformed() {
-        srcPathCtrl.setSourcePath(srcPathTableModel);
+  public void buttonCancelActionPerformed() {
+    setVisible(false);
+    dispose();
+  }
+
+  public void buttonOkActionPerformed() {
+    for (int i = 0; i < _srcPathTableModel.getRowCount(); i++) {
+      MModelElement elem = (MModelElement)_srcPathTableModel.getValueAt(i,0);
+      String path = (String)_srcPathTableModel.getValueAt(i,3);
+      if (elem != null && path != null && !path.equals(elem.getTaggedValue("src_path"))) {
+        elem.setTaggedValue("src_path",path);
+      }
     }
-
-    /**
-     * Retrieve the selected rows indexes.
-     */
-    private int[] getSelectedIndexes() {
-        int firstSelectedRow = rowSM.getMinSelectionIndex();
-        int lastSelectedRow = rowSM.getMaxSelectionIndex();
-        LinkedList selectedIndexesList = new LinkedList();
-        int numSelectedRows = 0;
-        for (int i = firstSelectedRow; i <= lastSelectedRow; i++) {
-            if (rowSM.isSelectedIndex(i)) {
-                numSelectedRows++;
-                selectedIndexesList.add(new Integer(i));
-            }
-        }
-        int[] indexes = new int[selectedIndexesList.size()];
-        java.util.Iterator it = selectedIndexesList.iterator();
-        for (int i = 0; i < indexes.length && it.hasNext(); i++) {
-            indexes[i] = ((Integer) it.next()).intValue();
-        }
-        return indexes;
-    }
-
-    /**
-     * Delete the source path settings of the selected table rows.
-     */
-    private void deleteSelectedSettings() {
-        // find selected rows and make a list of the model elements
-        // that are selected
-        int[] selectedIndexes = getSelectedIndexes();
-
-        // confirm with the user that he wants to delete, presenting the
-        // list of settings to delete
-        StringBuffer msg = new StringBuffer();
-        msg.append(Translator.localize("dialog.source-path-del.question"));
-        for (int i = 0; i < selectedIndexes.length; i++) {
-            msg.append("\n");
-            msg.append(srcPathTableModel.getMEName(selectedIndexes[i]));
-            msg.append(" (");
-            msg.append(srcPathTableModel.getMEType(selectedIndexes[i]));
-            msg.append(")");
-        }
-
-        int res = JOptionPane.showConfirmDialog(this,
-            msg.toString(),
-            Translator.localize("dialog.title.source-path-del"),
-            JOptionPane.OK_CANCEL_OPTION);
-
-        if (res == JOptionPane.OK_OPTION) {
-            // procede with the deletion in the model
-            int firstSel = rowSM.getMinSelectionIndex();
-            for (int i = 0; i < selectedIndexes.length && firstSel != -1; i++) {
-                srcPathCtrl.deleteSourcePath(srcPathTableModel
-                        .getModelElement(firstSel));
-                srcPathTableModel.removeRow(firstSel);
-                firstSel = rowSM.getMinSelectionIndex();
-            }
-            // disable the button since no row will be selected now
-            delButton.setEnabled(false);
-        }
-    }
-
-    /**
-     * Class that listens to selection events.
-     */
-    class SelectionListener implements ListSelectionListener {
-        public void valueChanged(javax.swing.event.ListSelectionEvent e) {
-            if (!delButton.isEnabled()) {
-                delButton.setEnabled(true);
-            }
-        }
-    }
+    buttonCancelActionPerformed();
+  }
 } /* end class SourcePathDialog */
+
+/**
+ * Provides support for setting a "src_path" tagged value used in Java 
+ * round trip engineering.
+ */
+class SrcPathTableModel extends DefaultTableModel {
+
+  /** Creates a new instance of SrcPathTableModel */
+  public SrcPathTableModel() {
+    super(
+      new Object [][] {},
+      new String [] {"", "Name", "Type", "Source path"}
+    );
+    // The following lines should be substituted by the following 2 commented lines.
+    // (This is because getting the project still does not seem to work...)
+    ProjectBrowser pb = ProjectBrowser.getInstance();
+    org.argouml.ui.ArgoDiagram activeDiagram = ProjectManager.getManager().getCurrentProject().getActiveDiagram();
+    if (!(activeDiagram instanceof org.argouml.uml.diagram.ui.UMLDiagram)) return;
+    ru.novosoft.uml.foundation.core.MNamespace ns = ((org.argouml.uml.diagram.ui.UMLDiagram)activeDiagram).getNamespace();
+    if (ns == null) return;
+    while (ns.getNamespace() != null) ns = ns.getNamespace();
+    Collection elems = ModelManagementHelper.getHelper().getAllModelElementsOfKind(ns,MModelElement.class);
+    //Project p = ProjectManager.getManager().getCurrentProject();
+    //Collection elems = ModelManagementHelper.getHelper().getAllModelElementsOfKind(MClassifier.class);
+    Iterator iter = elems.iterator();
+    while (iter.hasNext()) {
+      MModelElement me = (MModelElement)iter.next();
+      String path = Generator.getCodePath(me);
+      if (path != null) {
+        String type = "";
+        String name = me.getName();
+        if (me instanceof MModel) {
+          type = "Model";
+        }
+        else if (me instanceof MPackage) {
+          type = "Package";
+          MNamespace parent = me.getNamespace();
+          while (parent != null) {
+            // ommit root package name; it's the model's root
+            if (parent.getNamespace() != null)
+              name = parent.getName() + "." + name;
+            parent = parent.getNamespace();
+          }
+        }
+        else if (me instanceof MClass) {
+          type = "Class";
+        }
+        else if (me instanceof MInterface) {
+          type = "Interface";
+        }
+        addRow(new Object[] {me, name, type, path});
+      }
+    }
+  }
+
+  public boolean isCellEditable(int rowIndex, int columnIndex) {
+    return columnIndex == 3;
+  }
+}

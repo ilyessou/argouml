@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,109 +23,43 @@
 
 package org.argouml.cognitive;
 
-/**
- * Posters look at the design material from different view points, since they
- * have to make different decisions in their evaluation process. A decision is a
- * unit which describes what kind of decision a given poster supports. E.g. a
- * designer is interested in making particular decisions, whereas a critic can
- * support relevant information which help making a particular decision (aka a
- * decision which lies in the domain specified by this class).
- *
+import org.argouml.application.api.Argo;
+
+/** This is where the class makes the decision
+ * to to fire critic.
  */
 public class Decision {
     ////////////////////////////////////////////////////////////////
     // constants
-    /**
-     * This is another test.
-     */
-    public static final Decision UNSPEC =
-        new Decision("misc.decision.uncategorized", 1);
-
+    /** this ia another test
+     */    
+    public static final Decision UNSPEC = 
+	new Decision("decision.uncategorized", 1);
+  
     ////////////////////////////////////////////////////////////////
     // instance variables
-    /**
-     * The localized name.
-     */
-    private String name;
-
-    /**
-     * The priority.
-     */
-    private int priority;
-
-    /**
-     * The constructor.
-     *
-     * @param n
-     *            the (not yet localized) name
-     * @param p
-     *            the priority
-     */
+    protected String _name;
+    protected int _priority;
+  
+    ////////////////////////////////////////////////////////////////
+    // constructor
     public Decision(String n, int p) {
-        name = Translator.localize(n);
-        priority = p;
+	setName(Argo.localize("Cognitive", n));
+	setPriority(p);
     }
 
     ////////////////////////////////////////////////////////////////
     // accessors
 
-    /**
-     * @see java.lang.Object#hashCode()
-     */
-    public int hashCode() {
-        if (name == null) {
-            return 0;
-        }
-        return name.hashCode();
-    }
-
-    /**
-     * Two decisions are considered to be equal if their names are equal. The
-     * priority is not considered.
-     *
-     * @see java.lang.Object#equals(java.lang.Object)
-     */
     public boolean equals(Object d2) {
-        if (!(d2 instanceof Decision)) {
-            return false;
-        }
-        return ((Decision) d2).getName().equals(getName());
+	if (!(d2 instanceof Decision)) return false;
+	return ((Decision)d2).getName().equals(getName());
     }
 
-    /**
-     * @return the localized name
-     */
-    public String getName() {
-        return name;
-    }
+    public String getName() { return _name; }
+    public void setName(String n) { _name = n; }
+    public int getPriority() { return _priority; }
+    public void setPriority(int p) { _priority = p; }
 
-    /**
-     * @param n
-     *            the localized name
-     */
-    public void setName(String n) {
-        name = n;
-    }
-
-    /**
-     * @return the priority
-     */
-    public int getPriority() {
-        return priority;
-    }
-
-    /**
-     * @param p
-     *            the priority
-     */
-    public void setPriority(int p) {
-        priority = p;
-    }
-
-    /**
-     * @see java.lang.Object#toString()
-     */
-    public String toString() {
-        return getName();
-    }
+    public String toString() { return getName(); }
 } /* end class Decision */

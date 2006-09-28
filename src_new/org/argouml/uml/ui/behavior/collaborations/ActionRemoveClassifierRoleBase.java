@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,51 +21,42 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $Id$
 package org.argouml.uml.ui.behavior.collaborations;
 
 import java.awt.event.ActionEvent;
 
-import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.application.api.Argo;
 import org.argouml.uml.ui.AbstractActionRemoveElement;
+
+import ru.novosoft.uml.behavior.collaborations.MClassifierRole;
+import ru.novosoft.uml.foundation.core.MClassifier;
 
 /**
  * Action to remove a base from a classifierrole.
- * @author jaap.branderhorst@xs4all.nl
+ * @author jaap.branderhorst@xs4all.nl	
  * @since Jan 25, 2003
  */
 public class ActionRemoveClassifierRoleBase
     extends AbstractActionRemoveElement {
 
-    private static final ActionRemoveClassifierRoleBase SINGLETON =
-	new ActionRemoveClassifierRoleBase();
-
+    public static ActionRemoveClassifierRoleBase SINGLETON = new ActionRemoveClassifierRoleBase();
+    
     /**
      * Constructor for ActionRemoveClassifierRoleBase.
      */
     protected ActionRemoveClassifierRoleBase() {
-        super(Translator.localize("menu.popup.remove"));
+        super(Argo.localize("UMLMenu", "menu.popup.remove"));
     }
 
-
+    
 
     /**
-     * @see
-     * java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
+     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
      */
     public void actionPerformed(ActionEvent e) {
         super.actionPerformed(e);
-        Model.getCollaborationsHelper()
-        	.removeBase(getTarget(), getObjectToRemove());
-    }
-
-
-
-    /**
-     * @return Returns the sINGLETON.
-     */
-    public static ActionRemoveClassifierRoleBase getInstance() {
-        return SINGLETON;
+        ((MClassifierRole)getTarget()).removeBase((MClassifier)getObjectToRemove());
     }
 
 }

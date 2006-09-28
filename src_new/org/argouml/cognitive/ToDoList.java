@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,30 +21,30 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: ToDoList.java
+// Class: ToDoList
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.cognitive;
 
-import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.Observable;
-import java.util.Set;
-import java.util.Vector;
-
+import java.util.*;
 import javax.swing.event.EventListenerList;
 
-import org.apache.log4j.Logger;
+import org.tigris.gef.util.*;
+
+import org.apache.log4j.Category;
+import org.argouml.kernel.*;
 import org.argouml.cognitive.critics.Critic;
-import org.argouml.i18n.Translator;
 
-
-/**
- * Implements a list of ToDoItem's.<p>
+/** Implements a list of ToDoItem's.
  *
- * It spawns a "sweeper" thread that periodically goes through the list
- * and elimiates ToDoItem's that are no longer valid.<p>
+ * <p>It spawns a "sweeper" thread that periodically goes through the list
+ * and elimiates ToDoItem's that are no longer valid.
  *
+ * <P>
  * One difficulty designers face is keeping track of all
- * the myrid details of their task. It is all to
+ * the myrid details of thier task. It is all to
  * easy to skip a step in the design process,
  * leave part of the design unspecified, of make
  * a mistake that requires revision. Argo provides
@@ -58,193 +57,131 @@ import org.argouml.i18n.Translator;
  * list pane allow the designer to organize
  * items in different ways: by priority,
  * by decision supported, by offending design
- * element, etc.<p>
+ * element, etc.
  *
+ * <P>
  * The to do lists right now are a bit
  * unstable. Please test and let us know
- * what you find through Issuezilla.<p>
+ * what you find through Issuezilla.
  *
- * Items are shown under all applicable headings.<p>
+ * <p>Items are shown under all applicable headings.
+ * The "to do" list may also be viewed as a flat list.
  *
- * This class is dependent on Designer.<p>
+ * <p>This class is dependent on Designer.
  *
  * @see Designer#nondisruptivelyWarn
- * @author Jason Robbins
  */
-public class ToDoList extends Observable implements Runnable {
-    /**
-     * Logger.
-     */
-    private static final Logger LOG = Logger.getLogger(ToDoList.class);
-
-    private static Object recentOffender;
-    private static Vector recentOffenderItems;
-
+public class ToDoList
+    extends Observable
+    implements Runnable, // TODO refactor per issue 1024
+               java.io.Serializable {
+    
+    protected static Category cat = Category.getInstance(ToDoList.class);
+    
+    /** needs documenting */
+    protected static Object _RecentOffender;
+    /** needs documenting */
+    protected static Vector _RecentOffenderItems;
+    
     ////////////////////////////////////////////////////////////////
     // instance variables
-
-    /**
-     * Pending ToDoItems for the designer to consider.
-     */
-    private Vector items;
-
-    /**
-     * These are computed when needed.
-     */
-    private ListSet allOffenders;
-
-    /**
-     * These are computed when needed.
-     */
-    private ListSet allPosters;
-
-    /**
-     * ToDoItems that the designer has explicitly indicated that (s)he
-     * considers resolved.<p>
+    
+    /** Pending ToDoItems for the designer to consider. */
+    protected Vector _items;
+    
+    /** These are computed when needed. */
+    private VectorSet _allOffenders;
+    /** These are computed when needed. */
+    private VectorSet _allPosters;
+    
+    /** ToDoItems that the designer has explicitly indicated that (s)he
+     * considers resolved.
      *
-     * TODO: generalize into a design rationale logging facility.
+     * <p>TODO: generalize into a design rationale logging facility.
      */
-    private LinkedHashSet resolvedItems;
-
-    /**
-     * A Thread that keeps checking if the items on the list are
-     * still valid.
-     */
-    private Thread validityChecker;
-
-    /**
-     * The designer, used in determining if a ToDoItem is still valid.
-     */
-    private Designer designer;
-
-    private EventListenerList listenerList;
-
-    private static int longestToDoList;
-    private static int numNotValid;
-
-    /**
-     * The ToDoList instance that is also the validity checking thread.
-     * this thread should probably be factored out...
-     */
-    private static ToDoList theInstance;
-
-    /**
-     * state variable for whether the validity checking thread is paused
-     * (waiting).
-     */
-    private boolean isPaused;
-
+    protected Vector _resolvedItems;
+    
+    /** A Thread that keeps checking if the items on the list are still valid. */
+    protected Thread _validityChecker;
+    
+    /** The designer, used in determining if a ToDoItem is still valid.  */
+    protected Designer _designer;
+    
+    /** needs documenting */
+    protected EventListenerList _listenerList;
+    
+    /** needs documenting */
+    public static int _longestToDoList;
+    /** needs documenting */
+    public static int _numNotValid;
+    
     ////////////////////////////////////////////////////////////////
     // constructor
-
-    /**
-     * Creates a new todolist. Use getInstance() if you want to create the
-     * validity checking thread.
-     */
+    
+    /** needs documenting */
     public ToDoList() {
-
-	items = new Vector(100);
-	resolvedItems = new LinkedHashSet(100);
-	listenerList = new EventListenerList();
-	longestToDoList = 0;
-	numNotValid = 0;
-	recentOffenderItems = new Vector();
+    
+            _items = new Vector(100);
+            _resolvedItems = new Vector(100);
+            _listenerList = new EventListenerList();
+            _longestToDoList = 0;
+            _numNotValid = 0;
+            _RecentOffenderItems = new Vector();
     }
-
-    /**
-     * Returns the validity checking thread instance.
-     *
-     * @return the validity checking thread instance
-     */
-    public static ToDoList getInstance() {
-
-        if (theInstance == null) {
-            theInstance = new ToDoList();
-        }
-        return theInstance;
-    }
-
-    /**
-     * Start a Thread to delete old items from the ToDoList.
-     *
-     * @param d the designer
-     */
+    
+    /** Start a Thread to delete old items from the ToDoList. */
     public void spawnValidityChecker(Designer d) {
-        designer = d;
-        validityChecker = new Thread(this, "ValidityCheckingThread");
-        validityChecker.setDaemon(true);
-        validityChecker.setPriority(Thread.MIN_PRIORITY);
-        validityChecker.start();
+        _designer = d;
+        _validityChecker = new Thread(this, "ValidityCheckingThread");
+        _validityChecker.setDaemon(true);
+        _validityChecker.setPriority(Thread.MIN_PRIORITY);
+        _validityChecker.start();
     }
-
-    /**
-     * Periodically check to see if items on the list are still valid.
-     */
+    
+    /** Periodically check to see if items on the list are still valid. */
     public void run() {
         Vector removes = new Vector();
         while (true) {
-
-            // the validity checking thread should wait if disabled.
-            synchronized (this) {
-                while (isPaused) {
-                    try {
-                        this.wait();
-                    } catch (InterruptedException ignore) {
-                        LOG.error("InterruptedException!!!", ignore);
-                    }
-                }
-            }
-
             forceValidityCheck(removes);
             removes.removeAllElements();
-            try {
-		Thread.sleep(3000);
-	    } catch (InterruptedException ignore) {
-                LOG.error("InterruptedException!!!", ignore);
+            try { Thread.sleep(3000); }
+            catch (InterruptedException ignore) {
+                cat.error("InterruptedException!!!", ignore);
             }
         }
     }
-
-    /**
-     * Check each ToDoItem on the list to see if it is still valid.  If
-     * not, then remove that item.  This is called automatically by the
-     * ValidityCheckingThread, and it can be called by the user
-     * pressing a button via forceValidityCheck().
-     */
+    
+    /** needs documenting */
     public void forceValidityCheck() {
         Vector removes = new Vector();
         forceValidityCheck(removes);
     }
-
-    /**
-     * Check each ToDoItem on the list to see if it is still valid.  If
-     * not, then remove that item.  This is called automatically by the
-     * ValidityCheckingThread, and it can be called by the user
-     * pressing a button via forceValidityCheck(). <p>
+    
+    /** Check each ToDoItem on the list to see if it is still valid.  If
+     *  not, then remove that item.  This is called automatically by the
+     *  ValidityCheckingThread, and it can be called by the user
+     *  pressing a button via forceValidityCheck(). <p>
      *
-     * <em>Warning: Fragile code!</em> No method that this method calls can
-     * synchronized the Designer, otherwise there will be deadlock.
-     *
-     * @param removes the items removed
+     *  <b>Warning: Fragile code!<b> No method that this method calls can
+     *  synchronized the Designer, otherwise there will be deadlock.
      */
     protected synchronized void forceValidityCheck(Vector removes) {
         //Enumeration cur = _items.elements();
-        int size = items.size();
+        int size = _items.size();
         for (int i = 0; i < size; ++i) {
-            ToDoItem item = (ToDoItem) items.elementAt(i);
+            ToDoItem item = (ToDoItem) _items.elementAt(i);
             boolean valid;
-            try {
-		valid = item.stillValid(designer);
-	    } catch (Exception ex) {
+            try { valid = item.stillValid(_designer); }
+            catch (Exception ex) {
                 valid = false;
-                StringBuffer buf =
+                StringBuffer buf = 
                     new StringBuffer("Exception raised in to do list cleaning");
                 buf.append("\n");
                 buf.append(item.toString());
-                LOG.error(buf.toString(), ex);
+                cat.error(buf.toString(), ex);
             }
             if (!valid) {
-                numNotValid++;
+                _numNotValid++;
                 removes.addElement(item);
             }
         }
@@ -253,7 +190,7 @@ public class ToDoList extends Observable implements Runnable {
         for (int i = 0; i < size; ++i) {
             ToDoItem item = (ToDoItem) removes.elementAt(i);
             removeE(item);
-//            History.TheHistory.addItemResolution(item, "no longer valid");
+            History.TheHistory.addItemResolution(item, "no longer valid");
             //((ToDoItem)item).resolve("no longer valid");
             //notifyObservers("removeElement", item);
         }
@@ -261,48 +198,11 @@ public class ToDoList extends Observable implements Runnable {
         recomputeAllPosters();
         fireToDoItemsRemoved(removes);
     }
-
-
-    /**
-     * Pause.
-     */
-    public void pause() {
-        isPaused = true;
-    }
-
-    /**
-     * Resume.
-     */
-    public synchronized void resume() {
-        notifyAll();
-    }
-
-    /**
-     * @return true is paused
-     */
-    public boolean isPaused() {
-        return isPaused;
-    }
-
-    /**
-     * sets the pause state.
-     *
-     * @param paused if set to false, calls resume() also to start working
-     */
-    public void setPaused(boolean paused) {
-        isPaused = paused;
-        if (!isPaused) {
-            resume();
-	}
-    }
-
+    
     ////////////////////////////////////////////////////////////////
     // Notifications and Updates
-
-    /**
-     * @param action the action
-     * @param arg the argument
-     */
+    
+    /** needs documenting */
     public void notifyObservers(String action, Object arg) {
         setChanged();
         Vector v = new Vector(2);
@@ -310,147 +210,134 @@ public class ToDoList extends Observable implements Runnable {
         v.addElement(arg);
         super.notifyObservers(v);
     }
-
-    /**
-     * @see Observable#notifyObservers(Object)
-     */
+    
+    /** needs documenting */
     public void notifyObservers(Object o) {
         setChanged();
         super.notifyObservers(o);
     }
-
-    /**
-     * @see Observable#notifyObservers()
-     */
+    
+    /** needs documenting */
     public void notifyObservers() {
         setChanged();
         super.notifyObservers();
     }
-
+    
     ////////////////////////////////////////////////////////////////
     // accessors
-
-    /**
-     * @return the todo items
-     */
-    public Vector getToDoItems() { return items; }
-
-    /**
-     * @return the resolved items
-     */
-    public Set getResolvedItems() { return resolvedItems; }
-
+    
+    /** needs documenting */
+    public Vector getToDoItems() { return _items; }
+    /** needs documenting */
+    public Vector getResolvedItems() { return _resolvedItems; }
+    
     /**
      * @return the set of offenders
      */
-    public ListSet getOffenders() {
+    public VectorSet getOffenders() {
         // Extra care to be taken since _allOffenders can be reset while
         // this method is running.
-        ListSet all = allOffenders;
+        VectorSet all = _allOffenders;
         if (all == null) {
-            int size = items.size();
-            all = new ListSet(size * 2);
+            int size = _items.size();
+            all = new VectorSet(size*2);
             for (int i = 0; i < size; i++) {
-                ToDoItem item = (ToDoItem) items.elementAt(i);
+                ToDoItem item = (ToDoItem) _items.elementAt(i);
                 all.addAllElements(item.getOffenders());
             }
-            allOffenders = all;
+            _allOffenders = all;
         }
         return all;
     }
 
-    private void addOffenders(ListSet newoffs) {
-        if (allOffenders != null) {
-            allOffenders.addAllElements(newoffs);
-	}
+    /** needs documenting */
+    private void addOffenders(VectorSet newoffs) {
+        if (_allOffenders != null)
+            _allOffenders.addAllElements(newoffs);
     }
-
+    
     /**
      * @return the set of all the posters
      */
-    public ListSet getPosters() {
+    public VectorSet getPosters() {
         // Extra care to be taken since _allPosters can be reset while
         // this method is running.
-        ListSet all = allPosters;
+        VectorSet all = _allPosters;
         if (all == null) {
-            int size = items.size();
-            all = new ListSet();
+            int size = _items.size();
+            all = new VectorSet();
             for (int i = 0; i < size; i++) {
-                ToDoItem item = (ToDoItem) items.elementAt(i);
+                ToDoItem item = (ToDoItem) _items.elementAt(i);
                 all.addElement(item.getPoster());
             }
-            allPosters = all;
+            _allPosters = all;
         }
         return all;
     }
 
+    /** needs documenting */
     private void addPosters(Poster newp) {
-        if (allPosters != null) {
-            allPosters.addElement(newp);
-	}
+        if (_allPosters != null)
+            _allPosters.addElement(newp);
     }
+    
+    /** needs documenting */
+    public Vector getDecisions() { return new Vector(); }
 
-    /**
-     * @return the decisions
-     */
-    public static Vector getDecisions() { return new Vector(); }
-
-    /**
-     * @return the goals
-     */
-    public static Vector getGoals() { return new Vector(); }
-
-    /**
-     * TODO: needs documenting, why synchronised?
-     */
+    /** needs documenting */
+    public Vector getGoals() { return new Vector(); }
+    
+    /** needs documenting, why synchronised? */
     private synchronized void addE(ToDoItem item) {
         /* remove any identical items already on the list */
-        if (items.contains(item)) {
+        if (_items.contains(item))
             return;
-	}
-
+        
         if (item.getPoster() instanceof Critic) {
             ResolvedCritic rc;
             try {
-                rc =
-		    new ResolvedCritic((Critic) item.getPoster(),
-				       item.getOffenders(),
-				       false);
-                Iterator elems = resolvedItems.iterator();
+                rc = new ResolvedCritic((Critic)item.getPoster(),
+                                        item.getOffenders(), false);
+                Enumeration enum = _resolvedItems.elements();
                 //cat.debug("Checking for inhibitors " + rc);
-                while (elems.hasNext()) {
-                    if (elems.next().equals(rc)) {
-                        LOG.debug("ToDoItem not added because it was resolved");
+                while (enum.hasMoreElements()) {
+                    if (enum.nextElement().equals(rc)) {
+                        cat.debug("ToDoItem not added because it was resolved");
                         return;
                     }
                 }
             } catch (UnresolvableException ure) {
             }
         }
-
-        items.addElement(item);
-        longestToDoList = Math.max(longestToDoList, items.size());
+        
+        _items.addElement(item);
+        _longestToDoList = Math.max(_longestToDoList, _items.size());
         addOffenders(item.getOffenders());
         addPosters(item.getPoster());
-//        if (item.getPoster() instanceof Designer)
-//            History.TheHistory.addItem(item, "note: ");
-//        else
-//            History.TheHistory.addItemCritique(item);
+        if (item.getPoster() instanceof Designer)
+            History.TheHistory.addItem(item, "note: ");
+        else
+            History.TheHistory.addItemCritique(item);
         notifyObservers("addElement", item);
         fireToDoItemAdded(item);
     }
-
-    /**
-     * @param item the todo item to be added
-     */
+    
+    /** needs documenting */
     public synchronized void addElement(ToDoItem item) {
         addE(item);
     }
-
-
-    /**
-     * @param list the todo items to be removed
-     */
+    
+    /** needs documenting */
+    public synchronized void addAll(ToDoList list) {
+        Enumeration cur = list.elements();
+        while (cur.hasMoreElements()) {
+            ToDoItem item = (ToDoItem) cur.nextElement();
+            addElement(item);
+        }
+        fireToDoListChanged();
+    }
+    
+    /** needs documenting */
     public void removeAll(ToDoList list) {
         Enumeration cur = list.elements();
         while (cur.hasMoreElements()) {
@@ -461,22 +348,14 @@ public class ToDoList extends Observable implements Runnable {
         recomputeAllPosters();
         fireToDoItemsRemoved(list.getToDoItems());
     }
-
-    /**
-     * @param item the todo item to be removed
-     * @return <code>true</code> if the argument was a component of this
-     *          vector; <code>false</code> otherwise
-     */
+    
+    /** needs documenting */
     private synchronized boolean removeE(ToDoItem item) {
-        boolean res = items.removeElement(item);
+        boolean res = _items.removeElement(item);
         return res;
     }
-
-    /**
-     * @param item the todo item to be removed
-     * @return <code>true</code> if the argument was a component of this
-     *          vector; <code>false</code> otherwise
-     */
+    
+    /** needs documenting */
     public boolean removeElement(ToDoItem item) {
         boolean res = removeE(item);
         recomputeAllOffenders();
@@ -485,263 +364,210 @@ public class ToDoList extends Observable implements Runnable {
         notifyObservers("removeElement", item);
         return res;
     }
-
-    /**
-     * @param item the todo item to be resolved
-     * @return <code>true</code> if the argument was a component of this
-     *          vector; <code>false</code> otherwise
-     */
+    
+    /** needs documenting */
     public boolean resolve(ToDoItem item) {
         boolean res = removeE(item);
         fireToDoItemRemoved(item);
         return res;
     }
-
-    /**
-     * @param item the todo item
-     * @param reason the reason
-     * @return <code>true</code> if the argument was a component of this
-     *          vector; <code>false</code> otherwise
-     * @throws UnresolvableException unable to resolve
-     */
-    public boolean explicitlyResolve(ToDoItem item, String reason)
-	throws UnresolvableException {
-
+    
+    /** needs documenting */
+    public boolean explicitlyResolve(ToDoItem item, String reason) 
+      throws UnresolvableException {
+          
         if (item.getPoster() instanceof Designer) {
             boolean res = resolve(item);
-//            History.TheHistory.addItemResolution(item, reason);
+            History.TheHistory.addItemResolution(item, reason);
             return res;
         }
-
-        if (!(item.getPoster() instanceof Critic)) {
-            throw new UnresolvableException(Translator.localize(
-                    "misc.todo-unresolvable", 
-                    new Object[]{item.getPoster().getClass()}));
-	}
-
-        ResolvedCritic rc =
-	    new ResolvedCritic((Critic) item.getPoster(),
-			       item.getOffenders());
+        
+        if (!(item.getPoster() instanceof Critic))
+            throw new UnresolvableException("Unable to resolve with poster of type: "
+                                + item.getPoster().getClass());
+        
+        ResolvedCritic rc = new ResolvedCritic((Critic)item.getPoster(),
+                                                item.getOffenders());
         boolean res = resolve(item);
-        if (res) {
-            res = addResolvedCritic(rc);
-        }
+        _resolvedItems.addElement(rc);
+        History.TheHistory.addItemResolution(item, reason);
         return res;
     }
-
-    /**
-     * Add the given resolved critic to the list of resolved critics.
-     *
-     * @param rc the resolved critic
-     * @return <code>true</code> if successfully added;
-     *         <code>false</code> otherwise
-     */
-    public boolean addResolvedCritic(ResolvedCritic rc) {
-        return resolvedItems.add(rc);
-    }
-
-    /**
-     * Remove all todo items.
-     */
+    
+    /** needs documenting */
     public synchronized void removeAllElements() {
-        LOG.debug("removing all todo items");
-        Vector oldItems = (Vector) items.clone();
+        cat.debug("removing all todo items");
+        Vector oldItems = (Vector) _items.clone();
         int size = oldItems.size();
-        for (int i = 0; i < size; i++) {
-            removeE((ToDoItem) oldItems.elementAt(i));
-	}
-
+        for (int i = 0; i < size; i++)
+            removeE((ToDoItem)oldItems.elementAt(i));
+        
         recomputeAllOffenders();
         recomputeAllPosters();
         notifyObservers("removeAllElements");
         fireToDoItemsRemoved(oldItems);
     }
-
-    /**
-     * @param off the offender
-     * @return the todo tems for this offender
-     */
+    
+    /** needs documenting */
     public Vector elementsForOffender(Object off) {
-        if (off == recentOffender) {
-	    return recentOffenderItems;
-	}
-        recentOffender = off;
-        recentOffenderItems.removeAllElements();
-        synchronized (items) {
-            for (int i = 0; i < items.size(); i++) {
-                ToDoItem item = (ToDoItem) items.elementAt(i);
-                if (item.getOffenders().contains(off)) {
-                    recentOffenderItems.addElement(item);
-		}
+        if (off == _RecentOffender) return _RecentOffenderItems;
+        _RecentOffender = off;
+        _RecentOffenderItems.removeAllElements();
+        synchronized (_items) {
+            int size = _items.size();
+            for (int i = 0; i < _items.size(); i++) {
+                ToDoItem item = (ToDoItem) _items.elementAt(i);
+                if (item.getOffenders().contains(off))
+                    _RecentOffenderItems.addElement(item);
             }
         }
-        return recentOffenderItems;
+        return _RecentOffenderItems;
     }
-
-    /**
-     * @return the number of todo items
-     */
-    public int size() { return items.size(); }
-
-    /**
-     * @return the todo items
-     */
+    
+    /** needs documenting */
+    public int size() { return _items.size(); }
+    
+    /** needs documenting */
     public Enumeration elements() {
-        return items.elements();
+        return _items.elements();
     }
-
-    /**
-     * @param index an index into the todo items list
-     * @return the item at the index
-     */
+    
+    /** needs documenting */
     public ToDoItem elementAt(int index) {
-        return (ToDoItem) items.elementAt(index);
+        return (ToDoItem)_items.elementAt(index);
     }
-
-    /**
-     * Re-compute all offenders.
-     */
+    
+    /** needs documenting */
     protected void recomputeAllOffenders() {
-        allOffenders = null;
+        _allOffenders = null;
     }
-
-    /**
-     * Reset all posters.
-     */
+    
+    /** needs documenting */
     protected void recomputeAllPosters() {
-        allPosters = null;
+        _allPosters = null;
     }
-
-
+    
+    
     ////////////////////////////////////////////////////////////////
     // event related stuff
-
-    /**
-     * @param l the listener to be added
-     */
+    
+    /** needs documenting */
     public void addToDoListListener(ToDoListListener l) {
-        listenerList.add(ToDoListListener.class, l);
+        _listenerList.add(ToDoListListener.class, l);
     }
-
-    /**
-     * @param l the listener to be removed
-     */
+    
+    /** needs documenting */
     public void removeToDoListListener(ToDoListListener l) {
-        listenerList.remove(ToDoListListener.class, l);
+        _listenerList.remove(ToDoListListener.class, l);
     }
-
-    /**
-     * Notify all listeners that have registered interest for
-     * notification on this event type.  The event instance
-     * is lazily created using the parameters passed into
-     * the fire method.
-     * @see EventListenerList
-     */
+    
+  /**
+   * Notify all listeners that have registered interest for
+   * notification on this event type.  The event instance
+   * is lazily created using the parameters passed into
+   * the fire method.
+   * @see EventListenerList
+   */
     protected void fireToDoListChanged() {
-        recentOffender = null;
+        _RecentOffender = null;
         // Guaranteed to return a non-null array
-        Object[] listeners = listenerList.getListenerList();
+        Object[] listeners = _listenerList.getListenerList();
         ToDoListEvent e = null;
         // Process the listeners last to first, notifying
         // those that are interested in this event
-        for (int i = listeners.length - 2; i >= 0; i -= 2) {
-            if (listeners[i] == ToDoListListener.class) {
+        for (int i = listeners.length-2; i>=0; i-=2) {
+            if (listeners[i]==ToDoListListener.class) {
                 // Lazily create the event:
-                if (e == null) {
-		    e = new ToDoListEvent();
-		}
-                ((ToDoListListener) listeners[i + 1]).toDoListChanged(e);
+                if (e == null) e = new ToDoListEvent();
+                ((ToDoListListener)listeners[i+1]).toDoListChanged(e);
             }
         }
     }
-
-    /**
-     * @param item the todo item
-     */
+    
+    /** needs documenting */
     protected void fireToDoItemChanged(ToDoItem item) {
-        Object[] listeners = listenerList.getListenerList();
+        Object[] listeners = _listenerList.getListenerList();
         ToDoListEvent e = null;
         // Process the listeners last to first, notifying
         // those that are interested in this event
-        for (int i = listeners.length - 2; i >= 0; i -= 2) {
-            if (listeners[i] == ToDoListListener.class) {
+        for (int i = listeners.length-2; i>=0; i-=2) {
+            if (listeners[i]==ToDoListListener.class) {
                 // Lazily create the event:
                 if (e == null) {
-                    Vector its = new Vector();
-                    its.addElement(item);
-                    e = new ToDoListEvent(its);
+                    Vector items = new Vector();
+                    items.addElement(item);
+                    e = new ToDoListEvent(items);
                 }
-                ((ToDoListListener) listeners[i + 1]).toDoItemsChanged(e);
+                ((ToDoListListener)listeners[i+1]).toDoItemsChanged(e);
             }
         }
     }
-
-    /**
-     * @param item the todo item
-     */
+    
+    /** needs documenting */
     protected void fireToDoItemAdded(ToDoItem item) {
         Vector v = new Vector();
         v.addElement(item);
         fireToDoItemsAdded(v);
     }
 
-    /**
-     * @param theItems the todo items
-     */
-    protected void fireToDoItemsAdded(Vector theItems) {
-        recentOffender = null;
+    /** needs documenting */
+    protected void fireToDoItemsAdded(Vector items) {
+        _RecentOffender = null;
         // Guaranteed to return a non-null array
-        Object[] listeners = listenerList.getListenerList();
+        Object[] listeners = _listenerList.getListenerList();
         ToDoListEvent e = null;
         // Process the listeners last to first, notifying
         // those that are interested in this event
-        for (int i = listeners.length - 2; i >= 0; i -= 2) {
-            if (listeners[i] == ToDoListListener.class) {
+        for (int i = listeners.length-2; i>=0; i-=2) {
+            if (listeners[i]==ToDoListListener.class) {
                 // Lazily create the event:
-                if (e == null) {
-		    e = new ToDoListEvent(theItems);
-		}
-                ((ToDoListListener) listeners[i + 1]).toDoItemsAdded(e);
+                if (e == null) e = new ToDoListEvent(items);
+                ((ToDoListListener)listeners[i+1]).toDoItemsAdded(e);
             }
         }
     }
-
-    /**
-     * @param item the todo item
-     */
+    
+    /** needs documenting */
     protected void fireToDoItemRemoved(ToDoItem item) {
         Vector v = new Vector();
         v.addElement(item);
         fireToDoItemsRemoved(v);
     }
 
-    /**
-     * @param theItems the todo items
-     */
-    protected void fireToDoItemsRemoved(Vector theItems) {
-        recentOffender = null;
+    /** needs documenting */
+    protected void fireToDoItemsRemoved(Vector items) {
+        _RecentOffender = null;
         // Guaranteed to return a non-null array
-        Object[] listeners = listenerList.getListenerList();
+        Object[] listeners = _listenerList.getListenerList();
         ToDoListEvent e = null;
         // Process the listeners last to first, notifying
         // those that are interested in this event
-        for (int i = listeners.length - 2; i >= 0; i -= 2) {
-            if (listeners[i] == ToDoListListener.class) {
+        for (int i = listeners.length-2; i>=0; i-=2) {
+            if (listeners[i]==ToDoListListener.class) {
                 // Lazily create the event:
-                if (e == null) {
-		    e = new ToDoListEvent(theItems);
-		}
-                ((ToDoListListener) listeners[i + 1]).toDoItemsRemoved(e);
+                if (e == null) e = new ToDoListEvent(items);
+                ((ToDoListListener)listeners[i+1]).toDoItemsRemoved(e);
             }
         }
     }
-
+    
     ////////////////////////////////////////////////////////////////
     // internal methods
-
+    
     /**
-     * @see java.lang.Object#toString()
-     */
+     *  TODO: not done yet(empty implementation), Sort the items by priority.
+     *
+     *  It has been pointed out that
+     *  sorting and priorities will probably be pretty arbitrary and hard
+     *  to match with the Designer's (tacit) feelings about the
+     *  importance of various items.  We are thinking about a
+     *  sort-by-category user interface that would be part of a complete
+     *  java PIM (personal information manager, AKA, a daily planner).  */
+    private synchronized void sort() {
+        // do some sorting?
+    }
+    
+    /** needs documenting */
     public String toString() {
         StringBuffer res = new StringBuffer(100);
         res.append(getClass().getName()).append(" {\n");
@@ -753,9 +579,5 @@ public class ToDoList extends Observable implements Runnable {
         res.append("  }");
         return res.toString();
     }
-
-    /**
-     * The UID.
-     */
-    // private static final long serialVersionUID = -1288801672594900893L;
+    
 } /* end class ToDoList */

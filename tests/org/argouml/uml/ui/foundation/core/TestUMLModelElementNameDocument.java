@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,37 +24,33 @@
 
 package org.argouml.uml.ui.foundation.core;
 
-import javax.swing.text.BadLocationException;
-
 import junit.framework.TestCase;
 
-import org.argouml.model.Model;
+import org.argouml.application.security.ArgoSecurityManager;
+import org.argouml.model.uml.UmlFactory;
+import org.argouml.model.uml.foundation.core.CoreFactory;
+import org.argouml.model.uml.modelmanagement.ModelManagementFactory;
 import org.argouml.uml.ui.MockUMLUserInterfaceContainer;
+import javax.swing.text.BadLocationException;
+
+import ru.novosoft.uml.MFactoryImpl;
+import ru.novosoft.uml.foundation.core.MModelElement;
+import ru.novosoft.uml.model_management.MModel;
 
 /**
  * @since Oct 26, 2002
  * @author jaap.branderhorst@xs4all.nl
  */
 public class TestUMLModelElementNameDocument extends TestCase {
-
-    /**
-     * The element.
-     */
-    private Object elem;
-
-    /**
-     * The model to test.
-     */
+    
+    private MModelElement elem = null;
+    private int oldEventPolicy;
     private UMLModelElementNameDocument model;
-
-    /**
-     * The uml model / namespace the element reside in.
-     */
-    private Object ns;
+    private MModel ns;
 
     /**
      * Constructor for TestUMLModelElementNameDocument.
-     * @param arg0 is the name of the test case.
+     * @param arg0
      */
     public TestUMLModelElementNameDocument(String arg0) {
         super(arg0);
@@ -65,14 +61,16 @@ public class TestUMLModelElementNameDocument extends TestCase {
      */
     protected void setUp() throws Exception {
         super.setUp();
-        ns = Model.getModelManagementFactory().createModel();
-        elem = Model.getCoreFactory().buildClass(ns);
-        MockUMLUserInterfaceContainer cont =
-            new MockUMLUserInterfaceContainer();
+        ArgoSecurityManager.getInstance().setAllowExit(true);
+        UmlFactory.getFactory().setGuiEnabled(false);
+        ns = ModelManagementFactory.getFactory().createModel();
+        elem = CoreFactory.getFactory().buildClass(ns);
+        oldEventPolicy = MFactoryImpl.getEventPolicy();
+        MFactoryImpl.setEventPolicy(MFactoryImpl.EVENT_POLICY_IMMEDIATE);
+        MockUMLUserInterfaceContainer cont = new MockUMLUserInterfaceContainer();
         //cont.setTarget(elem);
         model = new UMLModelElementNameDocument();
         model.setTarget(elem);
-        Model.getPump().flushModelEvents();
     }
 
     /**
@@ -80,103 +78,66 @@ public class TestUMLModelElementNameDocument extends TestCase {
      */
     protected void tearDown() throws Exception {
         super.tearDown();
-        Model.getUmlFactory().delete(ns);
-        Model.getUmlFactory().delete(elem);
+        UmlFactory.getFactory().delete(ns);
+        UmlFactory.getFactory().delete(elem);
         elem = null;
         ns = null;
+        MFactoryImpl.setEventPolicy(oldEventPolicy);
         model = null;
     }
-
-    /**
-     * Test setName().
-     *
-     * @throws BadLocationException when the location is refused
-     */
-    public void testSetName() throws BadLocationException {
-        Model.getCoreHelper().setName(elem, "test");
-        Model.getPump().flushModelEvents();
-        assertEquals("test", model.getText(0, model.getLength()));
+    
+    public void testSetName()
+	throws BadLocationException
+    {
+        elem.setName("test");
+	assertEquals("test", model.getText(0, model.getLength()));
     }
-
-    /**
-     * Test setName() for removal of a name.
-     *
-     * @throws BadLocationException when the location is refused
-     */
-    public void testRemoveName() throws BadLocationException {
-        Model.getCoreHelper().setName(elem, "test");
-        Model.getCoreHelper().setName(elem, "");
-        Model.getPump().flushModelEvents();
-        assertEquals("", model.getText(0, model.getLength()));
+    
+    public void testRemoveName()
+	throws BadLocationException
+    {
+        elem.setName("test");
+        elem.setName(null);
+	assertEquals("", model.getText(0, model.getLength()));
     }
-
-    /**
-     * Test insertString().
-     *
-     * @throws BadLocationException when the location is refused
-     */
+    
     public void testInsertString()
-	throws BadLocationException {
-        Model.getCoreHelper().setName(elem, "");
-        Model.getPump().flushModelEvents();
-    	model.insertString(0, "test", null);
-        Model.getPump().flushModelEvents();
-        assertEquals("test", Model.getFacade().getName(elem));
-    }
-
-    /**
-     * Test remove().
-     *
-     * @throws BadLocationException when the location is refused
-     */
-    public void testRemoveString()
-	throws BadLocationException {
+	throws BadLocationException
+    {
+        elem.setName("");
 	model.insertString(0, "test", null);
-        Model.getPump().flushModelEvents();
+        assertEquals("test", elem.getName());
+    }
+    
+    public void testRemoveString() 
+	throws BadLocationException
+    {
+	model.insertString(0, "test", null);
 	model.remove(0, model.getLength());
-        Model.getPump().flushModelEvents();
-        assertEquals("", Model.getFacade().getName(elem));
+        assertEquals("", elem.getName());
     }
-
-    /**
-     * Test insertString() for appending.
-     *
-     * @throws BadLocationException when the location is refused
-     */
+    
     public void testAppendString()
-	throws BadLocationException {
-        Model.getCoreHelper().setName(elem, "test");
-        Model.getPump().flushModelEvents();
-    	model.insertString(model.getLength(), "test", null);
-        Model.getPump().flushModelEvents();
-        assertEquals("testtest", Model.getFacade().getName(elem));
+	throws BadLocationException
+    {
+        elem.setName("test");
+	model.insertString(model.getLength(), "test", null);
+        assertEquals("testtest", elem.getName());
     }
-
-    /**
-     * Test insertString() for inserting in the middle.
-     *
-     * @throws BadLocationException when the location is refused
-     */
+    
     public void testInsertStringHalfway()
-	throws BadLocationException {
-        Model.getCoreHelper().setName(elem, "test");
-        Model.getPump().flushModelEvents();
-    	model.insertString(1, "test", null);
-        Model.getPump().flushModelEvents();
-        assertEquals("ttestest", Model.getFacade().getName(elem));
+	throws BadLocationException
+    {
+        elem.setName("test");
+	model.insertString(1, "test", null);
+        assertEquals("ttestest", elem.getName());
     }
-
-    /**
-     * Test removing a string from the middle.
-     *
-     * @throws BadLocationException when the location is refused
-     */
+    
     public void testRemoveStringHalfway()
-	throws BadLocationException {
-        Model.getCoreHelper().setName(elem, "test");
-        Model.getPump().flushModelEvents();
-    	model.remove(1, model.getLength() - 2);
-        Model.getPump().flushModelEvents();
-        assertEquals("tt", Model.getFacade().getName(elem));
+	throws BadLocationException
+    {
+        elem.setName("test");
+	model.remove(1, model.getLength()-2);
+        assertEquals("tt", elem.getName());
     }
 }

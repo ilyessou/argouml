@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,10 +21,13 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $header$
 package org.argouml.uml.ui.foundation.core;
 
-import org.argouml.model.Model;
 import org.argouml.uml.ui.UMLModelElementListModel2;
+
+import ru.novosoft.uml.MBase;
+import ru.novosoft.uml.foundation.core.MModelElement;
 
 /**
  * @since Oct 11, 2002
@@ -36,6 +38,7 @@ public class UMLModelElementNamespaceListModel
 
     /**
      * Constructor for UMLModelElementNamespaceListModel.
+     * @param container
      */
     public UMLModelElementNamespaceListModel() {
         super("namespace");
@@ -46,17 +49,17 @@ public class UMLModelElementNamespaceListModel
      */
     protected void buildModelList() {
         removeAllElements();
-        if (getTarget() != null) {
-            addElement(Model.getFacade().getNamespace(getTarget()));
+        if (_target != null) {
+            addElement(((MModelElement)_target).getNamespace());
         }
     }
 
-
+    
     /**
-     * @see org.argouml.uml.ui.UMLModelElementListModel2#isValidElement(Object)
+     * @see org.argouml.uml.ui.UMLModelElementListModel2#isValidElement(ru.novosoft.uml.MBase)
      */
-    protected boolean isValidElement(Object/*MBase*/ element) {
-        return Model.getFacade().getNamespace(getTarget()) == element;
+    protected boolean isValidElement(MBase element) {
+        return ((MModelElement)getTarget()).getNamespace() == element;
     }
 
 }

@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,192 +21,135 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: FigInitialState.java
+// Classes: FigInitialState
+// Original Author: abonner@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.diagram.state.ui;
 
 import java.awt.Color;
+import java.awt.Rectangle;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.util.Collection;
-import java.util.Iterator;
+import java.util.Vector;
 
-import org.argouml.model.Model;
 import org.argouml.uml.diagram.activity.ui.SelectionActionState;
 import org.tigris.gef.base.Selection;
 import org.tigris.gef.graph.GraphModel;
 import org.tigris.gef.presentation.FigCircle;
+import ru.novosoft.uml.behavior.activity_graphs.MActivityGraph;
+import ru.novosoft.uml.behavior.state_machines.MPseudostate;
+import ru.novosoft.uml.behavior.state_machines.MStateVertex;
 
-/**
- * Class to display graphics for a UML Initial State in a diagram.
- *
- * @author abonner
- */
+/** Class to display graphics for a UML State in a diagram. */
+
 public class FigInitialState extends FigStateVertex {
 
-    ////////////////////////////////////////////////////////////////
-    // constants
+  ////////////////////////////////////////////////////////////////
+  // constants
 
-    private static final int X = 10;
-    private static final int Y = 10;
-    private static final int WIDTH = 16;
-    private static final int HEIGHT = 16;
+  public final int MARGIN = 2;
+  public int x = 10;
+  public int y = 10;
+  public int width = 20;
+  public int height = 20;
 
-    ////////////////////////////////////////////////////////////////
-    // instance variables
+  ////////////////////////////////////////////////////////////////
+  // instance variables
 
-    private FigCircle head;
+  /** UML does not really use ports, so just define one big one so
+   *  that users can drag edges to or from any point in the icon. */
 
-    ////////////////////////////////////////////////////////////////
-    // constructors
+  protected FigCircle _bigPort;
+  protected FigCircle _head;
 
-    /**
-     * Main constructor.
-     */
-    public FigInitialState() {
-        setEditable(false);
-        FigCircle bigPort =
-            new FigCircle(X, Y, WIDTH, HEIGHT, Color.cyan, Color.cyan);
-        head = new FigCircle(X, Y, WIDTH, HEIGHT, Color.black, Color.black);
+  ////////////////////////////////////////////////////////////////
+  // constructors
 
-        // add Figs to the FigNode in back-to-front order
-        addFig(bigPort);
-        addFig(head);
+  public FigInitialState() {
+    _bigPort = new FigCircle(x,y,width,height, Color.cyan, Color.cyan);
+    _head = new FigCircle(x,y,width,height, Color.black, Color.black);
+    // add Figs to the FigNode in back-to-front order
+    addFig(_bigPort);
+    addFig(_head);
 
-        setBigPort(bigPort);
+    setBlinkPorts(false); //make port invisble unless mouse enters
+    Rectangle r = getBounds();
+  }
 
-        setBlinkPorts(false); //make port invisble unless mouse enters
-    }
+  public FigInitialState(GraphModel gm, Object node) {
+    this();
+    setOwner(node);
+  }
 
-    /**
-     * Constructor which hooks the Fig into an existing UML element.
-     *
-     * @param gm ignored
-     * @param node the UML element
-     */
-    public FigInitialState(GraphModel gm, Object node) {
-        this();
-        setOwner(node);
-    }
+  public Object clone() {
+    FigInitialState figClone = (FigInitialState) super.clone();
+    Vector v = figClone.getFigs();
+    figClone._bigPort = (FigCircle) v.elementAt(0);
+    figClone._head = (FigCircle) v.elementAt(1);
+    return figClone;
+  }
 
-    /**
-     * @see java.lang.Object#clone()
-     */
-    public Object clone() {
-        FigInitialState figClone = (FigInitialState) super.clone();
-        Iterator it = figClone.getFigs().iterator();
-        setBigPort((FigCircle) it.next());
-        figClone.head = (FigCircle) it.next();
-        return figClone;
-    }
+  ////////////////////////////////////////////////////////////////
+  // Fig accessors
 
-    ////////////////////////////////////////////////////////////////
-    // Fig accessors
-
-    /**
-     * @see org.tigris.gef.presentation.Fig#makeSelection()
-     */
     public Selection makeSelection() {
-        Object pstate = null;
+        MPseudostate pstate = null;
         Selection sel = null;
         if (getOwner() != null) {
-            pstate = getOwner();
-            if (pstate == null) {
-                return sel;
-            }
-            if (Model.getFacade().isAActivityGraph(
-                    Model.getFacade().getStateMachine(
-                            Model.getFacade().getContainer(pstate)))) {
+            pstate = (MPseudostate)getOwner();
+            if (pstate == null) return sel;
+            if (pstate.getContainer().getStateMachine() 
+                instanceof MActivityGraph) {
                 sel = new SelectionActionState(this);
-                ((SelectionActionState) sel).setIncomingButtonEnabled(false);
-                Collection outs = Model.getFacade().getOutgoings(getOwner());
-                ((SelectionActionState) sel)
-                        .setOutgoingButtonEnabled(outs == null
-                                || outs.size() == 0);
-            } else {
+                ((SelectionActionState)sel).setIncomingButtonEnabled(false);
+                Collection outs = ((MStateVertex)getOwner()).getOutgoings();
+                ((SelectionActionState)sel).
+                    setOutgoingButtonEnabled(outs == null || outs.size() == 0);
+            }
+            else {
                 sel = new SelectionState(this);
-                ((SelectionState) sel).setIncomingButtonEnabled(false);
-                Collection outs = Model.getFacade().getOutgoings(getOwner());
-                ((SelectionState) sel).setOutgoingButtonEnabled(outs == null
-                        || outs.size() == 0);
+                ((SelectionState)sel).setIncomingButtonEnabled(false);
+                Collection outs = ((MStateVertex)getOwner()).getOutgoings();
+                ((SelectionState)sel).
+                    setOutgoingButtonEnabled(outs == null || outs.size() == 0);
             }
         }
         return sel;
     }
 
-    /**
-     * Initial states are fixed size.
-     *
-     * @see org.tigris.gef.presentation.Fig#isResizable()
-     */
-    public boolean isResizable() {
-        return false;
-    }
+  public void setOwner(Object node) {
+    super.setOwner(node);
+    bindPort(node, _bigPort);
+  }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#setLineColor(java.awt.Color)
-     */
-    public void setLineColor(Color col) {
-        head.setLineColor(col);
-    }
+  /** Initial states are fixed size. */
+  public boolean isResizable() { return false; }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#getLineColor()
-     */
-    public Color getLineColor() {
-        return head.getLineColor();
-    }
+//   public Selection makeSelection() {
+//     return new SelectionMoveClarifiers(this);
+//   }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#setFillColor(java.awt.Color)
-     */
-    public void setFillColor(Color col) {
-        head.setFillColor(col);
-    }
+  public void setLineColor(Color col) { _head.setLineColor(col); }
+  public Color getLineColor() { return _head.getLineColor(); }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#getFillColor()
-     */
-    public Color getFillColor() {
-        return head.getFillColor();
-    }
+  public void setFillColor(Color col) { _head.setFillColor(col); }
+  public Color getFillColor() { return _head.getFillColor(); }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#setFilled(boolean)
-     */
-    public void setFilled(boolean f) {
-    }
+  public void setFilled(boolean f) { }
+  public boolean getFilled() { return true; }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#getFilled()
-     */
-    public boolean getFilled() {
-        return true;
-    }
+  public void setLineWidth(int w) { _head.setLineWidth(w); }
+  public int getLineWidth() { return _head.getLineWidth(); }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#setLineWidth(int)
-     */
-    public void setLineWidth(int w) {
-        head.setLineWidth(w);
-    }
+  ////////////////////////////////////////////////////////////////
+  // Event handlers
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#getLineWidth()
-     */
-    public int getLineWidth() {
-        return head.getLineWidth();
-    }
+  public void mouseClicked(MouseEvent me) { }
+  public void keyPressed(KeyEvent ke) { }
 
-    ////////////////////////////////////////////////////////////////
-    // Event handlers
-
-    /**
-     * @see java.awt.event.MouseListener#mouseClicked(java.awt.event.MouseEvent)
-     */
-    public void mouseClicked(MouseEvent me) {
-    }
-
-    /**
-     * The UID.
-     */
-    static final long serialVersionUID = 6572261327347541373L;
+  static final long serialVersionUID = 6572261327347541373L;
 
 } /* end class FigInitialState */

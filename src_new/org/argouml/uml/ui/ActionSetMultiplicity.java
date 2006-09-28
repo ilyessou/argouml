@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -27,43 +26,37 @@ package org.argouml.uml.ui;
 
 import java.awt.event.ActionEvent;
 
-import javax.swing.Action;
-
-import org.argouml.i18n.Translator;
-import org.tigris.gef.undo.UndoableAction;
+import org.argouml.application.api.Argo;
 
 /**
  * Framework action to set the multiplicity of some modelelement.
- * @author jaap.branderhorst@xs4all.nl
+ * @author jaap.branderhorst@xs4all.nl	
  * @since Jan 6, 2003
  */
-public abstract class ActionSetMultiplicity extends UndoableAction {
+public abstract class ActionSetMultiplicity extends UMLChangeAction {
 
     /**
      * Constructor for ActionSetMultiplicity.
+     * @param s
      */
     protected ActionSetMultiplicity() {
-        super(Translator.localize("Set"), null);
-        // Set the tooltip string:
-        putValue(Action.SHORT_DESCRIPTION, 
-                Translator.localize("Set"));
+        super(Argo.localize("CoreMenu", "Set"), true, NO_ICON);
     }
-
+            
     /**
-     * @see
-     * java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
+     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
      */
     public void actionPerformed(ActionEvent e) {
         super.actionPerformed(e);
         Object source = e.getSource();
         if (source instanceof UMLComboBox2) {
-            Object selected = ((UMLComboBox2) source).getSelectedItem();
-            Object target = ((UMLComboBox2) source).getTarget();
+            Object selected = ((UMLComboBox2)source).getSelectedItem();
+            Object target = ((UMLComboBox2)source).getTarget();
             if (target != null && selected != null)
                 setSelectedItem(selected, target);
         }
     }
-
+    
     /**
      * The user should implement this method to set the multiplicity (the given
      * item) for the target of the comboboxmodel (target

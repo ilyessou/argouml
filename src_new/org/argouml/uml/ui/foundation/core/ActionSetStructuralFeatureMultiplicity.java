@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,20 +21,23 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $Id$
 package org.argouml.uml.ui.foundation.core;
 
-import org.argouml.model.Model;
 import org.argouml.uml.ui.ActionSetMultiplicity;
+
+import ru.novosoft.uml.foundation.core.MStructuralFeature;
+import ru.novosoft.uml.foundation.data_types.MMultiplicity;
 
 /**
  * Action to set the multiplicity of a structural feature.
- * @author jaap.branderhorst@xs4all.nl
+ * @author jaap.branderhorst@xs4all.nl	
  * @since Jan 6, 2003
  */
 public class ActionSetStructuralFeatureMultiplicity
     extends ActionSetMultiplicity {
 
-    private static final ActionSetStructuralFeatureMultiplicity SINGLETON =
+    public static final ActionSetStructuralFeatureMultiplicity SINGLETON =
         new ActionSetStructuralFeatureMultiplicity();
 
     /**
@@ -46,35 +48,17 @@ public class ActionSetStructuralFeatureMultiplicity
     }
 
     /**
-     * @see org.argouml.uml.ui.ActionSetMultiplicity#setSelectedItem(
-     * java.lang.Object, java.lang.Object)
+     * @see org.argouml.uml.ui.ActionSetMultiplicity#setSelectedItem(java.lang.Object, java.lang.Object)
      */
     public void setSelectedItem(Object item, Object target) {
-        if (target != null
-                && Model.getFacade().isAStructuralFeature(target)) {
-            if (Model.getFacade().isAMultiplicity(item)) {
-                if (!Model.getFacade().getMultiplicity(target).equals(item)) {
-                    Model.getCoreHelper().setMultiplicity(target, item);
-                }
-            } else if (item instanceof String) {
-                if (!item.equals(Model.getFacade().toString(
-                        Model.getFacade().getMultiplicity(target)))) {
-                    Model.getCoreHelper().setMultiplicity(
-                            target,
-                            Model.getDataTypesFactory().createMultiplicity(
-                                    (String) item));
-                }
-            } else {
-                Model.getCoreHelper().setMultiplicity(target, null);
-            }
-        }
-    }
+        if (target != null && target instanceof MStructuralFeature) {
+            if (item instanceof MMultiplicity) {
+                ((MStructuralFeature)target).setMultiplicity(
+                    (MMultiplicity)item);
+            } else
+                 ((MStructuralFeature)target).setMultiplicity(null);
 
-    /**
-     * @return Returns the sINGLETON.
-     */
-    public static ActionSetStructuralFeatureMultiplicity getInstance() {
-        return SINGLETON;
+        }
     }
 
 }

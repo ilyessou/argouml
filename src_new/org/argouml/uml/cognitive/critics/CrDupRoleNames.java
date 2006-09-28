@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2003 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,32 +22,31 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+
+// File: CrDupRoleNames.java
+// Classes: CrDupRoleNames
+// Original Author: jrobbins@ics.uci.edu
+
 package org.argouml.uml.cognitive.critics;
 
-import java.util.Iterator;
-import java.util.Vector;
+import java.util.*;
 
-import org.argouml.cognitive.Designer;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
-
+import org.argouml.cognitive.*;
 
 // Use Model through Facade
+import org.argouml.model.ModelFacade;
 
 /**
- * A critic to check that the ends of an association all have distinct
- * names.<p>
+ * <p> A critic to check that the ends of an association all have distinct
+ *   names.</p>
  *
- * This is the first well-formedness rule for associations in the UML 1.3
- * standard (see section 2.5.3 of the standard).<p>
+ * <p>This is the first well-formedness rule for associations in the UML 1.3
+ *   standard (see section 2.5.3 of the standard).</p>
  *
- * See <a href=
- * "http://argouml.tigris.org/documentation/snapshots/manual/argouml.html/
- * #s2.ref.critics_dup_role_names">
- * ArgoUML User Manual: Duplicate end (role) names for &lt;association&gt;</a>
- *
- * @author Jason Robbins
+ * @see <a href="http://argouml.tigris.org/documentation/snapshots/manual/argouml.html/#s2.ref.critics_dup_role_names">ArgoUML User Manual: Duplicate end (role) names for &lt;association&gt;</a>
  */
+
 public class CrDupRoleNames extends CrUML {
 
     /**
@@ -59,8 +58,10 @@ public class CrDupRoleNames extends CrUML {
      */
 
     public CrDupRoleNames() {
-        setupHeadAndDesc();
-        addSupportedDecision(UMLDecision.NAMING);
+
+        setResource("CrDupRoleNames");
+
+        addSupportedDecision(CrUML.decNAMING);
 
         // These may not actually make any difference at present (the code
         // behind addTrigger needs more work).
@@ -97,21 +98,23 @@ public class CrDupRoleNames extends CrUML {
      *               development of ArgoUML.
      *
      * @return       {@link #PROBLEM_FOUND PROBLEM_FOUND} if the critic is
-     *               triggered, otherwise {@link #NO_PROBLEM NO_PROBLEM}.
+     *               triggered, otherwise {@link #NO_PROBLEM NO_PROBLEM}.  
      */
-
+    
     public boolean predicate2(Object dm, Designer dsgr) {
 
         // Only work for associations
 
-        if (!(Model.getFacade().isAAssociation(dm))) {
+        if (!(ModelFacade.isAAssociation(dm))) {
             return NO_PROBLEM;
         }
 
 	// No problem if this is an association role.
-	if (Model.getFacade().isAAssociationRole(dm)) {
+	if (ModelFacade.isAAssociationRole(dm)) {
 	    return NO_PROBLEM;
 	}
+
+        Iterator enum = ModelFacade.getConnections(dm);
 
         // Loop through all the ends, comparing the name against those already
         // seen (ignoring any with no name).
@@ -120,9 +123,9 @@ public class CrDupRoleNames extends CrUML {
 
         Vector   namesSeen = new Vector();
 
-        Iterator conns = Model.getFacade().getConnections(dm).iterator();
-        while (conns.hasNext()) {
-            String name = Model.getFacade().getName(conns.next());
+        while (enum.hasNext()) {
+
+            String          name = ModelFacade.getName(enum.next());
 
             // Ignore non-existent and empty names
 

@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-01 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -29,126 +28,88 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Vector;
 
-import javax.swing.Action;
-
-import org.argouml.i18n.Translator;
 import org.argouml.kernel.ProjectManager;
-import org.argouml.model.Model;
+import org.argouml.model.uml.modelmanagement.ModelManagementHelper;
 import org.argouml.ui.ArgoDiagram;
+import org.argouml.ui.ProjectBrowser;
 import org.argouml.uml.diagram.ui.UMLDiagram;
-import org.argouml.uml.generator.GeneratorManager;
+import org.argouml.uml.generator.Generator;
 import org.argouml.uml.generator.ui.ClassGenerationDialog;
-import org.tigris.gef.undo.UndoableAction;
 
-/**
- * Action to trigger code generation for all classes/interfaces in the
- * project, which have a source code path set in tagged value 'src_path'.
- *
- * @stereotype singleton
+import ru.novosoft.uml.foundation.core.MClassifier;
+import ru.novosoft.uml.foundation.core.MNamespace;
+
+/** Action to trigger code generation for all classes/interfaces in the
+ *  project, which have a source code path set in tagged value 'src_path'
+ *  @stereotype singleton
  */
-public class ActionGenerateProjectCode extends UndoableAction {
+public class ActionGenerateProjectCode extends UMLAction {
+
+    ////////////////////////////////////////////////////////////////
+    // static variables
+
+    public static ActionGenerateProjectCode SINGLETON = new ActionGenerateProjectCode();
+
 
     ////////////////////////////////////////////////////////////////
     // constructors
 
-    /**
-     *  The constructor.
-     */
-    public ActionGenerateProjectCode() {
-	    super(Translator.localize("action.generate-code-for-project"), 
-	            null);
-        // Set the tooltip string:
-        putValue(Action.SHORT_DESCRIPTION, 
-                Translator.localize("action.generate-code-for-project"));
+    protected ActionGenerateProjectCode() {
+	super("action.generate-code-for-project", NO_ICON);
     }
 
 
     ////////////////////////////////////////////////////////////////
     // main methods
 
-    /**
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-     */
     public void actionPerformed(ActionEvent ae) {
-        super.actionPerformed(ae);
-        Vector classes = new Vector();
-	ArgoDiagram activeDiagram =
-	    ProjectManager.getManager().getCurrentProject().getActiveDiagram();
-	if (!(activeDiagram instanceof UMLDiagram)) {
-	    return;
-	}
-	Object/*MNamespace*/ ns = ((UMLDiagram) activeDiagram).getNamespace();
-	if (ns == null) {
-	    return;
-	}
-	while (Model.getFacade().getNamespace(ns) != null) {
-	    ns = Model.getFacade().getNamespace(ns);
-	}
-	Collection elems =
-	    Model.getModelManagementHelper()
-	    	.getAllModelElementsOfKind(
-	    	        ns,
-	    	        Model.getMetaTypes().getClassifier());
-	//Project p = ProjectManager.getManager().getCurrentProject();
-	//Collection elems =
-	//ModelManagementHelper.getHelper()
-        //    .getAllModelElementsOfKind(MClassifier.class);
-	Iterator iter = elems.iterator();
-	while (iter.hasNext()) {
-	    Object/*MClassifier*/ cls = iter.next();
-	    if (isCodeRelevantClassifier(cls)) {
-		classes.addElement(cls);
-	    }
-	}
-	ClassGenerationDialog cgd = new ClassGenerationDialog(classes, true);
-	cgd.setVisible(true);
+      Vector classes = new Vector();
+      // The following lines should be substituted by the following 2 commented lines.
+      // (This is because getting the project still does not seem to work...)
+      ProjectBrowser pb = ProjectBrowser.getInstance();
+      ArgoDiagram activeDiagram = ProjectManager.getManager().getCurrentProject().getActiveDiagram();
+      if (!(activeDiagram instanceof org.argouml.uml.diagram.ui.UMLDiagram)) return;
+      ru.novosoft.uml.foundation.core.MNamespace ns = ((org.argouml.uml.diagram.ui.UMLDiagram)activeDiagram).getNamespace();
+      if (ns == null) return;
+      while (ns.getNamespace() != null) ns = ns.getNamespace();
+      Collection elems = ModelManagementHelper.getHelper().getAllModelElementsOfKind(ns,MClassifier.class);
+      //Project p = ProjectManager.getManager().getCurrentProject();
+      //Collection elems = ModelManagementHelper.getHelper().getAllModelElementsOfKind(MClassifier.class);
+      Iterator iter = elems.iterator();
+      while (iter.hasNext()) {
+        MClassifier cls = (MClassifier)iter.next();
+        if (isCodeRelevantClassifier(cls)) {
+          classes.addElement(cls);
+        }
+      }
+      ClassGenerationDialog cgd = new ClassGenerationDialog(classes,true);
+      cgd.show();
     }
 
-    /**
-     * Check if the diagram is enabled
-     * 
-     * @return true if enabled
-     * @see org.tigris.gef.undo.UndoableAction#isEnabled()
-     */
-    public boolean isEnabled() {
-        ArgoDiagram activeDiagram = ProjectManager.getManager()
-				.getCurrentProject().getActiveDiagram();
-        return super.isEnabled() 
-		&& (activeDiagram instanceof UMLDiagram);
+    public boolean shouldBeEnabled() {
+      ProjectBrowser pb = ProjectBrowser.getInstance();
+      ArgoDiagram activeDiagram = ProjectManager.getManager().getCurrentProject().getActiveDiagram();
+      return super.shouldBeEnabled() && (activeDiagram instanceof UMLDiagram);
     }
 
-    /**
-     * @param cls the classifier that is candidate for generation
-     * @return true if the candidate is sound
-     */
-    private boolean isCodeRelevantClassifier(Object cls) {
-        if (cls == null) {
-            return false;
-        }
-        if (!Model.getFacade().isAClass(cls)
-                && !Model.getFacade().isAInterface(cls)) {
-            return false;
-        }
-        String path = GeneratorManager.getCodePath(cls);
-        String name = Model.getFacade().getName(cls);
-        if (name == null
-            || name.length() == 0
-            || Character.isDigit(name.charAt(0))) {
-            return false;
-        }
-        if (path != null) {
-            return (path.length() > 0);
-        }
-        Object parent = Model.getFacade().getNamespace(cls);
-        while (parent != null) {
-            path = GeneratorManager.getCodePath(parent);
-            if (path != null) {
-                return (path.length() > 0);
-            }
-            parent = Model.getFacade().getNamespace(parent);
-        }
+    private boolean isCodeRelevantClassifier(MClassifier cls) {
+      String path = Generator.getCodePath(cls);
+      String name = cls.getName();
+      if (name == null || name.length() == 0 || Character.isDigit(name.charAt(0))) {
         return false;
+      }
+      if (path != null) {
+        return (path.length() > 0);
+      }
+      MNamespace parent = cls.getNamespace();
+      while (parent != null) {
+        path = Generator.getCodePath(parent);
+        if (path != null) {
+          return (path.length() > 0);
+        }
+        parent = parent.getNamespace();
+      }
+      return false;
     }
-
 
 } /* end class ActionGenerateProjectCode */

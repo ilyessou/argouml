@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -25,8 +24,10 @@
 // $header$
 package org.argouml.uml.ui.behavior.collaborations;
 
-import org.argouml.model.Model;
 import org.argouml.uml.ui.UMLModelElementListModel2;
+
+import ru.novosoft.uml.MBase;
+import ru.novosoft.uml.behavior.collaborations.MMessage;
 
 /**
  * @since Oct 3, 2002
@@ -36,6 +37,7 @@ public class UMLMessageReceiverListModel extends UMLModelElementListModel2 {
 
     /**
      * Constructor for UMLMessageReceiverListModel.
+     * @param container
      */
     public UMLMessageReceiverListModel() {
         super("receiver");
@@ -46,14 +48,14 @@ public class UMLMessageReceiverListModel extends UMLModelElementListModel2 {
      */
     protected void buildModelList() {
         removeAllElements();
-        addElement(Model.getFacade().getReceiver(getTarget()));
+        addElement(((MMessage)getTarget()).getReceiver());
     }
 
     /**
-     * @see org.argouml.uml.ui.UMLModelElementListModel2#isValidElement(Object)
+     * @see org.argouml.uml.ui.UMLModelElementListModel2#isValidElement(MBase)
      */
-    protected boolean isValidElement(Object/*MBase*/ element) {
-        return Model.getFacade().getReceiver(getTarget()) == element;
+    protected boolean isValidElement(MBase element) {
+        return ((MMessage)getTarget()).getReceiver() == element;
     }
 
 }

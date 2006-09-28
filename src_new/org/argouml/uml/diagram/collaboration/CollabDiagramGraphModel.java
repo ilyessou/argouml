@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,346 +21,260 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+// File: CollabDiagramGraphModel.java
+// Classes: CollabDiagramGraphModel
+// Original Author: agauthie@ics.uci.edu
+// $Id$
+
+
 package org.argouml.uml.diagram.collaboration;
 
-import java.beans.PropertyChangeEvent;
-import java.beans.VetoableChangeListener;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Vector;
+import org.apache.log4j.Category;
 
-import org.apache.log4j.Logger;
-import org.argouml.model.Model;
 import org.argouml.uml.diagram.UMLMutableGraphSupport;
-import org.argouml.uml.diagram.static_structure.ui.CommentEdge;
+import org.argouml.model.uml.foundation.core.CoreFactory;
+import org.argouml.model.uml.foundation.core.CoreHelper;
 
-/**
- * This class defines a bridge between the UML meta-model
- * representation of the design and the GraphModel interface used by
- * GEF.  This class handles only UML Collaboration Diagrams.
- */
+import java.util.*;
+import java.beans.*;
+
+import ru.novosoft.uml.*;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.extension_mechanisms.*;
+import ru.novosoft.uml.behavior.use_cases.*;
+import ru.novosoft.uml.behavior.collaborations.*;
+import ru.novosoft.uml.model_management.*;
+
+
+/** This class defines a bridge between the UML meta-model
+ *  representation of the design and the GraphModel interface used by
+ *  GEF.  This class handles only UML Use Case Digrams.  */
+
 public class CollabDiagramGraphModel extends UMLMutableGraphSupport
-    implements VetoableChangeListener {
-    /**
-     * Logger.
-     */
-    private static final Logger LOG =
-        Logger.getLogger(CollabDiagramGraphModel.class);
+implements VetoableChangeListener {
+    protected static Category cat = Category.getInstance(CollabDiagramGraphModel.class);
 
-    /**
-     * @param collaboration the collaboration to be set for this diagram
-     */
-    public void setCollaboration(Object collaboration) {
-        try {
-            if (collaboration == null) {
-                throw new IllegalArgumentException(
-                    "A null collaboration was supplied");
-            }
-            if (!(Model.getFacade().isACollaboration(collaboration))) {
-                throw new IllegalArgumentException(
-                    "Expected a collaboration. The type received was "
-                    + collaboration.getClass().getName());
-            }
-        } catch (IllegalArgumentException e) {
-            LOG.error("Illegal Argument to setCollaboration", e);
-            throw e;
+  /** The "home" UML model of this diagram, not all ModelElements in this
+   *  graph are in the home model, but if they are added and don't
+   *  already have a model, they are placed in the "home model".
+   *  Also, elements from other models will have their FigNodes add a
+   *  line to say what their model is. */
+
+  /** The collaboration / interaction we are diagramming */
+    protected MCollaboration _collab;
+    protected MInteraction _interaction;
+
+  ////////////////////////////////////////////////////////////////
+  // accessors
+
+    public MNamespace getNamespace() { return _collab; }
+    public void setNamespace(MNamespace m) {
+        if (!(m instanceof MCollaboration)) {
+            throw new IllegalArgumentException("invalid namespace for CollabDiagramGraphModel");
         }
-        setHomeModel(collaboration);
+        _collab = (MCollaboration) m;
     }
 
 
-    ////////////////////////////////////////////////////////////////
-    // GraphModel implementation
+  ////////////////////////////////////////////////////////////////
+  // GraphModel implementation
 
+ 
+  /** Return all ports on node or edge */
+  public Vector getPorts(Object nodeOrEdge) {
+    Vector res = new Vector();  //wasteful!
+    if (nodeOrEdge instanceof MClassifierRole) res.addElement(nodeOrEdge);
+    return res;
+  }
 
-    /**
-     * Return all ports on node or edge.
-     *
-     * @see org.tigris.gef.graph.GraphModel#getPorts(java.lang.Object)
-     */
-    public List getPorts(Object nodeOrEdge) {
-	Vector res = new Vector();  //wasteful!
-	if (Model.getFacade().isAClassifierRole(nodeOrEdge)) {
-	    res.addElement(nodeOrEdge);
-	}
-	return res;
+  /** Return the node or edge that owns the given port */
+  public Object getOwner(Object port) {
+    return port;
+  }
+
+  /** Return all edges going to given port */
+  public Vector getInEdges(Object port) {
+    Vector res = new Vector(); //wasteful!
+    if (port instanceof MClassifierRole) {
+      MClassifierRole cr = (MClassifierRole) port;
+      Collection ends = cr.getAssociationEnds();
+      if (ends == null) return res; // empty Vector
+	  Iterator iter = ends.iterator();
+      while (iter.hasNext()) {
+	    MAssociationEndRole aer = (MAssociationEndRole) iter.next();
+	    res.addElement(aer.getAssociation());
+      }
     }
+    return res;
+  }
 
-    /**
-     * Return the node or edge that owns the given port.
-     *
-     * @see org.tigris.gef.graph.BaseGraphModel#getOwner(java.lang.Object)
-     */
-    public Object getOwner(Object port) {
-	return port;
+  /** Return all edges going from given port */
+  public Vector getOutEdges(Object port) {
+    return new Vector(); // TODO?
+  }
+
+  /** Return one end of an edge */
+  public Object getSourcePort(Object edge) {
+    if (edge instanceof MRelationship) {
+        return CoreHelper.getHelper().getSource((MRelationship)edge);
     }
+    cat.debug("TODO getSourcePort");
+    return null;
+  }
 
-    /**
-     * Return all edges going to given port.
-     *
-     * @see org.tigris.gef.graph.GraphModel#getInEdges(java.lang.Object)
-     */
-    public List getInEdges(Object port) {
-	Vector res = new Vector(); //wasteful!
-	if (Model.getFacade().isAClassifierRole(port)) {
-	    Object cr = /*(MClassifierRole)*/ port;
-	    Collection ends = Model.getFacade().getAssociationEnds(cr);
-	    if (ends == null) {
-                return res; // empty Vector
-            }
-	    Iterator iter = ends.iterator();
-	    while (iter.hasNext()) {
-		Object aer = /*(MAssociationEndRole)*/ iter.next();
-		res.addElement(Model.getFacade().getAssociation(aer));
-	    }
-	}
-	return res;
+  /** Return  the other end of an edge */
+  public Object getDestPort(Object edge) {
+    if (edge instanceof MRelationship) {
+        return CoreHelper.getHelper().getDestination((MRelationship)edge);
     }
+    cat.debug("TODO getDestPort");
+    return null;
+  }
 
-    /**
-     * Return all edges going from given port.
-     *
-     * @see org.tigris.gef.graph.GraphModel#getOutEdges(java.lang.Object)
-     */
-    public List getOutEdges(Object port) {
-	return new Vector(); // TODO:?
+
+  ////////////////////////////////////////////////////////////////
+  // MutableGraphModel implementation
+
+  /** Return true if the given object is a valid node in this graph */
+  public boolean canAddNode(Object node) {
+    if (node == null) return false;
+    if (_nodes.contains(node)) return false;
+    return (node instanceof MClassifierRole || node instanceof MMessage);
+  }
+
+  /** Return true if the given object is a valid edge in this graph */
+  public boolean canAddEdge(Object edge)  {
+    if (edge == null) return false;
+    if(_edges.contains(edge)) return false;
+    Object end0 = null, end1 = null;
+    if (edge instanceof MAssociationRole) {
+      List conns = ((MAssociationRole)edge).getConnections();
+      if (conns.size() < 2) return false;
+      MAssociationEndRole ae0 = (MAssociationEndRole) conns.get(0);
+      MAssociationEndRole ae1 = (MAssociationEndRole) conns.get(1);
+      if (ae0 == null || ae1 == null) return false;
+      end0 = ae0.getType();
+      end1 = ae1.getType();
     }
+    if (edge instanceof MGeneralization) {
+        MGeneralization gen = (MGeneralization)edge;
+        end0 = gen.getParent();
+        end1 = gen.getChild();
+    }
+    if (edge instanceof MDependency) {
+        Collection clients = ((MDependency)edge).getClients();
+        Collection suppliers = ((MDependency)edge).getSuppliers();
+        if (clients == null || suppliers == null) return false;
+        end0 = ((Object[])clients.toArray())[0];
+        end1 = ((Object[])suppliers.toArray())[0];
+    }
+    if (end0 == null || end1 == null) return false;
+    if (!_nodes.contains(end0)) return false;
+    if (!_nodes.contains(end1)) return false;
+    return true;
+  }
 
-    ////////////////////////////////////////////////////////////////
-    // MutableGraphModel implementation
 
-    /**
-     * Return true if the given object is a valid node in this graph.
-     *
-     * @see org.tigris.gef.graph.MutableGraphModel#canAddNode(java.lang.Object)
-     */
-    public boolean canAddNode(Object node) {
-        if (node == null) {
-            return false;
-        }
-        if (Model.getFacade().isAAssociation(node) && !Model.getFacade().isANaryAssociation(node)) {
-            // A binary association is not a node so reject.
-            return false;
-        }
+  /** Add the given node to the graph, if valid. */
+  public void addNode(Object node) {
+    cat.debug("adding MClassifierRole node!!");
+    if (!canAddNode(node)) return;
+    _nodes.addElement(node);
+    // TODO: assumes public, user pref for default visibility?
+      if (node instanceof MClassifier) {
+		  _collab.addOwnedElement((MClassifier) node);
+		  // ((MClassifier)node).setNamespace(_collab.getNamespace());
+      }
     
-	if (containsNode(node)) {
-            return false;
-        }
-	return (Model.getFacade().isAClassifierRole(node)
-            || Model.getFacade().isAMessage(node)
-            || Model.getFacade().isAComment(node));
-    }
+    fireNodeAdded(node);
+  }
 
-    /**
-     * Return true if the given object is a valid edge in this graph.
-     *
-     * @see org.tigris.gef.graph.MutableGraphModel#canAddEdge(java.lang.Object)
-     */
-    public boolean canAddEdge(Object edge)  {
-	if (edge == null) {
-            return false;
-        }
-	if (containsEdge(edge)) {
-            return false;
-        }
-	Object end0 = null;
-        Object end1 = null;
-	if (Model.getFacade().isAAssociationRole(edge)) {
-	    Collection conns = Model.getFacade().getConnections(edge);
-            Iterator iter = conns.iterator();
-	    if (conns.size() < 2) {
-                return false;
-            }
-	    Object associationEndRole0 = iter.next();
-	    Object associationEndRole1 = iter.next();
-	    if (associationEndRole0 == null || associationEndRole1 == null) {
-	        return false;
-	    }
-	    end0 = Model.getFacade().getType(associationEndRole0);
-	    end1 = Model.getFacade().getType(associationEndRole1);
-	} else if (Model.getFacade().isAGeneralization(edge)) {
-	    Object gen = /*(MGeneralization)*/ edge;
-	    end0 = Model.getFacade().getParent(gen);
-	    end1 = Model.getFacade().getChild(gen);
-	} else if (Model.getFacade().isADependency(edge)) {
-	    Collection clients = Model.getFacade().getClients(edge);
-	    Collection suppliers = Model.getFacade().getSuppliers(edge);
-	    if (clients == null || suppliers == null) {
-                return false;
-            }
-	    end0 = (clients.toArray())[0];
-	    end1 = (suppliers.toArray())[0];
-	} else if (edge instanceof CommentEdge) {
-	    end0 = ((CommentEdge) edge).getSource();
-	    end1 = ((CommentEdge) edge).getDestination();
-	} else {
-	    return false;       
-        }
-        
-        // Both ends must be defined and nodes that are on the graph already.
-        if (end0 == null || end1 == null) {
-            LOG.error("Edge rejected. Its ends are not attached to anything");
-            return false;
-        }
-        
-        if (!containsNode(end0)
-                && !containsEdge(end0)) {
-            LOG.error("Edge rejected. Its source end is attached to " +
-                    end0 +
-                    " but this is not in the graph model");
-            return false;
-        }
-        if (!containsNode(end1)
-                && !containsEdge(end1)) {
-            LOG.error("Edge rejected. Its destination end is attached to " +
-                    end1 +
-                    " but this is not in the graph model");
-            return false;
-        }
-        
-        return true;
-    }
-
-
-    /**
-     * Add the given node to the graph, if valid.
-     *
-     * @see org.tigris.gef.graph.MutableGraphModel#addNode(java.lang.Object)
-     */
-    public void addNode(Object node) {
-	LOG.debug("adding MClassifierRole node!!");
-	if (!canAddNode(node)) {
-            return;
-        }
-	getNodes().add(node);
-	// TODO: assumes public, user pref for default visibility?
-	if (Model.getFacade().isAClassifier(node)) {
-	    Model.getCoreHelper().addOwnedElement(getHomeModel(), node);
-	    // ((MClassifier)node).setNamespace(_collab.getNamespace());
-	}
-
-	fireNodeAdded(node);
-    }
-
-    /**
-     * Add the given edge to the graph, if valid.
-     *
-     * @see org.tigris.gef.graph.MutableGraphModel#addEdge(java.lang.Object)
-     */
+    /** Add the given edge to the graph, if valid. */
     public void addEdge(Object edge) {
-        LOG.debug("adding class edge!!!!!!");
-        if (!canAddEdge(edge)) {
-            return;
-        }
-        getEdges().add(edge);
+        cat.debug("adding class edge!!!!!!");
+        if (!canAddEdge(edge)) return;
+        _edges.addElement(edge);
         // TODO: assumes public
-        if (Model.getFacade().isAModelElement(edge)
-	    && Model.getFacade().getNamespace(edge) == null) {
-            Model.getCoreHelper().addOwnedElement(getHomeModel(), edge);
+        if (edge instanceof MModelElement && ((MModelElement)edge).getNamespace() == null) {
+            _collab.addOwnedElement((MModelElement) edge);
         }
         fireEdgeAdded(edge);
     }
 
-    /**
-     * @see org.tigris.gef.graph.MutableGraphModel#addNodeRelatedEdges(java.lang.Object)
-     */
-    public void addNodeRelatedEdges(Object node) {
-        super.addNodeRelatedEdges(node);
-
-	if (Model.getFacade().isAClassifier(node)) {
-	    Collection ends = Model.getFacade().getAssociationEnds(node);
-	    Iterator iter = ends.iterator();
-	    while (iter.hasNext()) {
-		Object ae = /*(MAssociationEndRole)*/ iter.next();
-		if (canAddEdge(Model.getFacade().getAssociation(ae))) {
-                    addEdge(Model.getFacade().getAssociation(ae));
-                }
-	    }
-	}
-	if (Model.getFacade().isAGeneralizableElement(node)) {
-	    Collection gn = Model.getFacade().getGeneralizations(node);
-	    Iterator iter = gn.iterator();
-	    while (iter.hasNext()) {
-		Object g = /*(MGeneralization)*/ iter.next();
-		if (canAddEdge(g)) {
-		    addEdge(g);
-		    return;
-		}
-	    }
-	    Collection sp = Model.getFacade().getSpecializations(node);
-	    iter = sp.iterator();
-	    while (iter.hasNext()) {
-		Object s = /*(MGeneralization)*/ iter.next();
-		if (canAddEdge(s)) {
-		    addEdge(s);
-		    return;
-		}
-	    }
-	}
-	if (Model.getFacade().isAModelElement(node)) {
-	    Vector specs =
-		new Vector(Model.getFacade().getClientDependencies(node));
-	    specs.addAll(Model.getFacade().getSupplierDependencies(node));
-	    Iterator iter = specs.iterator();
-	    while (iter.hasNext()) {
-		Object dep = /*(MDependency)*/ iter.next();
-		if (canAddEdge(dep)) {
-		    addEdge(dep);
-		    return;
-		}
-	    }
-	}
+  public void addNodeRelatedEdges(Object node) {
+    if ( node instanceof MClassifier ) {
+      Collection ends = ((MClassifier)node).getAssociationEnds();
+      Iterator iter = ends.iterator();
+      while (iter.hasNext()) {
+         MAssociationEndRole ae = (MAssociationEndRole) iter.next();
+         if(canAddEdge(ae.getAssociation()))
+           addEdge(ae.getAssociation());
+      }
     }
-
-
-    /**
-     * Return true if the two given ports can be connected by a
-     * kind of edge to be determined by the ports.
-     *
-     * @see org.tigris.gef.graph.MutableGraphModel#canConnect(java.lang.Object,
-     * java.lang.Object)
-     */
-    public boolean canConnect(Object fromP, Object toP) {
-	if ((Model.getFacade().isAClassifierRole(fromP))
-	    && (Model.getFacade().isAClassifierRole(toP))) {
-            return true;
-        }
-	return false;
+    if ( node instanceof MGeneralizableElement ) {
+      Collection gn = ((MGeneralizableElement)node).getGeneralizations();
+      Iterator iter = gn.iterator();
+      while (iter.hasNext()) {
+         MGeneralization g = (MGeneralization) iter.next();
+         if(canAddEdge(g)) {
+           addEdge(g);
+           return;
+         }
+      }
+      Collection sp = ((MGeneralizableElement)node).getSpecializations();
+      iter = sp.iterator();
+      while (iter.hasNext()) {
+         MGeneralization s = (MGeneralization) iter.next();
+         if(canAddEdge(s)) {
+           addEdge(s);
+           return;
+         }
+      }
     }
-
-    ////////////////////////////////////////////////////////////////
-    // VetoableChangeListener implementation
-
-    /**
-     * @see java.beans.VetoableChangeListener#vetoableChange(java.beans.PropertyChangeEvent)
-     */
-    public void vetoableChange(PropertyChangeEvent pce) {
-	//throws PropertyVetoException
-
-	if ("ownedElement".equals(pce.getPropertyName())) {
-	    Vector oldOwned = (Vector) pce.getOldValue();
-	    Object eo = /*(MElementImport)*/ pce.getNewValue();
-	    Object me = Model.getFacade().getModelElement(eo);
-	    if (oldOwned.contains(eo)) {
-		LOG.debug("model removed " + me);
-		if (Model.getFacade().isAClassifier(me)) {
-                    removeNode(me);
-                }
-		if (Model.getFacade().isAMessage(me)) {
-                    removeNode(me);
-                }
-		if (Model.getFacade().isAAssociation(me)) {
-                    removeEdge(me);
-                }
-	    } else {
-		LOG.debug("model added " + me);
-	    }
-	}
+    if ( node instanceof MModelElement ) {
+      Vector specs = new Vector(((MModelElement)node).getClientDependencies());
+      specs.addAll(((MModelElement)node).getSupplierDependencies());
+      Iterator iter = specs.iterator();
+      while (iter.hasNext()) {
+         MDependency dep = (MDependency) iter.next();
+         if(canAddEdge(dep)) {
+           addEdge(dep);
+           return;
+         }
+      }
     }
+ }
 
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = -4895696235473642985L;
+
+  /** Return true if the two given ports can be connected by a
+   * kind of edge to be determined by the ports. */
+  public boolean canConnect(Object fromP, Object toP) {
+    if ((fromP instanceof MClassifierRole) && (toP instanceof MClassifierRole)) return true;
+    return false;
+  }
+
+  ////////////////////////////////////////////////////////////////
+  // VetoableChangeListener implementation
+
+  public void vetoableChange(PropertyChangeEvent pce) {
+    //throws PropertyVetoException
+
+    if ("ownedElement".equals(pce.getPropertyName())) {
+      Vector oldOwned = (Vector) pce.getOldValue();
+      MElementImport eo = (MElementImport) pce.getNewValue();
+      MModelElement me = eo.getModelElement();
+      if (oldOwned.contains(eo)) {
+	    cat.debug("model removed " + me);
+	    if (me instanceof MClassifier) removeNode(me);
+	    if (me instanceof MMessage) removeNode(me);
+	    if (me instanceof MAssociation) removeEdge(me);
+      }
+      else {
+	    cat.debug("model added " + me);
+      }
+    }
+  }
+
 } /* end class CollabDiagramGraphModel */
+

@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -25,8 +24,11 @@
 // $header$
 package org.argouml.uml.ui.behavior.collaborations;
 
-import org.argouml.model.Model;
 import org.argouml.uml.ui.UMLModelElementListModel2;
+
+import ru.novosoft.uml.MBase;
+import ru.novosoft.uml.behavior.collaborations.MMessage;
+import ru.novosoft.uml.behavior.common_behavior.MAction;
 
 /**
  * @since Oct 3, 2002
@@ -36,6 +38,7 @@ public class UMLMessageActionListModel extends UMLModelElementListModel2 {
 
     /**
      * Constructor for UMLMessageActionListModel.
+     * @param container
      */
     public UMLMessageActionListModel() {
         super("action");
@@ -46,16 +49,16 @@ public class UMLMessageActionListModel extends UMLModelElementListModel2 {
      */
     protected void buildModelList() {
         removeAllElements();
-        addElement(Model.getFacade().getAction(getTarget()));
+        addElement(((MMessage)getTarget()).getAction());
     }
 
-
+    
     /**
-     * @see org.argouml.uml.ui.UMLModelElementListModel2#isValidElement(Object)
+     * @see org.argouml.uml.ui.UMLModelElementListModel2#isValidElement(ru.novosoft.uml.MBase)
      */
-    protected boolean isValidElement(Object/*MBase*/ elem) {
-        return Model.getFacade().isAAction(elem)
-            && Model.getFacade().getAction(getTarget()) == elem;
+    protected boolean isValidElement(MBase elem) {        
+        return elem instanceof MAction && 
+            ((MMessage)getTarget()).getAction() == elem;
     }
 
 }

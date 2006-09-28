@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -27,8 +26,8 @@ package org.argouml.uml.ui.behavior.common_behavior;
 
 import javax.swing.Action;
 
-import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.application.api.Argo;
+import org.argouml.model.uml.behavioralelements.commonbehavior.CommonBehaviorFactory;
 
 /**
  * @since Dec 15, 2002
@@ -36,32 +35,22 @@ import org.argouml.model.Model;
  */
 public class ActionNewCallAction extends ActionNewAction {
 
-    private static final ActionNewCallAction SINGLETON =
-        new ActionNewCallAction();
-
+    public static ActionNewCallAction SINGLETON = new ActionNewCallAction();
+    
     /**
      * Constructor for ActionNewCallAction.
      */
     protected ActionNewCallAction() {
         super();
-        putValue(Action.NAME, Translator.localize(
-                "button.new-callaction"));
+        putValue(Action.NAME, Argo.localize("UMLMenu", "button.new-callaction"));
     }
-
-
+    
+    
     /**
      * @see org.argouml.uml.ui.behavior.common_behavior.ActionNewAction#createAction()
      */
     protected Object createAction() {
-        return Model.getCommonBehaviorFactory().createCallAction();
-    }
-
-
-    /**
-     * @return Returns the SINGLETON.
-     */
-    public static ActionNewCallAction getInstance() {
-        return SINGLETON;
+        return CommonBehaviorFactory.getFactory().createCallAction();
     }
 
 }

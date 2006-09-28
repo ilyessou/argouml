@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,116 +23,71 @@
 
 package org.argouml.cognitive.ui;
 
-import java.util.Enumeration;
-import java.util.Vector;
+import java.util.*;
+import javax.swing.*;
+import javax.swing.event.*;
+import javax.swing.tree.*;
 
-import javax.swing.event.TreeModelListener;
-import javax.swing.tree.TreePath;
+import org.tigris.gef.util.*;
 
-import org.argouml.cognitive.Designer;
-import org.argouml.cognitive.ToDoItem;
-import org.argouml.cognitive.ToDoList;
-import org.argouml.cognitive.ListSet;
-import org.argouml.uml.PredicateNotInTrash;
+import org.argouml.ui.*;
+import org.argouml.cognitive.*;
+
+public class GoListToOffenderToItem implements TreeModel {
+  
+  ////////////////////////////////////////////////////////////////
+  // TreeModel implementation
+  
+  public Object getRoot() {
+      throw new UnsupportedOperationException("getRoot should never be called");
+  } 
+  public void setRoot(Object r) { }
+
+  public Object getChild(Object parent, int index) {
+    Vector children = getChildren(parent);
+    return (children == null) ? null : children.elementAt(index);
+  }
+  
+  public int getChildCount(Object parent) {
+    Vector children = getChildren(parent);
+    return (children == null) ? 0 : children.size();
+  }
+  
+  public int getIndexOfChild(Object parent, Object child) {
+    Vector children = getChildren(parent);
+    return (children == null) ? -1 : children.indexOf(child);
+  }
+
+  public boolean isLeaf(Object node) {
+    if (node instanceof ToDoList) return false;
+    if (getChildCount(node) > 0) return false;
+    return true;
+  }
 
 
-/**
- * Rule for sorting the ToDo list: Offender -> Item.
- *
- */
-public class GoListToOffenderToItem extends AbstractGoList {
-
-    /**
-     * The constructor.
-     */
-    public GoListToOffenderToItem() {
-        setListPredicate(new PredicateNotInTrash());
+  public Vector getChildren(Object parent) {
+    VectorSet allOffenders = Designer.TheDesigner.getToDoList().getOffenders();
+    if (parent instanceof ToDoList) {
+      return allOffenders.asVector();
     }
-
-    ////////////////////////////////////////////////////////////////
-    // TreeModel implementation
-
-    /**
-     * @see javax.swing.tree.TreeModel#getChild(java.lang.Object, int)
-     */
-    public Object getChild(Object parent, int index) {
-	Vector children = getChildren(parent);
-	return (children == null) ? null : children.elementAt(index);
+    //otherwise parent must be an offending design material
+    if (allOffenders.contains(parent)) {
+      Vector res = new Vector();
+      ToDoList list = Designer.TheDesigner.getToDoList();
+      java.util.Enumeration enum = list.elements();
+      while (enum.hasMoreElements()) {
+	ToDoItem item = (ToDoItem) enum.nextElement();
+	VectorSet offs = item.getOffenders();
+	if (offs.contains(parent)) res.addElement(item);
+      }
+      return res;
     }
-
-    /**
-     * @see javax.swing.tree.TreeModel#getChildCount(java.lang.Object)
-     */
-    public int getChildCount(Object parent) {
-	Vector children = getChildren(parent);
-	return (children == null) ? 0 : children.size();
-    }
-
-    /**
-     * @see javax.swing.tree.TreeModel#getIndexOfChild(
-     * java.lang.Object, java.lang.Object)
-     */
-    public int getIndexOfChild(Object parent, Object child) {
-	Vector children = getChildren(parent);
-	return (children == null) ? -1 : children.indexOf(child);
-    }
-
-    /**
-     * @see javax.swing.tree.TreeModel#isLeaf(java.lang.Object)
-     */
-    public boolean isLeaf(Object node) {
-	if (node instanceof ToDoList) return false;
-	if (getChildCount(node) > 0) return false;
-	return true;
-    }
-
-
-    /**
-     * @param parent the parent object to check for offspring
-     * @return the children
-     */
-    public Vector getChildren(Object parent) {
-        ListSet allOffenders = new ListSet();
-        allOffenders.addAllElementsSuchThat(Designer.theDesigner()
-            .getToDoList().getOffenders(),
-            getListPredicate());
-
-
-	if (parent instanceof ToDoList) {
-	    return allOffenders.asVector();
-	}
-	//otherwise parent must be an offending design material
-	if (allOffenders.contains(parent)) {
-	    Vector res = new Vector();
-	    ToDoList list = Designer.theDesigner().getToDoList();
-	    Enumeration elems = list.elements();
-	    while (elems.hasMoreElements()) {
-		ToDoItem item = (ToDoItem) elems.nextElement();
-		ListSet offs = new ListSet();
-                offs.addAllElementsSuchThat(item.getOffenders(),
-                    getListPredicate());
-		if (offs.contains(parent)) res.addElement(item);
-	    }
-	    return res;
-	}
-	return null;
-    }
-
-    /**
-     * @see javax.swing.tree.TreeModel#valueForPathChanged(
-     * javax.swing.tree.TreePath, java.lang.Object)
-     */
-    public void valueForPathChanged(TreePath path, Object newValue) { }
-
-    /**
-     * @see javax.swing.tree.TreeModel#addTreeModelListener(javax.swing.event.TreeModelListener)
-     */
-    public void addTreeModelListener(TreeModelListener l) { }
-
-    /**
-     * @see javax.swing.tree.TreeModel#removeTreeModelListener(javax.swing.event.TreeModelListener)
-     */
-    public void removeTreeModelListener(TreeModelListener l) { }
+    return null;
+  }
+  
+  public void valueForPathChanged(TreePath path, Object newValue) { }
+  public void addTreeModelListener(TreeModelListener l) { }
+  public void removeTreeModelListener(TreeModelListener l) { }
 
 
 } /* end class GoListToOffenderToItem */

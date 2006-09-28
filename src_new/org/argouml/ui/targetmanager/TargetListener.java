@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 2002-2006 The Regents of the University of California. All
+// Copyright (c) 2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -26,24 +26,25 @@ package org.argouml.ui.targetmanager;
 import java.util.EventListener;
 
 /**
- * Listener for target events.
+ * @author gebruiker
  *
- * @author jaap.branderhorst@xs4all.nl
+ * To change the template for this generated type comment go to
+ * Window>Preferences>Java>Code Generation>Code and Comments
  */
 public interface TargetListener extends EventListener {
-
+    
     /**
      * Fired when a total new set of targets is set
      * @param e The targetevent, name will be TARGET_SET
      */
     public void targetSet(TargetEvent e);
-
+    
     /**
      * Fired when a target is removed from the list of targets
      * @param e The targetevent, name will be TARGET_REMOVED
      */
     public void targetRemoved(TargetEvent e);
-
+    
     /**
      * Fired when a target is added to the list of targets.
      * @param e The targetevent, name will be TARGET_ADDED

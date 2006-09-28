@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,120 +23,77 @@
 
 package org.argouml.uml.cognitive.critics;
 
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Graphics;
-import java.awt.Rectangle;
+import java.awt.*;
+import javax.swing.*;
 
-import org.apache.log4j.Logger;
-import org.argouml.cognitive.ToDoItem;
-import org.argouml.ui.Clarifier;
-import org.argouml.uml.diagram.ui.AttributesCompartmentContainer;
-import org.tigris.gef.presentation.Fig;
+import org.tigris.gef.presentation.*;
 
-/**
- * Class that represents the clarifier (red wavy line)
- * for a attribute compartment.
- *
- */
+import org.argouml.ui.*;
+import org.apache.log4j.Category;
+import org.argouml.cognitive.*;
+import org.argouml.uml.diagram.static_structure.ui.*;
+
 public class ClAttributeCompartment implements Clarifier {
+    protected static Category cat = Category.getInstance(ClAttributeCompartment.class);
+  public static ClAttributeCompartment TheInstance = new ClAttributeCompartment();
+  public static int WAVE_LENGTH = 4;
+  public static int WAVE_HEIGHT = 2;
 
-    private static final Logger LOG =
-	Logger.getLogger(ClAttributeCompartment.class);
+  ////////////////////////////////////////////////////////////////
+  // instance variables
+  Fig _fig;
 
-    private static ClAttributeCompartment theInstance =
-	new ClAttributeCompartment();
+  public void setFig(Fig f) { _fig = f; }
+  public void setToDoItem(ToDoItem i) { }
 
-    private static final int WAVE_LENGTH = 4;
-    private static final int WAVE_HEIGHT = 2;
+  public void paintIcon(Component c, Graphics g, int x, int y) {
+    if (_fig instanceof FigClass) {
+      FigClass fc = (FigClass) _fig;
 
-    ////////////////////////////////////////////////////////////////
-    // instance variables
-    private Fig fig;
+      // added by Eric Lefevre 13 Mar 1999: we must check if the FigText for
+      // attributes is drawn before drawing things over it
+      if ( !fc.isAttributeVisible() ) {
+        _fig = null;
+        return;
+      }
 
-    /**
-     * @see org.argouml.ui.Clarifier#setFig(org.tigris.gef.presentation.Fig)
-     */
-    public void setFig(Fig f) { fig = f; }
-
-    /**
-     * @see org.argouml.ui.Clarifier#setToDoItem(org.argouml.cognitive.ToDoItem)
-     */
-    public void setToDoItem(ToDoItem i) { }
-
-    /**
-     * @see javax.swing.Icon#paintIcon(java.awt.Component, java.awt.Graphics,
-     * int, int)
-     */
-    public void paintIcon(Component c, Graphics g, int x, int y) {
-	if (fig instanceof AttributesCompartmentContainer) {
-	    AttributesCompartmentContainer fc =
-	        (AttributesCompartmentContainer) fig;
-
-	    // added by Eric Lefevre 13 Mar 1999: we must check if the
-	    // FigText for attributes is drawn before drawing things
-	    // over it
-	    if (!fc.isAttributesVisible()) {
-		fig = null;
-		return;
-	    }
-
-	    Rectangle fr = fc.getAttributesBounds();
-	    int left  = fr.x + 6;
-	    int height = fr.y + fr.height - 5;
-	    int right = fr.x + fr.width - 6;
-	    g.setColor(Color.red);
-	    int i = left;
-	    while (true) {
-		g.drawLine(i, height, i + WAVE_LENGTH, height + WAVE_HEIGHT);
-		i += WAVE_LENGTH;
-		if (i >= right) break;
-		g.drawLine(i, height + WAVE_HEIGHT, i + WAVE_LENGTH, height);
-		i += WAVE_LENGTH;
-		if (i >= right) break;
-		g.drawLine(i, height, i + WAVE_LENGTH,
-			   height + WAVE_HEIGHT / 2);
-		i += WAVE_LENGTH;
-		if (i >= right) break;
-		g.drawLine(i, height + WAVE_HEIGHT / 2, i + WAVE_LENGTH,
-			   height);
-		i += WAVE_LENGTH;
-		if (i >= right) break;
-	    }
-	    fig = null;
-	}
+      FigGroup fg = fc.getAttributesFig();
+      int left  = fg.getX() + 6;
+      int height = fg.getY() + fg.getHeight() - 5;
+      int right = fg.getX() + fg.getWidth() - 6;
+      g.setColor(Color.red);
+      int i = left;
+      while (true) {
+	g.drawLine(i, height, i + WAVE_LENGTH, height + WAVE_HEIGHT);
+	i += WAVE_LENGTH;
+	if (i >= right) break;
+	g.drawLine(i, height + WAVE_HEIGHT, i + WAVE_LENGTH, height);
+	i += WAVE_LENGTH;
+	if (i >= right) break;
+	g.drawLine(i, height, i + WAVE_LENGTH, height + WAVE_HEIGHT/2);
+	i += WAVE_LENGTH;
+	if (i >= right) break;
+	g.drawLine(i, height + WAVE_HEIGHT/2, i + WAVE_LENGTH, height);
+	i += WAVE_LENGTH;
+	if (i >= right) break;
+      }
+      _fig = null;
     }
+  }
 
-    /**
-     * @see javax.swing.Icon#getIconWidth()
-     */
-    public int getIconWidth() { return 0; }
+  public int getIconWidth() { return 0; }
+  public int getIconHeight() { return 0; }
 
-    /**
-     * @see javax.swing.Icon#getIconHeight()
-     */
-    public int getIconHeight() { return 0; }
-
-    /**
-     * @see org.argouml.ui.Clarifier#hit(int, int)
-     */
-    public boolean hit(int x, int y) {
-	if (!(fig instanceof AttributesCompartmentContainer)) {
-	    LOG.debug("not a FigClass");
-	    return false;
-	}
-	AttributesCompartmentContainer fc =
-	    (AttributesCompartmentContainer) fig;
-	Rectangle fr = fc.getAttributesBounds();
-	boolean res = fr.contains(x, y);
-	fig = null;
-	return res;
+  public boolean hit(int x, int y) {
+    if (!(_fig instanceof FigClass)) {
+      cat.debug("not a FigClass");
+      return false;
     }
-    /**
-     * @return Returns the theInstance.
-     */
-    public static ClAttributeCompartment getTheInstance() {
-        return theInstance;
-    }
+    FigClass fc = (FigClass) _fig;
+    FigGroup fg = fc.getAttributesFig();
+    boolean res = fg.contains(x, y);
+    _fig = null;
+    return res;
+  }
 
 } /* end class ClAttributeCompartment */

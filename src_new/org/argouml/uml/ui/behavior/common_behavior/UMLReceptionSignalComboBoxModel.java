@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,15 +23,14 @@
 
 package org.argouml.uml.ui.behavior.common_behavior;
 
-import java.beans.PropertyChangeEvent;
-import java.util.Collection;
-
-import org.argouml.kernel.Project;
-import org.argouml.kernel.ProjectManager;
-import org.argouml.model.Model;
-import org.argouml.model.RemoveAssociationEvent;
+import org.argouml.model.uml.UmlModelEventPump;
+import org.argouml.model.uml.modelmanagement.ModelManagementHelper;
 import org.argouml.uml.ui.UMLComboBoxModel2;
 
+import ru.novosoft.uml.MBase;
+import ru.novosoft.uml.behavior.common_behavior.MReception;
+import ru.novosoft.uml.behavior.common_behavior.MSignal;
+import ru.novosoft.uml.foundation.core.MNamespace;
 
 /**
  * The model for the signal combobox on the reception proppanel.
@@ -41,11 +39,11 @@ public class UMLReceptionSignalComboBoxModel extends UMLComboBoxModel2 {
 
     /**
      * Constructor for UMLReceptionSignalComboBoxModel.
+     * @param container
      */
     public UMLReceptionSignalComboBoxModel() {
         super("signal", false);
-        Model.getPump().addClassModelEventListener(this,
-                Model.getMetaTypes().getNamespace(), "ownedElement");
+        UmlModelEventPump.getPump().addClassModelEventListener(this, MNamespace.class, "ownedElement");
     }
 
     /**
@@ -53,25 +51,20 @@ public class UMLReceptionSignalComboBoxModel extends UMLComboBoxModel2 {
      */
     protected void buildModelList() {
         Object target = getTarget();
-        if (Model.getFacade().isAReception(target)) {
-            Object rec = /*(MReception)*/ target;
+        if (target instanceof MReception) {
+            MReception rec = (MReception)target;
             removeAllElements();
-            Project p = ProjectManager.getManager().getCurrentProject();
-            Object model = p.getRoot();
-            setElements(Model.getModelManagementHelper()
-                    .getAllModelElementsOfKindWithModel(
-                            model,
-                            Model.getMetaTypes().getSignal()));
-            setSelectedItem(Model.getFacade().getSignal(rec));
+            setElements(ModelManagementHelper.getHelper().getAllModelElementsOfKind(MSignal.class));
+            setSelectedItem(rec.getSignal());      
         }
-
+         
     }
 
     /**
-     * @see org.argouml.uml.ui.UMLComboBoxModel2#isValidElement(Object)
+     * @see org.argouml.uml.ui.UMLComboBoxModel2#isValidElement(ru.novosoft.uml.MBase)
      */
     protected boolean isValidElement(Object m) {
-        return Model.getFacade().isASignal(m);
+        return m instanceof MSignal;
     }
 
     /**
@@ -79,37 +72,9 @@ public class UMLReceptionSignalComboBoxModel extends UMLComboBoxModel2 {
      */
     protected Object getSelectedModelElement() {
         if (getTarget() != null) {
-            return Model.getFacade().getSignal(getTarget());
+            return ((MReception)getTarget()).getSignal();
         }
         return null;
-    }
-
-    /**
-     * Override UMLComboBoxModel2's default handling of RemoveAssociation. We
-     * get this from MDR for the previous signal when a different signal is
-     * selected. Don't let that remove it from the combo box. Only remove it if
-     * the signal was removed from the namespace.
-     * <p>
-     *
-     * @see org.argouml.uml.ui.UMLComboBoxModel2#propertyChange(java.beans.PropertyChangeEvent)
-     */
-    public void propertyChange(PropertyChangeEvent evt) {
-        if (evt instanceof RemoveAssociationEvent) {
-            if ("ownedElement".equals(evt.getPropertyName())) {
-                Object o = getChangedElement(evt);
-                if (contains(o)) {
-                    buildingModel = true;
-                    if (o instanceof Collection) {
-                        removeAll((Collection) o);
-                    } else {
-                        removeElement(o);
-                    }
-                    buildingModel = false;
-                }
-            }
-        } else {
-            super.propertyChange(evt);
-        }
     }
 
 }

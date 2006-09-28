@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,20 +22,26 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: SelectionUseCase.java
+// Classes: SelectionUseCase
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.diagram.use_case.ui;
 
+import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Rectangle;
 
 import javax.swing.Icon;
 
-import org.apache.log4j.Logger;
+import org.apache.log4j.Category;
 import org.argouml.application.helpers.ResourceLoaderWrapper;
-import org.argouml.model.Model;
-import org.argouml.uml.diagram.ui.SelectionNodeClarifiers;
+import org.argouml.model.uml.UmlFactory;
+import org.argouml.uml.diagram.ui.ModeCreateEdgeAndNode;
+import org.argouml.uml.diagram.ui.SelectionWButtons;
 import org.tigris.gef.base.Editor;
 import org.tigris.gef.base.Globals;
-import org.tigris.gef.base.ModeCreateEdgeAndNode;
 import org.tigris.gef.base.ModeManager;
 import org.tigris.gef.base.ModeModify;
 import org.tigris.gef.base.SelectionManager;
@@ -43,46 +49,34 @@ import org.tigris.gef.graph.MutableGraphModel;
 import org.tigris.gef.presentation.Fig;
 import org.tigris.gef.presentation.FigNode;
 import org.tigris.gef.presentation.Handle;
+import ru.novosoft.uml.behavior.use_cases.MActorImpl;
+import ru.novosoft.uml.behavior.use_cases.MUseCaseImpl;
+import ru.novosoft.uml.foundation.core.MAssociation;
+import ru.novosoft.uml.foundation.core.MGeneralization;
 
-/**
- * @author jrobbins@ics.uci.edu
- */
-public class SelectionUseCase extends SelectionNodeClarifiers {
-    /**
-     * Logger.
-     */
-    private static final Logger LOG =
-        Logger.getLogger(SelectionUseCase.class);
-
-    /**
-     * Remember the pressed button, 
-     * for the case where the mouse is released not above a fig.
-     */
-    private int code;
-
+public class SelectionUseCase extends SelectionWButtons {
+    protected static Category cat =
+        Category.getInstance(SelectionUseCase.class);
     ////////////////////////////////////////////////////////////////
     // constants
-    private static Icon inherit =
-        ResourceLoaderWrapper.lookupIconResource("Generalization");
-    private static Icon assoc =
-        ResourceLoaderWrapper.lookupIconResource("Association");
+    public static Icon inherit =
+        ResourceLoaderWrapper.getResourceLoaderWrapper().lookupIconResource(
+            "Generalization");
+    public static Icon assoc =
+        ResourceLoaderWrapper.getResourceLoaderWrapper().lookupIconResource(
+            "Association");
 
     ////////////////////////////////////////////////////////////////
     // constructors
 
-    /**
-     * Construct a new SelectionUseCase for the given Fig.
-     *
-     * @param f The given Fig.
-     */
+    /** Construct a new SelectionUseCase for the given Fig */
     public SelectionUseCase(Fig f) {
         super(f);
     }
 
-    /**
-     * Return a handle ID for the handle under the mouse, or -1 if
-     * none. TODO: in the future, return a Handle instance or
-     * null. <p>
+    /** Return a handle ID for the handle under the mouse, or -1 if
+     *  none. TODO: in the future, return a Handle instance or
+     *  null. <p>
      *  <pre>
      *   0-------1-------2
      *   |               |
@@ -90,31 +84,24 @@ public class SelectionUseCase extends SelectionNodeClarifiers {
      *   |               |
      *   5-------6-------7
      * </pre>
-     *
-     * @see org.tigris.gef.base.Selection#hitHandle(java.awt.Rectangle,
-     * org.tigris.gef.presentation.Handle)
      */
     public void hitHandle(Rectangle r, Handle h) {
         super.hitHandle(r, h);
-        if (h.index != -1) {
+        if (h.index != -1)
             return;
-        }
-        if (!isPaintButtons()) {
+        if (!_paintButtons)
             return;
-        }
         Editor ce = Globals.curEditor();
         SelectionManager sm = ce.getSelectionManager();
-        if (sm.size() != 1) {
+        if (sm.size() != 1)
             return;
-        }
         ModeManager mm = ce.getModeManager();
-        if (mm.includes(ModeModify.class) && getPressedButton() == -1) {
+        if (mm.includes(ModeModify.class) && _pressedButton == -1)
             return;
-        }
-        int cx = getContent().getX();
-        int cy = getContent().getY();
-        int cw = getContent().getWidth();
-        int ch = getContent().getHeight();
+        int cx = _content.getX();
+        int cy = _content.getY();
+        int cw = _content.getWidth();
+        int ch = _content.getHeight();
         int iw = inherit.getIconWidth();
         int ih = inherit.getIconHeight();
         int aw = assoc.getIconWidth();
@@ -137,139 +124,116 @@ public class SelectionUseCase extends SelectionNodeClarifiers {
         }
     }
 
-    /**
-     * @see org.tigris.gef.base.SelectionButtons#paintButtons(Graphics)
-     */
+    /** Paint the handles at the four corners and midway along each edge
+     * of the bounding box.  */
     public void paintButtons(Graphics g) {
-        int cx = getContent().getX();
-        int cy = getContent().getY();
-        int cw = getContent().getWidth();
-        int ch = getContent().getHeight();
+        int cx = _content.getX();
+        int cy = _content.getY();
+        int cw = _content.getWidth();
+        int ch = _content.getHeight();
         paintButtonAbove(inherit, g, cx + cw / 2, cy, 10);
         paintButtonBelow(inherit, g, cx + cw / 2, cy + ch, 11);
         paintButtonLeft(assoc, g, cx + cw, cy + ch / 2, 12);
         paintButtonRight(assoc, g, cx, cy + ch / 2, 13);
     }
 
-    /**
-     * @see org.tigris.gef.base.Selection#dragHandle(int, int, int, int,
-     * org.tigris.gef.presentation.Handle)
-     */
     public void dragHandle(int mX, int mY, int anX, int anY, Handle hand) {
         if (hand.index < 10) {
-            setPaintButtons(false);
+            _paintButtons = false;
             super.dragHandle(mX, mY, anX, anY, hand);
             return;
         }
-        int cx = getContent().getX(), cy = getContent().getY();
-        int cw = getContent().getWidth(), ch = getContent().getHeight();
-        Object edgeType = null;
-        Object nodeType = null;
-        if (hand.index == 10 || hand.index == 11) {
-            nodeType = Model.getMetaTypes().getUseCase();
-        } else {
-            nodeType = Model.getMetaTypes().getActor();
-        }
+        int cx = _content.getX(), cy = _content.getY();
+        int cw = _content.getWidth(), ch = _content.getHeight();
+        int newX = cx, newY = cy, newW = cw, newH = ch;
+        Dimension minSize = _content.getMinimumSize();
+        int minWidth = minSize.width, minHeight = minSize.height;
+        Class edgeClass = null;
+        Class nodeClass = null;
+        if (hand.index == 10 || hand.index == 11)
+            nodeClass = MUseCaseImpl.class;
+        else
+            nodeClass = MActorImpl.class;
 
         int bx = mX, by = mY;
         boolean reverse = false;
         switch (hand.index) {
-	case 10 : //add superclass
-	    edgeType = Model.getMetaTypes().getGeneralization();
-	    by = cy;
-	    bx = cx + cw / 2;
-	    break;
-	case 11 : //add subclass
-	    edgeType = Model.getMetaTypes().getGeneralization();
-	    reverse = true;
-	    by = cy + ch;
-	    bx = cx + cw / 2;
-	    break;
-	case 12 : //add assoc
-	    edgeType = Model.getMetaTypes().getAssociation();
-	    by = cy + ch / 2;
-	    bx = cx + cw;
-	    break;
-	case 13 : // add assoc
-	    edgeType = Model.getMetaTypes().getAssociation();
-	    reverse = true;
-	    by = cy + ch / 2;
-	    bx = cx;
-	    break;
-	default :
-	    LOG.warn("invalid handle number");
-	    break;
+            case 10 : //add superclass
+                edgeClass = MGeneralization.class;
+                by = cy;
+                bx = cx + cw / 2;
+                break;
+            case 11 : //add subclass
+                edgeClass = MGeneralization.class;
+                reverse = true;
+                by = cy + ch;
+                bx = cx + cw / 2;
+                break;
+            case 12 : //add assoc
+                edgeClass = MAssociation.class;
+                by = cy + ch / 2;
+                bx = cx + cw;
+                break;
+            case 13 : // add assoc
+                edgeClass = MAssociation.class;
+                reverse = true;
+                by = cy + ch / 2;
+                bx = cx;
+                break;
+            default :
+                cat.warn("invalid handle number");
+                break;
         }
-        code = hand.index;
-        if (edgeType != null && nodeType != null) {
+        if (edgeClass != null && nodeClass != null) {
             Editor ce = Globals.curEditor();
             ModeCreateEdgeAndNode m =
-                new ModeCreateEdgeAndNode(ce, edgeType, false, this);
-            m.setup((FigNode) getContent(), getContent().getOwner(),
-                    bx, by, reverse);
-            ce.pushMode(m);
+                new ModeCreateEdgeAndNode(ce, edgeClass, nodeClass, false);
+            m.setup((FigNode) _content, _content.getOwner(), bx, by, reverse);
+            ce.mode(m);
         }
 
     }
 
+    
+    
 
     /**
-     * @see org.tigris.gef.base.SelectionButtons#createEdgeAbove(
-     *         org.tigris.gef.graph.MutableGraphModel, java.lang.Object)
-     */
+       * @see org.argouml.uml.diagram.ui.SelectionWButtons#createEdgeAbove(org.tigris.gef.graph.MutableGraphModel, java.lang.Object)
+       */
     protected Object createEdgeAbove(MutableGraphModel gm, Object newNode) {
-        return gm.connect(getContent().getOwner(), newNode,
-                // TODO: Remove when GEF with this fixed and incorporated
-                // http://gef.tigris.org/issues/show_bug.cgi?id=203
-               (Class) Model.getMetaTypes().getGeneralization());
+        return gm.connect(_content.getOwner(), newNode, MGeneralization.class);
     }
 
     /**
-     * @see org.tigris.gef.base.SelectionButtons#createEdgeLeft(
-     *         org.tigris.gef.graph.MutableGraphModel, java.lang.Object)
+     * @see org.argouml.uml.diagram.ui.SelectionWButtons#createEdgeLeft(org.tigris.gef.graph.MutableGraphModel, java.lang.Object)
      */
     protected Object createEdgeLeft(MutableGraphModel gm, Object newNode) {
-        return gm.connect(newNode, getContent().getOwner(),
-            // TODO: Remove (Class) when GEF with this fixed and incorporated
-            // http://gef.tigris.org/issues/show_bug.cgi?id=203
-            (Class) Model.getMetaTypes().getAssociation());
+        return gm.connect(newNode, _content.getOwner(), MAssociation.class);
     }
 
     /**
-     * @see org.tigris.gef.base.SelectionButtons#createEdgeRight(
-     *         org.tigris.gef.graph.MutableGraphModel, java.lang.Object)
+     * @see org.argouml.uml.diagram.ui.SelectionWButtons#createEdgeRight(org.tigris.gef.graph.MutableGraphModel, java.lang.Object)
      */
     protected Object createEdgeRight(MutableGraphModel gm, Object newNode) {
-        return gm.connect(getContent().getOwner(), newNode,
-            // TODO: Remove when GEF with this fixed and incorporated
-            // http://gef.tigris.org/issues/show_bug.cgi?id=203
-			  (Class) Model.getMetaTypes().getAssociation());
+        return gm.connect(_content.getOwner(), newNode, MAssociation.class);
     }
 
     /**
-     * @see org.tigris.gef.base.SelectionButtons#createEdgeUnder(
-     *         org.tigris.gef.graph.MutableGraphModel, java.lang.Object)
+     * @see org.argouml.uml.diagram.ui.SelectionWButtons#createEdgeUnder(org.tigris.gef.graph.MutableGraphModel, java.lang.Object)
      */
     protected Object createEdgeUnder(MutableGraphModel gm, Object newNode) {
-        return gm.connect(newNode, getContent().getOwner(),
-            // TODO: Remove when GEF with this fixed and incorporated
-            // http://gef.tigris.org/issues/show_bug.cgi?id=203
-			  (Class) Model.getMetaTypes().getGeneralization());
+        return gm.connect(newNode, _content.getOwner(), MGeneralization.class);
     }
 
     /**
-     * @see org.tigris.gef.base.SelectionButtons#getNewNode(int)
+     * @see org.argouml.uml.diagram.ui.SelectionWButtons#getNewNode(int)
      */
     protected Object getNewNode(int buttonCode) {
         Object newNode = null;
-        if (buttonCode < 10) {
-            buttonCode = code;
-        }
-        if (buttonCode == 10 || buttonCode == 11) {
-            newNode = Model.getUseCasesFactory().createUseCase();
-        } else {
-            newNode = Model.getUseCasesFactory().createActor();
-        }
+        if (buttonCode == 10 || buttonCode == 11)
+            newNode = UmlFactory.getFactory().getUseCases().createUseCase();
+        else
+            newNode = UmlFactory.getFactory().getUseCases().createActor();
         return newNode;
     }
 

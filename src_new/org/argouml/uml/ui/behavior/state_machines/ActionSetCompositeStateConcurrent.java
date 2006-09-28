@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,58 +21,45 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $header$
 package org.argouml.uml.ui.behavior.state_machines;
 
 import java.awt.event.ActionEvent;
 
-import javax.swing.Action;
-
-import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.application.api.Argo;
+import org.argouml.uml.ui.UMLChangeAction;
 import org.argouml.uml.ui.UMLCheckBox2;
-import org.tigris.gef.undo.UndoableAction;
+import ru.novosoft.uml.behavior.state_machines.MCompositeState;
 
 /**
  * @since Dec 14, 2002
  * @author jaap.branderhorst@xs4all.nl
  */
-public class ActionSetCompositeStateConcurrent extends UndoableAction {
+public class ActionSetCompositeStateConcurrent extends UMLChangeAction {
 
-    private static final ActionSetCompositeStateConcurrent SINGLETON =
-	new ActionSetCompositeStateConcurrent();
+    public static final ActionSetCompositeStateConcurrent SINGLETON = new ActionSetCompositeStateConcurrent();
 
     /**
      * Constructor for ActionSetCompositeStateConcurrent.
+     * @param s
      */
     protected ActionSetCompositeStateConcurrent() {
-        super(Translator.localize("action.set"), null);
-        // Set the tooltip string:
-        putValue(Action.SHORT_DESCRIPTION, 
-                Translator.localize("action.set"));
+        super(Argo.localize("CoreMenu", "Set"), true, NO_ICON);
     }
-
+    
     /**
      * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
      */
     public void actionPerformed(ActionEvent e) {
         super.actionPerformed(e);
         if (e.getSource() instanceof UMLCheckBox2) {
-            UMLCheckBox2 source = (UMLCheckBox2) e.getSource();
+            UMLCheckBox2 source = (UMLCheckBox2)e.getSource();
             Object target = source.getTarget();
-            if (Model.getFacade().isACompositeState(target)) {
-                Object compositeState = target;
-                Model.getStateMachinesHelper().setConcurrent(
-                        compositeState,
-                        !Model.getFacade().isConcurrent(compositeState));
+            if (target instanceof MCompositeState) {
+                MCompositeState m = (MCompositeState)target;
+                m.setConcurent(!m.isConcurent());
             }
         }
-    }
-
-    /**
-     * @return Returns the sINGLETON.
-     */
-    public static ActionSetCompositeStateConcurrent getInstance() {
-        return SINGLETON;
     }
 
 }

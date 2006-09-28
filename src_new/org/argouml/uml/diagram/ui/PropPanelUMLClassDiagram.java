@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,22 +21,24 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $Id$
 package org.argouml.uml.diagram.ui;
 
-import org.argouml.i18n.Translator;
+import org.argouml.application.api.Argo;
 
 /**
- * @author jaap.branderhorst@xs4all.nl
+ * 
+ * @author jaap.branderhorst@xs4all.nl	
  * @since Jan 3, 2003
  */
 public class PropPanelUMLClassDiagram extends PropPanelDiagram {
 
     /**
      * Constructor for PropPanelUMLClassDiagram.
+     * @param diagramName
      */
     public PropPanelUMLClassDiagram() {
-        super(Translator.localize("label.class-diagram"),
-                lookupIcon("ClassDiagram"));
+        super(Argo.localize("UMLMenu", "label.class-diagram"));
     }
 
 }

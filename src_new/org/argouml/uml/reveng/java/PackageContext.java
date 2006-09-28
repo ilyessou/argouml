@@ -1,43 +1,38 @@
 // $Id$
-// Copyright (c) 2003-2006 The Regents of the University of California. All
-// Rights Reserved. Permission to use, copy, modify, and distribute this
-// software and its documentation without fee, and without a written
-// agreement is hereby granted, provided that the above copyright notice
-// and this paragraph appear in all copies.  This software program and
-// documentation are copyrighted by The Regents of the University of
-// California. The software program and documentation are supplied "AS
-// IS", without any accompanying services from The Regents. The Regents
-// does not warrant that the operation of the program will be
-// uninterrupted or error-free. The end-user understands that the program
-// was developed for research purposes and is advised not to rely
-// exclusively on the program for any reason.  IN NO EVENT SHALL THE
-// UNIVERSITY OF CALIFORNIA BE LIABLE TO ANY PARTY FOR DIRECT, INDIRECT,
-// SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, INCLUDING LOST PROFITS,
-// ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN IF
-// THE UNIVERSITY OF CALIFORNIA HAS BEEN ADVISED OF THE POSSIBILITY OF
-// SUCH DAMAGE. THE UNIVERSITY OF CALIFORNIA SPECIFICALLY DISCLAIMS ANY
-// WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
-// MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. THE SOFTWARE
-// PROVIDED HEREUNDER IS ON AN "AS IS" BASIS, AND THE UNIVERSITY OF
-// CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
-// UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+
+/*
+  JavaRE - Code generation and reverse engineering for UML and Java
+  Copyright (C) 2000 Marcus Andersson andersson@users.sourceforge.net
+
+  This library is free software; you can redistribute it and/or modify
+  it under the terms of the GNU Lesser General Public License as
+  published by the Free Software Foundation; either version 2.1 of the
+  License, or (at your option) any later version.
+
+  This library is distributed in the hope that it will be useful, but
+  WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  Lesser General Public License for more details.
+
+  You should have received a copy of the GNU Lesser General Public
+  License along with this library; if not, write to the Free Software
+  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+  USA
+
+*/
 
 package org.argouml.uml.reveng.java;
 
-import org.apache.log4j.Logger;
-import org.argouml.model.Facade;
-import org.argouml.model.Model;
-import org.argouml.uml.reveng.ImportClassLoader;
+import org.argouml.uml.*;
+
+import org.argouml.model.ModelFacade;
+import org.argouml.model.uml.UmlFactory;
 
 /**
- * This context is a package.
- *
- * @author Marcus Andersson
- */
-class PackageContext extends Context {
-    
-    private static final Logger LOG = Logger.getLogger(PackageContext.class);
-    
+   This context is a package.
+*/
+class PackageContext extends Context
+{
     /** The package this context represents. */
     private Object mPackage;
 
@@ -45,82 +40,51 @@ class PackageContext extends Context {
     private String javaName;
 
     /**
-       Create a new context from a package.
+	Create a new context from a package.
 
-       @param base Based on this context.
-       @param thePackage Represents this package.
+	@param base Based on this context.
+	@param mPackage Represents this package.
     */
-    public PackageContext(Context base, Object thePackage) {
+    public PackageContext(Context base, Object mPackage)
+    {
 	super(base);
-	this.mPackage = thePackage;
-	javaName = getJavaName(thePackage);
+	this.mPackage = mPackage;
+	javaName = getJavaName(mPackage);
     }
 
     public Object getInterface(String name)
-	throws ClassifierNotFoundException {
+	throws ClassifierNotFoundException
+    {
         // Search in model
-        Object mInterface = Model.getFacade().lookupIn(mPackage, name);
+        Object mInterface = ModelFacade.lookupIn(mPackage,name);
 
-        if (mInterface == null) {
-	    Class classifier;
-
+        if(mInterface == null) {
 	    // Try to find it via the classpath
 	    try {
+		Class classifier;
 
 		// Special case for model
-		if (Model.getFacade().isAModel(mPackage)) {
+		if(ModelFacade.isAModel(mPackage)) {
 		    classifier = Class.forName(name);
 		}
 		else {
-                    String clazzName = javaName + "." + name;
 		    classifier =
-			Class.forName(clazzName);
+			Class.forName(javaName + "." + name);
 		}
-		if (classifier.isInterface()) {
-		    mInterface =
-			Model.getCoreFactory()
-			    .buildInterface(name, mPackage);
-		    Model.getCoreHelper().setTaggedValue(mInterface,
-					       Facade.GENERATED_TAG,
-					       "yes");
+		if(classifier.isInterface()) {
+		    mInterface = UmlFactory.getFactory().getCore().buildInterface(name,mPackage);
+		    ModelFacade.setTaggedValue(mInterface,MMUtil.GENERATED_TAG,"yes");
 		}
 	    }
-	    catch (ClassNotFoundException e) {
+	    catch(ClassNotFoundException e) {
 		// We didn't find any interface
-                // try USER classpath
-                try {
-                    // Special case for model
-                    if (Model.getFacade().isAModel(mPackage)) {
-                        classifier =
-			    ImportClassLoader.getInstance().loadClass(name);
-                    }
-                    else {
-                        String clazzName = javaName + "." + name;
-                        classifier =
-			    ImportClassLoader.getInstance()
-			        .loadClass(clazzName);
-                    }
-		    if (classifier.isInterface()) {
-			mInterface =
-			    Model.getCoreFactory()
-			        .buildInterface(name, mPackage);
-			Model.getCoreHelper().setTaggedValue(mInterface,
-						   Facade.GENERATED_TAG,
-						   "yes");
-		    }
-                }
-                catch (Exception e1) {
-		    // Ignore.
-                    // TODO: Why are these being ignored?
-                    LOG.warn("Exception ignored", e1);
-                }
 	    }
 	}
-	if (mInterface == null && getContext() != null) {
+	if(mInterface == null && context != null) {
 	    // Continue the search through the rest of the model
-	    mInterface = getContext().getInterface(name);
+	    mInterface = context.getInterface(name);
         }
-	if (mInterface == null) {
+	if(mInterface == null) {
 	    throw new ClassifierNotFoundException(name);
 	}
 
@@ -128,108 +92,68 @@ class PackageContext extends Context {
     }
 
     /**
-     * Get a classifier from the model. If it is not in the model, try
-     * to find it with the CLASSPATH. If found, in the classpath, the
-     * classifier is created and added to the model. If not found at
-     * all, a datatype is created and added to the model.
-     *
-     * @param name The name of the classifier to find.
-     * @return Found classifier.
-     */
-    public Object get(String name)
-	throws ClassifierNotFoundException {
-	// Search in model
-	Object mClassifier = Model.getFacade().lookupIn(mPackage, name);
+       Get a classifier from the model. If it is not in the model, try
+       to find it with the CLASSPATH. If found, in the classpath, the
+       classifier is created and added to the model. If not found at
+       all, a datatype is created and added to the model.
 
-	if (mClassifier == null) {
-	    Class classifier;
+       @param classifierName The name of the classifier to find.
+       @return Found classifier.
+    */
+    public Object get(String name)
+	throws ClassifierNotFoundException
+    {
+	// Search in model
+	Object mClassifier = ModelFacade.lookupIn(mPackage,name);
+
+	if(mClassifier == null) {
 	    // Try to find it via the classpath
 	    try {
+		Class classifier;
 
 		// Special case for model
-		if (Model.getFacade().isAModel(mPackage)) {
+		if(ModelFacade.isAModel(mPackage)) {
 		    classifier = Class.forName(name);
 		}
 		else {
-                    String clazzName = javaName + "." + name;
 		    classifier =
-			Class.forName(clazzName);
+			Class.forName(javaName + "." + name);
 		}
-		if (classifier.isInterface()) {
-		    mClassifier =
-			Model.getCoreFactory()
-			    .buildInterface(name, mPackage);
+		if(classifier.isInterface()) {
+		    mClassifier = UmlFactory.getFactory().getCore().buildInterface(name,mPackage);
 		}
 		else {
-		    mClassifier =
-			Model.getCoreFactory()
-			    .buildClass(name, mPackage);
+		    mClassifier = UmlFactory.getFactory().getCore().buildClass(name,mPackage);
 		}
-		Model.getCoreHelper().setTaggedValue(mClassifier,
-					   Facade.GENERATED_TAG,
-					   "yes");
+		ModelFacade.setTaggedValue(mClassifier,MMUtil.GENERATED_TAG,"yes");
 	    }
-	    catch (ClassNotFoundException e) {
+	    catch(ClassNotFoundException e) {
 		// No class or interface found
-                // try USER classpath
-
-                try {
-                    // Special case for model
-                    if (Model.getFacade().isAModel(mPackage)) {
-                        classifier =
-			    ImportClassLoader.getInstance().loadClass(name);
-                    }
-                    else {
-                        String clazzName = javaName + "." + name;
-                        classifier =
-			    ImportClassLoader.getInstance()
-			        .loadClass(clazzName);
-                    }
-		    if (classifier.isInterface()) {
-			mClassifier =
-			    Model.getCoreFactory()
-			        .buildInterface(name, mPackage);
-		    } else {
-			mClassifier =
-			    Model.getCoreFactory()
-			        .buildClass(name, mPackage);
-		    }
-		    Model.getCoreHelper().setTaggedValue(mClassifier,
-					       Facade.GENERATED_TAG,
-					       "yes");
-                }
-                catch (Exception e1) {
-		    // Ignore
-                    // TODO: Why are these being ignored? - tfm
-                    LOG.warn("Exception ignored", e1);
-                }
-            }
+	    }
 	}
-	if (mClassifier == null) {
+	if(mClassifier == null) {
 	    // Continue the search through the rest of the model
-	    if (getContext() != null) {
-		mClassifier = getContext().get(name);
+	    if(context != null) {
+		mClassifier = context.get(name);
 	    }
 	    else {
 		// Check for java data types
-		if (name.equals("int")
-		    || name.equals("long")
-		    || name.equals("short")
-		    || name.equals("byte")
-		    || name.equals("char")
-		    || name.equals("float")
-		    || name.equals("double")
-		    || name.equals("boolean")
-		    || name.equals("void")
-		    // How do I represent arrays in UML?
-		    || name.indexOf("[]") != -1) {
-		    mClassifier =
-			Model.getCoreFactory()
-			    .buildDataType(name, mPackage);
+		if(name.equals("int") ||
+		   name.equals("long") ||
+		   name.equals("short") ||
+		   name.equals("byte") ||
+		   name.equals("char") ||
+		   name.equals("float") ||
+		   name.equals("double") ||
+		   name.equals("boolean") ||
+		   name.equals("void") ||
+		   // How do I represent arrays in UML?
+		   name.indexOf("[]") != -1) {
+		    mClassifier = UmlFactory.getFactory().getCore().buildDataType(name,mPackage);
 		}
 	    }
 	}
-	if (mClassifier == null) {
+	if(mClassifier == null) {
 	    throw new ClassifierNotFoundException(name);
 	}
 

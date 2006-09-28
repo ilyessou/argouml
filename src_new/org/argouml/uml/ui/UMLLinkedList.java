@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -25,48 +24,85 @@
 // $header$
 package org.argouml.uml.ui;
 
-import java.awt.Color;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 
-import javax.swing.ListModel;
 import javax.swing.ListSelectionModel;
+import javax.swing.SwingUtilities;
+import javax.swing.event.ListSelectionEvent;
+
+import org.argouml.ui.targetmanager.TargetManager;
+
+import ru.novosoft.uml.foundation.core.MModelElement;
+
 
 /**
- * An UMLList2 that implements 'jump' behaviour. As soon as the user
- * doubleclicks on an element in the list, that element is selected in
- * argouml. <p>
- *
- * Also, it allows showing an icon with the text items in the list.<p>
- *
- * And, in case the listed item has no name, a default name is generated.
- *
+ * An UMLList that implements 'jump' behaviour. As soon as the user doubleclicks 
+ * on an element in the list, that element is selected in argouml.
  * @since Oct 2, 2002
  * @author jaap.branderhorst@xs4all.nl
  */
-public class UMLLinkedList extends UMLList2 {
+public class UMLLinkedList extends UMLList2 implements MouseListener {
 
     /**
      * Constructor for UMLLinkedList.
-     *
-     * @param dataModel the data model
-     * @param showIcon true if an icon should be shown
+     * @param container
+     * @param dataModel
      */
-    public UMLLinkedList(ListModel dataModel,
-            boolean showIcon) {
+    public UMLLinkedList(
+        UMLModelElementListModel2 dataModel, boolean showIcon) {
         super(dataModel, new UMLLinkedListCellRenderer(showIcon));
         setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        setForeground(Color.blue);
-        setSelectionForeground(Color.blue.darker());
-        UMLLinkMouseListener mouseListener = new UMLLinkMouseListener(this);
-        addMouseListener(mouseListener);
+        addMouseListener(this);
+    }
+    
+    public UMLLinkedList(UMLModelElementListModel2 dataModel) {
+        this(dataModel, false);
     }
 
     /**
-     * The constructor.
-     *
-     * @param dataModel the data model
+     * @see org.argouml.uml.ui.UMLList2#doIt(javax.swing.event.ListSelectionEvent)
      */
-    public UMLLinkedList(ListModel dataModel) {
-        this(dataModel, true);
+    protected void doIt(ListSelectionEvent e) {
+    }
+
+    /**
+     * @see java.awt.event.MouseListener#mouseClicked(java.awt.event.MouseEvent)
+     */
+    public void mouseClicked(MouseEvent e) {
+        if (e.getSource() == this) {
+            if (e.getClickCount() >=2 && SwingUtilities.isLeftMouseButton(e)) {
+                Object o = getSelectedValue();
+                if (o instanceof MModelElement) {                    
+                    TargetManager.getInstance().setTarget(o);
+                }
+            }
+            e.consume();
+        }
+    }
+
+    /**
+     * @see java.awt.event.MouseListener#mouseEntered(java.awt.event.MouseEvent)
+     */
+    public void mouseEntered(MouseEvent e) {
+    }
+
+    /**
+     * @see java.awt.event.MouseListener#mouseExited(java.awt.event.MouseEvent)
+     */
+    public void mouseExited(MouseEvent e) {
+    }
+
+    /**
+     * @see java.awt.event.MouseListener#mousePressed(java.awt.event.MouseEvent)
+     */
+    public void mousePressed(MouseEvent e) {
+    }
+
+    /**
+     * @see java.awt.event.MouseListener#mouseReleased(java.awt.event.MouseEvent)
+     */
+    public void mouseReleased(MouseEvent e) {
     }
 
 }

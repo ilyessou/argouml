@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -31,8 +30,14 @@ import java.util.Set;
 
 import org.argouml.kernel.Project;
 import org.argouml.kernel.ProjectManager;
-import org.argouml.model.Model;
+import org.argouml.model.uml.UmlModelEventPump;
+import org.argouml.model.uml.modelmanagement.ModelManagementHelper;
 import org.argouml.uml.ui.UMLComboBoxModel2;
+
+import ru.novosoft.uml.foundation.core.MClassifier;
+import ru.novosoft.uml.foundation.core.MGeneralization;
+import ru.novosoft.uml.foundation.core.MNamespace;
+import ru.novosoft.uml.model_management.MModel;
 
 /**
  * @since Nov 3, 2002
@@ -43,11 +48,11 @@ public class UMLGeneralizationPowertypeComboBoxModel
 
     /**
      * Constructor for UMLGeneralizationPowertypeComboBoxModel.
+     * @param container
      */
     public UMLGeneralizationPowertypeComboBoxModel() {
         super("powertype", true);
-        Model.getPump().addClassModelEventListener(this,
-                Model.getMetaTypes().getNamespace(), "ownedElement");
+        UmlModelEventPump.getPump().addClassModelEventListener(this, MNamespace.class, "ownedElement");
     }
 
     /**
@@ -55,7 +60,7 @@ public class UMLGeneralizationPowertypeComboBoxModel
      */
     protected Object getSelectedModelElement() {
         if (getTarget() != null) {
-            return Model.getFacade().getPowertype(getTarget());
+            return ((MGeneralization)getTarget()).getPowertype();
         }
         return null;
     }
@@ -68,22 +73,18 @@ public class UMLGeneralizationPowertypeComboBoxModel
         Project p = ProjectManager.getManager().getCurrentProject();
         Iterator it = p.getUserDefinedModels().iterator();
         while (it.hasNext()) {
-	    Object model = /*(MModel)*/ it.next();
-	    elements.addAll(Model.getModelManagementHelper()
-                .getAllModelElementsOfKind(model,
-                        Model.getMetaTypes().getClassifier()));
+           MModel model = (MModel)it.next();
+           elements.addAll(ModelManagementHelper.getHelper().getAllModelElementsOfKind(model, MClassifier.class));
         }
-        elements.addAll(Model.getModelManagementHelper()
-                .getAllModelElementsOfKind(p.getDefaultModel(),
-                        Model.getMetaTypes().getClassifier()));
+        elements.addAll(ModelManagementHelper.getHelper().getAllModelElementsOfKind(p.getDefaultModel(), MClassifier.class));
         setElements(elements);
     }
 
     /**
-     * @see org.argouml.uml.ui.UMLComboBoxModel2#isValidElement(Object)
+     * @see org.argouml.uml.ui.UMLComboBoxModel2#isValidElement(ru.novosoft.uml.MBase)
      */
     protected boolean isValidElement(Object element) {
-        return Model.getFacade().isAClassifier(element);
+        return element instanceof MClassifier;
     }
 
 }

@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 2002-2006 The Regents of the University of California. All
+// Copyright (c) 2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,8 +24,12 @@
 
 package org.argouml.uml.ui.behavior.collaborations;
 
-import org.argouml.model.Model;
 import org.argouml.uml.ui.UMLModelElementListModel2;
+
+import ru.novosoft.uml.MBase;
+import ru.novosoft.uml.behavior.collaborations.MAssociationEndRole;
+import ru.novosoft.uml.behavior.collaborations.MAssociationRole;
+import ru.novosoft.uml.foundation.core.MAssociationEnd;
 
 /**
  * @since Oct 5, 2002
@@ -36,6 +40,7 @@ public class UMLAssociationEndRoleBaseListModel
 
     /**
      * Constructor for UMLAssociationEndRoleBaseListModel.
+     * @param container
      */
     public UMLAssociationEndRoleBaseListModel() {
         super("base");
@@ -45,26 +50,17 @@ public class UMLAssociationEndRoleBaseListModel
      * @see org.argouml.uml.ui.UMLModelElementListModel2#buildModelList()
      */
     protected void buildModelList() {
-        removeAllElements();
-        if (getTarget() != null
-                && Model.getFacade().getBase(getTarget()) != null) {
-            addElement(Model.getFacade().getBase(getTarget()));
+        if (_target != null && ((MAssociationEndRole)getTarget()).getBase() != null) {
+            addElement(((MAssociationEndRole)getTarget()).getBase());
         }
     }
 
     /**
-     * @see org.argouml.uml.ui.UMLModelElementListModel2#isValidElement(Object)
+     * @see org.argouml.uml.ui.UMLModelElementListModel2#isValidElement(MBase)
      */
-    protected boolean isValidElement(Object/*MBase*/ base) {
-        if (!Model.getFacade().isAAssociationEnd(base)) {
-            return false;
-        }
-
-        Object assocEndRole = /*(MAssociationEndRole)*/ getTarget();
-        Object assocRole =
-            Model.getFacade().getAssociation(assocEndRole);
-        return Model.getFacade().getConnections(
-                Model.getFacade().getBase(assocRole))
-            .contains(base);
+    protected boolean isValidElement(MBase m) {
+        return m instanceof MAssociationEnd && 
+            ((MAssociationRole)((MAssociationEndRole)getTarget()).getAssociation()).getBase().getConnections().contains(m);
     }
+
 }

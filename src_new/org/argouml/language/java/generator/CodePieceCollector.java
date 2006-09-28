@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2001 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,41 +21,34 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+/*
+  taken from:
+  JavaRE - Code generation and reverse engineering for UML and Java
+  Author: Marcus Andersson andersson@users.sourceforge.net
+*/
+
+
 package org.argouml.language.java.generator;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.FileInputStream;
-import java.io.InputStreamReader;
-import java.util.Iterator;
-import java.util.Stack;
-import java.util.Vector;
+import java.io.*;
+import java.util.*;
+import ru.novosoft.uml.foundation.core.*;
 
-import org.argouml.application.api.Argo;
-import org.argouml.application.api.Configuration;
 
 /**
- * This class collects pieces of code when a source file is parsed,
- * and then updates the file with new code from the model.
- *
- * taken from:
- *
- * JavaRE - Code generation and reverse engineering for UML and Java.
- *
- * @author Marcus Andersson andersson@users.sourceforge.net
- */
-public class CodePieceCollector {
+   This class collects pieces of code when a source file is parsed,
+   and then updates the file with new code from the model.
+*/
+public class CodePieceCollector
+{
     /** Code pieces the parser found. */
     private Vector codePieces;
 
     /**
        Constructor.
     */
-    public CodePieceCollector() {
+    public CodePieceCollector()
+    {
 	codePieces = new Vector();
     }
 
@@ -66,15 +58,16 @@ public class CodePieceCollector {
 
        @param codePiece A named code piece found in the code.
     */
-    public void add(NamedCodePiece codePiece) {
-	int index = 0;
+    public void add(NamedCodePiece codePiece)
+    {
+	int index=0;
 
 	// Insert in sorted order
-	for (Iterator i = codePieces.iterator(); i.hasNext(); index++) {
-	    CodePiece cp = (CodePiece) i.next();
-	    if (cp.getStartLine() > codePiece.getStartLine()
-		|| (cp.getStartLine() == codePiece.getStartLine()
-		    && cp.getStartPosition() > codePiece.getStartPosition())) {
+	for(Iterator i = codePieces.iterator(); i.hasNext(); index++) {
+	    CodePiece cp = (CodePiece)i.next();
+	    if(cp.getStartLine() > codePiece.getStartLine() ||
+	       (cp.getStartLine() == codePiece.getStartLine() &&
+		cp.getStartPosition() > codePiece.getStartPosition())) {
 		break;
 	    }
 	}
@@ -82,47 +75,35 @@ public class CodePieceCollector {
     }
 
     /**
-     * Replace all the code pieces in a source file with new code from
-     * the model, or maintain them if nothing is found in the model.
-     *
-     * @param source The source file.
-     * @param destination The destination file.
-     * @param mNamespace The package the source belongs to.
-     * @throws IOException if we cannot write or read from the files.
-     */
+       Replace all the code pieces in a source file with new code from
+       the model, or maintain them if nothing is found in the model.
+
+       @param source The source file.
+       @param destination The destination file.
+       @param mNamespace The package the source belongs to.
+    */
     public void filter(File source,
                        File destination,
-                       Object/*MNamespace*/ mNamespace) throws IOException {
-	String encoding = null;
-	if (Configuration.getString(Argo.KEY_INPUT_SOURCE_ENCODING) == null
-	    || Configuration.getString(Argo.KEY_INPUT_SOURCE_ENCODING)
-	    	.trim().equals("")) {
-	    encoding = System.getProperty("file.encoding");
-	} else {
-	    encoding = Configuration.getString(Argo.KEY_INPUT_SOURCE_ENCODING);
-	}
-	FileInputStream in = new FileInputStream(source);
-	FileOutputStream out = new FileOutputStream(destination);
-
-	BufferedReader reader =
-	    new BufferedReader(new InputStreamReader(in, encoding));
-	BufferedWriter writer =
-	    new BufferedWriter(new OutputStreamWriter(out, encoding));
+                       MNamespace mNamespace)
+	throws Exception
+    {
+	BufferedReader reader = new BufferedReader(new FileReader(source));
+	BufferedWriter writer = new BufferedWriter(new FileWriter(destination));
 	int line = 0;
 	int column = 0;
 	Stack parseStateStack = new Stack();
 	parseStateStack.push(new ParseState(mNamespace));
 
-	for (Iterator i = codePieces.iterator(); i.hasNext();) {
-	    NamedCodePiece cp = (NamedCodePiece) i.next();
+	for(Iterator i = codePieces.iterator(); i.hasNext(); ) {
+	    NamedCodePiece cp = (NamedCodePiece)i.next();
 	    // copy until code piece
-	    while (line < cp.getStartLine()) {
+	    while(line < cp.getStartLine()) {
 		line++;
 		column = 0;
 		writer.write(reader.readLine());
 		writer.newLine();
 	    }
-	    while (column < cp.getStartPosition()) {
+	    while(column < cp.getStartPosition()) {
 		writer.write(reader.read());
 		column++;
 	    }
@@ -134,7 +115,7 @@ public class CodePieceCollector {
 
 	// Copy the rest of the file
 	String data;
-	while ((data = reader.readLine()) != null) {
+	while((data = reader.readLine()) != null) {
 	    writer.write(data);
 	    writer.newLine();
 	}

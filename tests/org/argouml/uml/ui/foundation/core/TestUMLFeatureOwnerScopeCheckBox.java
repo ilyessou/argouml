@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -26,42 +26,43 @@ package org.argouml.uml.ui.foundation.core;
 
 import junit.framework.TestCase;
 
-import org.argouml.model.Model;
+import org.argouml.application.security.ArgoSecurityManager;
+import org.argouml.model.uml.UmlFactory;
+import org.argouml.model.uml.foundation.core.CoreFactory;
+
+import ru.novosoft.uml.MFactoryImpl;
+import ru.novosoft.uml.foundation.core.MFeature;
+import ru.novosoft.uml.foundation.data_types.MScopeKind;
 
 /**
  * @since Nov 6, 2002
  * @author jaap.branderhorst@xs4all.nl
  */
 public class TestUMLFeatureOwnerScopeCheckBox extends TestCase {
-
-    /**
-     * The box to test.
-     */
-    private UMLFeatureOwnerScopeCheckBox box;
-
-    /**
-     * The element to test.
-     */
-    private Object elem;
+    
+    private UMLFeatureOwnerScopeCheckBox box = null;
+    private MFeature elem = null;
 
     /**
      * Constructor for TestUMLFeatureOwnerScopeCheckBox.
-     * @param arg0 is the name of the test case.
+     * @param arg0
      */
     public TestUMLFeatureOwnerScopeCheckBox(String arg0) {
         super(arg0);
     }
-
+    
     /**
      * @see junit.framework.TestCase#setUp()
      */
     protected void setUp() throws Exception {
         super.setUp();
-        elem = Model.getCoreFactory().createAttribute();
-
+        ArgoSecurityManager.getInstance().setAllowExit(true);
+        UmlFactory.getFactory().setGuiEnabled(false);
+        MFactoryImpl.setEventPolicy(MFactoryImpl.EVENT_POLICY_IMMEDIATE);
+        elem = CoreFactory.getFactory().createAttribute();       
+	
 	box = new UMLFeatureOwnerScopeCheckBox();
         box.setTarget(elem);
-        Model.getPump().flushModelEvents();
     }
 
     /**
@@ -69,44 +70,34 @@ public class TestUMLFeatureOwnerScopeCheckBox extends TestCase {
      */
     protected void tearDown() throws Exception {
         super.tearDown();
-        Model.getUmlFactory().delete(elem);
+        elem.remove();
         elem = null;
         box = null;
     }
-
+    
     /**
-     * Tests the marking/clicking of the checkbox. Simulates the behaviour when
+     * Tests the marking/clicking of the checkbox. Simulates the behaviour when 
      * the users selects the checkbox. Tests if the ownerscope of the element
      * is really changed
      */
     public void testDoClick() {
-        Object spec = Model.getFacade().getOwnerScope(elem);
-	if (box == null) {
-	    return; // Inconclusive
-	}
+        MScopeKind spec = elem.getOwnerScope();
+	if (box == null) return; // Inconclusive
         box.doClick();
-        assertEquals(
-                Model.getScopeKind().getClassifier(),
-                Model.getFacade().getOwnerScope(elem));
+        assertEquals(MScopeKind.CLASSIFIER, elem.getOwnerScope());
     }
-
+    
     /**
-     * Tests whether a change in the modelelement is reflected in the
-     * checkbox.
+     * Tests wether a change in the NSUML modelelement is reflected in the 
+     * checkbox
      */
     public void testPropertySet() {
-	if (box == null) {
-	    return; // Inconclusive
-	}
+	if (box == null) return; // Inconclusive
         boolean selected = box.isSelected();
-        if (selected) {
-            Model.getCoreHelper().setOwnerScope(elem,
-                    Model.getScopeKind().getInstance());
-        } else {
-            Model.getCoreHelper().setOwnerScope(elem,
-                    Model.getScopeKind().getClassifier());
-        }
-        Model.getPump().flushModelEvents();
+        if (selected) 
+            elem.setOwnerScope(MScopeKind.INSTANCE);
+        else
+            elem.setOwnerScope(MScopeKind.CLASSIFIER);
         assertEquals(!selected, box.isSelected());
     }
 

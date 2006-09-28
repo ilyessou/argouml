@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,13 +21,16 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $Id$
 package org.argouml.uml.ui.behavior.collaborations;
 
 import java.util.Vector;
 
-import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.application.api.Argo;
+import org.argouml.model.uml.behavioralelements.collaborations.CollaborationsHelper;
 import org.argouml.uml.ui.AbstractActionAddModelElement;
+
+import ru.novosoft.uml.behavior.collaborations.MClassifierRole;
 
 /**
  * @since Oct 3, 2002
@@ -37,11 +39,7 @@ import org.argouml.uml.ui.AbstractActionAddModelElement;
  */
 public class ActionAddClassifierRoleBase extends AbstractActionAddModelElement {
 
-    /**
-     * The one and only instance of this class.
-     */
-    public static final ActionAddClassifierRoleBase SINGLETON =
-	new ActionAddClassifierRoleBase();
+    public final static ActionAddClassifierRoleBase SINGLETON = new ActionAddClassifierRoleBase();
     /**
      * Constructor for ActionAddClassifierRoleBase.
      */
@@ -54,8 +52,7 @@ public class ActionAddClassifierRoleBase extends AbstractActionAddModelElement {
      */
     protected Vector getChoices() {
         Vector vec = new Vector();
-        vec.addAll(Model.getCollaborationsHelper()
-                .getAllPossibleBases(getTarget()));
+        vec.addAll(CollaborationsHelper.getHelper().getAllPossibleBases((MClassifierRole)getTarget()));
         return vec;
     }
 
@@ -64,7 +61,7 @@ public class ActionAddClassifierRoleBase extends AbstractActionAddModelElement {
      */
     protected Vector getSelected() {
         Vector vec = new Vector();
-        vec.addAll(Model.getFacade().getBases(getTarget()));
+        vec.addAll(((MClassifierRole)getTarget()).getBases());
         return vec;
     }
 
@@ -72,17 +69,16 @@ public class ActionAddClassifierRoleBase extends AbstractActionAddModelElement {
      * @see org.argouml.uml.ui.AbstractActionAddModelElement#getDialogTitle()
      */
     protected String getDialogTitle() {
-        return Translator.localize("dialog.title.add-bases");
+        return Argo.localize("UMLMenu", "dialog.title.add-bases");
     }
 
     /**
-     * @see
-     * org.argouml.uml.ui.AbstractActionAddModelElement#doIt(java.util.Vector)
+     * @see org.argouml.uml.ui.AbstractActionAddModelElement#doIt(java.util.Vector)
      */
     protected void doIt(Vector selected) {
-        Object role = /*(MClassifierRole)*/ getTarget();
-        Model.getCollaborationsHelper().setBases(role, selected);
+        MClassifierRole role = (MClassifierRole)getTarget();
+        CollaborationsHelper.getHelper().setBases(role, selected);
     }
-
+        
 
 }

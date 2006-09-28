@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -27,24 +26,17 @@ package org.argouml.uml.ui.behavior.state_machines;
 
 import java.awt.event.ActionEvent;
 
-import org.argouml.model.Model;
-import org.argouml.ui.targetmanager.TargetManager;
+import org.argouml.model.uml.behavioralelements.statemachines.StateMachinesFactory;
 import org.argouml.uml.ui.AbstractActionNewModelElement;
 
 /**
- * The action to create a new Guard for a Transition. <p>
- * 
- * This action is (currently) not fit to create a guard for a transition 
- * that already has one! If this functionality is needed, then 
- * the old guard should be deleted before making a new one.
- * 
  * @since Dec 15, 2002
  * @author jaap.branderhorst@xs4all.nl
  */
 public class ActionNewGuard extends AbstractActionNewModelElement {
 
-    private static ActionNewGuard singleton = new ActionNewGuard();
-
+    public static ActionNewGuard SINGLETON = new ActionNewGuard();
+    
     /**
      * Constructor for ActionNewCallAction.
      */
@@ -57,24 +49,7 @@ public class ActionNewGuard extends AbstractActionNewModelElement {
      */
     public void actionPerformed(ActionEvent e) {
         super.actionPerformed(e);
-        TargetManager.getInstance().setTarget(
-                Model.getStateMachinesFactory().buildGuard(getTarget()));
-    }
-
-    /**
-     * @return Returns the singleton.
-     */
-    public static ActionNewGuard getSingleton() {
-        return singleton;
-    }
-
-    /**
-     * @see javax.swing.Action#isEnabled()
-     */
-    public boolean isEnabled() {
-        Object t = getTarget();
-        return t != null
-            && Model.getFacade().getGuard(t) == null;
+        StateMachinesFactory.getFactory().buildGuard(getTarget());
     }
 
 }

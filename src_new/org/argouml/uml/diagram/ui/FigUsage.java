@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,47 +21,51 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: FigUsage.java
+// Classes: FigUsage
+// Original Author: Markus Klink
+// $Id$
+
 package org.argouml.uml.diagram.ui;
 
-import org.tigris.gef.base.Layer;
+import java.awt.*;
+import java.beans.*;
 
-/**
- * This class represents a Fig for a Usage.
- *
- * @author Markus Klink
- */
+import ru.novosoft.uml.MElementEvent;
+import ru.novosoft.uml.foundation.core.*;
+
+import org.tigris.gef.base.*;
+import org.tigris.gef.presentation.*;
+
+import org.argouml.language.helpers.*;
+
 public class FigUsage extends FigDependency {
 
-    /**
-     * The constructor.
-     *
-     */
+    ////////////////////////////////////////////////////////////////
+    // constructors
+    protected ArrowHeadGreater endArrow;
+
     public FigUsage() {
-        super();
+	super();
     }
 
-    /**
-     * The constructor.
-     *
-     * @param edge the owning UML element
-     */
     public FigUsage(Object edge) {
         super(edge);
     }
 
-    /**
-     * The constructor.
-     *
-     * @param edge the owning UML element
-     * @param lay the layer
-     */
     public FigUsage(Object edge, Layer lay) {
-        super(edge, lay);
+        super(edge,lay);
     }
+        
+    protected void modelChanged(MElementEvent e) {
+	super.modelChanged(e);
+	
+	String stereoTypeStr = _stereo.getText();
 
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = -1805275467987372774L;
+	if (stereoTypeStr == null || "".equals(stereoTypeStr)) {
+	    _stereo.setText(NotationHelper.getLeftGuillemot()+"use"+NotationHelper.getRightGuillemot());
+	}
+    } 
+
 } /* end class FigUsage */
 

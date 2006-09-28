@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,11 +21,14 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $header$
 package org.argouml.uml.ui.foundation.core;
 
-import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.application.api.Argo;
 import org.argouml.uml.ui.UMLCheckBox2;
+
+import ru.novosoft.uml.foundation.core.MFeature;
+import ru.novosoft.uml.foundation.data_types.MScopeKind;
 
 /**
  * @since Nov 6, 2002
@@ -36,24 +38,23 @@ public class UMLFeatureOwnerScopeCheckBox extends UMLCheckBox2 {
 
     /**
      * Constructor for UMLFeatureOwnerScopeCheckBox.
+     * @param container
+     * @param text
+     * @param a
      */
     public UMLFeatureOwnerScopeCheckBox() {
-        super(Translator.localize("checkbox.static-lc"),
-                ActionSetFeatureOwnerScope.getInstance(), "ownerScope");
+        super(Argo.localize("UMLMenu", "static"), ActionSetFeatureOwnerScope.SINGLETON, "ownerScope");
     }
 
     /**
      * @see org.argouml.uml.ui.UMLCheckBox2#buildModel()
      */
     public void buildModel() {
-        Object scope = Model.getFacade().getOwnerScope(getTarget());
-        if (scope != null
-                && scope.equals(
-                        Model.getScopeKind().getClassifier())) {
+        MScopeKind scope = ((MFeature)getTarget()).getOwnerScope();
+        if (scope != null && scope.equals(MScopeKind.CLASSIFIER)) {
             setSelected(true);
-        } else {
+        } else
             setSelected(false);
-        }
     }
 
 }

@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,130 +21,308 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+// File: UMLChangeDispatch.java
+// Classes: UMLChangeDispatch
+// Original Author:
+// $Id$
+
+// 23 Apr 2002: Jeremy Bennett (mail@jeremybennett.com). Added named constants
+
+// for the various event types.
+
+// 15 Juli 2002: Jaap Branderhorst (jaap.branderhorst@xs4all.nl). 
+//  Removed double registration of MEventListeners (see run for extra comment) Hopefully solves issue 827
+// for the various event types.
+
+
+
+
 package org.argouml.uml.ui;
 
 import java.awt.Component;
 import java.awt.Container;
 
+import org.argouml.model.uml.UmlModelEventPump;
+import org.argouml.uml.ui.behavior.common_behavior.PropPanelComponentInstance;
+import org.argouml.uml.ui.behavior.common_behavior.PropPanelNodeInstance;
+import org.argouml.uml.ui.behavior.common_behavior.PropPanelObject;
+
+import ru.novosoft.uml.MBase;
+import ru.novosoft.uml.MElementEvent;
+
 /**
- * This class is used to dispatch a UML model change event (which may
- * occur on a non-UI) thread) to user interface components.  The class
- * is created in response to a UML Model change event being captured by a
- * UMLUserInterfaceContainer and then is passed as an argument to
- * InvokeLater to be run on the user interface thread.<p>
- *
- * This class is updated to cope with changes to the targetchanged
- * mechanism.
+ *  This class is used to dispatch a NSUML change event (which may occur on a non-UI)
+ *  thread) to user interface components.  The class is created in response to a 
+ *  NSUML change event being captures by a UMLUserInterfaceContainer and then
+ *  is passed as an argument to InvokeLater to be run on the user interface thread.
+ * <p>
+ * This class is updated to cope with changes to the targetchanged mechanisme
+ * </p>
  */
 public class UMLChangeDispatch implements Runnable, UMLUserInterfaceComponent {
-    private int eventType;
-    private Container container;
+    private MElementEvent _event;
+    private int _eventType;
+    private Container _container;
+    /**
+     * The target of the proppanel that constructs this umlchangedispatch
+     */
+    private Object _target;
 
     /**
-     * The target of the proppanel that constructs this umlchangedispatch.
+     * <p>Dispatch a target changed event <em>and</em> add a NSUML listener to
+     *   the target afterwards.</p>
      */
-    private Object target;
 
-    /**
-     * Dispatch a target changed event
-     */
     public static final int TARGET_CHANGED_ADD = -1;
 
 
     /**
-     * Dispatch a target changed event.
+     * <p>Dispatch a target changed event.</p>
      */
+
     public static final int TARGET_CHANGED = 0;
+
+
     /**
-     * Dispatch a target reasserted event.
+     * <p>Dispatch a NSUML property set event.</p>
      */
+
+    public static final int PROPERTY_SET = 1;
+
+
+    /**
+     * <p>Dispatch a NSUML list role item set event.</p>
+     */
+
+    public static final int LIST_ROLE_ITEM_SET = 2;
+
+
+    /**
+     * <p>Dispatch a NSUML recovered event.</p>
+     */
+
+    public static final int RECOVERED = 3;
+
+
+    /**
+     * <p>Dispatch a NSUML removed event.</p>
+     */
+
+    public static final int REMOVED = 4;
+
+
+    /**
+     * <p>Dispatch a NSUML role added event.</p>
+     */
+
+    public static final int ROLE_ADDED = 5;
+
+
+    /**
+     * <p>Dispatch a NSUML role removed event.</p>
+     */
+
+    public static final int ROLE_REMOVED = 6;
+
+
+    /**
+     * <p>Dispatch a target reasserted event.</p>
+     */
+
     public static final int TARGET_REASSERTED = 7;
 
+
     /**
-     * Creates a UMLChangeDispatch.  eventType is overriden if a call to
-     * one of the event functions is called.
-     *
-     * @param uic user interface container to which changes are dispatched.
-     * @param et -1 will add event listener to new target, 0 for default.
+     * <p>Dispatch a default (target changed) event.</p>
      */
-    public UMLChangeDispatch(Container uic, int et) {
-        synchronized (uic) {
-            container = uic;
-            eventType = et;
-            if (uic instanceof PropPanel) {
-            	target = ((PropPanel) uic).getTarget();
-            }
+
+    public static final int DEFAULT = TARGET_CHANGED;
+
+
+    /**
+     *  Creates a UMLChangeDispatch.  eventType is overriden if a call to 
+     *  one of the event functions is called.
+     *  @param container user interface container to which changes are dispatched.
+     *  @param eventType -1 will add event listener to new target, 0 for default.
+     *      
+     */
+    public UMLChangeDispatch(Container container,int eventType) {
+        synchronized (container) {
+        _container = container;
+        _eventType = eventType;
+        if (container instanceof PropPanel) {
+            _target = ((PropPanel)container).getTarget();              
         }
+        
+    }
+    }
+    
+    /**
+     *   configures this instance to dispatch a targetChanged event.
+     */
+    public void targetChanged()
+    {
+        _eventType = 0;
     }
 
-    /**
-     * Configures this instance to dispatch a targetChanged event.
-     */
-    public void targetChanged() {
-        eventType = 0;
-    }
-
-    /**
-     * @see org.argouml.uml.ui.UMLUserInterfaceComponent#targetReasserted()
-     */
     public void targetReasserted() {
-        eventType = 7;
+        _eventType = 7;
+    }
+    
+    /**
+     *   configures this instance to dispatch a propertySet event.
+     *   @param mee NSUML event
+     */
+    public void propertySet(MElementEvent mee) {
+        _event = mee;
+        _eventType = 1;
+    }
+           
+    /**
+     *   configures this instance to dispatch a listRoleItemSet event.
+     *   @param mee NSUML event
+     */
+    public void listRoleItemSet(MElementEvent mee) {
+        _event = mee;
+        _eventType = 2;
     }
 
     /**
-     * Called by InvokeLater on user interface thread.  Dispatches
-     * event to all contained objects implementing
-     * UMLUserInterfaceComponent.  If event == -1, adds change listener to
-     * new target on completion of dispatch.
+     *   configures this instance to dispatch a recovered event.
+     *   @param mee NSUML event.
+     */
+    public void recovered(MElementEvent mee) {
+        _event = mee;
+        _eventType = 3;
+    }
+    
+    /**  
+     *    configures this instance to dispatch a removed event.
+     *    @param mee NSUML event.
+     */
+    public void removed(MElementEvent mee) {
+        _event = mee;
+        _eventType = 4;
+    }
+	
+    /**
+     *    configures this instance to dispatch a roleAdded event.
+     *    @param mee NSUML event.
+     */
+    public void roleAdded(MElementEvent mee) {
+        _event = mee;
+        _eventType = 5;
+    }
+	
+    /**
+     *    configures this instance to dispatch a roleRemoved event.
+     *    @param mee NSUML event
+     */
+    public void roleRemoved(MElementEvent mee) {
+        _event = mee;
+        _eventType = 6;
+    }
+    
+    
+    /**
+     *    Called by InvokeLater on user interface thread.  Dispatches
+     *    event to all contained objects implementing
+     *    UMLUserInterfaceComponent.  If event == -1, adds change listener to
+     *    new target on completion of dispatch.
      */
     public void run() {
-        if (target != null) {
-            synchronizedDispatch(container);
-        } else {
-	    dispatch(container);
-        }
-    }
+        if (_target != null) {
+            synchronizedDispatch(_container);
+        } else
+        dispatch(_container); 
+        //
+        //   now that we have finished all the UI updating
+        //
+        //   if we were doing an object change then
+        //      add a listener to our new target
+        //
+        if(_eventType == -1 && _container instanceof PropPanel &&
+           !((_container instanceof PropPanelObject) ||
+            (_container instanceof PropPanelNodeInstance) ||
+            (_container instanceof PropPanelComponentInstance))) {
+           PropPanel propPanel = (PropPanel) _container;
+            Object target = propPanel.getTarget();
 
-    /**
-     * Iterates through all children of this container.  If a child
-     * is another container then calls dispatch iteratively, if
-     * a child supports UMLUserInterfaceComponent then calls the
-     * appropriate method.
-     *
-     * @param theAWTContainer AWT container
-     */
-    private void dispatch(Container theAWTContainer) {
-
-        int count = theAWTContainer.getComponentCount();
-        Component component;
-        for (int i = 0; i < count; i++) {
-            component = theAWTContainer.getComponent(i);
-            if (component instanceof Container)
-                dispatch((Container) component);
-            if (component instanceof UMLUserInterfaceComponent
-                    && component.isVisible()) {
-
-                switch(eventType) {
-                case -1:
-                case 0:
-                    ((UMLUserInterfaceComponent) component).targetChanged();
-                    break;
-
-                case 7:
-                    ((UMLUserInterfaceComponent) component).targetReasserted();
-                    break;
-                }
+            if(target instanceof MBase) {
+            	
+            	// 2002-07-15
+            	// Jaap Branderhorst
+            	// added next statement to prevent PropPanel getting added again and again to the target's listeners
+                UmlModelEventPump.getPump().addModelEventListener(propPanel, target);      	
             }
+            
         }
     }
+    
+    /**
+     *    Iterates through all children of this container.  If a child
+     *    is another container then calls dispatch iteratively, if
+     *    a child supports UMLUserInterfaceComponent then calls the
+     *    appropriate method.
+     *    @param container AWT container
+     */
+    private void dispatch(Container container) {
+       
+        int count = container.getComponentCount();
+        Component component;
+        UMLUserInterfaceComponent uiComp;
+        for(int i = 0; i < count; i++) {
+            component = container.getComponent(i);
+            if(component instanceof Container)
+                dispatch((Container) component);
+            if(component instanceof UMLUserInterfaceComponent) {
+                uiComp = (UMLUserInterfaceComponent) component;
+                if (uiComp instanceof Component && ((Component)uiComp).isVisible())
+                switch(_eventType) {
+                    case -1:
+                    case 0:
+                        uiComp.targetChanged();
+                        break;
+                    
+                    case 1:
+                        uiComp.propertySet(_event);
+                        break;
+                    
+                    case 2:
+                        uiComp.listRoleItemSet(_event);
+                        break;
+                    
+                    case 3:
+                        uiComp.recovered(_event);
+                        break;
+                    
+                    case 4:
+                        uiComp.removed(_event);
+                        break;
+                        
+                    case 5:
+                        uiComp.roleAdded(_event);
+                        break;
+                        
+                    case 6:
+                        uiComp.roleRemoved(_event);
+                        break;
 
+                    case 7:
+                        uiComp.targetReasserted();
+                        break;
+                }
+            } 
+        }
+       
+    }
+    
     private void synchronizedDispatch(Container cont) {
-        if (target == null) {
-	    throw new IllegalStateException("Target may not be null in "
-					    + "synchronized dispatch");
-	}
-        synchronized (target) {
+        if (_target == null)  throw new IllegalStateException("Target may not be null in synchronized dispatch");
+        synchronized(_target) {
             dispatch(cont);
         }
     }
 }
+

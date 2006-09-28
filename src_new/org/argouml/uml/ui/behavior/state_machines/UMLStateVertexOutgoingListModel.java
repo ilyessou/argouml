@@ -1,16 +1,15 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
-// and this paragraph appear in all copies. This software program and
+// and this paragraph appear in all copies.  This software program and
 // documentation are copyrighted by The Regents of the University of
 // California. The software program and documentation are supplied "AS
 // IS", without any accompanying services from The Regents. The Regents
 // does not warrant that the operation of the program will be
 // uninterrupted or error-free. The end-user understands that the program
 // was developed for research purposes and is advised not to rely
-// exclusively on the program for any reason. IN NO EVENT SHALL THE
+// exclusively on the program for any reason.  IN NO EVENT SHALL THE
 // UNIVERSITY OF CALIFORNIA BE LIABLE TO ANY PARTY FOR DIRECT, INDIRECT,
 // SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, INCLUDING LOST PROFITS,
 // ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN IF
@@ -22,23 +21,25 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $header$
 package org.argouml.uml.ui.behavior.state_machines;
 
-import java.util.ArrayList;
-
-import org.argouml.model.Model;
 import org.argouml.uml.ui.UMLModelElementListModel2;
 
+import ru.novosoft.uml.MBase;
+import ru.novosoft.uml.behavior.state_machines.MStateVertex;
+
 /**
- * Listmodel for the outgoing transitions of a StateVertex.
- *
+ * Listmodel for the outgoing transitions of a StateVertex
  * @since Dec 14, 2002
  * @author jaap.branderhorst@xs4all.nl
  */
-public class UMLStateVertexOutgoingListModel extends UMLModelElementListModel2 {
+public class UMLStateVertexOutgoingListModel
+    extends UMLModelElementListModel2 {
 
     /**
      * Constructor for UMLStateVertexOutgoingListModel.
+     * @param container
      */
     public UMLStateVertexOutgoingListModel() {
         super("outgoing");
@@ -48,30 +49,14 @@ public class UMLStateVertexOutgoingListModel extends UMLModelElementListModel2 {
      * @see org.argouml.uml.ui.UMLModelElementListModel2#buildModelList()
      */
     protected void buildModelList() {
-        ArrayList c =
-            new ArrayList(Model.getFacade().getOutgoings(getTarget()));
-        if (Model.getFacade().isAState(getTarget())) {
-            ArrayList i =
-                new ArrayList(
-                        Model.getFacade().getInternalTransitions(getTarget()));
-            c.removeAll(i);
-        }
-        setAllElements(c);
+        setAllElements(((MStateVertex)getTarget()).getOutgoings());
     }
 
     /**
-     * @see org.argouml.uml.ui.UMLModelElementListModel2#isValidElement(Object)
+     * @see org.argouml.uml.ui.UMLModelElementListModel2#isValidElement(ru.novosoft.uml.MBase)
      */
-    protected boolean isValidElement(Object/* MBase */element) {
-        ArrayList c =
-            new ArrayList(Model.getFacade().getOutgoings(getTarget()));
-        if (Model.getFacade().isAState(getTarget())) {
-            ArrayList i =
-                new ArrayList(
-                        Model.getFacade().getInternalTransitions(getTarget()));
-            c.removeAll(i);
-        }
-        return c.contains(element);
+    protected boolean isValidElement(MBase element) {
+        return ((MStateVertex)getTarget()).getOutgoings().contains(element);
     }
 
 }

@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -25,25 +24,29 @@
 package org.argouml.uml.ui;
 
 import java.awt.BorderLayout;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import javax.swing.JOptionPane;
 import javax.swing.JToolBar;
+import javax.swing.JOptionPane;
 import javax.swing.event.EventListenerList;
 
-import org.apache.log4j.Logger;
-import org.argouml.model.Model;
+import org.apache.log4j.Category;
+
+import org.argouml.model.ModelFacade;
+import org.argouml.model.uml.UmlFactory;
 import org.argouml.ocl.ArgoFacade;
 import org.argouml.ocl.OCLUtil;
-import org.argouml.ui.AbstractArgoJPanel;
+import org.argouml.ui.TabSpawnable;
 import org.argouml.ui.targetmanager.TargetEvent;
-import org.tigris.gef.presentation.Fig;
-import org.tigris.toolbar.ToolBarManager;
 
-import tudresden.ocl.OclException;
+import org.tigris.gef.presentation.Fig;
+
+import ru.novosoft.uml.foundation.core.MClassifier;
+import ru.novosoft.uml.foundation.core.MConstraint;
+import ru.novosoft.uml.foundation.core.MModelElement;
+
 import tudresden.ocl.OclTree;
 import tudresden.ocl.check.OclTypeException;
 import tudresden.ocl.gui.ConstraintRepresentation;
@@ -53,276 +56,249 @@ import tudresden.ocl.gui.OCLEditorModel;
 import tudresden.ocl.gui.events.ConstraintChangeEvent;
 import tudresden.ocl.gui.events.ConstraintChangeListener;
 import tudresden.ocl.parser.OclParserException;
-import tudresden.ocl.parser.analysis.DepthFirstAdapter;
-import tudresden.ocl.parser.node.AConstraintBody;
-import tudresden.ocl.parser.node.TName;
+import tudresden.ocl.OclException;
 
 /**
   * Tab for OCL constraint editing.
   *
+  * <p>$Id$
+  *
   * @author v1.0: Falk Finger
   * @author v2.0: Steffen Zschaler
   */
-public class TabConstraints extends AbstractArgoJPanel
-    implements TabModelTarget {
+public class TabConstraints extends TabSpawnable implements TabModelTarget {
 
-    private static final Logger LOG = Logger.getLogger(TabConstraints.class);
-
-    /**
-     * The actual editor pane.
-     */
-    private OCLEditor mOcleEditor;
+    private static Category _cat = Category.getInstance(TabConstraints.class);
 
     /**
-     * The current target element.
-     */
-    private Object/*MModelElement*/ mMmeiTarget;
+      * The actual editor pane.
+      */
+    private OCLEditor m_ocleEditor;
 
     /**
-     * The constructor.
-     */
+      * The current target element.
+      */
+    private MModelElement m_mmeiTarget;
+
     public TabConstraints() {
         super("tab.constraints");
 
         setLayout(new BorderLayout(0, 0));
 
-        mOcleEditor = new OCLEditor();
-        mOcleEditor.setOptionMask(OCLEditor.OPTIONMASK_TYPECHECK
-                   /*|  //removed to workaround problems with autosplit
-                     OCLEditor.OPTIONMASK_AUTOSPLIT*/);
-        mOcleEditor.setDoAutoSplit(false);
+        m_ocleEditor = new OCLEditor();
+        m_ocleEditor.setOptionMask(OCLEditor.OPTIONMASK_TYPECHECK
+        /*|  //removed to workaround problems with autosplit
+                                         OCLEditor.OPTIONMASK_AUTOSPLIT*/
+        );
+        m_ocleEditor.setDoAutoSplit(false);
         setToolbarRollover(true);
         setToolbarFloatable(false);
 
-        add(mOcleEditor);
+        add(m_ocleEditor);
     }
 
-    /**
-     * Set the toolbar rollover style.
-     *
-     * @param enable If true then button borders do not become visible
-     * until mouse rolls over button.
+    /** Set the toolbar rollover style.
+     * @param enable if true then button borders do not become visible until mouse rolls over button
      */
     private void setToolbarRollover(boolean enable) {
-        if (!ToolBarManager.alwaysUseStandardRollover()) {
-            getOclToolbar().putClientProperty("JToolBar.isRollover", Boolean.TRUE);
-        }
+        getOclToolbar().putClientProperty("JToolBar.isRollover", Boolean.TRUE);
     }
 
-    /**
-     * Set the toolbar floating style.
-     *
+    /** Set the toolbar floating style
      * @param enable If true then the toolbar can be floated and docked
      */
     private void setToolbarFloatable(boolean enable) {
         getOclToolbar().setFloatable(false);
     }
 
-    /**
-     * Get a reference to the toolbar object contained in the
-     * OCLEditor component.  This is currently a nasty hack. We really
-     * require an interface method on OCLEditor (Bob Tarling 8 Feb
-     * 2003).
-     *
+    /** Get a reference to the toolbar object contained in the OCLEditor component.
+     * This is currently a nasty hack. We really require an interface method
+     * on OCLEditor (Bob Tarling 8 Feb 2003).
      * @return The toolbar
      */
     private JToolBar getOclToolbar() {
-        return (JToolBar) mOcleEditor.getComponent(0);
+        return (JToolBar) m_ocleEditor.getComponent(0);
     }
 
     //TabModelTarget interface methods
-
+    
     /**
-     * Should this tab be activated for the current target element?<p>
+     * Should this tab be activated for the current target element?
      *
-     * Argo only supports constraints for Classes and Features
+     * <p>Argo only supports constraints for Classes and Features
      * (eg. Attributes and Operations) currently.
-     *
-     * @see org.argouml.ui.TabTarget#shouldBeEnabled(java.lang.Object)
      */
     public boolean shouldBeEnabled(Object target) {
         target = (target instanceof Fig) ? ((Fig) target).getOwner() : target;
-        return (Model.getFacade().isAClass(target)
-                || Model.getFacade().isAFeature(target));
+        return (ModelFacade.isAClass(target) || ModelFacade.isAFeature(target));
     }
 
     /**
-     * Get the target element whose properties this tab presents.
-     *
-     * @see org.argouml.ui.TabTarget#getTarget()
-     */
+      * Get the target element whose properties this tab presents.
+      */
     public Object getTarget() {
-        return mMmeiTarget;
+        return m_mmeiTarget;
     }
 
     /**
-     * Refresh the tab because the target has changed.
-     */
+      * Refresh the tab because the target has changed.
+      */
     public void refresh() {
-        setTarget(mMmeiTarget);
+        setTarget(m_mmeiTarget);
     }
 
     /**
-     * Set the target element to be displayed in this tab. Only model elements
-     * will be accepted by the constraint tab.
-     *
-     * @see org.argouml.ui.TabTarget#setTarget(java.lang.Object)
-     */
+      * Set the target element to be displayed in this tab. Only model elements
+      * will be accepted by the constraint tab.
+      */
     public void setTarget(Object oTarget) {
-        oTarget =
-	    (oTarget instanceof Fig) ? ((Fig) oTarget).getOwner() : oTarget;
-        if (!(Model.getFacade().isAModelElement(oTarget))) {
-            mMmeiTarget = null;
+        oTarget = (oTarget instanceof Fig) ? ((Fig) oTarget).getOwner() : oTarget;
+        if (!(oTarget instanceof MModelElement)) {
+            m_mmeiTarget = null;
             return;
         }
 
-        mMmeiTarget = /*(MModelElement)*/oTarget;
+        m_mmeiTarget = (MModelElement) oTarget;
 
         // Set editor's model
-        mOcleEditor.setModel(new ConstraintModel(mMmeiTarget));
+        m_ocleEditor.setModel(new ConstraintModel(m_mmeiTarget));
     }
 
     /**
-     * Adapter to provide information and a manipulation interface for a
-     * target element's set of constraints to the constraint editor.
-     */
+    * Adapter to provide information and a manipulation interface for a
+    * target element's set of constraints to the constraint editor.
+    */
     private static class ConstraintModel implements OCLEditorModel {
 
         /**
-         * The target element being edited.
-         */
-        private Object/*MModelElement*/ theMMmeiTarget;
+          * The target element being edited.
+          */
+        private MModelElement m_mmeiTarget;
 
         /**
-         * A list of all the constraints in m_nmeiTarget. This is necessary to
-         * induce a consistent order on the constraints.
-         */
-        private ArrayList theMAlConstraints;
+          * A list of all the constraints in m_nmeiTarget. This is necessary to
+          * induce a consistent order on the constraints.
+          */
+        private ArrayList m_alConstraints;
 
         /**
-         * List of listeners.
-         */
-        private EventListenerList theMEllListeners = new EventListenerList();
+          * List of listeners.
+          */
+        private EventListenerList m_ellListeners = new EventListenerList();
 
         /**
-         * Construct a new ConstraintModel.
-         */
-        public ConstraintModel(Object/*MModelElement*/ mmeiTarget) {
+          * Construct a new ConstraintModel.
+          */
+        public ConstraintModel(MModelElement mmeiTarget) {
             super();
 
-            theMMmeiTarget = mmeiTarget;
+            m_mmeiTarget = mmeiTarget;
 
-            theMAlConstraints =
-		new ArrayList(Model.getFacade().getConstraints(theMMmeiTarget));
+            m_alConstraints = new ArrayList(m_mmeiTarget.getConstraints());
         }
 
         /**
-         * Return the number of constraints in this model.
-         */
+          * Return the number of constraints in this model.
+          */
         public int getConstraintCount() {
-            return theMAlConstraints.size();
+            return m_alConstraints.size();
         }
 
         /**
-         * Return the constraint with the specified index.
-         *
-         * @param nIdx the index of the constraint to be returned.
-         *             0 <= nIdx < {@link #getConstraintCount}
-         */
+          * Return the constraint with the specified index.
+          *
+          * @param nIdx the index of the constraint to be returned.
+          *             0 <= nIdx < {@link #getConstraintCount}
+          */
         public ConstraintRepresentation getConstraintAt(int nIdx) {
             return representationFor(nIdx);
         }
 
-        /**
-         * Remove the specified constraint from the model.
-         *
-         * @param nIdx the index of the constraint to be removed.
-         *             0 <= nIdx < {@link #getConstraintCount}
-         */
+        /** 
+          * Remove the specified constraint from the model.
+          *
+          * @param nIdx the index of the constraint to be removed.
+          *             0 <= nIdx < {@link #getConstraintCount}
+          */
         public void removeConstraintAt(int nIdx) {
-            if ((nIdx < 0) || (nIdx > theMAlConstraints.size())) {
+            if ((nIdx < 0) || (nIdx > m_alConstraints.size())) {
                 return;
             }
 
-            Object/*MConstraint*/ mc =
-		/*(MConstraint)*/theMAlConstraints.remove(nIdx);
+            MConstraint mc = (MConstraint) m_alConstraints.remove(nIdx);
 
             if (mc != null) {
-                Model.getCoreHelper().removeConstraint(theMMmeiTarget, mc);
+                m_mmeiTarget.removeConstraint(mc);
             }
 
             fireConstraintRemoved(mc, nIdx);
         }
 
         /**
-         * Add a fresh constraint to the model.<p>
-         *
-         * There are 2 restrictions on what can be parsed, given
-         * the current OCL grammar:
+          * Add a fresh constraint to the model.
+         * 
+         * <p>There are 2 restrictions on what can be parsed, given the
+         * current OCL grammar:
          * <ol>
-         *   <li>Class names must have a capital first letter.
-         *   <li>Feature name must have a lower case first letter.
+         *   <li>Class names must have a capital first letter.</li>
+         *   <li>Feature name must have a lower case first letter.</li>
          * </ol>
-         */
+          */
         public void addConstraint() {
-
+            
             // check ocl parsing constraints
-            Object mmeContext = OCLUtil
-                    .getInnerMostEnclosingNamespace(theMMmeiTarget);
-            String contextName = Model.getFacade().getName(mmeContext);
-            String targetName = Model.getFacade().getName(theMMmeiTarget);
-            if ((contextName == null
-		 || contextName.equals (""))
-		||  // this is to fix issue #2056
-                (targetName == null
-		 || targetName.equals (""))
-		||   // this is to fix issue #2056
-                !Character.isUpperCase(contextName.charAt(0))
-		|| (Model.getFacade().isAClass (theMMmeiTarget)
-		    && !Character.isUpperCase(targetName.charAt(0)))
-		|| (Model.getFacade().isAFeature(theMMmeiTarget)
-		    && !Character.isLowerCase(targetName.charAt(0)))) {
-                // TODO: I18n
-                JOptionPane.showMessageDialog(
-		    null,
-                    "The OCL Toolkit requires that:\n\n"
-		    + "Class names have a capital first letter and\n"
-		    + "Attribute or Operation names have "
-		    + "a lower case first letter.",
-                    "Require Correct name convention:",
-                    JOptionPane.ERROR_MESSAGE);
-                // do not create a constraint:
-                return;
-            }
+            MModelElement mmeContext = m_mmeiTarget;
 
-            // null elements represent new constraints, which will be
-            // added to the target the first time any actual editing
-            // takes place.  This is done to ensure syntactical
-            // correctness of constraints stored with the target.
-            theMAlConstraints.add(null);
+            while (!(mmeContext instanceof MClassifier)) {
+                mmeContext = mmeContext.getModelElementContainer();
+            }
+            
+            if(ModelFacade.getName(mmeContext) == null ||
+               ModelFacade.getName(m_mmeiTarget) == null ||
+               !Character.isUpperCase(ModelFacade.getName(mmeContext).charAt(0)) ||
+               (ModelFacade.isAClass(m_mmeiTarget) &&
+                !Character.isUpperCase(ModelFacade.getName(m_mmeiTarget).charAt(0))) ||
+               (ModelFacade.isAFeature(m_mmeiTarget) &&
+                !Character.isLowerCase(ModelFacade.getName(m_mmeiTarget).charAt(0)))
+                ){
+                    // TODO I18n
+                    JOptionPane.showMessageDialog (null,
+                        "The OCL Toolkit requires that:\n\n"+
+                        "Class names have a capital first letter and\n"+
+                        "Attribute or Operation names have a lower case first letter.",
+                        "Require Correct name convention:",
+                        JOptionPane.ERROR_MESSAGE);
+                    // do not create a constraint:
+                    return;
+            }
+            
+            // null elements represent new constraints, which will be added to the
+            // target the first time any actual editing takes place.
+            // This is done to ensure syntactical correctness of constraints stored
+            // with the target.
+            m_alConstraints.add(null);
 
             fireConstraintAdded();
         }
 
-        // TODO: - please add some javadoc - ugly classname also
         private class CR implements ConstraintRepresentation {
-            /**
-             * The constraint being represented.
-             */
-            private Object/*MConstraint*/ theMMcConstraint;
 
             /**
-             * The constraint's index in the list of
-             * constraints. Necessary only for new constraints, where
-             * m_mcConstraint is still <tt>null</tt>.
-             */
-            private int theMNIdx = -1;
+              * The constraint being represented.
+              */
+            private MConstraint m_mcConstraint;
 
-            public CR(Object/*MConstraint*/ mcConstraint, int nIdx) {
+            /**
+              * The constraint's index in the list of constraints. Necessary only for
+              * new constraints, where m_mcConstraint is still null.
+              */
+            private int m_nIdx = -1;
+
+            public CR(MConstraint mcConstraint, int nIdx) {
                 super();
 
-                theMMcConstraint = mcConstraint;
-                theMNIdx = nIdx;
+                m_mcConstraint = mcConstraint;
+                m_nIdx = nIdx;
             }
 
             public CR(int nIdx) {
@@ -330,58 +306,63 @@ public class TabConstraints extends AbstractArgoJPanel
             }
 
             /**
-             * Get the name of the constraint.
-             */
+              * Get the name of the constraint.
+              */
             public String getName() {
-                if (theMMcConstraint == null) {
+                if (m_mcConstraint == null) {
                     return "newConstraint";
+                } else {
+                    return m_mcConstraint.getName();
                 }
-                return Model.getFacade().getName(theMMcConstraint);
             }
 
             /**
-             * Get the constraint's body.
-             */
+              * Get the constraint's body.
+              */
             public String getData() {
-                if (theMMcConstraint == null) {
-                    return OCLUtil.getContextString(theMMmeiTarget);
+                if (m_mcConstraint == null) {
+                    return OCLUtil.getContextString(m_mmeiTarget);
+                } else {
+                    return m_mcConstraint.getBody().getBody();
                 }
-                return (String) Model.getFacade().getBody(
-                        Model.getFacade().getBody(theMMcConstraint));
             }
 
             /**
-             * Set the constraint's body text. For the exceptions the
-             * detailed message must be human readable.
-             *
-             * @param sData the new body of the constraint
-             *
-             * @exception IllegalStateException if the constraint is
-             *            not in a state to accept body changes.
-             * @exception OclParserException if the specified constraint is not
-             *     syntactically correct.
-             * @exception OclTypeException if the specified constraint
-             *            does not adhere by OCL type rules.
-             */
+              * Set the constraint's body text. For the exceptions the detailed message must
+              * be human readable.
+              *
+              * @param sData the new body of the constraint
+              *
+              * @exception IllegalStateException if the constraint is not in a state to
+              *     accept body changes.
+              * @exception OclParserException if the specified constraint is not
+              *     syntactically correct.
+              * @exception OclTypeException if the specified constraint does not adhere by
+              *     OCL type rules.
+              */
             public void setData(String sData, EditingUtilities euHelper)
-		throws OclParserException, OclTypeException {
+                throws OclParserException, OclTypeException {
                 // Parse and check specified constraint.
                 OclTree tree = null;
 
+                MModelElement mmeContext = m_mmeiTarget;
+
                 try {
-                    Object mmeContext = OCLUtil
-                            .getInnerMostEnclosingNamespace(theMMmeiTarget);
+                    while (!(mmeContext instanceof MClassifier)) {
+                        mmeContext = mmeContext.getModelElementContainer();
+                    }
 
                     try {
                         tree =
-			    euHelper.parseAndCheckConstraint(
-				sData,
-				new ArgoFacade(mmeContext));
-                    } catch (IOException ioe) {
-                        // Ignored: Highly unlikely, and what would we
-                        // do anyway?  log it
-                        LOG.error("problem parsing And Checking Constraints",
-				   ioe);
+                            euHelper.parseAndCheckConstraint(
+                                sData,
+                                new ArgoFacade(mmeContext));
+                    } catch (java.io.IOException ioe) {
+                        // Ignored: Highly unlikely, and what would we do anyway?
+                        // log it
+                        _cat.error(
+                            "problem parsing And Checking Constraints",
+                            ioe);
                         return;
                     }
 
@@ -390,44 +371,43 @@ public class TabConstraints extends AbstractArgoJPanel
                         List lConstraints = euHelper.splitConstraint(tree);
 
                         if (lConstraints.size() > 0) {
-                            removeConstraintAt(theMNIdx);
+                            removeConstraintAt(m_nIdx);
 
                             for (Iterator i = lConstraints.iterator();
-				 i.hasNext();) {
+                                i.hasNext();
+                                ) {
                                 OclTree ocltCurrent = (OclTree) i.next();
 
-                                Object/*MConstraint*/ mc =
-                                    Model.getCoreFactory()
-				        .createConstraint();
-                                Model.getCoreHelper().setName(mc, ocltCurrent
-                                    .getConstraintName());
-                                Model.getCoreHelper().setBody(mc,
-                                        Model.getDataTypesFactory()
-                                        	.createBooleanExpression(
-                                        	        "OCL",
-                                        	        ocltCurrent
-                                        	        .getExpression()));
-                                Model.getCoreHelper().addConstraint(
-                                        theMMmeiTarget,
-                                        mc);
+                                MConstraint mc =
+                                    UmlFactory
+                                        .getFactory()
+                                        .getCore()
+                                        .createConstraint();
+                                mc.setName(ocltCurrent.getConstraintName());
+                                mc.setBody(
+                                    UmlFactory
+                                        .getFactory()
+                                        .getDataTypes()
+                                        .createBooleanExpression(
+                                        "OCL",
+                                        ocltCurrent.getExpression()));
+
+                                m_mmeiTarget.addConstraint(mc);
 
                                 // the constraint _must_ be owned by a namespace
-                                if (Model.getFacade().getNamespace(
-                                        theMMmeiTarget)
-                                        != null) {
-                                    Model.getCoreHelper().addOwnedElement(
-                                            Model.getFacade().getNamespace(
-                                                    theMMmeiTarget),
-                                            mc);
-                                } else if (Model.getFacade().getNamespace(
-                                        mmeContext) != null) {
-                                    Model.getCoreHelper().addOwnedElement(
-                                            Model.getFacade().getNamespace(
-                                                    mmeContext),
-                                            theMMcConstraint);
+                                if (m_mmeiTarget.getNamespace() != null) {
+                                    m_mmeiTarget
+                                        .getNamespace()
+                                        .addOwnedElement(
+                                        mc);
+                                }
+                                else if(mmeContext.getNamespace() != null){
+                                    
+                                    mmeContext.getNamespace().addOwnedElement(
+                                    m_mcConstraint);
                                 }
 
-                                theMAlConstraints.add(mc);
+                                m_alConstraints.add(mc);
                                 fireConstraintAdded();
                             }
 
@@ -436,191 +416,214 @@ public class TabConstraints extends AbstractArgoJPanel
                     }
 
                     // Store constraint body
-                    Object/*MConstraint*/ mcOld = null;
+                    MConstraint mcOld = null;
 
-                    if (theMMcConstraint == null) {
+                    if (m_mcConstraint == null) {
                         // New constraint, first time setData is called
-                        theMMcConstraint =
-                            Model.getCoreFactory().createConstraint();
+                        m_mcConstraint =
+                            UmlFactory
+                                .getFactory()
+                                .getCore()
+                                .createConstraint();
 
-                        Model.getCoreHelper().setName(
-                                theMMcConstraint,
-                                "newConstraint");
-                        Model.getCoreHelper().setBody(
-                                theMMcConstraint,
-                                Model.getDataTypesFactory()
-                                	.createBooleanExpression("OCL", sData));
+                        m_mcConstraint.setName("newConstraint");
+                        m_mcConstraint.setBody(
+                            UmlFactory
+                                .getFactory()
+                                .getDataTypes()
+                                .createBooleanExpression(
+                                "OCL",
+                                sData));
 
-                        Model.getCoreHelper().addConstraint(theMMmeiTarget,
-                                theMMcConstraint);
+                        m_mmeiTarget.addConstraint(m_mcConstraint);
 
                         // the constraint _must_ be owned by a namespace
-                        Object targetNamespace =
-                            Model.getFacade().getNamespace(theMMmeiTarget);
-                        Object contextNamespace =
-                            Model.getFacade().getNamespace(mmeContext);
-                        if (targetNamespace != null) {
-                            Model.getCoreHelper().addOwnedElement(
-                                    targetNamespace,
-                                    theMMcConstraint);
-                        } else if (contextNamespace != null) {
-                            Model.getCoreHelper().addOwnedElement(
-                                    contextNamespace,
-                                    theMMcConstraint);
+                        if (m_mmeiTarget.getNamespace() != null) {
+                            m_mmeiTarget.getNamespace().addOwnedElement(
+                                m_mcConstraint);
+                        }
+                        else if(mmeContext.getNamespace() != null){
+                            
+                            mmeContext.getNamespace().addOwnedElement(
+                                m_mcConstraint);
                         }
 
-                        theMAlConstraints.set(theMNIdx, theMMcConstraint);
+                        m_alConstraints.set(m_nIdx, m_mcConstraint);
                     } else {
-                        mcOld = Model.getCoreFactory().createConstraint();
-                        Model.getCoreHelper().setName(
-                                mcOld,
-                                Model.getFacade().getName(theMMcConstraint));
-                        Model.getCoreHelper().setBody(
-                                mcOld,
-                                Model.getDataTypesFactory()
-                                	.createBooleanExpression("OCL",
-                                	        (String) Model.getFacade()
-                                	        	.getBody(
-                                                Model.getFacade().getBody(
-                                                        theMMcConstraint))));
-                        Model.getCoreHelper().setBody(theMMcConstraint,
-                                Model.getDataTypesFactory()
-                                	.createBooleanExpression("OCL", sData));
+                        mcOld =
+                            UmlFactory
+                                .getFactory()
+                                .getCore()
+                                .createConstraint();
+                        mcOld.setName(m_mcConstraint.getName());
+                        mcOld.setBody(
+                            UmlFactory
+                                .getFactory()
+                                .getDataTypes()
+                                .createBooleanExpression(
+                                "OCL",
+                                m_mcConstraint.getBody().getBody()));
+
+                        m_mcConstraint.setBody(
+                            UmlFactory
+                                .getFactory()
+                                .getDataTypes()
+                                .createBooleanExpression(
+                                "OCL",
+                                sData));
                     }
 
-                    fireConstraintDataChanged(theMNIdx, mcOld,
-                            theMMcConstraint);
+                    fireConstraintDataChanged(m_nIdx, mcOld, m_mcConstraint);
 
                 } catch (OclTypeException pe) {
-                    LOG.warn("There was some sort of OCL Type problem", pe);
+                    _cat.warn("There was some sort of OCL Type problem", pe);
                     throw pe;
                 } catch (OclParserException pe1) {
-                    LOG.warn("Could not parse the constraint", pe1);
+                    _cat.warn(
+                        "Could not parse the constraint",
+                        pe1);
                     throw pe1;
                 } catch (OclException oclExc) {
                     // a runtime exception that occurs when some
                     // internal test fails
-                    LOG.warn("There was some unidentified problem");
+                    _cat.warn(
+                        "There was some unidentified problem");
                     throw oclExc;
                 }
             }
 
             /**
-             * Set the constraint's name.
-             */
+              * Set the constraint's name.
+              */
             public void setName(
                 final String sName,
                 final EditingUtilities euHelper) {
-                if (theMMcConstraint != null) {
+                if (m_mcConstraint != null) {
                     // Check name for consistency with spec
                     if (!euHelper.isValidConstraintName(sName)) {
-                        throw new IllegalArgumentException(
-                                "Please specify a valid name.");
+                        throw new IllegalArgumentException("Please specify a valid name.");
                     }
 
                     // Set name
-                    Object/*MConstraint*/ mcOld =
-                        Model.getCoreFactory().createConstraint();
-                    Model.getCoreHelper().setName(mcOld,
-                            Model.getFacade().getName(theMMcConstraint));
-                    Object constraintBody =
-                        Model.getFacade().getBody(theMMcConstraint);
-                    Model.getCoreHelper().setBody(mcOld,
-                            Model.getDataTypesFactory()
-                                .createBooleanExpression(
-                                        "OCL",
-                                        (String) Model.getFacade().getBody(
-                                                constraintBody)));
+                    MConstraint mcOld =
+                        UmlFactory.getFactory().getCore().createConstraint();
+                    mcOld.setName(m_mcConstraint.getName());
+                    mcOld.setBody(
+                        UmlFactory
+                            .getFactory()
+                            .getDataTypes()
+                            .createBooleanExpression(
+                            "OCL",
+                            m_mcConstraint.getBody().getBody()));
 
-                    Model.getCoreHelper().setName(theMMcConstraint, sName);
+                    m_mcConstraint.setName(sName);
 
-                    fireConstraintNameChanged(theMNIdx, mcOld,
-                            theMMcConstraint);
+                    fireConstraintNameChanged(m_nIdx, mcOld, m_mcConstraint);
 
                     // Also set name in constraint body -- Added 03/14/2001
                     try {
                         OclTree tree = null;
-                        Object mmeContext = OCLUtil
-                                .getInnerMostEnclosingNamespace(theMMmeiTarget);
 
-                        constraintBody =
-                            Model.getFacade().getBody(theMMcConstraint);
+                        MModelElement mmeContext = m_mmeiTarget;
+                        while (!(mmeContext instanceof MClassifier)) {
+                            mmeContext = mmeContext.getModelElementContainer();
+                        }
+
                         tree =
                             euHelper.parseAndCheckConstraint(
-                                (String) Model.getFacade().getBody(
-                                        constraintBody),
+                                m_mcConstraint.getBody().getBody(),
                                 new ArgoFacade(mmeContext));
 
                         if (tree != null) {
-                            tree.apply(new DepthFirstAdapter() {
-                                private int nameID = 0;
+                            tree
+                                .apply(
+                                    new tudresden
+                                    .ocl
+                                    .parser
+                                    .analysis
+                                    .DepthFirstAdapter() {
+                                int name_ID = 0;
                                 public void caseAConstraintBody(
-                                        AConstraintBody node) {
+                                    tudresden
+                                        .ocl
+                                        .parser
+                                        .node
+                                        .AConstraintBody node) {
                                     // replace name
-                                    if (nameID == 0) {
-                                        node.setName(new TName(sName));
+                                    if (name_ID == 0) {
+                                        node.setName(
+                                            new tudresden
+                                                .ocl
+                                                .parser
+                                                .node
+                                                .TName(
+                                                sName));
                                     } else {
-                                        node.setName(new TName(
-                                                sName + "_" + nameID));
+                                        node.setName(
+                                            new tudresden
+                                                .ocl
+                                                .parser
+                                                .node
+                                                .TName(
+                                                sName + "_" + name_ID));
                                     }
-                                    nameID++;
-				}
+                                    name_ID++;
+                                }
                             });
 
                             setData(tree.getExpression(), euHelper);
                         }
                     } catch (Throwable t) {
-                        // OK, so that didn't work out... Just ignore
-                        // any problems and don't set the name in the
-                        // constraint body better had log it.
-                        LOG.error("some unidentified problem", t);
+                        // OK, so that didn't work out... Just ignore any problems and don't
+                        // set the name in the constraint body
+                        // better had log it.
+                        _cat.error("some unidentified problem", t);
                     }
                 } else {
-                    throw new IllegalStateException(
-                        "Please define and submit a constraint body first.");
+                    throw new IllegalStateException("Please define and submit a constraint body first.");
                 }
             }
         }
 
         /**
-         * Create a representation adapter for the given constraint.
-         */
+          * Create a representation adapter for the given constraint.
+         *
+          */
         private CR representationFor(int nIdx) {
-            if ((nIdx < 0) || (nIdx >= theMAlConstraints.size())) {
+            if ((nIdx < 0) || (nIdx >= m_alConstraints.size())) {
                 return null;
             }
 
-            Object/*MConstraint*/ mc = theMAlConstraints.get(nIdx);
+            MConstraint mc = (MConstraint) m_alConstraints.get(nIdx);
 
             if (mc != null) {
                 return new CR(mc, nIdx);
+            } else {
+                return new CR(nIdx);
             }
-            return new CR(nIdx);
         }
 
         /**
-         * Add a listener to be informed of changes in the model.
-         *
-         * @param ccl the new listener
-         */
+          * Add a listener to be informed of changes in the model.
+          *
+          * @param ccl the new listener
+          */
         public void addConstraintChangeListener(ConstraintChangeListener ccl) {
-            theMEllListeners.add(ConstraintChangeListener.class, ccl);
+            m_ellListeners.add(ConstraintChangeListener.class, ccl);
         }
 
         /**
-         * Remove a listener to be informed of changes in the model.
-         *
-         * @param ccl the listener to be removed
-         */
-        public void removeConstraintChangeListener(
-                ConstraintChangeListener ccl) {
-            theMEllListeners.remove(ConstraintChangeListener.class, ccl);
+          * Remove a listener to be informed of changes in the model.
+          *
+          * @param ccl the listener to be removed
+          */
+        public void removeConstraintChangeListener(ConstraintChangeListener ccl) {
+            m_ellListeners.remove(ConstraintChangeListener.class, ccl);
         }
 
-        protected void fireConstraintRemoved(
-                Object/*MConstraint*/ mc, int nIdx) {
+        protected void fireConstraintRemoved(MConstraint mc, int nIdx) {
             // Guaranteed to return a non-null array
-            Object[] listeners = theMEllListeners.getListenerList();
+            Object[] listeners = m_ellListeners.getListenerList();
 
             ConstraintChangeEvent cce = null;
 
@@ -630,21 +633,25 @@ public class TabConstraints extends AbstractArgoJPanel
                 if (listeners[i] == ConstraintChangeListener.class) {
                     // Lazily create the event:
                     if (cce == null) {
-                        cce = new ConstraintChangeEvent(
-                            this,
-                            nIdx,
-                            new CR(mc, nIdx),
-                            null);
+                        cce =
+                            new ConstraintChangeEvent(
+                                this,
+                                nIdx,
+                                new CR(mc, nIdx),
+                                null);
                     }
-                    ((ConstraintChangeListener) listeners[i + 1])
-                        .constraintRemoved(cce);
+
+                    (
+                        (ConstraintChangeListener) listeners[i
+                            + 1]).constraintRemoved(
+                        cce);
                 }
             }
         }
 
         protected void fireConstraintAdded() {
             // Guaranteed to return a non-null array
-            Object[] listeners = theMEllListeners.getListenerList();
+            Object[] listeners = m_ellListeners.getListenerList();
 
             ConstraintChangeEvent cce = null;
 
@@ -654,26 +661,29 @@ public class TabConstraints extends AbstractArgoJPanel
                 if (listeners[i] == ConstraintChangeListener.class) {
                     // Lazily create the event:
                     if (cce == null) {
-                        int nIdx = theMAlConstraints.size() - 1;
+                        int nIdx = m_alConstraints.size() - 1;
                         cce =
                             new ConstraintChangeEvent(
-                              this,
-                              nIdx,
-                              null,
-                              representationFor(nIdx));
+                                this,
+                                nIdx,
+                                null,
+                                representationFor(nIdx));
                     }
-                    ((ConstraintChangeListener) listeners[i + 1])
-                        .constraintAdded(cce);
+
+                    (
+                        (ConstraintChangeListener) listeners[i
+                            + 1]).constraintAdded(
+                        cce);
                 }
             }
         }
 
         protected void fireConstraintDataChanged(
-                         int nIdx,
-                         Object/*MConstraint*/ mcOld,
-                         Object/*MConstraint*/ mcNew) {
+            int nIdx,
+            MConstraint mcOld,
+            MConstraint mcNew) {
             // Guaranteed to return a non-null array
-            Object[] listeners = theMEllListeners.getListenerList();
+            Object[] listeners = m_ellListeners.getListenerList();
 
             ConstraintChangeEvent cce = null;
 
@@ -683,25 +693,28 @@ public class TabConstraints extends AbstractArgoJPanel
                 if (listeners[i] == ConstraintChangeListener.class) {
                     // Lazily create the event:
                     if (cce == null) {
-                        cce = new ConstraintChangeEvent(
-                            this,
-                            nIdx,
-                            new CR(mcOld, nIdx),
-                            new CR(mcNew, nIdx));
+                        cce =
+                            new ConstraintChangeEvent(
+                                this,
+                                nIdx,
+                                new CR(mcOld, nIdx),
+                                new CR(mcNew, nIdx));
                     }
 
-                    ((ConstraintChangeListener) listeners[i + 1])
-                        .constraintDataChanged(cce);
+                    (
+                        (ConstraintChangeListener) listeners[i
+                            + 1]).constraintDataChanged(
+                        cce);
                 }
             }
         }
 
         protected void fireConstraintNameChanged(
-                         int nIdx,
-                         Object/*MConstraint*/ mcOld,
-                         Object/*MConstraint*/ mcNew) {
+            int nIdx,
+            MConstraint mcOld,
+            MConstraint mcNew) {
             // Guaranteed to return a non-null array
-            Object[] listeners = theMEllListeners.getListenerList();
+            Object[] listeners = m_ellListeners.getListenerList();
 
             ConstraintChangeEvent cce = null;
 
@@ -711,40 +724,43 @@ public class TabConstraints extends AbstractArgoJPanel
                 if (listeners[i] == ConstraintChangeListener.class) {
                     // Lazily create the event:
                     if (cce == null) {
-                        cce = new ConstraintChangeEvent(
-                            this,
-                            nIdx,
-                            new CR(mcOld, nIdx),
-                            new CR(mcNew, nIdx));
+                        cce =
+                            new ConstraintChangeEvent(
+                                this,
+                                nIdx,
+                                new CR(mcOld, nIdx),
+                                new CR(mcNew, nIdx));
                     }
 
-                    ((ConstraintChangeListener) listeners[i + 1])
-                        .constraintNameChanged(cce);
+                    (
+                        (ConstraintChangeListener) listeners[i
+                            + 1]).constraintNameChanged(
+                        cce);
                 }
             }
         }
     }
-
-    /**
-     * @see org.argouml.ui.targetmanager.TargetListener#targetAdded(
-     *         org.argouml.ui.targetmanager.TargetEvent)
+    /* (non-Javadoc)
+     * @see org.argouml.ui.targetmanager.TargetListener#targetAdded(org.argouml.ui.targetmanager.TargetEvent)
      */
     public void targetAdded(TargetEvent e) {
+
     }
 
-    /**
-     * @see org.argouml.ui.targetmanager.TargetListener#targetRemoved(
-     *         org.argouml.ui.targetmanager.TargetEvent)
+    /* (non-Javadoc)
+     * @see org.argouml.ui.targetmanager.TargetListener#targetRemoved(org.argouml.ui.targetmanager.TargetEvent)
      */
     public void targetRemoved(TargetEvent e) {
-        setTarget(e.getNewTarget());
+        setTarget(e.getNewTargets()[0]);
+
     }
 
-    /**
-     * @see org.argouml.ui.targetmanager.TargetListener#targetSet(
-     *         org.argouml.ui.targetmanager.TargetEvent)
+    /* (non-Javadoc)
+     * @see org.argouml.ui.targetmanager.TargetListener#targetSet(org.argouml.ui.targetmanager.TargetEvent)
      */
     public void targetSet(TargetEvent e) {
-        setTarget(e.getNewTarget());
+        setTarget(e.getNewTargets()[0]);
+
     }
+
 }

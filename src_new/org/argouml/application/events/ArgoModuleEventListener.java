@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2001 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -23,7 +22,8 @@
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 package org.argouml.application.events;
-import org.argouml.application.api.ArgoEventListener;
+import org.argouml.application.api.*;
+import org.argouml.application.modules.*;
 
 /** An interface that objects interested in ModuleEvent
  *  notifications must extend.
@@ -36,29 +36,21 @@ public interface ArgoModuleEventListener extends ArgoEventListener {
 
     /**
      * Invoked when a module has been loaded.
-     *
-     * @param e the event
      */
     public void moduleLoaded(ArgoModuleEvent e);
 
     /**
      * Invoked when a module has been unloaded.
-     *
-     * @param e the event
      */
     public void moduleUnloaded(ArgoModuleEvent e);
 
     /**
      * Invoked when a module has been enabled.
-     *
-     * @param e the event
      */
     public void moduleEnabled(ArgoModuleEvent e);
 
     /**
      * Invoked when a module has been disabled.
-     *
-     * @param e the event
      */
     public void moduleDisabled(ArgoModuleEvent e);
 }

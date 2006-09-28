@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,97 +21,95 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+// File: PropPanelNode.java
+// Classes: PropPanelNode
+// Original Author: 5eichler@informatik.uni-hamburg.de
+// $Id$
+
+// 21 Mar 2002: Jeremy Bennett (mail@jeremybennett.com). Changed to use the
+// labels "Generalizes:" and "Specializes:" for inheritance.
+
+// 4 Apr 2002: Jeremy Bennett (mail@jeremybennett.com). Labels corrected to
+// "Generalizations:" and "Specializations".
+
+
 package org.argouml.uml.ui.foundation.core;
 
+import java.awt.Color;
+import java.awt.GridLayout;
+import java.util.Collection;
+
 import javax.swing.JList;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 
-import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
-import org.argouml.uml.ui.ActionNavigateContainerElement;
-import org.argouml.uml.ui.UMLLinkedList;
-import org.argouml.uml.ui.UMLModelElementListModel2;
-import org.argouml.uml.ui.foundation.extension_mechanisms.ActionNewStereotype;
+import org.argouml.application.api.Argo;
+import org.argouml.model.ModelFacade;
+
+import org.argouml.uml.ui.PropPanelButton;
+import org.argouml.uml.ui.UMLCheckBox;
+import org.argouml.uml.ui.UMLComboBoxNavigator;
+import org.argouml.uml.ui.UMLList;
+import org.argouml.uml.ui.UMLReflectionBooleanProperty;
+import org.argouml.uml.ui.UMLReflectionListModel;
 import org.argouml.util.ConfigLoader;
 
+import ru.novosoft.uml.foundation.core.MNode;
+
 /**
- * TODO: this property panel needs refactoring to remove dependency on
+ * @todo this property panel needs refactoring to remove dependency on
  *       old gui components.
- *
- * @author 5eichler
  */
 public class PropPanelNode extends PropPanelClassifier {
 
-    /**
-     * The serial version.
-     */
-    private static final long serialVersionUID = 2681345252220104772L;
-
-    /**
-     * Construct a property panel for a UML Node element.
-     */
+    ////////////////////////////////////////////////////////////////
+    // contructors
     public PropPanelNode() {
-        super("Node", lookupIcon("Node"),
-                ConfigLoader.getTabPropsOrientation());
+        super("Node",_nodeIcon, ConfigLoader.getTabPropsOrientation());
 
-        addField(Translator.localize("label.name"),
-                getNameTextField());
-        addField(Translator.localize("label.namespace"),
-                getNamespaceSelector());
+        Class mclass = (Class)ModelFacade.NODE;
 
-        add(getModifiersPanel());
-
-        addSeparator();
+        addField(Argo.localize("UMLMenu", "label.name"), getNameTextField());
 
         addField("Generalizations:", getGeneralizationScroll());
 
+        addField(Argo.localize("UMLMenu", "label.stereotype"), new UMLComboBoxNavigator(this, Argo.localize("UMLMenu", "tooltip.nav-stereo"),getStereotypeBox()));
+
+        JPanel modifiersPanel = new JPanel(new GridLayout(0,3));
+        modifiersPanel.add(new UMLCheckBox(Argo.localize("UMLMenu", "checkbox.abstract-lc"),this,new UMLReflectionBooleanProperty("isAbstract",mclass,"isAbstract","setAbstract")));
+        modifiersPanel.add(new UMLCheckBox(Argo.localize("UMLMenu", "checkbox.final-lc"),this,new UMLReflectionBooleanProperty("isLeaf",mclass,"isLeaf","setLeaf")));
+        modifiersPanel.add(new UMLCheckBox(localize("root"),this,new UMLReflectionBooleanProperty("isRoot",mclass,"isRoot","setRoot")));
+        addField(Argo.localize("UMLMenu", "label.modifiers"), modifiersPanel);
+
+        addField(Argo.localize("UMLMenu", "label.namespace"), getNamespaceComboBox());
+
         addField("Specializations:", getSpecializationScroll());
 
-        addSeparator();
+        addSeperator();
 
-        JList resList = new UMLLinkedList(
-                new UMLNodeDeployedComponentListModel());
-        addField(Translator.localize("label.deployedcomponents"),
-                new JScrollPane(resList));
+        JList compList = new UMLList(new UMLReflectionListModel(this,"component",true,"getResidents","setResidents",null,null),true);
+        compList.setForeground(Color.blue);
+        addField(Argo.localize("UMLMenu", "label.components"), new JScrollPane(compList));
 
-        addAction(new ActionNavigateContainerElement());
-        addAction(getActionNewReception());
-        addAction(new ActionNewStereotype());
-        addAction(getDeleteAction());
+        new PropPanelButton(this,buttonPanel,_navUpIcon, Argo.localize("UMLMenu", "button.go-up"),"navigateUp",null);
+        new PropPanelButton(this,buttonPanel,_deleteIcon,localize("Delete node"),"removeElement",null);
     }
 
-
-} /* end class PropPanelNode */
-
-class UMLNodeDeployedComponentListModel extends UMLModelElementListModel2 {
-    
-    /**
-     * The serial version.
-     */
-    private static final long serialVersionUID = -7137518645846584922L;
-
-    /**
-     * Construct a list model for the deployed components of a Node.
-     */
-    public UMLNodeDeployedComponentListModel() {
-        super("deployedComponent");
+    public Collection getResidents() {
+        Collection components = null;
+        Object target = getTarget();
+        if(ModelFacade.isANode(target)) {
+            components = ModelFacade.getResidents(target);
+        }
+        return components;
     }
-    
-    /**
-     * @see org.argouml.uml.ui.UMLModelElementListModel2#buildModelList()
-     */
-    protected void buildModelList() {
-        if (Model.getFacade().isANode(getTarget())) {
-            setAllElements(
-                    Model.getFacade().getDeployedComponents(getTarget()));
+
+    public void setResidents(Collection components) {
+        Object target = getTarget();
+        if(ModelFacade.isANode(target)) {
+            ((MNode) target).setResidents(components);
         }
     }
-    
-    /**
-     * @see org.argouml.uml.ui.UMLModelElementListModel2#isValidElement(Object)
-     */
-    protected boolean isValidElement(Object o) {
-        return (Model.getFacade().isAComponent(o));
-    }
-    
-}
+} /* end class PropPanelNode */
+

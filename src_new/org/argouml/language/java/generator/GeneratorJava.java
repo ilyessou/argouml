@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2001 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,157 +21,153 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: GeneratorJava.java
+// Classes: GeneratorJava
+// Original Author:
+// $Id$
+
+// 12 Apr 2002: Jeremy Bennett (mail@jeremybennett.com). Extended to support
+// extension points.
+
 package org.argouml.language.java.generator;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.Vector;
 
-import org.apache.log4j.Logger;
 import org.argouml.application.ArgoVersion;
 import org.argouml.application.api.Argo;
-import org.argouml.application.api.Configuration;
-import org.argouml.model.Model;
-import org.argouml.notation.Notation;
-import org.argouml.ocl.ArgoFacade;
+import org.argouml.application.api.Notation;
+import org.argouml.model.ModelFacade;
+import org.argouml.model.uml.UmlHelper;
 import org.argouml.uml.DocumentationManager;
 import org.argouml.uml.generator.FileGenerator;
-import org.argouml.uml.generator.Generator2;
+import org.argouml.uml.generator.Generator;
 
-import tudresden.ocl.OclTree;
-import tudresden.ocl.parser.analysis.DepthFirstAdapter;
-import tudresden.ocl.parser.node.AConstraintBody;
-import antlr.ANTLRException;
+import ru.novosoft.uml.behavior.collaborations.MAssociationRole;
+import ru.novosoft.uml.behavior.collaborations.MMessage;
+import ru.novosoft.uml.behavior.common_behavior.MAction;
+import ru.novosoft.uml.behavior.state_machines.MGuard;
+import ru.novosoft.uml.behavior.state_machines.MState;
+import ru.novosoft.uml.behavior.state_machines.MTransition;
+import ru.novosoft.uml.behavior.use_cases.MExtensionPoint;
+import ru.novosoft.uml.foundation.core.MAssociation;
+import ru.novosoft.uml.foundation.core.MAssociationEnd;
+import ru.novosoft.uml.foundation.core.MAttribute;
+import ru.novosoft.uml.foundation.core.MBehavioralFeature;
+import ru.novosoft.uml.foundation.core.MClass;
+import ru.novosoft.uml.foundation.core.MClassifier;
+import ru.novosoft.uml.foundation.core.MConstraint;
+import ru.novosoft.uml.foundation.core.MDataType;
+import ru.novosoft.uml.foundation.core.MFeature;
+import ru.novosoft.uml.foundation.core.MGeneralizableElement;
+import ru.novosoft.uml.foundation.core.MGeneralization;
+import ru.novosoft.uml.foundation.core.MInterface;
+import ru.novosoft.uml.foundation.core.MMethod;
+import ru.novosoft.uml.foundation.core.MModelElement;
+import ru.novosoft.uml.foundation.core.MOperation;
+import ru.novosoft.uml.foundation.core.MParameter;
+import ru.novosoft.uml.foundation.core.MStructuralFeature;
+import ru.novosoft.uml.foundation.data_types.MCallConcurrencyKind;
+import ru.novosoft.uml.foundation.data_types.MChangeableKind;
+import ru.novosoft.uml.foundation.data_types.MExpression;
+import ru.novosoft.uml.foundation.data_types.MMultiplicity;
+import ru.novosoft.uml.foundation.data_types.MMultiplicityRange;
+import ru.novosoft.uml.foundation.data_types.MScopeKind;
+import ru.novosoft.uml.foundation.data_types.MVisibilityKind;
+import ru.novosoft.uml.foundation.extension_mechanisms.MStereotype;
+import ru.novosoft.uml.foundation.extension_mechanisms.MTaggedValue;
+import ru.novosoft.uml.model_management.MPackage;
 
-/**
- * Generator2 subclass to generate Java for display in diagrams and in
- * text fields in the ArgoUML user interface.
- *
- * @stereotype singleton
- */
+/** Generator subclass to generate text for display in diagrams in in
+ * text fields in the Argo/UML user interface.  The generated code
+ * looks a lot like (invalid) Java.  The idea is that other generators
+ * could be written for outher languages.  This code is just a
+ * placeholder for future development, I expect it to be totally
+ * replaced. */
+
+// TODO: always check for null!!!
+
 public class GeneratorJava
-    extends Generator2 implements FileGenerator {
+    extends Generator implements FileGenerator {
 
-    /**
-     * Logger.
-     */
-    private static final Logger LOG = Logger.getLogger(GeneratorJava.class);
+    /*
+      	 * 2002-06-09
+      	 * changed visibility of VERBOSE_DOCS and LF_BEFORE_CURLY to public instead of private
+      	 * Reason: needed for testing
+      	 * 2002-06-11
+      	 * removed VERBOSE_DOCS and LF_BEFORE_CURLY and changed them in configurable items (not yet implemented in GUI)
+      	 */
 
-    private boolean verboseDocs;
-    private boolean lfBeforeCurly;
+    protected boolean _verboseDocs = false;
+    protected boolean _lfBeforeCurly = false;
     private static final boolean VERBOSE_DOCS = false;
-    private static final String LINE_SEPARATOR =
-	System.getProperty("line.separator");
-    private static final String LANG_PACKAGE = "java.lang";
-
-    private static final Set JAVA_TYPES;
-    static {
-	HashSet types = new HashSet();
-	types.add("void");
-	types.add("boolean");
-	types.add("byte");
-	types.add("char");
-	types.add("int");
-	types.add("short");
-	types.add("long");
-	types.add("float");
-	types.add("double");
-	JAVA_TYPES = Collections.unmodifiableSet(types);
-    }
-
+    private final static String LINE_SEPARATOR = System.getProperty("line.separator");
     // TODO: make it configurable
     // next two flags shows in what mode we are working
-    /**
-     * <code>true</code> when GenerateFile.
-     */
-    private static boolean isFileGeneration;
+    private static boolean _isFileGeneration = false; // true when GenerateFile
+    private static boolean _isInUpdateMode = false; // true if GenerateFile in Update Mode
 
-    /**
-     * <code>true</code> if GenerateFile in Update Mode.
-     */
-    private static boolean isInUpdateMode;
+    private static GeneratorJava SINGLETON = new GeneratorJava();
 
-    /**
-     * The instance.
-     */
-    private static final GeneratorJava SINGLETON = new GeneratorJava();
-
-    /**
-     * Get the generator.
-     *
-     * @return The singleton.
-     */
     public static GeneratorJava getInstance() {
         return SINGLETON;
     }
 
-    /**
-     * Constructor.
-     */
     protected GeneratorJava() {
         super(
-	      Notation.makeNotation(
-				    "Java",
-				    null,
-				    Argo.lookupIconResource("JavaNotation")));
+            Notation.makeNotation(
+                "Java",
+                null,
+                Argo.lookupIconResource("JavaNotation")));
     }
 
-    /**
-     * Generates a file for the classifier.
+    public static String Generate(Object o) {
+        return SINGLETON.generate(o);
+    }
+
+    /** Generates a file for the classifier.
      * This method could have been static if it where not for the need to
      * call it through the Generatorinterface.
-     * Returns the full path name of the the generated file or
-     * null if no file can be generated.
-     *
-     * @see org.argouml.uml.generator.FileGenerator#generateFile2(
-     * java.lang.Object, java.lang.String)
+     * @return the full path name of the the generated file or
+     * 	       null if no file can be generated.
      */
-    public String generateFile2(Object modelElement, String path) {
-        String name = Model.getFacade().getName(modelElement);
-        if (name == null || name.length() == 0) {
+    public String GenerateFile(Object me, String path) {
+        String name = ModelFacade.getName(me);
+        if (name == null || name.length() == 0)
             return null;
-        }
-        Object classifier = /*(MClassifier)*/ modelElement;
+        MClassifier cls = (MClassifier)me;
         String filename = name + ".java";
-        if (!path.endsWith(FILE_SEPARATOR)) {
+        if (!path.endsWith(FILE_SEPARATOR))
             path += FILE_SEPARATOR;
-        }
 
-        String packagePath =
-	    getPackageName(Model.getFacade().getNamespace(classifier));
+        String packagePath = getPackageName(ModelFacade.getNamespace(cls));
 
         int lastIndex = -1;
         do {
             File f = new File(path);
             if (!f.isDirectory()) {
                 if (!f.mkdir()) {
-                    LOG.error(" could not make directory " + path);
+                    Argo.log.error(" could not make directory " + path);
                     return null;
                 }
             }
 
-            if (lastIndex == packagePath.length()) {
+            if (lastIndex == packagePath.length())
                 break;
-            }
 
             int index = packagePath.indexOf(".", lastIndex + 1);
-            if (index == -1) {
+            if (index == -1)
                 index = packagePath.length();
-            }
 
             path += packagePath.substring(lastIndex + 1, index)
                 + FILE_SEPARATOR;
@@ -180,210 +175,136 @@ public class GeneratorJava
         } while (true);
 
         String pathname = path + filename;
-        //cat.info("-----" + pathname + "-----");
+        //Argo.log.info("-----" + pathname + "-----");
 
-        //now decide wether file exist and need an update or is to be
-        //newly generated
+        //now decide wether file exist and need an update or is to be newly generated
         File f = new File(pathname);
-        isFileGeneration = true; // used to produce method javadoc
+        _isFileGeneration = true; // used to produce method javadoc
         if (f.exists()) {
             try {
-                update(classifier, f);
+                update(cls, f);
             } catch (Exception exp) {
-                isInUpdateMode = false;
-                isFileGeneration = false;
-                LOG.error("FAILED: " + f.getPath(), exp);
+                _isInUpdateMode = false;
+                _isFileGeneration = false;
+                Argo.log.error("FAILED: " + f.getPath());
             }
 
-            //cat.info("----- end generating -----");
-            isFileGeneration = false;
+            //Argo.log.info("----- end generating -----");
+            _isFileGeneration = false;
             return pathname;
         }
 
         //String pathname = path + filename;
         // TODO: package, project basepath, tagged values to configure
-        LOG.info("Generating (new) " + f.getPath());
-        isFileGeneration = true;
-        String header =
-	    SINGLETON.generateHeader(classifier, pathname, packagePath);
-        String src = SINGLETON.generate(classifier);
+        Argo.log.info("Generating (new) " + f.getPath());
+        _isFileGeneration = true;
+        String header = SINGLETON.generateHeader(cls, pathname, packagePath);
+        String src = SINGLETON.generate(cls);
         BufferedWriter fos = null;
         try {
-	    if (Configuration.getString(Argo.KEY_INPUT_SOURCE_ENCODING) == null
-		|| Configuration.getString(Argo.KEY_INPUT_SOURCE_ENCODING)
-		    .trim().equals("")) {
-            	fos =
-		    new BufferedWriter(
-		            new OutputStreamWriter(new FileOutputStream(f),
-		                    System.getProperty("file.encoding")));
-	    } else {
-            	fos =
-		    new BufferedWriter(
-		            new OutputStreamWriter(new FileOutputStream(f),
-		                    Configuration.getString(
-		                            Argo.KEY_INPUT_SOURCE_ENCODING)));
-	    }
+            fos = new BufferedWriter(new FileWriter(f));
             fos.write(header);
             fos.write(src);
         } catch (IOException exp) {
-            LOG.error("IO Exception: " + exp + ", for file: " + f.getPath());
         } finally {
-            isFileGeneration = false;
+            _isFileGeneration = false;
             try {
-                if (fos != null) {
+                if (fos != null)
                     fos.close();
-                }
             } catch (IOException exp) {
-                LOG.error("FAILED: " + f.getPath());
+                Argo.log.error("FAILED: " + f.getPath());
             }
         }
 
-        //cat.info("----- end updating -----");
+        //Argo.log.info("----- end updating -----");
         return pathname;
     }
 
-    private String generateHeader(Object cls,
-				  String pathname,
-				  String packagePath) {
+    public String generateHeader(
+        MClassifier cls,
+        String pathname,
+        String packagePath) {
         StringBuffer sb = new StringBuffer(80);
         //TODO: add user-defined copyright
-        if (VERBOSE_DOCS) {
-            sb.append("// FILE: ").append(pathname.replace('\\', '/'));
-	    sb.append(LINE_SEPARATOR).append(LINE_SEPARATOR);
-	}
-        if (packagePath.length() > 0) {
-            sb.append("package ").append(packagePath).append(";");
-	    sb.append(LINE_SEPARATOR).append(LINE_SEPARATOR);
-	}
+        if (VERBOSE_DOCS)
+            sb.append("// FILE: ").append(pathname.replace('\\', '/')).append(LINE_SEPARATOR).append(LINE_SEPARATOR);
+        if (packagePath.length() > 0)
+            sb.append("package ").append(packagePath).append(";").append(LINE_SEPARATOR).append(LINE_SEPARATOR);
         sb.append(generateImports(cls, packagePath));
         return sb.toString();
     }
 
-    private String generateImports(Object cls, String packagePath) {
+    public String generateImports(MClassifier cls, String packagePath) {
         // TODO: check also generalizations
         StringBuffer sb = new StringBuffer(80);
-        HashSet importSet = new java.util.HashSet();
+        java.util.HashSet importSet = new java.util.HashSet();
         String ftype;
         Iterator j;
-        Collection c = Model.getFacade().getFeatures(cls);
+        Collection c = cls.getFeatures();
         if (c != null) {
             // now check packages of all feature types
             for (j = c.iterator(); j.hasNext();) {
-                Object mFeature = /*(MFeature)*/ j.next();
-                if (Model.getFacade().isAAttribute(mFeature)) {
+                MFeature mFeature = (MFeature)j.next();
+                if (mFeature instanceof MAttribute) {
                     if ((ftype =
-			    generateImportType(Model.getFacade()
-				.getType(mFeature), packagePath))
-                            != null) {
+                        generateImportType(
+                            ((MAttribute)mFeature).getType(),
+                            packagePath))
+                        != null) {
                         importSet.add(ftype);
                     }
-                } else if (Model.getFacade().isAOperation(mFeature)) {
+                } else if (mFeature instanceof MOperation) {
                     // check the parameter types
                     Iterator it =
-			Model.getFacade().getParameters(mFeature).iterator();
+                        ((MOperation)mFeature).getParameters().iterator();
                     while (it.hasNext()) {
-                        Object parameter = it.next();
-			ftype =
-			    generateImportType(Model.getFacade()
-			        .getType(parameter), packagePath);
-			if (ftype != null) {
+                        MParameter p = (MParameter)it.next();
+                        if ((ftype =
+                            generateImportType(p.getType(), packagePath))
+                            != null) {
                             importSet.add(ftype);
                         }
                     }
-
                     // check the return parameter types
                     it =
-                        Model.getCoreHelper()
-			        .getReturnParameters(/*(MOperation)*/mFeature)
-			            .iterator();
+                        UmlHelper
+                            .getHelper()
+                            .getCore()
+                            .getReturnParameters((MOperation)mFeature)
+                            .iterator();
                     while (it.hasNext()) {
-                        Object parameter = it.next();
-			ftype =
-			    generateImportType(Model.getFacade()
-			        .getType(parameter), packagePath);
-                        if (ftype != null) {
+                        MParameter p = (MParameter)it.next();
+                        if ((ftype =
+                            generateImportType(p.getType(), packagePath))
+                            != null) {
                             importSet.add(ftype);
                         }
                     }
-
-		    // check raised signals
-		    it =
-		        Model.getFacade().getRaisedSignals(mFeature).iterator();
-		    while (it.hasNext()) {
-			Object signal = it.next();
-			if (!Model.getFacade().isAException(signal)) {
-			    continue;
-			}
-
-			ftype =
-			    generateImportType(Model.getFacade()
-			        .getType(signal), packagePath);
-			if (ftype != null) {
-			    importSet.add(ftype);
-			}
-		    }
                 }
             }
         }
-
-	c = Model.getFacade().getGeneralizations(cls);
-	if (c != null) {
-	    // now check packages of all generalized types
-	    for (j = c.iterator(); j.hasNext();) {
-		Object gen = /*(MGeneralization)*/ j.next();
-		Object parent = Model.getFacade().getParent(gen);
-		if (parent == cls) {
-		    continue;
-		}
-
-		ftype = generateImportType(parent, packagePath);
-		if (ftype != null) {
-		    importSet.add(ftype);
-		}
-	    }
-	}
-
-	c = Model.getFacade().getSpecifications(cls);
-	if (c != null) {
-	    // now check packages of the interfaces
-	    for (j = c.iterator(); j.hasNext();) {
-		Object iface = j.next();
-
-		ftype = generateImportType(iface, packagePath);
-		if (ftype != null) {
-		    importSet.add(ftype);
-		}
-	    }
-	}
-
-        c = Model.getFacade().getAssociationEnds(cls);
+        c = cls.getAssociationEnds();
         if (!c.isEmpty()) {
             // check association end types
             for (j = c.iterator(); j.hasNext();) {
-                Object associationEnd = /*(MAssociationEnd)*/ j.next();
-                Object association =
-                    Model.getFacade().getAssociation(associationEnd);
-                Iterator connEnum =
-		    Model.getFacade().getConnections(association).iterator();
+                MAssociationEnd ae = (MAssociationEnd)j.next();
+                MAssociation a = ae.getAssociation();
+                Iterator connEnum = a.getConnections().iterator();
                 while (connEnum.hasNext()) {
-                    Object associationEnd2 =
-			/*(MAssociationEnd)*/ connEnum.next();
-                    if (associationEnd2 != associationEnd
-                            && Model.getFacade().isNavigable(associationEnd2)
-                            && !Model.getFacade().isAbstract(
-                                    Model.getFacade().getAssociation(
-                                            associationEnd2))) {
+                    MAssociationEnd ae2 = (MAssociationEnd)connEnum.next();
+                    if (ae2 != ae
+                        && ae2.isNavigable()
+                        && !ae2.getAssociation().isAbstract()) {
                         // association end found
-                        if (Model.getFacade().getUpper(associationEnd2) != 1) {
+                        MMultiplicity m = ae2.getMultiplicity();
+                        if (!MMultiplicity.M1_1.equals(m)
+                            && !MMultiplicity.M0_1.equals(m)) {
                             importSet.add("java.util.Vector");
-                        } else {
-			    ftype =
-				generateImportType(Model.getFacade().getType(
-				        associationEnd2),
-						   packagePath);
-			    if (ftype != null) {
-				importSet.add(ftype);
-			    }
+                        } else if (
+                            (ftype =
+                                generateImportType(ae2.getType(), packagePath))
+                                != null) {
+                            importSet.add(ftype);
                         }
                     }
                 }
@@ -391,9 +312,8 @@ public class GeneratorJava
         }
         // finally generate the import statements
         for (j = importSet.iterator(); j.hasNext();) {
-            ftype = (String) j.next();
-            sb.append("import ").append(ftype).append(";");
-	    sb.append(LINE_SEPARATOR);
+            ftype = (String)j.next();
+            sb.append("import ").append(ftype).append(";").append(LINE_SEPARATOR);
         }
         if (!importSet.isEmpty()) {
             sb.append(LINE_SEPARATOR);
@@ -401,79 +321,51 @@ public class GeneratorJava
         return sb.toString();
     }
 
-    private String generateImportType(Object type, String exclude) {
+    public String generateImportType(MClassifier type, String exclude) {
         String ret = null;
-
-	if (Model.getFacade().isADataType(type)
-	    && JAVA_TYPES.contains(Model.getFacade().getName(type))) {
-		return null;
-	}
-
-        if (type != null && Model.getFacade().getNamespace(type) != null) {
-            String p = getPackageName(Model.getFacade().getNamespace(type));
-            if (!p.equals(exclude) && !p.equals(LANG_PACKAGE)) {
-		if (p.length() > 0) {
-		    ret = p + '.' + Model.getFacade().getName(type);
-		} else {
-		    ret = Model.getFacade().getName(type);
-		}
-	    }
+        if (type != null && type.getNamespace() != null) {
+            String p = getPackageName(type.getNamespace());
+            if (p.length() > 0 && !p.equals(exclude))
+                ret = p + '.' + type.getName();
         }
         return ret;
     }
 
     /**
-     * Generate code for an extension point.<p>
+     * <p>Generate code for an extension point.</p>
      *
-     * Provided to comply with the interface, but returns null
-     * since no code will be generated. This should prevent a source tab
-     * being shown.<p>
+     * <p>Provided to comply with the interface, but returns null
+     *   since no code will be generated. This should prevent a source tab
+     *   being shown.</p>
      *
      * @param ep  The extension point to generate for
      *
      * @return    The generated code string. Always empty in this
      *            implementation.
      */
-    public String generateExtensionPoint(Object ep) {
+
+    public String generateExtensionPoint(MExtensionPoint ep) {
+
         return null;
     }
 
-    /**
-     * @see org.argouml.notation.NotationProvider2#generateAssociationRole(java.lang.Object)
-     */
-    public String generateAssociationRole(Object m) {
+    public String generateAssociationRole(MAssociationRole m) {
         return "";
     }
 
-    /**
-     * @see org.argouml.notation.NotationProvider2#generateOperation(
-     *         java.lang.Object, boolean)
-     */
-    public String generateOperation(Object op, boolean documented) {
-        if (isFileGeneration) {
+    public String generateOperation(MOperation op, boolean documented) {
+        if (_isFileGeneration)
             documented = true; // fix Issue 1506
-        }
         StringBuffer sb = new StringBuffer(80);
         String nameStr = null;
         boolean constructor = false;
-
-        Iterator its = Model.getFacade().getStereotypes(op).iterator();
-        String name = "";
-        while (its.hasNext()) {
-            Object o = its.next();
-            name = Model.getFacade().getName(o);
-            if ("create".equals(name)) {
-		break;
-	    }
-        }
-        if ("create".equals(name)) {
-            // constructor
-            nameStr =
-                generateName(Model.getFacade().getName(
-                    Model.getFacade().getOwner(op)));
+        MStereotype stereo = op.getStereotype();
+        if (stereo != null
+            && stereo.getName().equals("create")) { // constructor
+            nameStr = generateName(op.getOwner().getName());
             constructor = true;
         } else {
-            nameStr = generateName(Model.getFacade().getName(op));
+            nameStr = generateName(op.getName());
         }
         // Each pattern here must be similar to corresponding code piece
         // Operation code piece doesn't start with '\n'
@@ -482,16 +374,14 @@ public class GeneratorJava
         if (documented) {
             String s =
                 generateConstraintEnrichedDocComment(op, documented, INDENT);
-            if (s != null && s.trim().length() > 0) {
-		// should starts as the code piece
-                sb.append(s).append(INDENT);
-	    }
+            if (s != null && s.trim().length() > 0)
+                sb.append(s).append(LINE_SEPARATOR); // should starts as the code piece
         }
 
         // 2002-07-14
         // Jaap Branderhorst
         // missing concurrency generation
-	//sb.append(INDENT); fixed issue 1505
+	    //sb.append(INDENT); fixed issue 1505
         sb.append(generateConcurrency(op));
         sb.append(generateAbstractness(op));
         sb.append(generateChangeability(op));
@@ -499,84 +389,51 @@ public class GeneratorJava
         sb.append(generateVisibility(op));
 
         // pick out return type
-        Collection returnParams = Model.getCoreHelper().getReturnParameters(op);
-        Object rp;
-        if (returnParams.size() == 0) {
-            rp = null;
-        } else {
-            rp = returnParams.iterator().next();
-        }
-        if (returnParams.size() > 1)  {
-            LOG.warn("Java generator only handles one return parameter"
-                    + " - Found " + returnParams.size()
-                    + " for " + Model.getFacade().getName(op));
-        }
-        if (rp != null && !constructor) {
-            Object/*MClassifier*/ returnType = Model.getFacade().getType(rp);
-            if (returnType == null) {
+        MParameter rp = UmlHelper.getHelper().getCore().getReturnParameter(op);
+        if (rp != null) {
+            MClassifier returnType = rp.getType();
+            if (returnType == null && !constructor) {
                 sb.append("void ");
-            } else {
+            } else if (returnType != null) {
                 sb.append(generateClassifierRef(returnType)).append(' ');
             }
         }
 
         // name and params
-        Vector params = new Vector(Model.getFacade().getParameters(op));
+        Vector params = new Vector(op.getParameters());
         params.remove(rp);
 
         sb.append(nameStr).append('(');
 
         if (params != null) {
+            boolean first = true;
+
             for (int i = 0; i < params.size(); i++) {
-                if (i > 0) {
+                MParameter p = (MParameter)params.elementAt(i);
+
+                if (!first)
                     sb.append(", ");
-                }
-                sb.append(generateParameter(params.elementAt(i)));
+
+                sb.append(generateParameter(p));
+                first = false;
             }
         }
 
         sb.append(')');
 
-	Collection c = Model.getFacade().getRaisedSignals(op);
-	if (!c.isEmpty()) {
-	    Iterator it = c.iterator();
-	    boolean first = true;
-	    while (it.hasNext()) {
-		Object signal = it.next();
-
-		if (!Model.getFacade().isAException(signal)) {
-		    continue;
-		}
-
-		if (first) {
-		    sb.append(" throws ");
-		} else {
-		    sb.append(", ");
-		}
-
-		sb.append(Model.getFacade().getName(it.next()));
-		first = false;
-	    }
-	}
-
         return sb.toString();
+
     }
 
-    /**
-     * @see org.argouml.notation.NotationProvider2#generateAttribute(
-     *         java.lang.Object, boolean)
-     */
-    public String generateAttribute(Object attr, boolean documented) {
-        if (isFileGeneration) {
+    public String generateAttribute(MAttribute attr, boolean documented) {
+        if (_isFileGeneration)
             documented = true; // always "documented" if we generate file.
-	}
         StringBuffer sb = new StringBuffer(80);
         if (documented) {
             String s =
                 generateConstraintEnrichedDocComment(attr, documented, INDENT);
-            if (s != null && s.trim().length() > 0) {
-                sb.append(s).append(INDENT);
-	    }
+            if (s != null && s.trim().length() > 0)
+                sb.append(s).append(LINE_SEPARATOR);
         }
         //sb.append(INDENT); fixed issue 1505
         sb.append(generateCoreAttribute(attr));
@@ -585,66 +442,72 @@ public class GeneratorJava
         return sb.toString();
     }
 
-    String generateCoreAttribute(Object attr) {
+    public String generateCoreAttribute(MAttribute attr) {
         StringBuffer sb = new StringBuffer(80);
         sb.append(generateVisibility(attr));
         sb.append(generateScope(attr));
         sb.append(generateChangability(attr));
-        Object/*MClassifier*/ type = Model.getFacade().getType(attr);
-        Object/*MMultiplicity*/ multi = Model.getFacade().getMultiplicity(attr);
-        // handle multiplicity here since we need the type
-        // actually the API of generator is buggy since to generate
-        // multiplicity correctly we need the attribute too
-        if (type != null && multi != null) {
-            if (Model.getFacade().getUpper(multi) == 1) {
-                sb.append(generateClassifierRef(type)).append(' ');
-            } else if (Model.getFacade().isADataType(type)) {
-                sb.append(generateClassifierRef(type)).append("[] ");
-            } else {
-                sb.append("java.util.Vector ");
+        /*
+             * 2002-07-14
+             * Jaap Branderhorst
+             * Generating the multiplicity should not lead to putting the range in the generated code
+             * (no 0..1 as modifier)
+             * Therefore removed the multiplicity generation
+             * START OLD CODE
+
+            if (!MMultiplicity.M1_1.equals(attr.getMultiplicity()))
+            {
+            	String m = generateMultiplicity(attr.getMultiplicity());
+            	if (m != null && m.trim().length() > 0)
+            		sb.append(m).append(' ');
             }
+            */
+        // END OLD CODE
+
+        MClassifier type = attr.getType();
+        MMultiplicity multi = attr.getMultiplicity();
+        // handle multiplicity here since we need the type
+        // actually the API of generator is buggy since to generate multiplicity correctly we need the attribute too
+        if (type != null && multi != null) {
+            if (multi.equals(MMultiplicity.M1_1)) {
+                sb.append(generateClassifierRef(type)).append(' ');
+            } else if (type instanceof MDataType) {
+                sb.append(generateClassifierRef(type)).append("[] ");
+            } else
+                sb.append("java.util.Vector ");
         }
 
-        sb.append(generateName(Model.getFacade().getName(attr)));
-        Object/*MExpression*/ init = Model.getFacade().getInitialValue(attr);
+        sb.append(generateName(attr.getName()));
+        MExpression init = attr.getInitialValue();
         if (init != null) {
             String initStr = generateExpression(init).trim();
-            if (initStr.length() > 0) {
+            if (initStr.length() > 0)
                 sb.append(" = ").append(initStr);
-	    }
         }
 
         return sb.toString();
     }
 
-    /**
-     * @see org.argouml.notation.NotationProvider2#generateParameter(java.lang.Object)
-     */
-    public String generateParameter(Object parameter) {
+    public String generateParameter(MParameter param) {
         StringBuffer sb = new StringBuffer(20);
         //TODO: qualifiers (e.g., const)
         //TODO: stereotypes...
-        sb.append(generateClassifierRef(Model.getFacade().getType(parameter)));
-	sb.append(' ');
-        sb.append(generateName(Model.getFacade().getName(parameter)));
+        sb.append(generateClassifierRef(param.getType())).append(' ');
+        sb.append(generateName(param.getName()));
         //TODO: initial value
         return sb.toString();
     }
 
-    /**
-     * @see org.argouml.notation.NotationProvider2#generatePackage(java.lang.Object)
-     */
-    public String generatePackage(Object p) {
+    public String generatePackage(MPackage p) {
         StringBuffer sb = new StringBuffer(80);
-        String packName = generateName(Model.getFacade().getName(p));
-        sb.append("package ").append(packName).append(" {");
-	sb.append(LINE_SEPARATOR);
-        Collection ownedElements = Model.getFacade().getOwnedElements(p);
+        String packName = generateName(p.getName());
+        sb.append("package ").append(packName).append(" {").append(LINE_SEPARATOR);
+        Collection ownedElements = p.getOwnedElements();
         if (ownedElements != null) {
             Iterator ownedEnum = ownedElements.iterator();
             while (ownedEnum.hasNext()) {
-                Object modelElement = /*(MModelElement)*/ ownedEnum.next();
-                sb.append(generate(modelElement));
+                MModelElement me = (MModelElement)ownedEnum.next();
+                sb.append(generate(me));
                 sb.append(LINE_SEPARATOR).append(LINE_SEPARATOR);
             }
         } else {
@@ -665,15 +528,14 @@ public class GeneratorJava
      *
      * @return the generated start sequence
      */
-    StringBuffer generateClassifierStart(Object cls) {
+    StringBuffer generateClassifierStart(MClassifier cls) {
         String sClassifierKeyword;
-        if (Model.getFacade().isAClass(cls)) {
+        if (cls instanceof MClass)
             sClassifierKeyword = "class";
-        } else if (Model.getFacade().isAInterface(cls)) {
+        else if (cls instanceof MInterface)
             sClassifierKeyword = "interface";
-        } else {
+        else
             return null; // actors, use cases etc.
-        }
 
         StringBuffer sb = new StringBuffer(80);
 
@@ -682,57 +544,46 @@ public class GeneratorJava
         // Classfier code piece doesn't start with LINE_SEPARATOR
         // so the next line is commented. See Issue 1505
         //sb.append (LINE_SEPARATOR);
-        sb.append(DocumentationManager.getComments(cls));
-        sb.append(generateConstraintEnrichedDocComment(cls, true, ""));
+        sb.append(DocumentationManager.getComments(cls)).append(
+            generateConstraintEnrichedDocComment(cls, true, ""));
 
-        // Now add visibility, but not for non public top level classifiers
-        if (Model.getFacade().isPublic(cls)
-                || Model.getFacade().isAClassifier(
-			Model.getFacade().getNamespace(cls))) {
-            sb.append(generateVisibility(Model.getFacade().getVisibility(cls)));
-        }
+        // Now add visibility
+        sb.append(generateVisibility(cls.getVisibility()));
 
         // Add other modifiers
-        if (Model.getFacade().isAbstract(cls)
-                && !(Model.getFacade().isAInterface(cls))) {
+        if (cls.isAbstract() && !(cls instanceof MInterface)) {
             sb.append("abstract ");
         }
 
-        if (Model.getFacade().isLeaf(cls)) {
+        if (cls.isLeaf()) {
             sb.append("final ");
         }
 
         // add additional modifiers
-	Object smod = Model.getFacade().getTaggedValue(cls, "src_modifiers");
-        if (smod != null && Model.getFacade().getValue(smod) != null) {
-            sb.append(" ");
-	    sb.append(Model.getFacade().getValue(smod));
-	    sb.append(" ");
-	}
+        if (cls.getTaggedValue("src_modifiers") != null)
+            sb.append(" "+cls.getTaggedValue("src_modifiers")+" ");
 
         // add classifier keyword and classifier name
-        sb.append(sClassifierKeyword).append(" ");
-	sb.append(generateName(Model.getFacade().getName(cls)));
+        sb.append(sClassifierKeyword).append(" ").append(
+            generateName(cls.getName()));
 
         // add base class/interface
-        String baseClass =
-	    generateGeneralization(Model.getFacade().getGeneralizations(cls));
+        String baseClass = generateGeneralization(cls.getGeneralizations());
         if (!baseClass.equals("")) {
             sb.append(" ").append("extends ").append(baseClass);
         }
 
         // add implemented interfaces, if needed
-        // UML: realizations!
-        if (Model.getFacade().isAClass(cls)) {
-            String interfaces = generateSpecification(cls);
-	    LOG.debug("Specification: " + interfaces);
+        // nsuml: realizations!
+        if (cls instanceof MClass) {
+            String interfaces = generateSpecification((MClass)cls);
             if (!interfaces.equals("")) {
                 sb.append(" ").append("implements ").append(interfaces);
             }
         }
 
         // add opening brace
-        sb.append(lfBeforeCurly ? (LINE_SEPARATOR + "{") : " {");
+        sb.append(_lfBeforeCurly ? (LINE_SEPARATOR + "{") : " {");
 
         // list tagged values for documentation
         String tv = generateTaggedValues(cls);
@@ -743,55 +594,229 @@ public class GeneratorJava
         return sb;
     }
 
-    private StringBuffer generateClassifierEnd(Object cls) {
+    protected StringBuffer generateClassifierEnd(MClassifier cls) {
         StringBuffer sb = new StringBuffer();
-        if (Model.getFacade().isAClass(cls)
-                || Model.getFacade().isAInterface(cls)) {
-            if (verboseDocs) {
+        if (cls instanceof MClass || cls instanceof MInterface) {
+            if (_verboseDocs) {
                 String classifierkeyword = null;
-                if (Model.getFacade().isAClass(cls)) {
+                if (cls instanceof MClass) {
                     classifierkeyword = "class";
                 } else {
                     classifierkeyword = "interface";
                 }
-                sb.append(LINE_SEPARATOR);
-		sb.append("//end of ").append(classifierkeyword);
-		sb.append(" ").append(Model.getFacade().getName(cls));
-		sb.append(LINE_SEPARATOR);
+                sb.append(LINE_SEPARATOR).append("//end of "
+                + classifierkeyword
+                + " "
+                + cls.getName()).append(LINE_SEPARATOR);
             }
             sb.append("}");
         }
         return sb;
     }
     /**
-     * Append the classifier end sequence to the prefix text specified. The
-     * classifier end sequence is the closing curly brace together with any
-     * comments marking the end of the classifier.
-     *
-     * This method is intented for package internal usage.
-     *
-     * @param sbPrefix the prefix text to be amended. It is OK to call append on
-     *                 this parameter.
-     * @param cls      the classifier for which to generate the classifier end
-     *                 sequence. Only classes and interfaces have a classifier
-     *                 end sequence.
-     * @return the complete classifier code, i.e., sbPrefix plus the classifier
-     *         end sequence
-     */
-    StringBuffer appendClassifierEnd(StringBuffer sbPrefix,
-				     Object/*MClassifier*/ cls) {
+       * Append the classifier end sequence to the prefix text specified. The
+       * classifier end sequence is the closing curly brace together with any
+       * comments marking the end of the classifier.
+       *
+       * This method is intented for package internal usage.
+       *
+       * @param sbPrefix the prefix text to be amended. It is OK to call append on
+       *                 this parameter.
+       * @param cls      the classifier for which to generate the classifier end
+       *                 sequence. Only classes and interfaces have a classifier
+       *                 end sequence.
+       * @param fPlain   if true, only the closing brace is generated. Otherwise,
+       *                 this may also generate some comments.
+       *
+       * @return the complete classifier code, i.e., sbPrefix plus the classifier
+       *         end sequence
+       */
+    StringBuffer appendClassifierEnd(
+        StringBuffer sbPrefix,
+        MClassifier cls,
+        boolean fPlain) {
+        // 2002-07-11
+        // Jaap Branderhorst
+        // Was:
+        // START OLD CODE
+        // if (fPlain)
+        // {
+        // 	return sbPrefix.append("}");
+        // }
+        // else
+        // {
+        //	String sClassifierKeyword;
+        //	if (cls instanceof MClass)
+        //		sClassifierKeyword = "class";
+        //	else
+        //		if (cls instanceof MInterface)
+        //			sClassifierKeyword = "interface";
+        //		else
+        //			return null; // actors, use cases etc.
+
+        //			sbPrefix.append("\n}");
+        //	if (_verboseDocs)
+        //	{
+        //		sbPrefix
+        //			.append(" /* end of ")
+        //			.append(sClassifierKeyword)
+        //			.append(" ")
+        //			.append(generateName(cls.getName()))
+        //			.append(" */");
+        //	}
+        //	sbPrefix.append('\n');
+        // END OLD CODE
+        // which caused problems due to the misuse of the boolean fplain. (verbosedocs has same semantics)
+        // To prevent backward compatibility problems i didnt remove the method but changed to:
         sbPrefix.append(generateClassifierEnd(cls));
 
         return sbPrefix;
+
     }
 
     /**
-     * Generates code for a classifier. In case of Java code is
-     * generated for classes and interfaces only at the moment.
-     * @see org.argouml.notation.NotationProvider2#generateClassifier(
-     *         Object)
-     */
-    public String generateClassifier(Object cls) {
+       * Generates code for a classifier. In case of Java code is generated for classes and interfaces only at the moment.
+       * @see org.argouml.application.api.NotationProvider#generateClassifier(MClassifier)
+       */
+    public String generateClassifier(MClassifier cls) {
+        /*
+         * 2002-07-11
+         * Jaap Branderhorst
+         * To prevent generation of not requested whitespace etc. the method is reorganized.
+         * First the start of the classifier is generated.
+         * Next the body (method).
+         * Then the end of the classifier.
+         * The last step is to concatenate everything.
+         * Done this because if the body was empty there were still linefeeds.
+         * Start old code:
+        StringBuffer sb = generateClassifierStart(cls);
+        if (sb == null)
+        	return ""; // not a class or interface
+
+        String tv = null; // helper for tagged values
+
+        // add attributes
+        Collection strs = MMUtil.SINGLETON.getAttributes(cls);
+        //
+         // 2002-06-08
+         // Jaap Branderhorst
+         // Bugfix: strs is never null. Should check for isEmpty instead
+         // old code:
+         // if (strs != null)
+         // new code:
+         //
+        if (!strs.isEmpty())
+        {
+        	sb.append('\n');
+        	if (_verboseDocs && cls instanceof MClass)
+        	{
+        		sb.append(INDENT).append("// Attributes\n");
+        	}
+
+        	Iterator strEnum = strs.iterator();
+        	while (strEnum.hasNext())
+        	{
+        		MStructuralFeature sf = (MStructuralFeature) strEnum.next();
+
+        		sb.append(generate(sf));
+
+        		tv = generateTaggedValues(sf);
+        		if (tv != null && tv.length() > 0)
+        		{
+        			sb.append(INDENT).append(tv);
+        		}
+        	}
+        }
+
+        // add attributes implementing associations
+        Collection ends = cls.getAssociationEnds();
+        if (ends != null)
+        {
+        	sb.append('\n');
+        	if (_verboseDocs && cls instanceof MClass)
+        	{
+        		sb.append(INDENT).append("// Associations\n");
+        	}
+
+        	Iterator endEnum = ends.iterator();
+        	while (endEnum.hasNext())
+        	{
+        		MAssociationEnd ae = (MAssociationEnd) endEnum.next();
+        		MAssociation a = ae.getAssociation();
+
+        		sb.append(generateAssociationFrom(a, ae));
+
+        		tv = generateTaggedValues(a);
+        		if (tv != null && tv.length() > 0)
+        		{
+        			sb.append(INDENT).append(tv);
+        		}
+        	}
+        }
+
+        // add operations
+        // TODO: constructors
+        Collection behs = MMUtil.SINGLETON.getOperations(cls);
+        //
+         // 2002-06-08
+         // Jaap Branderhorst
+         // Bugfix: behs is never null. Should check for isEmpty instead
+         // old code:
+         // if (behs != null)
+         // new code:
+         //
+        if (!behs.isEmpty())
+        {
+        	sb.append('\n');
+        	if (_verboseDocs)
+        	{
+        		sb.append(INDENT).append("// Operations\n");
+        	}
+        	Iterator behEnum = behs.iterator();
+
+        	while (behEnum.hasNext())
+        	{
+        		MBehavioralFeature bf = (MBehavioralFeature) behEnum.next();
+
+        		sb.append(generate(bf));
+
+        		tv = generateTaggedValues((MModelElement) bf);
+
+        		if ((cls instanceof MClass)
+        			&& (bf instanceof MOperation)
+        			&& (!((MOperation) bf).isAbstract()))
+        		{
+        			if (_lfBeforeCurly)
+        				sb.append('\n').append(INDENT);
+        			else
+        				sb.append(' ');
+        			sb.append('{');
+
+        			if (tv.length() > 0)
+        			{
+        				sb.append('\n').append(INDENT).append(tv);
+        			}
+
+        			// there is no ReturnType in behavioral feature (nsuml)
+        			sb.append('\n').append(generateMethodBody((MOperation) bf)).append(
+        				INDENT).append(
+        				"}\n");
+        		}
+        		else
+        		{
+        			sb.append(";\n");
+        			if (tv.length() > 0)
+        			{
+        				sb.append(INDENT).append(tv).append('\n');
+        			}
+        		}
+        	}
+        }
+
+        sb = appendClassifierEnd(sb, cls, false);
+
+        return sb.toString();
+         start new code: */
         StringBuffer returnValue = new StringBuffer();
         StringBuffer start = generateClassifierStart(cls);
         if ((start != null) && (start.length() > 0)) {
@@ -801,7 +826,7 @@ public class GeneratorJava
             if ((body != null) && (body.length() > 0)) {
                 returnValue.append(LINE_SEPARATOR);
                 returnValue.append(body);
-                if (lfBeforeCurly) {
+                if (_lfBeforeCurly) {
                     returnValue.append(LINE_SEPARATOR);
                 }
             }
@@ -815,44 +840,43 @@ public class GeneratorJava
      * @param cls
      * @return StringBuffer
      */
-    private StringBuffer generateClassifierBody(Object cls) {
+    protected StringBuffer generateClassifierBody(MClassifier cls) {
         StringBuffer sb = new StringBuffer();
-        if (Model.getFacade().isAClass(cls)
-                || Model.getFacade().isAInterface(cls)) {
+        if (cls instanceof MClass || cls instanceof MInterface) {
             String tv = null; // helper for tagged values
 
             // add attributes
-            Collection strs = Model.getFacade().getStructuralFeatures(cls);
+            Collection strs = ModelFacade.getStructuralFeatures(cls);
 
+            //
+            // 2002-06-08
+            // Jaap Branderhorst
+            // Bugfix: strs is never null. Should check for isEmpty instead
+            // old code:
+            // if (strs != null)
+            // new code:
+            //
             if (!strs.isEmpty()) {
                 sb.append(LINE_SEPARATOR);
-                if (verboseDocs && Model.getFacade().isAClass(cls)) {
-                    sb.append(INDENT).append("// Attributes");
-		    sb.append(LINE_SEPARATOR);
+                if (_verboseDocs && cls instanceof MClass) {
+                    sb.append(INDENT).append("// Attributes").append(LINE_SEPARATOR);
                 }
 
                 Iterator strEnum = strs.iterator();
-		boolean first = true;
                 while (strEnum.hasNext()) {
-                    Object structuralFeature =
-			/*(MStructuralFeature)*/ strEnum.next();
+                    MStructuralFeature sf = (MStructuralFeature)strEnum.next();
 
-		    if (!first) {
-			sb.append(LINE_SEPARATOR);
-		    }
-		    sb.append(INDENT);
-                    sb.append(generate(structuralFeature));
+                    sb.append(generate(sf));
 
-                    tv = generateTaggedValues(structuralFeature);
+                    tv = generateTaggedValues(sf);
                     if (tv != null && tv.length() > 0) {
                         sb.append(INDENT).append(tv);
                     }
-		    first = false;
                 }
             }
 
             // add attributes implementing associations
-            Collection ends = Model.getFacade().getAssociationEnds(cls);
+            Collection ends = cls.getAssociationEnds();
             // 2002-06-08
             // Jaap Branderhorst
             // Bugfix: ends is never null. Should check for isEmpty instead
@@ -861,22 +885,18 @@ public class GeneratorJava
             // new code:
             if (!ends.isEmpty()) {
                 sb.append(LINE_SEPARATOR);
-                if (verboseDocs && Model.getFacade().isAClass(cls)) {
-                    sb.append(INDENT).append("// Associations");
-		    sb.append(LINE_SEPARATOR);
+                if (_verboseDocs && cls instanceof MClass) {
+                    sb.append(INDENT).append("// Associations").append(LINE_SEPARATOR);
                 }
 
                 Iterator endEnum = ends.iterator();
                 while (endEnum.hasNext()) {
-                    Object associationEnd =
-			/*(MAssociationEnd)*/ endEnum.next();
-                    Object association =
-			Model.getFacade().getAssociation(associationEnd);
+                    MAssociationEnd ae = (MAssociationEnd)endEnum.next();
+                    MAssociation a = ae.getAssociation();
 
-                    sb.append(generateAssociationFrom(association,
-						      associationEnd));
+                    sb.append(generateAssociationFrom(a, ae));
 
-                    tv = generateTaggedValues(association);
+                    tv = generateTaggedValues(a);
                     if (tv != null && tv.length() > 0) {
                         sb.append(INDENT).append(tv);
                     }
@@ -884,19 +904,17 @@ public class GeneratorJava
             }
 
             // Inner classes
-            Collection elements = Model.getFacade().getOwnedElements(cls);
-            for (Iterator i = elements.iterator(); i.hasNext();) {
-                Object element = /*(MModelElement)*/ i.next();
-                if (Model.getFacade().isAClass(element)
-		    || Model.getFacade().isAInterface(element)) {
-
-                    sb.append(generateClassifier(element));
+            Collection elements = cls.getOwnedElements();
+            for(Iterator i = elements.iterator(); i.hasNext(); ) {
+                MModelElement element = (MModelElement)i.next();
+                if(element instanceof MClass || element instanceof MInterface) {
+                    sb.append(generateClassifier((MClass)element));
                 }
             }
 
             // add operations
             // TODO: constructors
-            Collection behs = Model.getFacade().getOperations(cls);
+            Collection behs = ModelFacade.getOperations(cls);
 
             //
             // 2002-06-08
@@ -908,122 +926,94 @@ public class GeneratorJava
             //
             if (!behs.isEmpty()) {
                 sb.append(LINE_SEPARATOR);
-                if (verboseDocs) {
-                    sb.append(INDENT).append("// Operations");
-		    sb.append(LINE_SEPARATOR);
+                if (_verboseDocs) {
+                    sb.append(INDENT).append("// Operations").append(LINE_SEPARATOR);
                 }
-
                 Iterator behEnum = behs.iterator();
-		boolean first = true;
+
                 while (behEnum.hasNext()) {
-                    Object behavioralFeature =
-			/*(MBehavioralFeature)*/ behEnum.next();
+                    MBehavioralFeature bf = (MBehavioralFeature)behEnum.next();
 
-		    if (!first) {
-                        sb.append(LINE_SEPARATOR);
-                    }
-		    sb.append(INDENT);
-                    sb.append(generate(behavioralFeature));
+                    sb.append(generate(bf));
 
-                    tv = generateTaggedValues(behavioralFeature);
+                    tv = generateTaggedValues((MModelElement)bf);
 
-                    if ((Model.getFacade().isAClass(cls))
-                            && (Model.getFacade()
-                                    .isAOperation(behavioralFeature))
-                            && (!Model.getFacade()
-                                    .isAbstract(behavioralFeature))) {
-                        if (lfBeforeCurly) {
+                    if ((cls instanceof MClass)
+                        && (bf instanceof MOperation)
+                        && (!((MOperation)bf).isAbstract())) {
+                        if (_lfBeforeCurly)
                             sb.append(LINE_SEPARATOR).append(INDENT);
-                        } else {
+                        else
                             sb.append(' ');
-                        }
                         sb.append('{');
 
                         if (tv.length() > 0) {
                             sb.append(LINE_SEPARATOR).append(INDENT).append(tv);
                         }
 
-                        // there is no ReturnType in behavioral feature (UML)
-                        sb.append(LINE_SEPARATOR);
-			sb.append(generateMethodBody(behavioralFeature));
-			sb.append(INDENT);
-			sb.append("}").append(LINE_SEPARATOR);
+                        // there is no ReturnType in behavioral feature (nsuml)
+                        sb
+                            .append(LINE_SEPARATOR)
+                            .append(generateMethodBody((MOperation)bf))
+                            .append(INDENT)
+                            .append("}").append(LINE_SEPARATOR);
                     } else {
                         sb.append(";").append(LINE_SEPARATOR);
                         if (tv.length() > 0) {
                             sb.append(INDENT).append(tv).append(LINE_SEPARATOR);
                         }
                     }
-
-		    first = false;
                 }
             }
         }
         return sb;
-    }
 
-    /**
-     * Generate the body of a method associated with the given
-     * operation. This assumes there's at most one method
-     * associated!
+    } /**
+     * Generate the body of a method associated with the given operation. This
+     * assumes there's at most one method associated!
      *
-     * If no method is associated with the operation, a default
-     * method body will be generated.
+     * If no method is associated with the operation, a default method body will
+     * be generated.
      */
-    private String generateMethodBody(Object op) {
-        //cat.info("generateMethodBody");
+    public String generateMethodBody(MOperation op) {
+        //Argo.log.info("generateMethodBody");
         if (op != null) {
-            Collection methods = Model.getFacade().getMethods(op);
+            Collection methods = op.getMethods();
             Iterator i = methods.iterator();
-            Object m = null;
+            MMethod m = null;
 
             while (i != null && i.hasNext()) {
-                m = i.next();
+                m = (MMethod)i.next();
 
                 if (m != null) {
-                    if (Model.getFacade().getBody(m) != null) {
-                        String body =
-			    (String) Model.getFacade().getBody(
-			            Model.getFacade().getBody(m));
-			// Note that this will not preserve empty lines
-			// in the body
-                        StringTokenizer tokenizer =
-			    new StringTokenizer(body, "\r\n");
+                    if (m.getBody() != null) {
+                        String body = m.getBody().getBody();
+                        if (body.equals("\n")) {
+                            return LINE_SEPARATOR;
+                        }
+                        StringTokenizer tokenizer = new StringTokenizer(body, "\n");
                         StringBuffer bsb = new StringBuffer();
-			while (tokenizer.hasMoreTokens()) {
-			    String token = tokenizer.nextToken();
-			    if (token.length() > 0) {
-				bsb.append(token);
-				bsb.append(LINE_SEPARATOR);
-			    }
+                        while (tokenizer.hasMoreTokens()) {
+                            String token = tokenizer.nextToken();
+                            bsb.append(token);
+                            if (tokenizer.hasMoreTokens()) {
+                                bsb.append(LINE_SEPARATOR);
+                            }
                         }
-                        if (bsb.length() <= 0) {
-			    // generateClassifierBody relies on the string
-			    // ending with a new-line
-			    bsb.append(LINE_SEPARATOR);
+                        if (bsb.length() > 0) {
+                            body = bsb.toString();
                         }
-                        return bsb.toString();
-                    }
-                    return "";
+                        return body;
+                    } else
+                        return "";
                 }
             }
 
             // pick out return type
-            Collection returnParams =
-		Model.getCoreHelper().getReturnParameters(op);
-            Object rp;
-            if (returnParams.size() == 0) {
-                rp = null;
-            } else {
-                rp = returnParams.iterator().next();
-            }
-            if (returnParams.size() > 1)  {
-                LOG.warn("Java generator only handles one return parameter"
-                        + " - Found " + returnParams.size()
-                        + " for " + Model.getFacade().getName(op));
-            }
+            MParameter rp =
+                UmlHelper.getHelper().getCore().getReturnParameter(op);
             if (rp != null) {
-                Object returnType = Model.getFacade().getType(rp);
+                MClassifier returnType = rp.getType();
                 return generateDefaultReturnStatement(returnType);
             }
         }
@@ -1031,63 +1021,51 @@ public class GeneratorJava
         return generateDefaultReturnStatement(null);
     }
 
-    private String generateDefaultReturnStatement(Object cls) {
-        if (cls == null) {
+    public String generateDefaultReturnStatement(MClassifier cls) {
+        if (cls == null)
             return "";
-        }
 
-        String clsName = Model.getFacade().getName(cls);
-        if (clsName.equals("void")) {
+        String clsName = cls.getName();
+        if (clsName.equals("void"))
             return "";
-        }
-        if (clsName.equals("char")) {
+        if (clsName.equals("char"))
             return INDENT + "return 'x';" + LINE_SEPARATOR;
-        }
-        if (clsName.equals("int")) {
+        if (clsName.equals("int"))
             return INDENT + "return 0;" + LINE_SEPARATOR;
-        }
-        if (clsName.equals("boolean")) {
+        if (clsName.equals("boolean"))
             return INDENT + "return false;" + LINE_SEPARATOR;
-        }
-        if (clsName.equals("byte")) {
+        if (clsName.equals("byte"))
             return INDENT + "return 0;" + LINE_SEPARATOR;
-        }
-        if (clsName.equals("long")) {
+        if (clsName.equals("long"))
             return INDENT + "return 0;" + LINE_SEPARATOR;
-        }
-        if (clsName.equals("float")) {
+        if (clsName.equals("float"))
             return INDENT + "return 0.0;" + LINE_SEPARATOR;
-        }
-        if (clsName.equals("double")) {
+        if (clsName.equals("double"))
             return INDENT + "return 0.0;" + LINE_SEPARATOR;
-        }
         return INDENT + "return null;" + LINE_SEPARATOR;
     }
 
-    private String generateTaggedValues(Object e) {
-        if (isInUpdateMode) {
-            return ""; // no tagged values are generated in update mode.
-	}
-        Iterator iter = Model.getFacade().getTaggedValues(e);
-        if (iter == null) {
+    public String generateTaggedValues(MModelElement e) {
+        if (_isInUpdateMode)
+            return ""; // no tagged values are generated in update mode. Fixed issue 1512
+        Collection tvs = e.getTaggedValues();
+        if (tvs == null || tvs.size() == 0)
             return "";
-	}
         boolean first = true;
         StringBuffer buf = new StringBuffer();
+        Iterator iter = tvs.iterator();
         String s = null;
         while (iter.hasNext()) {
             /*
-             * 2002-11-07 Jaap Branderhorst Was
-	     *
-	     * s = generateTaggedValue((MTaggedValue) iter.next());
-	     *
-	     * which caused problems because the test tags (i.e. tags with
-             * name <NotationName.getName()>+TEST_SUFFIX) were still
-             * generated.
-	     *
+             * 2002-11-07
+             * Jaap Branderhorst
+             * Was
+             * s = generateTaggedValue((MTaggedValue) iter.next());
+             * which caused problems because the test tags (i.e. tags with name <NotationName.getName()>+TEST_SUFFIX)
+             * were still generated.
              * New code:
              */
-            s = generate(/*(MTaggedValue)*/ iter.next());
+            s = generate((MTaggedValue)iter.next());
             // end new code
             if (s != null && s.length() > 0) {
                 if (first) {
@@ -1095,14 +1073,13 @@ public class GeneratorJava
                      * Corrected 2001-09-26 STEFFEN ZSCHALER
                      *
                      * Was:
-		     buf.append("// {");
+                    		buf.append("// {");
                      *
-                     * which caused problems with new lines characters
-                     * in tagged values (e.g. comments...). The new
-                     * version still has some problems with tagged
-                     * values containing "*"+"/" as this closes the
-                     * comment prematurely, but comments should be
-                     * taken out of the tagged values list anyway...
+                     * which caused problems with new lines characters in tagged values
+                     * (e.g. comments...). The new version still has some problems with
+                     * tagged values containing "*"+"/" as this closes the comment
+                     * prematurely, but comments should be taken out of the tagged values
+                     * list anyway...
                      */
                     buf.append("/* {");
 
@@ -1117,41 +1094,33 @@ public class GeneratorJava
          * Corrected 2001-09-26 STEFFEN ZSCHALER
          *
          * Was:
-	 if (!first) buf.append("}\n");
+        if (!first) buf.append("}\n");
          *
          * which caused problems with new-lines in tagged values.
          */
-        if (!first) {
+        if (!first)
             buf.append("}*/").append(LINE_SEPARATOR);
-	}
 
         return buf.toString();
     }
 
-    /**
-     * @see org.argouml.notation.NotationProvider2#generateTaggedValue(java.lang.Object)
-     */
-    public String generateTaggedValue(Object tv) {
-        if (tv == null) {
+    public String generateTaggedValue(MTaggedValue tv) {
+        if (tv == null)
             return "";
-	}
-        String s = generateUninterpreted(Model.getFacade().getValueOfTag(tv));
-        if (s == null || s.length() == 0 || s.equals("/** */")) {
+        String s = generateUninterpreted(tv.getValue());
+        if (s == null || s.length() == 0 || s.equals("/** */"))
             return "";
-	}
-        String t = Model.getFacade().getTagOfTag(tv);
-        if ("documentation".equals(t)) {
+        String t = tv.getTag();
+        if (t.equals("documentation"))
             return "";
-	}
         return generateName(t) + "=" + s;
     }
 
     /**
-     * Enhance/Create the doccomment for the given model element,
-     * including tags for any OCL constraints connected to the model
-     * element. The tags generated are suitable for use with the ocl
-     * injector which is part of the Dresden OCL Toolkit and are in
-     * detail:
+     * Enhance/Create the doccomment for the given model element, including tags
+     * for any OCL constraints connected to the model element. The tags generated
+     * are suitable for use with the ocl injector which is part of the Dresden OCL
+     * Toolkit and are in detail:
      *
      * &nbsp;@invariant for each invariant specified
      * &nbsp;@precondition for each precondition specified
@@ -1168,11 +1137,13 @@ public class GeneratorJava
      * @return the documentation comment for the specified model element, either
      * enhanced or completely generated
      */
-    public String generateConstraintEnrichedDocComment(Object me, Object ae) {
+    public String generateConstraintEnrichedDocComment(
+        MModelElement me,
+        MAssociationEnd ae) {
         String s = generateConstraintEnrichedDocComment(me, true, INDENT);
 
-        Object/*MMultiplicity*/ m = Model.getFacade().getMultiplicity(ae);
-        if (Model.getFacade().getUpper(m) != 1) {
+        MMultiplicity m = ae.getMultiplicity();
+        if (!(MMultiplicity.M1_1.equals(m) || MMultiplicity.M0_1.equals(m))) {
             // Multiplicity greater 1, that means we will generate some sort of
             // collection, so we need to specify the element type tag
             StringBuffer sDocComment = new StringBuffer(80);
@@ -1182,36 +1153,35 @@ public class GeneratorJava
                 // Just remove closing "*/"
                 sDocComment.append(s.substring(0, s.indexOf("*/") + 1));
             } else {
-                sDocComment.append(INDENT).append("/**").append(LINE_SEPARATOR);
-		sDocComment.append(INDENT).append(" * ").append(LINE_SEPARATOR);
-		sDocComment.append(INDENT).append(" *");
+                sDocComment
+                    .append(INDENT)
+                    .append("/**").append(LINE_SEPARATOR)
+                    .append(INDENT)
+                    .append(" * ").append(LINE_SEPARATOR)
+                    .append(INDENT)
+                    .append(" *");
             }
 
             // Build doccomment
-            Object/*MClassifier*/ type = Model.getFacade().getType(ae);
+            MClassifier type = ae.getType();
             if (type != null) {
-                sDocComment.append(" @element-type ");
-		sDocComment.append(Model.getFacade().getName(type));
+                sDocComment.append(" @element-type ").append(type.getName());
+            } else {
+                // REMOVED: 2002-03-11 STEFFEN ZSCHALER: element type unknown is not recognized by the OCL injector...
+                //sDocComment += " @element-type unknown";
             }
-
-	    // REMOVED: 2002-03-11 STEFFEN ZSCHALER: element type
-	    // unknown is not recognized by the OCL injector...
-	    // else {
-	    //     sDocComment += " @element-type unknown";
-	    // }
-            sDocComment.append(LINE_SEPARATOR).append(INDENT).append(" */");
-	    sDocComment.append(LINE_SEPARATOR);
+            sDocComment.append(LINE_SEPARATOR).append(INDENT).append(" */").append(LINE_SEPARATOR);
             return sDocComment.toString();
+        } else {
+            return (s != null) ? s : "";
         }
-        return (s != null) ? s : "";
     }
 
     /**
-     * Enhance/Create the doccomment for the given model element,
-     * including tags for any OCL constraints connected to the model
-     * element. The tags generated are suitable for use with the ocl
-     * injector which is part of the Dresden OCL Toolkit and are in
-     * detail:
+     * Enhance/Create the doccomment for the given model element, including tags
+     * for any OCL constraints connected to the model element. The tags generated
+     * are suitable for use with the ocl injector which is part of the Dresden OCL
+     * Toolkit and are in detail:
      *
      * &nbsp;@invariant for each invariant specified
      * &nbsp;@precondition for each precondition specified
@@ -1221,37 +1191,33 @@ public class GeneratorJava
      * @author Steffen Zschaler
      *
      * @param me the model element for which the documentation comment is needed
-     * @param documented if existing tagged values should be generated
-     *                   in addition to javadoc
-     * @param indent indent String (usually blanks) for indentation of
-     *               generated comments
-     * @return the documentation comment for the specified model
-     * element, either enhanced or completely generated
+     * @param documented if existing tagged values should be generated in addition to javadoc
+     * @param indent indent String (usually blanks) for indentation of generated comments
+     * @return the documentation comment for the specified model element, either
+     * enhanced or completely generated
      */
-    public static String generateConstraintEnrichedDocComment(
-            Object/*MModelElement*/ me,
-	    boolean documented,
-	    String indent) {
-        if (isFileGeneration) {
+    static public String generateConstraintEnrichedDocComment(
+        MModelElement me,
+        boolean documented,
+        String indent) {
+        if (_isFileGeneration)
             documented = true; // always "documented" if we generate file
-        }
         // Retrieve any existing doccomment
         String s =
             (VERBOSE_DOCS || DocumentationManager.hasDocs(me))
-	    ? DocumentationManager.getDocs(me, indent)
-	    : null;
+                ? DocumentationManager.getDocs(me, indent)
+                : null;
         StringBuffer sDocComment = new StringBuffer(80);
 
         if (s != null && s.trim().length() > 0) {
             sDocComment.append(s).append(LINE_SEPARATOR);
         }
-        LOG.debug("documented=" + documented);
-        if (!documented) {
+        cat.debug("documented="+documented);
+        if (!documented)
             return sDocComment.toString();
-        }
 
         // Extract constraints
-        Collection cConstraints = Model.getFacade().getConstraints(me);
+        Collection cConstraints = me.getConstraints();
 
         if (cConstraints.size() == 0) {
             return sDocComment.toString();
@@ -1263,51 +1229,48 @@ public class GeneratorJava
             s = sDocComment.toString();
             sDocComment = new StringBuffer(s.substring(0, s.indexOf("*/") + 1));
         } else {
-            sDocComment.append(INDENT).append("/**").append(LINE_SEPARATOR);
-	    sDocComment.append(INDENT).append(" * ").append(LINE_SEPARATOR);
-	    sDocComment.append(INDENT).append(" *");
+            sDocComment
+                .append(INDENT)
+                .append("/**").append(LINE_SEPARATOR)
+                .append(INDENT)
+                .append(" * ").append(LINE_SEPARATOR)
+                .append(INDENT)
+                .append(" *");
         }
 
         // Add each constraint
 
-        class TagExtractor extends DepthFirstAdapter {
-            private LinkedList llsTags = new LinkedList();
-            private String constraintName;
-            private int constraintID;
+        class TagExtractor
+            extends tudresden.ocl.parser.analysis.DepthFirstAdapter {
+            private LinkedList m_llsTags = new LinkedList();
+            private String m_sConstraintName;
+            private int m_nConstraintID = 0;
 
-            /**
-             * Constructor.
-             *
-             * @param sConstraintName The constraint name.
-             */
             public TagExtractor(String sConstraintName) {
                 super();
 
-                constraintName = sConstraintName;
+                m_sConstraintName = sConstraintName;
             }
 
             public Iterator getTags() {
-                return llsTags.iterator();
+                return m_llsTags.iterator();
             }
 
-            /**
-             * @see tudresden.ocl.parser.analysis.Analysis#caseAConstraintBody(tudresden.ocl.parser.node.AConstraintBody)
-             */
-            public void caseAConstraintBody(AConstraintBody node) {
-                // We don't care for anything below this node, so we
-                // do not use apply anymore.
+            public void caseAConstraintBody(
+                tudresden.ocl.parser.node.AConstraintBody node) {
+                // We don't care for anything below this node, so we do not use apply anymore.
                 String sKind =
                     (node.getStereotype() != null)
-		    ? (node.getStereotype().toString())
-		    : (null);
+                        ? (node.getStereotype().toString())
+                        : (null);
                 String sExpression =
                     (node.getExpression() != null)
-		    ? (node.getExpression().toString())
-		    : (null);
+                        ? (node.getExpression().toString())
+                        : (null);
                 String sName =
                     (node.getName() != null)
-		    ? (node.getName().getText())
-		    : (constraintName + "_" + (constraintID++));
+                        ? (node.getName().getText().toString())
+                        : (m_sConstraintName + "_" + (m_nConstraintID++));
 
                 if ((sKind == null) || (sExpression == null)) {
                     return;
@@ -1325,30 +1288,31 @@ public class GeneratorJava
                 }
 
                 sTag += sName + ": " + sExpression;
-                llsTags.addLast(sTag);
+                m_llsTags.addLast(sTag);
             }
         }
 
-        tudresden.ocl.check.types.ModelFacade mf = new ArgoFacade(me);
+        tudresden.ocl.check.types.ModelFacade mf =
+            new org.argouml.ocl.ArgoFacade(me);
         for (Iterator i = cConstraints.iterator(); i.hasNext();) {
-            Object constraint = /*(MConstraint)*/ i.next();
+            MConstraint mc = (MConstraint)i.next();
 
             try {
-		String body =
-		    (String) Model.getFacade().getBody(
-		            Model.getFacade().getBody(constraint));
-                OclTree otParsed = OclTree.createTree(body, mf);
+                tudresden.ocl.OclTree otParsed =
+                    tudresden.ocl.OclTree.createTree(
+                        mc.getBody().getBody(),
+                        mf);
 
-                TagExtractor te =
-		    new TagExtractor(Model.getFacade().getName(constraint));
+                TagExtractor te = new TagExtractor(mc.getName());
                 otParsed.apply(te);
 
                 for (Iterator j = te.getTags(); j.hasNext();) {
-                    sDocComment.append(' ').append(j.next());
-		    sDocComment.append(LINE_SEPARATOR);
-		    sDocComment.append(INDENT).append(" *");
+                    sDocComment.append(' ').append(j.next()).append(
+                        LINE_SEPARATOR).append(
+                        INDENT).append(
+                        " *");
                 }
-            } catch (IOException ioe) {
+            } catch (java.io.IOException ioe) {
                 // Nothing to be done, should not happen anyway ;-)
             }
         }
@@ -1358,30 +1322,73 @@ public class GeneratorJava
         return sDocComment.toString();
     }
 
-    private String generateAssociationFrom(Object a, Object associationEnd) {
+    public String generateConstraints(MModelElement me) {
+
+        // This method just adds comments to the generated java code. This should be code generated by ocl-argo int he future?
+        Collection cs = me.getConstraints();
+        if (cs == null || cs.size() == 0)
+            return "";
+        StringBuffer sb = new StringBuffer(80);
+        if (VERBOSE_DOCS)
+            sb.append(INDENT).append("// constraints").append(LINE_SEPARATOR);
+        int size = cs.size();
+        // MConstraint[] csarray = (MConstraint[])cs.toArray();
+        // Argo.log.debug("Got " + csarray.size() + " constraints.");
+        for (Iterator i = cs.iterator(); i.hasNext();) {
+            MConstraint c = (MConstraint)i.next();
+            String constrStr = generateConstraint(c);
+            java.util.StringTokenizer st =
+                new java.util.StringTokenizer(constrStr, LINE_SEPARATOR + "\r");
+            while (st.hasMoreElements()) {
+                String constrLine = st.nextToken();
+                sb.append(INDENT).append("// ").append(constrLine).append(LINE_SEPARATOR);
+            }
+        }
+        sb.append(LINE_SEPARATOR);
+        return sb.toString();
+    }
+
+    public String generateConstraint(MConstraint c) {
+        if (c == null)
+            return "";
+        StringBuffer sb = new StringBuffer(20);
+        if (c.getName() != null && c.getName().length() != 0)
+            sb.append(generateName(c.getName())).append(": ");
+        sb.append(generateExpression(c));
+        return sb.toString();
+    }
+
+    public String generateAssociationFrom(MAssociation a, MAssociationEnd ae) {
         // TODO: does not handle n-ary associations
         StringBuffer sb = new StringBuffer(80);
 
-        Collection connections = Model.getFacade().getConnections(a);
+        /*
+         * Moved into while loop 2001-09-26 STEFFEN ZSCHALER
+         *
+         * Was:
+         *
+        s += DocumentationManager.getDocs(a) + "\n" + INDENT;
+         */
+
+        Collection connections = a.getConnections();
         Iterator connEnum = connections.iterator();
         while (connEnum.hasNext()) {
-            Object associationEnd2 = /*(MAssociationEnd)*/ connEnum.next();
-            if (associationEnd2 != associationEnd) {
-                sb.append(INDENT);
-		sb.append(
-		        generateConstraintEnrichedDocComment(a,
-		                			     associationEnd2));
-                sb.append(generateAssociationEnd(associationEnd2));
+            MAssociationEnd ae2 = (MAssociationEnd)connEnum.next();
+            if (ae2 != ae) {
+                /**
+                 * Added generation of doccomment 2001-09-26 STEFFEN ZSCHALER
+                 *
+                 */
+                sb.append(INDENT).append(
+                    generateConstraintEnrichedDocComment(a, ae2));
+                sb.append(generateAssociationEnd(ae2));
             }
         }
 
         return sb.toString();
     }
 
-    /**
-     * @see org.argouml.notation.NotationProvider2#generateAssociation(java.lang.Object)
-     */
-    public String generateAssociation(Object a) {
+    public String generateAssociation(MAssociation a) {
         //    String s = "";
         //     String generatedName = generateName(a.getName());
         //     s += "MAssociation " + generatedName + " {\n";
@@ -1397,17 +1404,11 @@ public class GeneratorJava
         return "";
     }
 
-    /**
-     * @see org.argouml.notation.NotationProvider2#generateAssociationEnd(java.lang.Object)
-     */
-    public String generateAssociationEnd(Object ae) {
-        if (!Model.getFacade().isNavigable(ae)) {
+    public String generateAssociationEnd(MAssociationEnd ae) {
+        if (!ae.isNavigable())
             return "";
-        }
-        if (Model.getFacade()
-                .isAbstract(Model.getFacade().getAssociation(ae))) {
+        if (ae.getAssociation().isAbstract())
             return "";
-        }
         //String s = INDENT + "protected ";
         // must be public or generate public navigation method!
         //String s = INDENT + "public ";
@@ -1417,407 +1418,329 @@ public class GeneratorJava
         return (sb.append(";").append(LINE_SEPARATOR)).toString();
     }
 
-    String generateCoreAssociationEnd(Object ae) {
+    public String generateCoreAssociationEnd(MAssociationEnd ae) {
         StringBuffer sb = new StringBuffer(80);
-        sb.append(generateVisibility(Model.getFacade().getVisibility(ae)));
+        sb.append(generateVisibility(ae.getVisibility()));
 
-        if (Model.getScopeKind().getClassifier().equals(
-                Model.getFacade().getTargetScope(ae))) {
+        if (MScopeKind.CLASSIFIER.equals(ae.getTargetScope()))
             sb.append("static ");
-        }
         //     String n = ae.getName();
-        //     if (n != null && !String.UNSPEC.equals(n))
-	//         s += generateName(n) + " ";
+        //     if (n != null && !String.UNSPEC.equals(n)) s += generateName(n) + " ";
         //     if (ae.isNavigable()) s += "navigable ";
         //     if (ae.getIsOrdered()) s += "ordered ";
-        if (Model.getFacade().getUpper(ae) == 1) {
-            sb.append(generateClassifierRef(Model.getFacade().getType(ae)));
-        } else {
+        MMultiplicity m = ae.getMultiplicity();
+        if (MMultiplicity.M1_1.equals(m) || MMultiplicity.M0_1.equals(m))
+            sb.append(generateClassifierRef(ae.getType()));
+        else
             sb.append("Vector "); //generateMultiplicity(m) + " ";
-        }
 
         sb.append(' ').append(generateAscEndName(ae));
 
         return sb.toString();
     }
 
+    //   public String generateConstraints(MModelElement me) {
+    //     Vector constr = me.getConstraint();
+    //     if (constr == null || constr.size() == 0) return "";
+    //     String s = "{";
+    //     Iterator conEnum = constr.iterator();
+    //     while (conEnum.hasNext()) {
+    //       s += generateConstraint((MConstraint)conEnum.next());
+    //       if (conEnum.hasNext()) s += "; ";
+    //     }
+    //     s += "}";
+    //     return s;
+    //   }
+
+    //   public String generateConstraint(MConstraint c) {
+    //     return generateExpression(c);
+    //   }
+
     ////////////////////////////////////////////////////////////////
     // internal methods?
 
-    private String generateGeneralization(Collection generalizations) {
-        if (generalizations == null) {
+    public String generateGeneralization(Collection generalizations) {
+        if (generalizations == null)
             return "";
-        }
         Collection classes = new ArrayList();
-        Iterator it = generalizations.iterator();
-        while (it.hasNext()) {
-            Object generalization = /*(MGeneralization)*/ it.next();
-            Object generalizableElement =
-                Model.getFacade().getParent(generalization);
+        Iterator enum = generalizations.iterator();
+        while (enum.hasNext()) {
+            MGeneralization g = (MGeneralization)enum.next();
+            MGeneralizableElement ge = g.getParent();
             // assert ge != null
-            if (generalizableElement != null) {
-                classes.add(generalizableElement);
-            }
+            if (ge != null)
+                classes.add(ge);
         }
         return generateClassList(classes);
     }
 
     //  public String generateSpecification(Collection realizations) {
-    private String generateSpecification(Object cls) {
+    public String generateSpecification(MClass cls) {
         Collection realizations =
-            Model.getFacade().getSpecifications(cls);
-        if (realizations == null) {
+            ModelFacade.getSpecifications(cls);
+        if (realizations == null)
             return "";
-        }
-	LOG.debug("realizations: " + realizations.size());
         StringBuffer sb = new StringBuffer(80);
         Iterator clsEnum = realizations.iterator();
         while (clsEnum.hasNext()) {
-            Object inter = /*(MInterface)*/ clsEnum.next();
-            sb.append(generateClassifierRef(inter));
-            if (clsEnum.hasNext()) {
+            MInterface i = (MInterface)clsEnum.next();
+            sb.append(generateClassifierRef(i));
+            if (clsEnum.hasNext())
                 sb.append(", ");
-            }
         }
         return sb.toString();
     }
 
-    private String generateClassList(Collection classifiers) {
-        if (classifiers == null) {
+    public String generateClassList(Collection classifiers) {
+        if (classifiers == null)
             return "";
-        }
         StringBuffer sb = new StringBuffer(80);
         Iterator clsEnum = classifiers.iterator();
         while (clsEnum.hasNext()) {
-            sb.append(generateClassifierRef(/*(MClassifier)*/ clsEnum.next()));
-            if (clsEnum.hasNext()) {
+            sb.append(generateClassifierRef((MClassifier)clsEnum.next()));
+            if (clsEnum.hasNext())
                 sb.append(", ");
-            }
         }
         return sb.toString();
     }
 
-    /**
-     * Returns a visibility String either for a MVisibilityKind (according to
-     * the definition in NotationProvider2), but also for a model element,
-     * because if it is a MFeature, then the tag 'src_visibility' is to be
-     * taken into account for generating language dependent visibilities.
-     * @see org.argouml.notation.NotationProvider2#generateVisibility(java.lang.Object)
-     */
-    public String generateVisibility(Object o) {
-	if (Model.getFacade().isAFeature(o)) {
-	    Object tv = Model.getFacade().getTaggedValue(o, "src_visibility");
-	    if (tv != null) {
-		String tagged = (String) Model.getFacade().getValue(tv);
-		if (tagged != null) {
-		    if (tagged.trim().equals("")
-			|| tagged.trim().toLowerCase().equals("package")
-			|| tagged.trim().toLowerCase().equals("default")) {
-			return "";
-		    }
-                    return tagged + " ";
-		}
-            }
-        }
-        if (Model.getFacade().isAModelElement(o)) {
-            if (Model.getFacade().isPublic(o)) {
-                return "public ";
-            }
-            if (Model.getFacade().isPrivate(o)) {
-                return "private ";
-            }
-            if (Model.getFacade().isProtected(o)) {
-                return "protected ";
-            }
-            if (Model.getFacade().isPackage(o)) {
-                return "";
-            }
-        }
-        if (Model.getFacade().isAVisibilityKind(o)) {
-            if (Model.getVisibilityKind().getPublic().equals(o)) {
-                return "public ";
-            }
-            if (Model.getVisibilityKind().getPrivate().equals(o)) {
-                return "private ";
-            }
-            if (Model.getVisibilityKind().getProtected().equals(o)) {
-                return "protected ";
-            }
-            if (Model.getVisibilityKind().getPackage().equals(o)) {
-                return "";
-            }
-        }
+    public String generateVisibility(MVisibilityKind vis) {
+        //if (vis == null) return "";
+        if (MVisibilityKind.PUBLIC.equals(vis))
+            return "public ";
+        if (MVisibilityKind.PRIVATE.equals(vis))
+            return "private ";
+        if (MVisibilityKind.PROTECTED.equals(vis))
+            return "protected ";
         return "";
     }
 
-    private String generateScope(Object f) {
-        if (Model.getFacade().isClassifierScope(f)) {
-            return "static ";
+    public String generateVisibility(MFeature f) {
+        String _tagged = f.getTaggedValue("src_visibility");
+        if (_tagged != null) {
+            if ( _tagged.trim().equals("") || _tagged.trim().toLowerCase().equals("package") || _tagged.trim().toLowerCase().equals("default"))
+                return "";
+            else
+                return f.getTaggedValue("src_visibility")+" ";
         }
+        MVisibilityKind vis = f.getVisibility();
+        //if (vis == null) return "";
+        if (MVisibilityKind.PUBLIC.equals(vis))
+            return "public ";
+        if (MVisibilityKind.PRIVATE.equals(vis))
+            return "private ";
+        if (MVisibilityKind.PROTECTED.equals(vis))
+            return "protected ";
+        return "";
+    }
+
+    public String generateScope(MFeature f) {
+        MScopeKind scope = f.getOwnerScope();
+        //if (scope == null) return "";
+        if (MScopeKind.CLASSIFIER.equals(scope))
+            return "static ";
         return "";
     }
 
     /**
      * Generate "abstract" keyword for an abstract operation.
      */
-    private String generateAbstractness(Object op) {
-        if (Model.getFacade().isAbstract(op)) {
+    public String generateAbstractness(MOperation op) {
+        if (op.isAbstract()) {
             return "abstract ";
+        } else {
+            return "";
         }
-        return "";
     }
 
     /**
      * Generate "final" keyword for final operations.
      */
-    private String generateChangeability(Object op) {
-        if (Model.getFacade().isLeaf(op)) {
+    public String generateChangeability(MOperation op) {
+        if (op.isLeaf()) {
             return "final ";
+        } else {
+            return "";
         }
-        return "";
     }
 
-    private String generateChangability(Object sf) {
-        if (!Model.getFacade().isChangeable(sf)) {
+    public String generateChangability(MStructuralFeature sf) {
+        MChangeableKind ck = sf.getChangeability();
+        //if (ck == null) return "";
+        if (MChangeableKind.FROZEN.equals(ck))
             return "final ";
-        }
+        //if (MChangeableKind.ADDONLY.equals(ck)) return "final ";
         return "";
     }
 
     /**
      * Generates "synchronized" keyword for guarded operations.
      * @param op The operation
-     * @return String The synchronized keyword if the operation is guarded,
-     *                else "".
+     * @return String The synchronized keyword if the operation is guarded, else ""
      */
-    private String generateConcurrency(Object op) {
-        if (Model.getFacade().getConcurrency(op) != null
-            && Model.getConcurrencyKind().getGuarded().equals(
-                    Model.getFacade().getConcurrency(op))) {
+    public String generateConcurrency(MOperation op) {
+        if (op.getConcurrency() != null
+            && op.getConcurrency().getValue() == MCallConcurrencyKind._GUARDED) {
             return "synchronized ";
         }
         return "";
     }
 
-    /**
-     * Generates a String representation of a Multiplicity.
-     *
-     * @param m the Multiplicity.
-     * @return a human readable String.
-     */
-    public String generateMultiplicity(Object m) {
-        if (m == null || "1".equals(Model.getFacade().toString(m))) {
-            return "";
-        } else {
-            return Model.getFacade().toString(m);
-        }
-    }
-
-    /**
-     * @see org.argouml.notation.NotationProvider2#generateState(java.lang.Object)
-     */
-    public String generateState(Object m) {
-        return Model.getFacade().getName(m);
-    }
-
-    /**
-     * @see org.argouml.notation.NotationProvider2#generateSubmachine(java.lang.Object)
-     */
-    public String generateSubmachine(Object m) {
-        Object c = Model.getFacade().getSubmachine(m);
-        if (c == null) {
-            return "include / ";
-        }
-        if (Model.getFacade().getName(c) == null) {
-            return "include / ";
-        }
-        if (Model.getFacade().getName(c).length() == 0) {
-            return "include / ";
-        }
-        return ("include / " + generateName(Model.getFacade().getName(c)));
-    }
-
-    /**
-     * @see org.argouml.notation.NotationProvider2#generateObjectFlowState(java.lang.Object)
-     */
-    public String generateObjectFlowState(Object m) {
-        Object c = Model.getFacade().getType(m);
-        if (c == null) {
+    public String generateMultiplicity(MMultiplicity m) {
+        if (m == null) {
             return "";
         }
-        return Model.getFacade().getName(c);
+        if (MMultiplicity.M0_N.equals(m))
+            return ANY_RANGE;
+        Collection v = m.getRanges();
+        if (v == null)
+            return "";
+        StringBuffer sb = new StringBuffer(20);
+        Iterator rangeEnum = v.iterator();
+        while (rangeEnum.hasNext()) {
+            MMultiplicityRange mr = (MMultiplicityRange)rangeEnum.next();
+            sb.append(generateMultiplicityRange(mr));
+            if (rangeEnum.hasNext())
+                sb.append(',');
+        }
+        return sb.toString();
     }
 
-    /**
-     * @see org.argouml.notation.NotationProvider2#generateStateBody(java.lang.Object)
-     */
-    public String generateStateBody(Object m) {
-        LOG.info("GeneratorJava: generating state body");
+    public static final String ANY_RANGE = "0..*";
+    //public static final String ANY_RANGE = "*";
+    // TODO: user preference between "*" and "0..*"
+
+    public String generateMultiplicityRange(MMultiplicityRange mr) {
+        Integer lower = new Integer(mr.getLower());
+        Integer upper = new Integer(mr.getUpper());
+        if (lower.intValue() == -1 && upper.intValue() == -1)
+            return ANY_RANGE;
+        if (lower.intValue() == -1)
+            return "*.." + upper.toString();
+        if (upper.intValue() == -1)
+            return lower.toString() + "..*";
+        if (lower.intValue() == upper.intValue())
+            return lower.toString();
+        return lower.toString() + ".." + upper.toString();
+
+    }
+
+    public String generateState(MState m) {
+        return m.getName();
+    }
+
+    public String generateStateBody(MState m) {
+        Argo.log.info("GeneratorJava: generating state body");
         StringBuffer sb = new StringBuffer(80);
-        Object entryAction = Model.getFacade().getEntry(m);
-        Object exitAction = Model.getFacade().getExit(m);
-        Object doAction = Model.getFacade().getDoActivity(m);
+        MAction entryAction = m.getEntry();
+        MAction exitAction = m.getExit();
+        MAction doAction = m.getDoActivity();
 
         if (entryAction != null) {
-            String entryStr = generate(entryAction);
-            if (entryStr.length() > 0) {
+            String entryStr = Generate(entryAction);
+            if (entryStr.length() > 0)
                 sb.append("entry / ").append(entryStr);
-            }
         }
         if (doAction != null) {
-            String doStr = generate(doAction);
+            String doStr = Generate(doAction);
             if (doStr.length() > 0) {
-                if (sb.length() > 0) {
+                if (sb.length() > 0)
                     sb.append(LINE_SEPARATOR);
-                }
                 sb.append("do / ").append(doStr);
             }
         }
         if (exitAction != null) {
-            String exitStr = generate(exitAction);
-            if (sb.length() > 0) {
+            String exitStr = Generate(exitAction);
+            if (sb.length() > 0)
                 sb.append(LINE_SEPARATOR);
-            }
-            if (exitStr.length() > 0) {
+            if (exitStr.length() > 0)
                 sb.append("exit / ").append(exitStr);
-            }
         }
-        Collection trans = Model.getFacade().getInternalTransitions(m);
+        Collection trans = m.getInternalTransitions();
         if (trans != null) {
             Iterator iter = trans.iterator();
             while (iter.hasNext()) {
-                if (sb.length() > 0) {
+                if (sb.length() > 0)
                     sb.append(LINE_SEPARATOR);
-                }
-                sb.append(generateTransition(iter.next()));
+                sb.append(generateTransition((MTransition)iter.next()));
             }
         }
 
         /*   if (trans != null) {
-	     int size = trans.size();
-	     MTransition[] transarray = (MTransition[])trans.toArray();
-	     for (int i = 0; i < size; i++) {
-	     if (s.length() > 0) s += "\n";
-	     s += Generate(transarray[i]);
-	     }
-	     }*/
+            int size = trans.size();
+        	  MTransition[] transarray = (MTransition[])trans.toArray();
+            for (int i = 0; i < size; i++) {
+        		if (s.length() > 0) s += "\n";
+        		s += Generate(transarray[i]);
+            }
+            }*/
         return sb.toString();
     }
 
-    /**
-     * @see org.argouml.notation.NotationProvider2#generateTransition(java.lang.Object)
-     */
-    public String generateTransition(Object m) {
-        StringBuffer sb =
-            new StringBuffer(generate(Model.getFacade().getName(m)));
-        String t = generate(Model.getFacade().getTrigger(m));
-        String g = generate(Model.getFacade().getGuard(m));
-        String e = generate(Model.getFacade().getEffect(m));
-        if (sb.length() > 0) {
+    public String generateTransition(MTransition m) {
+        StringBuffer sb = new StringBuffer(generate(m.getName()));
+        String t = generate(m.getTrigger());
+        String g = generate(m.getGuard());
+        String e = generate(m.getEffect());
+        if (sb.length() > 0)
             sb.append(": ");
-        }
         sb.append(t);
-        if (g.length() > 0) {
+        if (g.length() > 0)
             sb.append(" [").append(g).append(']');
-        }
-        if (e.length() > 0) {
+        if (e.length() > 0)
             sb.append(" / ").append(e);
-        }
         return sb.toString();
 
         /*  String s = m.getName();
-	    String t = generate(Model.getFacade().getTrigger(m));
-	    String g = generate(Model.getFacade().getGuard(m));
-	    String e = generate(Model.getFacade().getEffect(m));
-	    if(s == null) s = "";
-	    if(t == null) t = "";
-	    if (s.length() > 0 &&
+        String t = generate(m.getTrigger());
+        String g = generate(m.getGuard());
+        String e = generate(m.getEffect());
+        if(s == null) s = "";
+        if(t == null) t = "";
+        if (s.length() > 0 &&
             (t.length() > 0 ||
             (g != null && g.length() > 0) ||
             (e != null && e.length() > 0)))
             s += ": ";
-	    s += t;
-	    if (g != null && g.length() > 0) s += " [" + g + "]";
-	    if (e != null && e.length() > 0) s += " / " + e;
-	    return s;*/
+        s += t;
+        if (g != null && g.length() > 0) s += " [" + g + "]";
+        if (e != null && e.length() > 0) s += " / " + e;
+        return s;*/
     }
 
-    /**
-     * @see org.argouml.notation.NotationProvider2#generateAction(java.lang.Object)
-     */
-    public String generateAction(Object m) {
+    public String generateAction(MAction m) {
         // return m.getName();
-
-        if (m != null) {
-            Object script = Model.getFacade().getScript(m);
-            if ((script != null)
-		    && (Model.getFacade().getBody(script) != null)) {
-                return Model.getFacade().getBody(script).toString();
-	    }
-        }
+        if (m != null
+            && (m.getScript() != null)
+            && (m.getScript().getBody() != null))
+            return m.getScript().getBody();
         return "";
     }
 
-    /**
-     * @see org.argouml.notation.NotationProvider2#generateGuard(java.lang.Object)
-     */
-    public String generateGuard(Object m) {
-        //return generateExpression(Model.getFacade().getExpression(m));
-        if (m != null && Model.getFacade().getExpression(m) != null) {
-            return generateExpression(Model.getFacade().getExpression(m));
-        }
+    public String generateGuard(MGuard m) {
+        //return generateExpression(m.getExpression());
+        if (m != null && m.getExpression() != null)
+            return generateExpression(m.getExpression());
         return "";
     }
 
-    /**
-     * @see org.argouml.notation.NotationProvider2#generateMessage(java.lang.Object)
-     */
-    public String generateMessage(Object m) {
-        if (m == null) {
+    public String generateMessage(MMessage m) {
+        if (m == null)
             return "";
-        }
-        return generateName(Model.getFacade().getName(m)) + "::"
-	    + generateAction(Model.getFacade().getAction(m));
+        return generateName(m.getName()) + "::" + generateAction(m.getAction());
     }
 
-    /**
-     * Generates the text for a (trigger) event.
-     *
-     * @author MVW
-     * @param m Object of any MEvent kind
-     * @return The generated event (as a String).
-     */
-    public String generateEvent(Object m) {
-        if (Model.getFacade().isAChangeEvent(m)) {
-            return "when("
-                + generateExpression(Model.getFacade().getExpression(m))
-                + ")";
-        }
-        if (Model.getFacade().isATimeEvent(m)) {
-            return "after("
-                + generateExpression(Model.getFacade().getExpression(m))
-                + ")";
-        }
-        if (Model.getFacade().isASignalEvent(m)) {
-            return generateName(Model.getFacade().getName(m));
-        }
-        if (Model.getFacade().isACallEvent(m)) {
-            return generateName(Model.getFacade().getName(m));
-        }
-        return "";
-    }
-
-    String generateAscEndName(Object ae) {
-        String n = Model.getFacade().getName(ae);
-        Object/*MAssociation*/ asc = Model.getFacade().getAssociation(ae);
-        String ascName = Model.getFacade().getName(asc);
+    public String generateAscEndName(MAssociationEnd ae) {
+        String n = ae.getName();
+        MAssociation asc = ae.getAssociation();
+        String ascName = asc.getName();
         if (n != null && n != null && n.length() > 0) {
             n = generateName(n);
         } else if (
-		   ascName != null && ascName != null && ascName.length() > 0) {
+            ascName != null && ascName != null && ascName.length() > 0) {
             n = generateName(ascName);
         } else {
-            n = "my" + generateClassifierRef(Model.getFacade().getType(ae));
+            n = "my" + generateClassifierRef(ae.getType());
         }
         return n;
     }
@@ -1830,45 +1753,29 @@ public class GeneratorJava
        @return the Java package name
     */
     public String getPackageName(Object namespace) {
-        if (namespace == null
-	    || !Model.getFacade().isANamespace(namespace)
-	    || Model.getFacade().getNamespace(namespace) == null) {
+        if (namespace == null || !ModelFacade.isANamespace(namespace) || ModelFacade.getNamespace(namespace) == null)
             return "";
-        }
-        String packagePath = Model.getFacade().getName(namespace);
-        while ((namespace = Model.getFacade().getNamespace(namespace))
-                != null) {
+        String packagePath = ModelFacade.getName(namespace);
+        while ((namespace = ModelFacade.getNamespace(namespace)) != null) {
             // ommit root package name; it's the model's root
-            if (Model.getFacade().getNamespace(namespace) != null) {
-                packagePath =
-		    Model.getFacade().getName(namespace) + '.' + packagePath;
-            }
+            if (ModelFacade.getNamespace(namespace) != null)
+                packagePath = ModelFacade.getName(namespace) + '.' + packagePath;
         }
         return packagePath;
     }
 
     /**
-     * Update a source code file.
-     *
-     * @param mClassifier The classifier to update from.
-     * @param file The file to update.
-     */
-    private static void update(Object mClassifier, File file)
-    	throws IOException, ANTLRException {
+       Update a source code file.
 
-        LOG.info("Parsing " + file.getPath());
-	String encoding = null;
-        if (Configuration.getString(Argo.KEY_INPUT_SOURCE_ENCODING) == null
-	    || Configuration.getString(Argo.KEY_INPUT_SOURCE_ENCODING)
-	        .trim().equals("")) {
-	    encoding = System.getProperty("file.encoding");
-	} else {
-	    encoding = Configuration.getString(Argo.KEY_INPUT_SOURCE_ENCODING);
-	}
-        FileInputStream in = new FileInputStream(file);
-	JavaLexer lexer =
-	    new JavaLexer(
-	            new BufferedReader(new InputStreamReader(in, encoding)));
+       @param mClassifier The classifier to update from.
+       @param file The file to update.
+    */
+    protected static void update(MClassifier mClassifier, File file)
+        throws Exception {
+        Argo.log.info("Parsing " + file.getPath());
+
+        BufferedReader in = new BufferedReader(new FileReader(file));
+        JavaLexer lexer = new JavaLexer(in);
         JavaRecognizer parser = new JavaRecognizer(lexer);
         CodePieceCollector cpc = new CodePieceCollector();
         parser.compilationUnit(cpc);
@@ -1877,60 +1784,48 @@ public class GeneratorJava
         File origFile = new File(file.getAbsolutePath());
         File newFile = new File(file.getAbsolutePath() + ".updated");
         File backupFile = new File(file.getAbsolutePath() + ".backup");
-        if (backupFile.exists()) {
+        if (backupFile.exists())
             backupFile.delete();
-        }
-        //cat.info("Generating " + newFile.getPath());
-        isInUpdateMode = true;
-        cpc.filter(file, newFile, Model.getFacade().getNamespace(mClassifier));
-        isInUpdateMode = false;
-        //cat.info("Backing up " + file.getPath());
+        //Argo.log.info("Generating " + newFile.getPath());
+        _isInUpdateMode = true;
+        cpc.filter(file, newFile, mClassifier.getNamespace());
+        _isInUpdateMode = false;
+        //Argo.log.info("Backing up " + file.getPath());
         file.renameTo(backupFile);
-        LOG.info("Updating " + file.getPath());
+        Argo.log.info("Updating " + file.getPath());
         newFile.renameTo(origFile);
     }
 
-    /**
-     * @see org.argouml.application.api.ArgoModule#getModuleName()
-     */
+    public boolean canParse() {
+        return true;
+    }
+
+    public boolean canParse(Object o) {
+        return true;
+    }
+
     public String getModuleName() {
         return "GeneratorJava";
     }
-
-    /**
-     * @see org.argouml.application.api.ArgoModule#getModuleDescription()
-     */
     public String getModuleDescription() {
         return "Java Notation and Code Generator";
     }
-
-    /**
-     * @see org.argouml.application.api.ArgoModule#getModuleAuthor()
-     */
     public String getModuleAuthor() {
         return "ArgoUML Core";
     }
-
-    /**
-     * @see org.argouml.application.api.ArgoModule#getModuleVersion()
-     */
     public String getModuleVersion() {
         return ArgoVersion.getVersion();
     }
-
-    /**
-     * @see org.argouml.application.api.ArgoModule#getModuleKey()
-     */
     public String getModuleKey() {
         return "module.language.java.generator";
     }
 
     /**
-     * Returns the _lfBeforeCurly.
-     * @return boolean
-     */
+         * Returns the _lfBeforeCurly.
+         * @return boolean
+         */
     public boolean isLfBeforeCurly() {
-        return lfBeforeCurly;
+        return _lfBeforeCurly;
     }
 
     /**
@@ -1938,54 +1833,33 @@ public class GeneratorJava
      * @return boolean
      */
     public boolean isVerboseDocs() {
-        return verboseDocs;
+        return _verboseDocs;
     }
 
     /**
-     * Sets the lfBeforeCurly.
-     * @param beforeCurl The new value.
+     * Sets the _lfBeforeCurly.
+     * @param _lfBeforeCurly The _lfBeforeCurly to set
      */
-    public void setLfBeforeCurly(boolean beforeCurl) {
-        lfBeforeCurly = beforeCurl;
+    public void setLfBeforeCurly(boolean _lfBeforeCurly) {
+        this._lfBeforeCurly = _lfBeforeCurly;
     }
 
     /**
-     * Sets the verboseDocs.
-     * @param verbose The new value.
+     * Sets the _verboseDocs.
+     * @param _verboseDocs The _verboseDocs to set
      */
-    public void setVerboseDocs(boolean verbose) {
-        verboseDocs = verbose;
+    public void setVerboseDocs(boolean _verboseDocs) {
+        this._verboseDocs = _verboseDocs;
     }
-
+    
 
     /**
      * @see org.argouml.application.api.Pluggable#inContext(java.lang.Object[])
      */
     public boolean inContext(Object[] o) {
-	return true;
+       return true;
     }
-
-    /**
-     * @see org.argouml.application.api.ArgoModule#isModuleEnabled()
-     */
-    public boolean isModuleEnabled() {
-        return true;
-    }
-
-    /**
-     * @see org.argouml.notation.NotationProvider2#generateActionState(java.lang.Object)
-     */
-    public String generateActionState(Object actionState) {
-        String ret = "";
-        Object action = Model.getFacade().getEntry(actionState);
-        if (action != null) {
-            Object expression = Model.getFacade().getScript(action);
-            if (expression != null) {
-                ret = generateExpression(expression);
-            }
-        }
-        return ret;
-    }
-
+    
+    public boolean isModuleEnabled() { return true; }
 
 }

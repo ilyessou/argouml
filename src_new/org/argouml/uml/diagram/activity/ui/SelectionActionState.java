@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,20 +22,26 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: SelectionActionState.java
+// Classes: SelectionState
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.diagram.activity.ui;
 
+import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Rectangle;
 
 import javax.swing.Icon;
 
-import org.apache.log4j.Logger;
+import org.apache.log4j.Category;
 import org.argouml.application.helpers.ResourceLoaderWrapper;
-import org.argouml.model.Model;
-import org.argouml.uml.diagram.ui.SelectionNodeClarifiers;
+import org.argouml.model.uml.UmlFactory;
+import org.argouml.uml.diagram.ui.ModeCreateEdgeAndNode;
+import org.argouml.uml.diagram.ui.SelectionWButtons;
 import org.tigris.gef.base.Editor;
 import org.tigris.gef.base.Globals;
-import org.tigris.gef.base.ModeCreateEdgeAndNode;
 import org.tigris.gef.base.ModeManager;
 import org.tigris.gef.base.ModeModify;
 import org.tigris.gef.base.SelectionManager;
@@ -44,283 +50,216 @@ import org.tigris.gef.graph.MutableGraphModel;
 import org.tigris.gef.presentation.Fig;
 import org.tigris.gef.presentation.FigNode;
 import org.tigris.gef.presentation.Handle;
+import ru.novosoft.uml.behavior.activity_graphs.MActionStateImpl;
+import ru.novosoft.uml.behavior.state_machines.MTransition;
 
-/**
- * @author jrobbins@ics.uci.edu
- */
-public class SelectionActionState extends SelectionNodeClarifiers {
-    /**
-     * Logger.
-     */
-    private static final Logger LOG =
-        Logger.getLogger(SelectionActionState.class);
+public class SelectionActionState extends SelectionWButtons {
+    protected static Category cat = 
+        Category.getInstance(SelectionActionState.class);
+  ////////////////////////////////////////////////////////////////
+  // constants
+  public static Icon trans = 
+      ResourceLoaderWrapper.getResourceLoaderWrapper().lookupIconResource("Transition");
+  public static Icon transDown = 
+      ResourceLoaderWrapper.getResourceLoaderWrapper().lookupIconResource("TransitionDown");
+  ////////////////////////////////////////////////////////////////
+  // instance varables
+  protected boolean _showIncomingLeft = true;
+    protected boolean _showIncomingAbove = true;
+  protected boolean _showOutgoingRight = true;
+    protected boolean _showOutgoingBelow = true;
 
-    ////////////////////////////////////////////////////////////////
-    // constants
-    private static Icon trans =
-	ResourceLoaderWrapper.lookupIconResource("Transition");
-    private static Icon transDown =
-	ResourceLoaderWrapper.lookupIconResource("TransitionDown");
+  ////////////////////////////////////////////////////////////////
+  // constructors
 
-    ////////////////////////////////////////////////////////////////
-    // instance varables
-    private boolean showIncomingLeft = true;
-    private boolean showIncomingAbove = true;
-    private boolean showOutgoingRight = true;
-    private boolean showOutgoingBelow = true;
+  /** Construct a new SelectionActionState for the given Fig */
+  public SelectionActionState(Fig f) { super(f); }
 
-    ////////////////////////////////////////////////////////////////
-    // constructors
+  ////////////////////////////////////////////////////////////////
+  // accessors
 
-    /**
-     * Construct a new SelectionActionState for the given Fig.
-     *
-     * @param f The given Fig.
-     */
-    public SelectionActionState(Fig f) { super(f); }
-
-    ////////////////////////////////////////////////////////////////
-    // accessors
-
-    /**
-     * @param b true if the buton is enabled
-     */
-    public void setOutgoingButtonEnabled(boolean b) {
+  public void setOutgoingButtonEnabled(boolean b) {
         setOutgoingRightButtonEnabled(b);
         setIncomingAboveButtonEnabled(b);
-    }
+  }
 
-    /**
-     * @param b true if the buton is enabled
-     */
-    public void setIncomingButtonEnabled(boolean b) {
+  public void setIncomingButtonEnabled(boolean b) {
         setIncomingLeftButtonEnabled(b);
         setOutgoingBelowButtonEnabled(b);
+  }
+
+  public void setIncomingLeftButtonEnabled(boolean b) {
+    _showIncomingLeft = b;
+  }
+
+  public void setOutgoingRightButtonEnabled(boolean b) {
+    _showOutgoingRight = b;
+  }
+
+   public void setIncomingAboveButtonEnabled(boolean b) {
+    _showIncomingAbove = b;
+  }
+
+  public void setOutgoingBelowButtonEnabled(boolean b) {
+    _showOutgoingBelow = b;
+  }
+
+  public void hitHandle(Rectangle r, Handle h) {
+    super.hitHandle(r, h);
+    if (h.index != -1) return;
+    if (!_paintButtons) return;
+    Editor ce = Globals.curEditor();
+    SelectionManager sm = ce.getSelectionManager();
+    if (sm.size() != 1) return;
+    ModeManager mm = ce.getModeManager();
+    if (mm.includes(ModeModify.class) && _pressedButton == -1) return;
+    int cx = _content.getX();
+    int cy = _content.getY();
+    int cw = _content.getWidth();
+    int ch = _content.getHeight();
+    int iw = trans.getIconWidth();
+    int ih = trans.getIconHeight();
+    int iwd = transDown.getIconWidth();
+    int ihd = transDown.getIconHeight();
+    if (_showOutgoingRight && hitLeft(cx + cw, cy + ch/2, iw, ih, r)) {
+      h.index = 12;
+      h.instructions = "Add an outgoing transition";
     }
-
-    /**
-     * @param b true if the buton is enabled
-     */
-    public void setIncomingLeftButtonEnabled(boolean b) {
-	showIncomingLeft = b;
+    else if (_showIncomingLeft && hitRight(cx, cy + ch/2, iw, ih, r)) {
+      h.index = 13;
+      h.instructions = "Add an incoming transition";
     }
-
-    /**
-     * @param b true if the buton is enabled
-     */
-    public void setOutgoingRightButtonEnabled(boolean b) {
-	showOutgoingRight = b;
+    else if (_showOutgoingBelow && hitAbove(cx+cw/2, cy, iwd, ihd, r)) {
+        h.index=10;
+        h.instructions = "Add an incoming transaction";
     }
-
-    /**
-     * @param b true if the buton is enabled
-     */
-    public void setIncomingAboveButtonEnabled(boolean b) {
-	showIncomingAbove = b;
+    else if (_showIncomingAbove && hitBelow(cx+cw/2,cy+ch, iwd, ihd, r)) {
+        h.index=11;
+        h.instructions = "Add an outgoing transaction";
     }
-
-    /**
-     * @param b true if the buton is enabled
-     */
-    public void setOutgoingBelowButtonEnabled(boolean b) {
-	showOutgoingBelow = b;
+    else {
+      h.index = -1;
+      h.instructions = "Move object(s)";
     }
+  }
 
-    /**
-     * @see org.tigris.gef.base.Selection#hitHandle(java.awt.Rectangle,
-     *         org.tigris.gef.presentation.Handle)
-     */
-    public void hitHandle(Rectangle r, Handle h) {
-	super.hitHandle(r, h);
-	if (h.index != -1) {
-	    return;
-	}
-	if (!isPaintButtons()) {
-	    return;
-	}
-	Editor ce = Globals.curEditor();
-	SelectionManager sm = ce.getSelectionManager();
-	if (sm.size() != 1) {
-	    return;
-	}
-	ModeManager mm = ce.getModeManager();
-	if (mm.includes(ModeModify.class) && getPressedButton() == -1) {
-	    return;
-	}
-	int cx = getContent().getX();
-	int cy = getContent().getY();
-	int cw = getContent().getWidth();
-	int ch = getContent().getHeight();
-	int iw = trans.getIconWidth();
-	int ih = trans.getIconHeight();
-	int iwd = transDown.getIconWidth();
-	int ihd = transDown.getIconHeight();
-	if (showOutgoingRight && hitLeft(cx + cw, cy + ch / 2, iw, ih, r)) {
-	    h.index = 12;
-	    h.instructions = "Add an outgoing transition";
-	} else if (showIncomingLeft && hitRight(cx, cy + ch / 2, iw, ih, r)) {
-	    h.index = 13;
-	    h.instructions = "Add an incoming transition";
-	} else if (showOutgoingBelow
-            && hitAbove(cx + cw / 2, cy, iwd, ihd, r)) {
-	    h.index = 10;
-	    h.instructions = "Add an incoming transaction";
-	} else if (showIncomingAbove
-		 && hitBelow(cx + cw / 2, cy + ch, iwd, ihd, r)) {
-	    h.index = 11;
-	    h.instructions = "Add an outgoing transaction";
-	} else {
-	    h.index = -1;
-	    h.instructions = "Move object(s)";
-	}
+
+  /** Paint the handles at the four corners and midway along each edge
+   * of the bounding box.  */
+  public void paintButtons(Graphics g) {
+    int cx = _content.getX();
+    int cy = _content.getY();
+    int cw = _content.getWidth();
+    int ch = _content.getHeight();
+    if (_showOutgoingRight) 
+        paintButtonLeft(trans, g, cx + cw, cy + ch/2, 12);
+    if (_showIncomingLeft) 
+        paintButtonRight(trans, g, cx, cy + ch/2, 13);
+    if (_showOutgoingBelow) 
+        paintButtonAbove(transDown, g, cx + cw/2, cy , 14);
+    if (_showIncomingAbove) 
+        paintButtonBelow(transDown, g, cx+cw/2, cy + ch, 15);
+  }
+
+
+  public void dragHandle(int mX, int mY, int anX, int anY, Handle hand) {
+    if (hand.index < 10) {
+      _paintButtons = false;
+      super.dragHandle(mX, mY, anX, anY, hand);
+      return;
     }
+    int cx = _content.getX(), cy = _content.getY();
+    int cw = _content.getWidth(), ch = _content.getHeight();
+    int newX = cx, newY = cy, newW = cw, newH = ch;
+    Dimension minSize = _content.getMinimumSize();
+    int minWidth = minSize.width, minHeight = minSize.height;
+    Class edgeClass = null;
+    Class nodeClass = MActionStateImpl.class;
 
+    Editor ce = Globals.curEditor();
+    GraphModel gm = ce.getGraphModel();
+    if (!(gm instanceof MutableGraphModel)) return;
+   
+    MutableGraphModel mgm = (MutableGraphModel) gm;
 
-    /**
-     * @see org.tigris.gef.base.SelectionButtons#paintButtons(Graphics)
-     */
-    public void paintButtons(Graphics g) {
-	int cx = getContent().getX();
-	int cy = getContent().getY();
-	int cw = getContent().getWidth();
-	int ch = getContent().getHeight();
-	if (showOutgoingRight) {
-	    paintButtonLeft(trans, g, cx + cw, cy + ch / 2, 12);
-	}
-	if (showIncomingLeft) {
-	    paintButtonRight(trans, g, cx, cy + ch / 2, 13);
-	}
-	if (showOutgoingBelow) {
-	    paintButtonAbove(transDown, g, cx + cw / 2, cy , 14);
-	}
-	if (showIncomingAbove) {
-	    paintButtonBelow(transDown, g, cx + cw / 2, cy + ch, 15);
-	}
+    int bx = mX, by = mY;
+    boolean reverse = false;
+    switch (hand.index) {
+    case 12: //add incoming
+      edgeClass = MTransition.class;
+      by = cy + ch/2;
+      bx = cx + cw;
+      break;
+    case 13: // add outgoing
+      edgeClass = MTransition.class;
+      reverse = true;
+      by = cy + ch/2;
+      bx = cx;
+      break;
+     case 10: // add incoming on top
+      edgeClass = MTransition.class;
+      reverse = true;
+      by = cy ;
+      bx = cx + cw/2;
+      break;
+     case 11: // add outgoing below
+      edgeClass = MTransition.class;
+      by = cy + ch;
+      bx = cx + cw/2;
+      break;
+    default:
+      cat.warn("invalid handle number");
+      break;
     }
-
-
-    /**
-     * @see org.tigris.gef.base.Selection#dragHandle(int, int, int, int,
-     *         org.tigris.gef.presentation.Handle)
-     */
-    public void dragHandle(int mX, int mY, int anX, int anY, Handle hand) {
-	if (hand.index < 10) {
-	    setPaintButtons(false);
-	    super.dragHandle(mX, mY, anX, anY, hand);
-	    return;
-	}
-	int cx = getContent().getX(), cy = getContent().getY();
-	int cw = getContent().getWidth(), ch = getContent().getHeight();
-	Object edgeType = null;
-        Object nodeType = getNewNodeType(hand.index);
-
-	Editor ce = Globals.curEditor();
-	GraphModel gm = ce.getGraphModel();
-	if (!(gm instanceof MutableGraphModel)) {
-	    return;
-	}
-
-	int bx = mX, by = mY;
-	boolean reverse = false;
-	switch (hand.index) {
-	case 12: //add incoming
-	    edgeType = Model.getMetaTypes().getTransition();
-	    by = cy + ch / 2;
-	    bx = cx + cw;
-	    break;
-	case 13: // add outgoing
-	    edgeType = Model.getMetaTypes().getTransition();
-	    reverse = true;
-	    by = cy + ch / 2;
-	    bx = cx;
-	    break;
-	case 10: // add incoming on top
-	    edgeType = Model.getMetaTypes().getTransition();
-	    reverse = true;
-	    by = cy;
-	    bx = cx + cw / 2;
-	    break;
-	case 11: // add outgoing below
-	    edgeType = Model.getMetaTypes().getTransition();
-	    by = cy + ch;
-	    bx = cx + cw / 2;
-	    break;
-	default:
-	    LOG.warn("invalid handle number");
-	    break;
-	}
-	if (edgeType != null && nodeType != null) {
-	    ModeCreateEdgeAndNode m =
-                //This fixes issue 2400:
-              new ModeCreateEdgeAndNode(ce, edgeType, false, this);
-	    m.setup((FigNode) getContent(), getContent().getOwner(),
-	            bx, by, reverse);
-	    ce.pushMode(m);
-	}
+    if (edgeClass != null && nodeClass != null) {
+      ModeCreateEdgeAndNode m = new
+	ModeCreateEdgeAndNode(ce, edgeClass, nodeClass, false);
+      m.setup((FigNode)_content, _content.getOwner(), bx, by, reverse);
+      ce.mode(m);
     }
-
+  }
+  
     /**
-     * Overrule this for other kinds.
-     * 
-     * @param buttonCode unused
-     * @return the meta type class to be created when dragged and released
-     */
-    protected Object getNewNodeType(int buttonCode) {
-        return Model.getMetaTypes().getActionState();
-    }
-
-    /**
-     * @see org.tigris.gef.base.SelectionButtons#getNewNode(int)
+     * @see org.argouml.uml.diagram.ui.SelectionWButtons#getNewNode(int)
      */
     protected Object getNewNode(int buttonCode) {
-        return Model.getActivityGraphsFactory().createActionState();
+        return UmlFactory.getFactory().getActivityGraphs().createActionState();
     }
 
     /**
-     * @see org.tigris.gef.base.SelectionButtons#createEdgeAbove(
-     *         org.tigris.gef.graph.MutableGraphModel, java.lang.Object)
+     * @see org.argouml.uml.diagram.ui.SelectionWButtons#createEdgeAbove(org.tigris.gef.graph.MutableGraphModel, java.lang.Object)
      */
     protected Object createEdgeAbove(MutableGraphModel mgm, Object newNode) {
-        return mgm.connect(newNode, getContent().getOwner(),
-			   (Class) Model.getMetaTypes().getTransition());
+        return mgm.connect(newNode, _content.getOwner(), MTransition.class);
     }
 
     /**
-     * @see org.tigris.gef.base.SelectionButtons#createEdgeLeft(
-     *         org.tigris.gef.graph.MutableGraphModel, java.lang.Object)
+     * @see org.argouml.uml.diagram.ui.SelectionWButtons#createEdgeLeft(org.tigris.gef.graph.MutableGraphModel, java.lang.Object)
      */
     protected Object createEdgeLeft(MutableGraphModel gm, Object newNode) {
-        return gm.connect(newNode, getContent().getOwner(),
-			  (Class) Model.getMetaTypes().getTransition());
+        return gm.connect(newNode, _content.getOwner(), MTransition.class);
     }
 
     /**
-     * @see org.tigris.gef.base.SelectionButtons#createEdgeRight(
-     *         org.tigris.gef.graph.MutableGraphModel, java.lang.Object)
+     * @see org.argouml.uml.diagram.ui.SelectionWButtons#createEdgeRight(org.tigris.gef.graph.MutableGraphModel, java.lang.Object)
      */
     protected Object createEdgeRight(MutableGraphModel gm, Object newNode) {
-        return gm.connect(getContent().getOwner(), newNode,
-			  (Class) Model.getMetaTypes().getTransition());
+        return gm.connect(_content.getOwner(), newNode, MTransition.class);
     }
 
     /**
      * To enable this we need to add an icon.
-     *
-     * @see org.tigris.gef.base.SelectionButtons#createEdgeToSelf(
-     *         org.tigris.gef.graph.MutableGraphModel)
+     * @see org.argouml.uml.diagram.ui.SelectionWButtons#createEdgeToSelf(org.tigris.gef.graph.MutableGraphModel)
      */
     protected Object createEdgeToSelf(MutableGraphModel gm) {
-        return gm.connect(getContent().getOwner(), getContent().getOwner(),
-			  (Class) Model.getMetaTypes().getTransition());
+        return gm.connect(_content.getOwner(), _content.getOwner(), MTransition.class);
     }
 
     /**
-     * @see org.tigris.gef.base.SelectionButtons#createEdgeUnder(
-     *         org.tigris.gef.graph.MutableGraphModel, java.lang.Object)
+     * @see org.argouml.uml.diagram.ui.SelectionWButtons#createEdgeUnder(org.tigris.gef.graph.MutableGraphModel, java.lang.Object)
      */
     protected Object createEdgeUnder(MutableGraphModel gm, Object newNode) {
-        return gm.connect(getContent().getOwner(), newNode,
-			  (Class) Model.getMetaTypes().getTransition());
+        return gm.connect(_content.getOwner(), newNode, MTransition.class);
     }
 
 } /* end class SelectionActionState */

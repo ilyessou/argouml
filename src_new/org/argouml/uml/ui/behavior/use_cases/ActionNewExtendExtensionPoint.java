@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 2002-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,12 +21,15 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $header$
 package org.argouml.uml.ui.behavior.use_cases;
 
 import java.awt.event.ActionEvent;
 
-import org.argouml.model.Model;
+import org.argouml.model.uml.behavioralelements.usecases.UseCasesFactory;
 import org.argouml.uml.ui.AbstractActionNewModelElement;
+import ru.novosoft.uml.behavior.use_cases.MExtend;
+import ru.novosoft.uml.behavior.use_cases.MExtensionPoint;
 
 /**
  * @since Oct 6, 2002
@@ -36,13 +38,10 @@ import org.argouml.uml.ui.AbstractActionNewModelElement;
  */
 public class ActionNewExtendExtensionPoint
     extends AbstractActionNewModelElement {
-
-    /**
-     * The singleton.
-     */
-    public static final ActionNewExtendExtensionPoint SINGLETON =
+        
+    public final static ActionNewExtendExtensionPoint SINGLETON = 
         new ActionNewExtendExtensionPoint();
-
+    
     /**
      * Constructor for ActionNewExtendExtensionPoint.
      */
@@ -55,11 +54,9 @@ public class ActionNewExtendExtensionPoint
      */
     public void actionPerformed(ActionEvent e) {
         super.actionPerformed(e);
-        if (Model.getFacade().isAExtend(getTarget())) {
-            Object point =
-                Model.getUseCasesFactory().buildExtensionPoint(
-                        Model.getFacade().getBase(getTarget()));
-            Model.getUseCasesHelper().addExtensionPoint(getTarget(), point);
+        if (getTarget() instanceof MExtend) {
+            MExtensionPoint point = UseCasesFactory.getFactory().buildExtensionPoint(((MExtend)getTarget()).getBase());
+            ((MExtend)getTarget()).addExtensionPoint(point);
         }
     }
 

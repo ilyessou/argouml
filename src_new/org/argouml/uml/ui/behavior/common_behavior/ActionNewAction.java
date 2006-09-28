@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,12 +21,13 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $header$
 package org.argouml.uml.ui.behavior.common_behavior;
 
 import java.awt.event.ActionEvent;
 
-import org.argouml.model.Model;
-import org.argouml.ui.targetmanager.TargetManager;
+import org.argouml.model.uml.behavioralelements.collaborations.CollaborationsHelper;
+import org.argouml.model.uml.behavioralelements.statemachines.StateMachinesHelper;
 import org.argouml.uml.ui.AbstractActionNewModelElement;
 
 /**
@@ -35,58 +35,48 @@ import org.argouml.uml.ui.AbstractActionNewModelElement;
  * @author jaap.branderhorst@xs4all.nl
  */
 public abstract class ActionNewAction extends AbstractActionNewModelElement {
-
+    
     /**
-     * The constant defining the role the action
-     * to be created plays for its parent.
-     * For example, if one wishes to create
-     * an entry action for a state, this is
-     * filled with "entry". The values are defined
-     * in the interface Roles
+     * The constant defining the role the action to be created plays for its parent. 
+     * For example, if one wishes to create an entry action for a state, this is 
+     * filled with "entry". The values are defined in the interface Roles
      */
-    public static final String ROLE = "role";
-
-    /**
-     * Contains the roles definitions for UML actions.
-     *
-     */
+    public final static String ROLE = "role";
+    
     public static interface Roles {
+        
         /**
-         * The entry activity for some state.
+         * The entry activity for some state
          */
-        String ENTRY = "entry";
-
+        public final static String ENTRY = "entry";
         /**
-         * The exit activity for some state.
+         * The exit activity for some state
          */
-        String EXIT = "exit";
-
+        public final static String EXIT = "exit";
         /**
-         * The doactivity with some state.
+         * The doactivity with some state
          */
-        String DO = "do";
-
+        public final static String DO = "do"; 
         /**
-         * The action with some message.
+         * The action with some message
          */
-        String ACTION = "action";
-
+        public final static String ACTION = "action";
+        
         /**
-         * The effect of some transition.
+         * The effect of some transition
          */
-        String EFFECT = "effect";
-    }
-
+        public final static String EFFECT = "effect";
+    }    
+    
     /**
      * Constructor for ActionNewAction.
      */
     protected ActionNewAction() {
         super();
     }
-
+    
     /**
-     * Implementors should create a concrete action like
-     * a CallAction in this method.
+     * Implementors should create a concrete action like a CallAction in this method.
      * @return Object
      */
     protected abstract Object createAction();
@@ -98,50 +88,21 @@ public abstract class ActionNewAction extends AbstractActionNewModelElement {
         super.actionPerformed(e);
         Object action = createAction();
         if (getValue(ROLE).equals(Roles.EXIT)) {
-            Model.getStateMachinesHelper().setExit(getTarget(), action);
+            StateMachinesHelper.getHelper().setActionAsExit(getTarget(), action);
         } else
-	    if (getValue(ROLE).equals(Roles.ENTRY)) {
-		Model.getStateMachinesHelper().setEntry(getTarget(), action);
-	    } else
-		if (getValue(ROLE).equals(Roles.DO)) {
-		    Model.getStateMachinesHelper().setDoActivity(
-		            getTarget(),
-		            action);
-		} else
-		    if (getValue(ROLE).equals(Roles.ACTION)) {
-			Model.getCollaborationsHelper().setAction(
-			        getTarget(),
-			        action);
-		    } else
-			if (getValue(ROLE).equals(Roles.EFFECT)) {
-			    Model.getStateMachinesHelper().setEffect(
-			            getTarget(),
-			            action);
-			}
-        TargetManager.getInstance().setTarget(action);
+        if (getValue(ROLE).equals(Roles.ENTRY)) {
+            StateMachinesHelper.getHelper().setActionAsEntry(getTarget(), action);
+        } else
+        if (getValue(ROLE).equals(Roles.DO)) {
+            StateMachinesHelper.getHelper().setActionAsDoActivity(getTarget(), action);
+        } else
+        if (getValue(ROLE).equals(Roles.ACTION)) {
+            CollaborationsHelper.getHelper().setActionAsAction(getTarget(), action);
+        } else
+        if (getValue(ROLE).equals(Roles.EFFECT)) {
+            StateMachinesHelper.getHelper().setActionAsEffect(getTarget(), action);
+        }
+        
     }
 
-    /**
-     * @param role the role the action plays
-     * @param t the transition or state to get the action for
-     * @return the action
-     */
-    public static Object getAction(String role, Object t) {
-        if (role.equals(Roles.EXIT)) {
-            return Model.getFacade().getExit(t);
-        } else
-            if (role.equals(Roles.ENTRY)) {
-                return Model.getFacade().getEntry(t);
-            } else
-                if (role.equals(Roles.DO)) {
-                    return Model.getFacade().getDoActivity(t);
-                } else
-                    if (role.equals(Roles.ACTION)) {
-                        return Model.getFacade().getAction(t);
-                    } else
-                        if (role.equals(Roles.EFFECT)) {
-                            return Model.getFacade().getEffect(t);
-                        }
-        return null;
-    }
 }

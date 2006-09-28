@@ -1,16 +1,15 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-03 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
-// and this paragraph appear in all copies. This software program and
+// and this paragraph appear in all copies.  This software program and
 // documentation are copyrighted by The Regents of the University of
 // California. The software program and documentation are supplied "AS
 // IS", without any accompanying services from The Regents. The Regents
 // does not warrant that the operation of the program will be
 // uninterrupted or error-free. The end-user understands that the program
 // was developed for research purposes and is advised not to rely
-// exclusively on the program for any reason. IN NO EVENT SHALL THE
+// exclusively on the program for any reason.  IN NO EVENT SHALL THE
 // UNIVERSITY OF CALIFORNIA BE LIABLE TO ANY PARTY FOR DIRECT, INDIRECT,
 // SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, INCLUDING LOST PROFITS,
 // ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN IF
@@ -22,72 +21,86 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $Id$
 
 package org.argouml.uml.diagram.static_structure.ui;
 
 import java.awt.Color;
-import java.awt.Polygon;
+import java.awt.Dimension;
+import java.awt.Graphics;
 import java.awt.Rectangle;
+import java.awt.Polygon;
+import java.awt.event.ActionEvent;
+import java.awt.event.MouseEvent;
+import java.util.Enumeration;
+import java.util.Vector;
 
+import javax.swing.JOptionPane;
+
+import org.apache.log4j.Category;
+import org.argouml.application.api.Notation;
+import org.argouml.kernel.Project;
+import org.argouml.kernel.ProjectManager;
+import org.argouml.ui.ArgoDiagram;
+import org.argouml.ui.ArgoJMenu;
+import org.argouml.ui.ProjectBrowser;
+import org.argouml.ui.targetmanager.TargetManager;
+import org.argouml.uml.diagram.ui.FigNodeModelElement;
+import org.argouml.uml.diagram.ui.UMLDiagram;
+import org.argouml.uml.ui.ActionModifier;
+import org.argouml.uml.ui.UMLAction;
+import org.tigris.gef.base.Globals;
 import org.tigris.gef.graph.GraphModel;
+import org.tigris.gef.presentation.Fig;
+import org.tigris.gef.presentation.FigRect;
+import org.tigris.gef.presentation.FigText;
 import org.tigris.gef.presentation.FigPoly;
 
-/** 
- * Class to display graphics for a UML model in a class diagram. 
- */
+import ru.novosoft.uml.foundation.core.MModelElement;
+import ru.novosoft.uml.foundation.core.MNamespace;
+import ru.novosoft.uml.foundation.extension_mechanisms.MStereotype;
+import ru.novosoft.uml.model_management.MModel;
+import ru.novosoft.uml.model_management.MPackage;
+
+/** Class to display graphics for a UML model in a class diagram. */
+
 public class FigModel extends FigPackage {
+    protected static Category cat = Category.getInstance(FigModel.class);
 
-    private FigPoly figPoly = new FigPoly(Color.black, Color.black);
+    protected FigPoly _figPoly;
 
-    /**
-     * The Constructor.
-     *
-     * @param modelElement the UML model
-     * @param x the x coordinate of the location
-     * @param y the y coordinate of the location
-     */
-    public FigModel(Object modelElement, int x, int y) {
-        super(modelElement, x, y);
+    ////////////////////////////////////////////////////////////////
+    // constructors
 
-        int[] xpoints = {125, 130, 135, 125};
-        int[] ypoints = {45, 40, 45, 45};
+    public FigModel() {
+        super();
+        _figPoly = new FigPoly(Color.black, Color.black);
+        int[] xpoints = { 125, 130, 135, 125};
+        int[] ypoints = { 45, 40, 45, 45};
         Polygon polygon = new Polygon(xpoints, ypoints, 4);
-        figPoly.setPolygon(polygon);
-        figPoly.setFilled(false);
-        addFig(figPoly);
+        _figPoly.setPolygon(polygon);
+        _figPoly.setFilled(false);
+        addFig(_figPoly);
         Rectangle r = getBounds();
         setBounds(r.x, r.y, r.width, r.height);
         updateEdges();
-
+        
     }
 
-    /**
-     * The constructor that hooks the Fig into the UML modelelement
-     * @param gm ignored
-     * @param node the UMl element
-     */
     public FigModel(GraphModel gm, Object node) {
-        this(node, 0, 0);
+        this();
+        setOwner(node);
+
+        // If this figure is created for an existing package node in the
+        // metamodel, set the figure's name according to this node. This is
+        // used when the user click's on 'add to diagram' in the navpane.
+        // Don't know if this should rather be done in one of the super
+        // classes, since similar code is used in FigClass.java etc.
+        // Andreas Rueckert <a_rueckert@gmx.net>
+        if (node instanceof MModel && (((MModel) node).getName() != null))
+            _name.setText(((MModelElement) node).getName());
     }
 
-    /**
-     *
-     * @see org.tigris.gef.presentation.Fig#setBounds(int, int, int, int)
-     */
-    protected void setBoundsImpl(int x, int y, int w, int h) {
-
-        if (figPoly != null) {
-            Rectangle oldBounds = getBounds();
-            figPoly.translate((x - oldBounds.x) + (w - oldBounds.width), y
-                    - oldBounds.y);
-
-        }
-        super.setBoundsImpl(x, y, w, h);
-    }
-
-    /**
-     * @see org.argouml.uml.diagram.ui.FigNodeModelElement#placeString()
-     */
     public String placeString() {
         return "new Model";
     }

@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,30 +21,24 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $Id$
 package org.argouml.uml.ui.foundation.core;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import org.argouml.uml.ui.UMLModelElementListModel2;
 
-import org.argouml.model.Model;
-import org.argouml.uml.ui.UMLModelElementOrderedListModel2;
+import ru.novosoft.uml.MBase;
+import ru.novosoft.uml.foundation.core.MClassifier;
 
 /**
- * This is the model for the list of parameters for a classifier,
- * as e.g. present on the operation properties panel. <p>
- *
- * This is an ordered list, and hence it supports reordering functions.
- *
- * @author jaap.branderhorst@xs4all.nl
+ * 
+ * @author jaap.branderhorst@xs4all.nl	
  * @since Jan 26, 2003
  */
 public class UMLClassifierParameterListModel
-    extends UMLModelElementOrderedListModel2 {
+    extends UMLModelElementListModel2 {
 
     /**
      * Constructor for UMLClassifierParameterListModel.
-     * This is an ordered list (2nd parameter = true).
      */
     public UMLClassifierParameterListModel() {
         super("parameter");
@@ -56,41 +49,15 @@ public class UMLClassifierParameterListModel
      */
     protected void buildModelList() {
         if (getTarget() != null) {
-            setAllElements(Model.getFacade().getParameters(getTarget()));
+            setAllElements(((MClassifier)getTarget()).getParameters());
         }
     }
 
     /**
-     * @see org.argouml.uml.ui.UMLModelElementListModel2#isValidElement(Object)
+     * @see org.argouml.uml.ui.UMLModelElementListModel2#isValidElement(ru.novosoft.uml.MBase)
      */
-    protected boolean isValidElement(Object element) {
-        return Model.getFacade().getParameters(getTarget()).contains(element);
-    }
-
-    /**
-     * @see org.argouml.uml.ui.UMLModelElementOrderedListModel2#moveTo(int, int)
-     */
-    protected void moveDown(int index1) {
-        int index2 = index1 + 1;
-        Object classifier = getTarget();
-        List c = new ArrayList(Model.getFacade().getParameters(classifier));
-        // TODO: Verify that the following works now with MDR
-        // and replace code - tfm - 20051109
-
-        /* The following does not work, because NSUML does not
-         * fire an update event, since no parameters were added or removed...
-        Collections.swap(c, index1, index2);
-        Model.getFacade().setParameters(classifier, c);
-        ... So, lets delete them first, then add them in reverse: */
-        Object mem1 = c.get(index1);
-        Object mem2 = c.get(index2);
-        List cc = new ArrayList(c);
-        cc.remove(mem1);
-        cc.remove(mem2);
-        Model.getCoreHelper().setParameters(classifier, cc);
-        Collections.swap(c, index1, index2);
-        Model.getCoreHelper().setParameters(classifier, c);
-        buildModelList();
+    protected boolean isValidElement(MBase element) {
+        return ((MClassifier)getTarget()).getParameters().contains(element);
     }
 
 }

@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,10 +21,14 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $header$
 package org.argouml.uml.ui.foundation.core;
 
-import org.argouml.model.Model;
 import org.argouml.uml.ui.UMLModelElementListModel2;
+
+import ru.novosoft.uml.MBase;
+import ru.novosoft.uml.foundation.core.MFlow;
+import ru.novosoft.uml.foundation.core.MModelElement;
 
 /**
  * @since Oct 12, 2002
@@ -36,6 +39,7 @@ public class UMLModelElementTargetFlowListModel
 
     /**
      * Constructor for UMLModelElementTargetFlowListModel.
+     * @param container
      */
     public UMLModelElementTargetFlowListModel() {
         super("targetFlow");
@@ -45,18 +49,17 @@ public class UMLModelElementTargetFlowListModel
      * @see org.argouml.uml.ui.UMLModelElementListModel2#buildModelList()
      */
     protected void buildModelList() {
-        if (getTarget() != null) {
-            setAllElements(Model.getFacade().getTargetFlows(getTarget()));
+        if (_target != null) {
+            setAllElements(((MModelElement)getTarget()).getTargetFlows());
         }
     }
 
-
+    
     /**
-     * @see org.argouml.uml.ui.UMLModelElementListModel2#isValidElement(Object)
+     * @see org.argouml.uml.ui.UMLModelElementListModel2#isValidElement(ru.novosoft.uml.MBase)
      */
-    protected boolean isValidElement(Object/*MBase*/ o) {
-        return Model.getFacade().isAFlow(o)
-            && Model.getFacade().getTargetFlows(getTarget()).contains(o);
+     protected boolean isValidElement(MBase o) {
+        return o instanceof MFlow && ((MModelElement)getTarget()).getTargetFlows().contains(o);
     }
 
 }

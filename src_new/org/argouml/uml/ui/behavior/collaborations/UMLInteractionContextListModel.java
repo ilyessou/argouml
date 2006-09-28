@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 2002-2006 The Regents of the University of California. All
+// Copyright (c) 2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,8 +24,11 @@
 
 package org.argouml.uml.ui.behavior.collaborations;
 
-import org.argouml.model.Model;
 import org.argouml.uml.ui.UMLModelElementListModel2;
+
+import ru.novosoft.uml.MBase;
+import ru.novosoft.uml.behavior.collaborations.MCollaboration;
+import ru.novosoft.uml.behavior.collaborations.MInteraction;
 
 /**
  * @since Oct 3, 2002
@@ -36,6 +39,7 @@ public class UMLInteractionContextListModel
 
     /**
      * Constructor for UMLInteractionContextListModel.
+     * @param container
      */
     public UMLInteractionContextListModel() {
         super("context");
@@ -46,15 +50,15 @@ public class UMLInteractionContextListModel
      */
     protected void buildModelList() {
         removeAllElements();
-        addElement(Model.getFacade().getContext(getTarget()));
+        addElement(((MInteraction)getTarget()).getContext());
     }
 
     /**
-     * @see org.argouml.uml.ui.UMLModelElementListModel2#isValidElement(Object)
+     * @see org.argouml.uml.ui.UMLModelElementListModel2#isValidElement(MBase)
      */
-    protected boolean isValidElement(Object/*MBase*/ elem) {
-        return Model.getFacade().isACollaboration(elem)
-            && Model.getFacade().getInteractions(elem).contains(getTarget());
+    protected boolean isValidElement(MBase elem) {
+        return elem instanceof MCollaboration && 
+            ((MCollaboration)elem).getInteractions().contains(getTarget());
     }
 
 }

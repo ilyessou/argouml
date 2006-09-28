@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,51 +21,39 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $Id$
 package org.argouml.uml.ui.foundation.core;
 
 import java.awt.event.ActionEvent;
 
-import javax.swing.Action;
 import javax.swing.JRadioButton;
 
-import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.application.api.Argo;
+import org.argouml.uml.ui.UMLChangeAction;
 import org.argouml.uml.ui.UMLRadioButtonPanel;
-import org.tigris.gef.undo.UndoableAction;
+
+import ru.novosoft.uml.foundation.core.MAssociationEnd;
+import ru.novosoft.uml.foundation.data_types.MAggregationKind;
 
 /**
- *
- * @author jaap.branderhorst@xs4all.nl
+ * 
+ * @author jaap.branderhorst@xs4all.nl	
  * @since Jan 4, 2003
  */
-public class ActionSetAssociationEndAggregation extends UndoableAction {
+public class ActionSetAssociationEndAggregation extends UMLChangeAction {
 
-    private static final ActionSetAssociationEndAggregation SINGLETON =
-	new ActionSetAssociationEndAggregation();
+    public static final ActionSetAssociationEndAggregation SINGLETON = new ActionSetAssociationEndAggregation();
 
-    /**
-     * AGGREGATE_COMMAND defines an aggregation kind.
-     */
-    public static final String AGGREGATE_COMMAND = "aggregate";
-
-    /**
-     * COMPOSITE_COMMAND defines an aggregation kind.
-     */
-    public static final String COMPOSITE_COMMAND = "composite";
-
-    /**
-     * NONE_COMMAND defines an aggregation kind.
-     */
-    public static final String NONE_COMMAND = "none";
+    public final static String AGGREGATE_COMMAND = "aggregate";
+    public final static String COMPOSITE_COMMAND = "composite";
+    public final static String NONE_COMMAND = "none";
 
     /**
      * Constructor for ActionSetElementOwnershipSpecification.
+     * @param s
      */
     protected ActionSetAssociationEndAggregation() {
-        super(Translator.localize("action.set"), null);
-        // Set the tooltip string:
-        putValue(Action.SHORT_DESCRIPTION, 
-                Translator.localize("action.set"));
+        super(Argo.localize("CoreMenu", "Set"), true, NO_ICON);
     }
 
     /**
@@ -77,28 +64,20 @@ public class ActionSetAssociationEndAggregation extends UndoableAction {
         if (e.getSource() instanceof JRadioButton) {
             JRadioButton source = (JRadioButton) e.getSource();
             String actionCommand = source.getActionCommand();
-            Object target = ((UMLRadioButtonPanel) source.getParent())
-                .getTarget();
-            if (Model.getFacade().isAAssociationEnd(target)) {
-                Object m = /*(MAssociationEnd)*/ target;
-                Object/*MAggregationKind*/ kind = null;
+            Object target = ((UMLRadioButtonPanel) source.getParent()).getTarget();
+            if (target instanceof MAssociationEnd) {
+                MAssociationEnd m = (MAssociationEnd) target;
+                MAggregationKind kind = null;
                 if (actionCommand.equals(AGGREGATE_COMMAND)) {
-                    kind = Model.getAggregationKind().getAggregate();
+                    kind = MAggregationKind.AGGREGATE;
                 } else if (actionCommand.equals(COMPOSITE_COMMAND)) {
-                    kind = Model.getAggregationKind().getComposite();
-                } else {
-                    kind = Model.getAggregationKind().getNone();
-                }
-                Model.getCoreHelper().setAggregation(m, kind);
+                    kind = MAggregationKind.COMPOSITE;
+                } else
+                    kind = MAggregationKind.NONE;
+                m.setAggregation(kind);
+
             }
         }
-    }
-
-    /**
-     * @return Returns the SINGLETON.
-     */
-    public static ActionSetAssociationEndAggregation getInstance() {
-        return SINGLETON;
     }
 
 }

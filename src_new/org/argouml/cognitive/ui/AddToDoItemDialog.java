@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,165 +23,114 @@
 
 package org.argouml.cognitive.ui;
 
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
-import javax.swing.DefaultListModel;
+import javax.swing.BorderFactory;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
-import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
-import javax.swing.ListCellRenderer;
+import javax.swing.SwingConstants;
 
+import org.argouml.application.api.Argo;
 import org.argouml.cognitive.Designer;
-import org.argouml.cognitive.ListSet;
 import org.argouml.cognitive.ToDoItem;
-import org.argouml.cognitive.Translator;
+import org.argouml.swingext.Horizontal;
+import org.argouml.swingext.LabelledLayout;
+import org.argouml.swingext.SerialLayout;
 import org.argouml.ui.ArgoDialog;
-import org.argouml.ui.targetmanager.TargetManager;
-import org.argouml.uml.cognitive.UMLToDoItem;
-import org.tigris.swidgets.Dialog;
-import org.tigris.swidgets.LabelledLayout;
+import org.argouml.ui.ProjectBrowser;
+import org.tigris.gef.util.VectorSet;
 
-/**
- * The dialog to enter a new ToDoItem.
- */
 public class AddToDoItemDialog extends ArgoDialog {
 
     ////////////////////////////////////////////////////////////////
     // constants
-    private static final String[] PRIORITIES = {
-        Translator.localize("misc.level.high"),
-        Translator.localize("misc.level.medium"),
-        Translator.localize("misc.level.low"),
+    private static final String PRIORITIES[] = {
+        Argo.localize(BUNDLE, "level.high"),
+        Argo.localize(BUNDLE, "level.medium"),
+        Argo.localize(BUNDLE, "level.low")
     };
-    private static final int TEXT_ROWS = 8;
-    private static final int TEXT_COLUMNS = 30;
-    /** Insets in pixels  */
-    private static final int INSET_PX = 3;
 
     ////////////////////////////////////////////////////////////////
     // instance variables
-    private JTextField headLineTextField;
-    private JComboBox  priorityComboBox;
-    private JTextField moreinfoTextField;
-    private JList offenderList;
-    private JTextArea  descriptionTextArea;
-
+    private JTextField _headline;
+    private JComboBox  _priority;
+    private JTextField _moreinfo;
+    private JTextArea  _description;
 
     /**
      * Create a new AddToDoItemDialog
-     * @param renderer the ListCellRenderer to use in order
-     *                 to display the offenders
      */
-    public AddToDoItemDialog(ListCellRenderer renderer) {
-        super(Translator.localize("dialog.title.add-todo-item"),
-	      Dialog.OK_CANCEL_OPTION, true);
-
-        headLineTextField = new JTextField(TEXT_COLUMNS);
-        priorityComboBox = new JComboBox(PRIORITIES);
-        moreinfoTextField = new JTextField(TEXT_COLUMNS);
-        descriptionTextArea = new JTextArea(TEXT_ROWS, TEXT_COLUMNS);
-
-        DefaultListModel dlm = new DefaultListModel();
-        Object[] offObj =
-            TargetManager.getInstance().getModelTargets().toArray();
-        for (int i = 0; i < offObj.length; i++) {
-            if (offObj[i] != null) {
-                dlm.addElement(offObj[i]);
-            }
-        }
-
-        offenderList = new JList(dlm);
-        offenderList.setCellRenderer(renderer);
-        JScrollPane offenderScroll = new JScrollPane(offenderList);
-        offenderScroll.setOpaque(true);
-
-        JLabel headlineLabel =
-            new JLabel(Translator.localize("label.headline"));
-        JLabel priorityLabel =
-            new JLabel(Translator.localize("label.priority"));
-        JLabel moreInfoLabel =
-            new JLabel(Translator.localize("label.more-info-url"));
-        JLabel offenderLabel =
-            new JLabel(Translator.localize("label.offenders"));
-        priorityComboBox.setSelectedItem(PRIORITIES[0]);
-
-        JPanel panel = new JPanel(new LabelledLayout(getLabelGap(),
-                getComponentGap()));
-
-        headlineLabel.setLabelFor(headLineTextField);
-        panel.add(headlineLabel);
-        panel.add(headLineTextField);
-
-        priorityLabel.setLabelFor(priorityComboBox);
-        panel.add(priorityLabel);
-        panel.add(priorityComboBox);
-
-        moreInfoLabel.setLabelFor(moreinfoTextField);
-        panel.add(moreInfoLabel);
-        panel.add(moreinfoTextField);
-
-        offenderLabel.setLabelFor(offenderScroll);
-        panel.add(offenderLabel);
-        panel.add(offenderScroll);
-
-        descriptionTextArea.setLineWrap(true);  //MVW - Issue 2422
-        descriptionTextArea.setWrapStyleWord(true);   //MVW - Issue 2422
-        descriptionTextArea.setText(Translator.localize("label.enter-todo-item")
-                	    + "\n");
-        descriptionTextArea.setMargin(new Insets(INSET_PX, INSET_PX,
-                INSET_PX, INSET_PX));
-        JScrollPane descriptionScroller = new JScrollPane(descriptionTextArea);
-        descriptionScroller.setPreferredSize(
-                descriptionTextArea.getPreferredSize());
-        panel.add(descriptionScroller);
-
-        setContent(panel);
+    public AddToDoItemDialog() {
+        super(ProjectBrowser.getInstance(), Argo.localize(BUNDLE, "dialog.title.add-todo-item"), true);
     }
 
+    protected JPanel addComponents() {
+        _headline = new JTextField(30);
+        _priority = new JComboBox(PRIORITIES);
+        _moreinfo = new JTextField(30);
+        _description = new JTextArea(10, 30);
+    
+        JLabel headlineLabel = new JLabel(Argo.localize(BUNDLE, "label.headline"));
+        JLabel priorityLabel = new JLabel(Argo.localize(BUNDLE, "label.priority"));
+        JLabel moreInfoLabel = new JLabel(Argo.localize(BUNDLE, "label.more-info-url"));
+   
+        _priority.setSelectedItem(PRIORITIES[0]);
+    
+        JPanel panel = new JPanel(new LabelledLayout(labelGap, componentGap));
+
+        headlineLabel.setLabelFor(_headline);
+        panel.add(headlineLabel);
+        panel.add(_headline);
+
+        priorityLabel.setLabelFor(_priority);
+        panel.add(priorityLabel);
+        panel.add(_priority);
+
+        moreInfoLabel.setLabelFor(_moreinfo);
+        panel.add(moreInfoLabel);
+        panel.add(_moreinfo);
+    
+        _description.setText(Argo.localize(BUNDLE, "label.enter-todo-item") + "\n");
+        JScrollPane descriptionScroller = new JScrollPane(_description);
+        descriptionScroller.setPreferredSize(_description.getPreferredSize());
+        panel.add(descriptionScroller);
+        
+        return panel;
+    }
+    
     ////////////////////////////////////////////////////////////////
     // event handlers
-
-    /**
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-     */
     public void actionPerformed(ActionEvent e) {
-        super.actionPerformed(e);
-        if (e.getSource() == getOkButton()) {
-            doAdd();
+        if (e.getSource() == _okButton) {
+            Designer designer = Designer.TheDesigner;
+            String headline = _headline.getText();
+            int priority = ToDoItem.HIGH_PRIORITY;
+            switch (_priority.getSelectedIndex()) {
+                case 0: priority = ToDoItem.HIGH_PRIORITY; break;
+                case 1: priority = ToDoItem.MED_PRIORITY; break;
+                case 2: priority = ToDoItem.LOW_PRIORITY; break;
+            }
+            String desc = _description.getText();
+            String moreInfoURL = _moreinfo.getText();
+            ToDoItem item = new ToDoItem(designer, headline, priority, desc, moreInfoURL);
+            designer.getToDoList().addElement(item); //? inform()
+            setVisible(false);
+            dispose();
+        } else if (e.getSource() == _cancelButton) {
+            hide();
+            dispose();
         }
     }
 
-    private void doAdd() {
-        Designer designer = Designer.theDesigner();
-        String headline = headLineTextField.getText();
-        int priority = ToDoItem.HIGH_PRIORITY;
-        switch (priorityComboBox.getSelectedIndex()) {
-	case 0:
-	    priority = ToDoItem.HIGH_PRIORITY;
-	    break;
-	case 1:
-	    priority = ToDoItem.MED_PRIORITY;
-	    break;
-	case 2:
-	    priority = ToDoItem.LOW_PRIORITY;
-	    break;
-        }
-        String desc = descriptionTextArea.getText();
-        String moreInfoURL = moreinfoTextField.getText();
-        ToDoItem item =
-	    new UMLToDoItem(designer, headline, priority, desc, moreInfoURL);
-        ListSet newOffenders = new ListSet();
-        for (int i = 0; i < offenderList.getModel().getSize(); i++) {
-            newOffenders.addElement(offenderList.getModel().getElementAt(i));
-        }
-        item.setOffenders(newOffenders);
-        designer.getToDoList().addElement(item); //? inform()
-        Designer.firePropertyChange(Designer.MODEL_TODOITEM_ADDED, null, item);
-    }
 } /* end class AddToDoItemDialog */
-

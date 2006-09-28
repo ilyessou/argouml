@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 2002-2006 The Regents of the University of California. All
+// Copyright (c) 2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -21,120 +21,71 @@
 // PROVIDED HEREUNDER IS ON AN "AS IS" BASIS, AND THE UNIVERSITY OF
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
-
 package org.argouml.ui.targetmanager;
 
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.Vector;
 
-import javax.swing.AbstractAction;
-import javax.swing.Action;
 import javax.swing.event.EventListenerList;
 
 import org.apache.log4j.Logger;
 import org.argouml.kernel.Project;
 import org.argouml.kernel.ProjectManager;
-import org.argouml.model.DeleteInstanceEvent;
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
+import org.argouml.ui.Actions;
 import org.argouml.uml.diagram.ui.UMLDiagram;
-import org.argouml.uml.ui.ActionDeleteModelElements;
 import org.tigris.gef.base.Diagram;
-import org.tigris.gef.base.Editor;
-import org.tigris.gef.base.Globals;
 import org.tigris.gef.presentation.Fig;
 
 /**
- * The manager of the target of ArgoUML.
- * The target of ArgoUML is the element currently selected by the user.
- * This can either be an instance of a meta-class (an
- * Interface or a Class for example) but it can also be a diagram
- * or anything that is shown
- * on a diagram.<p>
- *
- * There can be multiple targets in case
- * someone selected multiple items in the explorer or on the diagram.
- * This can be done by shift-clicking or Ctrl-clicking items,
- * or by drawing a box on the diagram around the items to select.<p>
- *
- * In case multiple targets are selected, the target manager will add each
- * target to the beginning of the list of targets. This way,
- * the first item of the list is the last selected item.
- * Most functions in ArgoUML work on all selected items.
- * However, a few (intentionally) only work on one target,
- * such as the properties panels.
- * These functions have 2 ways of retrieving the target they should work on:
- * <ul>
- * <li>1. Use the functions that return one target only,
- * such as getTarget(), getModelTarget(), getFigTarget().
- * <li>2. Use the first item in the list returned by
- * getTargets(), getModelTargets(). </ul><p>
- *
- * Remark: There is currently no function getFigs(),
- * returning a list of selected figs.
- * But you can obtain such a list from GEF. <p>
- *
- * The purpose of the targetmanager is to have a central spot where we
- * manage the list of current targets.<p>
- *
- * Via an event mechanism this manager makes sure that all objects interested
- * in knowing wether the selection changed are acknowledged. <p>
- *
- * Note in particular that null is an invalid target.<p>
- *
- * Thanks to the architecture of ArgoUML of Modelelements and Figs,
- * one rule has been decided upon (by mvw@tigris.org):<ul>
- * <li>The list of targets shall not contain any Fig that has an owner.
- * Instead, the owner is enlisted.
- * </ul>
- *
+ * <p>
+ * The manager of the target of argouml. The target of argouml is the selected
+ * element in the model. This can either be an instance of a meta-class (an
+ * Interface or a Class for example) but it can also be a diagram or a figure 
+ * on a diagram.
+ * </p>
+ * <p>
+ * Via an event mechanism this manager makes sure that all objects interested 
+ * in knowing wether the event changed are acknowledged.
+ * </p>
+ * 
  * @author jaap.branderhorst@xs4all.nl
  */
 public final class TargetManager {
 
     /**
-     * The manager of the history of targets. Every time the user (or
-     * the program) selects a new target, this is recorded in the
-     * history. Via navigateBack and navigateForward, the user can
-     * browse through the history just like in an ordinary internet
-     * browser.
+     * The manager of the history of targets. Everytimes the user (or the program)
+     * selects a new target, this is recorded in the history. Via navigateBack and
+     * navigateForward, the user can browse through the history just like in an 
+     * ordinary internet browser.
      * @author jaap.branderhorst@xs4all.nl
      */
-    private final class HistoryManager implements TargetListener {
+    private class HistoryManager implements TargetListener {
 
-        private static final int MAX_SIZE = 100;
+        private final static int MAX_SIZE = 100;
 
         /**
-         * The history with targets.
+         * The history with targets
          */
-        private List history = new ArrayList();
+        private List _history = new ArrayList();
 
         /**
          * Flag to indicate if the current settarget was instantiated by a
          * navigateBack action.
          */
-        private boolean navigateBackward;
+        private boolean _navigateBackward;
 
         /**
-         * The pointer to the current target in the history.
+         * The pointer to the current target in the history
          */
-        private int currentTarget = -1;
+        private int _currentTarget = -1;
 
         /**
-         * The listener to UML model changes. 
-         * Deleted model elements are removed 
-         * from the history list. 
-         */
-        private Remover umlListener = new HistoryRemover(); 
-
-        /**
-         * Default constructor that registrates the history manager as target
+         * Default constructor that registrates the history manager as target 
          * listener with the target manager.
          *
          */
@@ -143,45 +94,41 @@ public final class TargetManager {
         }
 
         /**
-         * Puts some target into the history (if needed). Updates both
-         * the history as the pointer to indicate the target.
+         * Puts some target into the history (if needed). Updates both the history
+         * as the pointer to indicate the target.
          * @param target The target to put into the history
          */
         private void putInHistory(Object target) {
-            if (currentTarget > -1) {
+            if (_currentTarget > -1) {
                 // only targets we didn't have allready count
-                Object theModelTarget =
-                    target instanceof Fig ? ((Fig) target).getOwner() : target;
+                Object modelTarget =
+                    target instanceof Fig ? ((Fig)target).getOwner() : target;
                 Object oldTarget =
-                    ((WeakReference) history.get(currentTarget)).get();
+                    ((WeakReference)_history.get(_currentTarget)).get();
                 oldTarget =
                     oldTarget instanceof Fig
-		    ? ((Fig) oldTarget).getOwner()
-		    : oldTarget;
-                if (oldTarget == theModelTarget) {
+                        ? ((Fig)oldTarget).getOwner()
+                        : oldTarget;
+                if (oldTarget == modelTarget)
                     return;
-                }
             }
-            if (target != null && !navigateBackward) {
-                if (currentTarget + 1 == history.size()) {
-                    umlListener.addListener(target);
-                    history.add(new WeakReference(target));
-                    currentTarget++;
+            if (target != null && !_navigateBackward) {
+                if (_currentTarget + 1 == _history.size()) {
+                    _history.add(new WeakReference(target));
+                    _currentTarget++;
                     resize();
                 } else {
                     WeakReference ref =
-                        currentTarget > -1
-			? (WeakReference) history.get(currentTarget)
-			: null;
-                    if (currentTarget == -1 || !ref.get().equals(target)) {
-                        int size = history.size();
-                        for (int i = currentTarget + 1; i < size; i++) {
-                            umlListener.removeListener(
-                                    history.remove(currentTarget + 1));
+                        _currentTarget > -1
+                            ? (WeakReference)_history.get(_currentTarget)
+                            : null;
+                    if (_currentTarget == -1 || !ref.get().equals(target)) {
+                        int size = _history.size();
+                        for (int i = _currentTarget + 1; i < size; i++) {
+                            _history.remove(_currentTarget + 1);
                         }
-                        history.add(new WeakReference(target));
-                        umlListener.addListener(target);
-                        currentTarget++;
+                        _history.add(new WeakReference(target));
+                        _currentTarget++;
                     }
                 }
 
@@ -193,34 +140,31 @@ public final class TargetManager {
          *
          */
         private void resize() {
-            int size = history.size();
+            int size = _history.size();
             if (size > MAX_SIZE) {
                 int oversize = size - MAX_SIZE;
                 int halfsize = size / 2;
-                if (currentTarget > halfsize && oversize < halfsize) {
+                if (_currentTarget > halfsize && oversize < halfsize) {
                     for (int i = 0; i < oversize; i++) {
-                        umlListener.removeListener(
-                                history.remove(0));
+                        _history.remove(0);
                     }
-                    currentTarget -= oversize;
+                    _currentTarget -= oversize;
                 }
             }
         }
 
         /**
-         * Navigate one target forward in history. Throws an
-         * illegalstateException if not possible.
+         * Navigate one target forward in history. Throws an illegalstateException
+         * if not possible.
          *
          */
         private void navigateForward() {
-            if (currentTarget >= history.size() - 1) {
+            if (_currentTarget >= _history.size() - 1)
                 throw new IllegalStateException(
-			"NavigateForward is not allowed "
-			+ "since the targetpointer is pointing at "
-			+ "the upper boundary "
-			+ "of the history");
-            }
-            setTarget(((WeakReference) history.get(++currentTarget)).get());
+                    "NavigateForward is not allowed "
+                        + "since the targetpointer is pointing at the upper boundary "
+                        + "of the history");
+            setTarget(((WeakReference)_history.get(++_currentTarget)).get());
         }
 
         /**
@@ -229,77 +173,53 @@ public final class TargetManager {
          *
          */
         private void navigateBackward() {
-            if (currentTarget == 0) {
+            if (_currentTarget == 0) {
                 throw new IllegalStateException(
-		        "NavigateBackward is not allowed "
-			+ "since the targetpointer is pointing at "
-			+ "the lower boundary "
-			+ "of the history");
+                    "NavigateBackward is not allowed "
+                        + "since the targetpointer is pointing at the lower boundary "
+                        + "of the history");
             }
-            navigateBackward = true;
-            // If nothing selected, go to last selected target
-            if (targets.size() == 0) {
-                setTarget(((WeakReference) history.get(currentTarget)).get());
-            } else {
-                setTarget(((WeakReference) history.get(--currentTarget)).get());
-            }
-            navigateBackward = false;
+            _navigateBackward = true;
+            setTarget(((WeakReference)_history.get(--_currentTarget)).get());
+            _navigateBackward = false;
         }
 
         /**
          * Checks if it's possible to navigate back.
-         * 
          * @return true if it's possible to navigate back.
          */
         private boolean navigateBackPossible() {
-            return currentTarget > 0;
+            return _currentTarget > 0;
         }
 
         /**
-         * Checks if it's possible to navigate forward.
-         *
+         * Checks if it's possible to navigate forward         
          * @return true if it's possible to navigate forward
          */
         private boolean navigateForwardPossible() {
-            return currentTarget < history.size() - 1;
+            return _currentTarget < _history.size() - 1;
         }
 
         /**
-         * Listener for additions of targets to the selected targets.
-         * On addition of targets we put them in the history.
-         * @see org.argouml.ui.targetmanager.TargetListener#targetAdded(
-         * org.argouml.ui.targetmanager.TargetEvent)
+         * @see org.argouml.ui.targetmanager.TargetListener#targetAdded(org.argouml.ui.targetmanager.TargetEvent)
          */
         public void targetAdded(TargetEvent e) {
-            Object[] addedTargets = e.getAddedTargets();
-            // we put the targets 'backwards' in the history
-            // since the first target in the addedTargets array is
-            // the first one selected.
-            for (int i = addedTargets.length - 1; i >= 0; i--) {
-                putInHistory(addedTargets[i]);
-            }
         }
 
         /**
-         * Listener for the removal of targets from the selection.
-         * On removal of a target from the selection we do nothing
-         * with respect to the history of targets.
          * @see org.argouml.ui.targetmanager.TargetListener#targetRemoved(org.argouml.ui.targetmanager.TargetEvent)
          */
         public void targetRemoved(TargetEvent e) {
+            // comparable to targetReasserted in this respect.
+            // putInHistory(e.getNewTargets()[0]);
+
         }
 
         /**
-         * Listener for the selection of a whole bunch of targets
-         * in one go (or just one). Puts all the new
-         * targets in the history starting with the 'newest' target.
          * @see org.argouml.ui.targetmanager.TargetListener#targetSet(org.argouml.ui.targetmanager.TargetEvent)
          */
         public void targetSet(TargetEvent e) {
-            Object[] newTargets = e.getNewTargets();
-            for (int i = newTargets.length - 1; i >= 0; i--) {
-                putInHistory(newTargets[i]);
-            }
+            putInHistory(e.getNewTargets()[0]);
         }
 
         /**
@@ -307,437 +227,257 @@ public final class TargetManager {
          *
          */
         private void clean() {
-            umlListener.removeAllListeners(history);
-            history = new ArrayList();
-            currentTarget = -1;
+            _history = new ArrayList();
+            _currentTarget = -1;
         }
 
         private void removeHistoryTarget(Object o) {
-            if (o instanceof Diagram) {
-                Iterator it = ((Diagram) o).getEdges().iterator();
+            if (ModelFacade.isADiagram(o)) {
+                ListIterator it = ((Diagram)o).getEdges().listIterator();
                 while (it.hasNext()) {
                     removeHistoryTarget(it.next());
                 }
-                it = ((Diagram) o).getNodes().iterator();
+                it = ((Diagram)o).getNodes().listIterator();
                 while (it.hasNext()) {
                     removeHistoryTarget(it.next());
                 }
             }
-            ListIterator it = history.listIterator();
+            ListIterator it = _history.listIterator();
+            int oldCurrentTarget = _currentTarget;
             while (it.hasNext()) {
-                WeakReference ref = (WeakReference) it.next();
+                WeakReference ref = (WeakReference)it.next();
                 Object historyObject = ref.get();
-                if (Model.getFacade().isAModelElement(o)) {
+                if (ModelFacade.isAModelElement(o)) {
                     historyObject =
                         historyObject instanceof Fig
-			? ((Fig) historyObject).getOwner()
-			: historyObject;
+                            ? ((Fig)historyObject).getOwner()
+                            : historyObject;
 
                 }
                 if (o == historyObject) {
-                    if (history.indexOf(ref) <= currentTarget) {
-                        currentTarget--;
+                    if (_history.indexOf(ref) <= _currentTarget) {
+                        _currentTarget--;
                     }
                     it.remove();
                 }
 
-                // cannot break here since an object can be multiple
-                // times in history
+                // cannot break here since an object can be multiple times in history
+            }
+            if (oldCurrentTarget != _currentTarget) {
+                Actions.updateAllEnabled();
             }
         }
 
     }
     /**
-     * The log4j logger to log messages to.
+     * The log4j logger to log messages to
      */
-    private static final Logger LOG = Logger.getLogger(TargetManager.class);
+    private Logger _log = Logger.getLogger(this.getClass());
 
     /**
-     * The singleton instance.
+     * The singleton instance
      */
     private static TargetManager instance = new TargetManager();
 
     /**
-     * The targets.
+     * The targets stored in an object array to improve performance
      */
-    private List targets = new ArrayList();
+    private Object[] _targets = new Object[0];
+
+    /** 
+     * Cache for the modeltarget. See getModelTarget
+     */
+    private Object _modelTarget = null;
 
     /**
-     * Cache for the modeltarget. See getModelTarget.
+     * Cache for the figTarget. See getFigTarget
      */
-    private Object modelTarget;
+    private Fig _figTarget = null;
 
     /**
-     * Cache for the figTarget. See getFigTarget.
+     * The list with targetlisteners
      */
-    private Fig figTarget;
-
-    /**
-     * The list with targetlisteners.
-     */
-    private EventListenerList listenerList = new EventListenerList();
+    private EventListenerList _listenerList = new EventListenerList();
 
     /**
      * The history manager of argouml. Via the historymanager browser behaviour
-     * is emulated.
+     * is emulated
      */
-    private HistoryManager historyManager = new HistoryManager();
-    
-    /**
-     * The listener to UML model changes. 
-     * Deleted model elements are removed 
-     * from the target list. 
-     */
-    private Remover umlListener = new TargetRemover(); 
+    private HistoryManager _historyManager = new HistoryManager();
 
     /**
-     * Flag to indicate that there is a setTarget method running.
+     * While firing events, the list with targets is not updated yet. Therefore
+     * getTarget() will return the old target. This can get nasty for classes that
+     * do not use the event mechanism yet. The newTarget is a variable that is 
+     * temporarily filled with the new target. When the targets are set, the new 
+     * target is nullified.
      */
-    private boolean inTransaction = false;
-
-    private Action addAttributeAction = new ActionAddAttribute();
-
-    private Action addOperationAction = new ActionAddOperation();
-    
-    private AbstractAction deleteAction = new ActionDeleteModelElements();
-
-    private Action addEnumerationLiteralAction = 
-        new ActionAddEnumerationLiteral();
+    private Object _newTarget;
 
     /**
-     * Singleton retrieval method.
-     * @return the targetmanager
+     * Flag to indicate that there is a setTarget method running
+     */
+    private boolean _inTransaction = false;
+
+    /**
+     * Singleton retrieval method
+     * @return The targetmanager
      */
     public static TargetManager getInstance() {
         return instance;
     }
 
     /**
-     * Singleton constructor should remain private.
-     */
-    private TargetManager() {
-    }
-
-    /**
-     * Sets the targets to the single given object. If there are targets at the
-     * moment of calling this method, these will be removed as targets. To
-     * all interested targetlisteners, a TargetEvent will be fired. If the
+     * Sets the targets to the single given object. If there are targets at the 
+     * moment of calling this method, these will be removed as targets. To 
+     * all interested targetlisteners, a TargetEvent will be fired. If the 
      * new target o equals the current target, no events will be fired, nor will
      * the target be (re)set.
-     * @param o The new target, null clears all targets.
+     * @param o The new target
      */
     public synchronized void setTarget(Object o) {
-	if (isInTargetTransaction()) {
-            return;
-        }
+        if (!isInTargetTransaction()) {
+            startTargetTransaction();
 
-	if ((targets.size() == 0 && o == null)
-	        || (targets.size() == 1 && targets.get(0).equals(o))) {
-            return;
-        }
-
-	startTargetTransaction();
-
-	Object[] oldTargets = targets.toArray();
-        umlListener.removeAllListeners(targets);
-	targets.clear();
-
-	if (o != null) {
-            Object newTarget;
-            if (o instanceof UMLDiagram) { // Needed for Argo startup :-(
-                newTarget = o;
-            } else {
-	        newTarget = getOwner(o);
-            }
-            targets.add(newTarget);
-            umlListener.addListener(newTarget);
-        }
-	internalOnSetTarget(TargetEvent.TARGET_SET, oldTargets);
-
-        endTargetTransaction();
-    }
-
-    private void internalOnSetTarget(String eventName, Object[] oldTargets) {
-	TargetEvent event =
-	    new TargetEvent(this, eventName, oldTargets, targets.toArray());
-
-	if (targets.size() > 0) {
-	    figTarget = determineFigTarget(targets.get(0));
-	    modelTarget = determineModelTarget(targets.get(0));
-	} else {
-	    figTarget = null;
-	    modelTarget = null;
-	}
-
-	if (TargetEvent.TARGET_SET.equals(eventName)) {
-	    fireTargetSet(event);
-	    return;
-	} else if (TargetEvent.TARGET_ADDED.equals(eventName)) {
-	    fireTargetAdded(event);
-	    return;
-	} else if (TargetEvent.TARGET_REMOVED.equals(eventName)) {
-	    fireTargetRemoved(event);
-	    return;
-	}
-
-	LOG.error("Unknown eventName: " + eventName);
-    }
-
-    /**
-     * Returns the current primary target, the first selected object.
-     *
-     * The value will be that of the new primary target during a targetSet/
-     * targetAdded/targetRemoved notification, since they are just that,
-     * notifications that the target(s) has just changed.
-     *
-     * @return The current target, or null if no target is selected
-     */
-    public synchronized Object getTarget() {
-	return targets.size() > 0 ? targets.get(0) : null;
-    }
-
-    /**
-     * Sets the given collection to the current targets. If the collection
-     * equals the current targets, then does nothing. When setting
-     * the targets, a TargetEvent will be fired to each interested listener.
-     * Note that the first element returned by an Iterator on targetList
-     * will be taken to be the primary target (see getTarget()), and that
-     * an event will be fired also in case that that element would not equal
-     * the element returned by getTarget().
-     * Note also that any nulls within the Collection will be ignored.
-     *
-     * @param targetsCollection The new targets list.
-     */
-    public synchronized void setTargets(Collection targetsCollection) {
-	Iterator ntarg;
-
-	if (isInTargetTransaction()) {
-            return;
-        }
-
-        Collection targetsList = new ArrayList();
-        if (targetsCollection != null) {
-            targetsList.addAll(targetsCollection);
-        }
-
-        /* Remove duplicates and take care of getOwner()
-         * and remove nulls: */
-        List modifiedList = new ArrayList();
-        Iterator it = targetsList.iterator();
-        while (it.hasNext()) {
-            Object o = it.next();
-            o = getOwner(o);
-            if ((o != null) && !modifiedList.contains(o)) {
-                modifiedList.add(o);
-            }
-        }
-        targetsList = modifiedList;
-
-	Object[] oldTargets = null;
-
-	// check if there are new elements in the list
-	// if the old and new list are of the same size
-	// set the oldTargets to the correct selection
-	if (targetsList.size() == targets.size()) {
-	    boolean first = true;
-	    ntarg = targetsList.iterator();
-
-	    while (ntarg.hasNext()) {
-		Object targ = ntarg.next();
-		if (targ == null) {
-                    continue;
+            Object[] targets = new Object[] { o };
+            List _targetsList = Arrays.asList(_targets);
+            boolean equal = true;
+            for (int i = 0; i < targets.length; i++) {
+                if (!_targetsList.contains(targets[i])) {
+                    equal = false;
+                    break;
                 }
-		if (!targets.contains(targ)
-		    || (first && targ != getTarget())) {
-		    oldTargets = targets.toArray();
-		    break;
-		}
-                first = false;
-	    }
-	} else {
-            oldTargets = targets.toArray();
-        }
-
-	if (oldTargets == null) {
-            return;
-        }
-
-	startTargetTransaction();
-
-        umlListener.removeAllListeners(targets);
-	targets.clear();
-
-	// implement set-like behaviour. The same element
-	// may not be added more then once.
-	ntarg = targetsList.iterator();
-	while (ntarg.hasNext()) {
-	    Object targ = ntarg.next();
-	    if (targets.contains(targ)) {
-                continue;
             }
-	    targets.add(targ);
-            umlListener.addListener(targ);
-	}
-
-	internalOnSetTarget(TargetEvent.TARGET_SET, oldTargets);
-
-	endTargetTransaction();
+            if (!equal) {
+                _newTarget = o;
+                _figTarget = determineFigTarget(_newTarget);
+                _modelTarget = determineModelTarget(_newTarget);
+                fireTargetSet(targets);
+                _targets = new Object[] { o };
+                _newTarget = null;
+            }
+            endTargetTransaction();
+        }
     }
 
     /**
-     * Adds a target to the targets list. If the target is already in
-     * the targets list then does nothing. Otherwise the
-     * target will be added and an appropriate TargetEvent will be
-     * fired to all interested listeners. Since null can never be a target,
-     * adding null will never do anything.
+     * Returns the current target. 
+     * @return The current target
+     * @throws TargetException if there are more then 1 target.
+     */
+    public synchronized Object getTarget() throws TargetException {
+        if (_targets.length == 0) {
+            _log.warn("Returning null as target. No target was selected.");
+        }
+        return _newTarget != null
+            ? _newTarget
+            : (_targets.length >= 1 ? _targets[0] : null);
+    }
+
+    /**
+     * Sets the given collection to the current targets. If the collection 
+     * equals the current targets, the targets will not be (re)set. When setting
+     * the targets, a TargetEvent will be fired to each interested listener.
+     * @param targetsList The new targets list.
+     */
+    public synchronized void setTargets(Collection targetsList) {
+        if (!isInTargetTransaction()) {
+            startTargetTransaction();
+            if (targetsList != null && !targetsList.isEmpty()) {
+                List _targetsList = Arrays.asList(_targets);
+                Object[] targets = targetsList.toArray();
+                boolean equal = true;
+                for (int i = 0; i < targets.length; i++) {
+                    if (!_targetsList.contains(targets[i])) {
+                        equal = false;
+                        break;
+                    }
+                }
+                if (!equal) {
+                    _newTarget = targets[0];
+                    _figTarget = determineFigTarget(_newTarget);
+                    _modelTarget = determineModelTarget(_newTarget);
+                    fireTargetSet(targets);
+                    _targets = targets;
+                    _newTarget = null;
+                }
+            } else {
+                Object[] targets = new Object[] { null };
+                fireTargetSet(targets);
+                _targets = targets;
+                _modelTarget = null;
+                _figTarget = null;
+            }
+            endTargetTransaction();
+        }
+    }
+
+    /**
+     * Adds a target to the targets list. If the target is allready in the targets
+     * list no (re)setting will take place. Otherwise the target will be added
+     * and an appropriate TargetEvent will be fired to all interested listeners.
      * @param target the target to be added.
      */
     public synchronized void addTarget(Object target) {
-	if (isInTargetTransaction()) {
-            return;
+        if (target != null && !isInTargetTransaction()) {
+            startTargetTransaction();
+            Object[] targets = new Object[_targets.length + 1];
+            System.arraycopy(_targets, 0, targets, 0, _targets.length);
+            targets[_targets.length] = target;
+            fireTargetAdded(target);
+            _targets = targets;
+            endTargetTransaction();
         }
-        Object newTarget = getOwner(target);
-
-        if (target == null
-                || targets.contains(target)
-                || targets.contains(newTarget)) {
-            return;
-        }
-
-	startTargetTransaction();
-
-	Object[] oldTargets = targets.toArray();
-	targets.add(0, newTarget);
-        umlListener.addListener(newTarget);
-
-	internalOnSetTarget(TargetEvent.TARGET_ADDED, oldTargets);
-
-	endTargetTransaction();
     }
 
     /**
-     * Removes the target from the targets list. Does nothing if the target
-     * does not exist in the targets list. Fires an appropriate TargetEvent to
-     * all interested listeners. Since null can never be a target, removing
-     * null will never do anything.
+     * Removes the target from the targets list. Does do nothing if the target
+     * does not exist in the targets list. Fires an appropriate TargetEvent to 
+     * all interested listeners.
      * @param target The target to remove.
      */
     public synchronized void removeTarget(Object target) {
-        if (isInTargetTransaction()) {
-            return;
-        }
+        if (target != null && !isInTargetTransaction()) {
+            startTargetTransaction();
+            boolean found = false;
+            for (int i = 0; i < _targets.length; i++) {
+                if (_targets[i] == target) {
+                    Object[] targets = new Object[_targets.length - 1];
+                    // Copy the list up to index
+                    System.arraycopy(_targets, 0, targets, 0, i);
+                    // Copy from two past the index, up to
+                    // the end of tmp (which is two elements
+                    // shorter than the old list)
+                    if (i < targets.length)
+                        System.arraycopy(
+                            _targets,
+                            i + 1,
+                            targets,
+                            i,
+                            targets.length - i);
+                    // set the listener array to the new array or null
+                    if (target == _modelTarget) {
+                        _modelTarget = null;
+                    }
+                    if (target == _figTarget) {
+                        _figTarget = null;
+                    }
+                    fireTargetRemoved(target);
+                    _targets = (targets.length == 0) ? new Object[0] : targets;
 
-	if (target == null /*|| !targets.contains(target)*/) {
-            return;
-        }
-
-	startTargetTransaction();
-
-	Object[] oldTargets = targets.toArray();
-        Collection c = getOwnerAndAllFigs(target);
-//	targets.remove(target);
-        targets.removeAll(c);
-        umlListener.removeAllListeners(c);
-
-        if (targets.size() != oldTargets.length) {
-            internalOnSetTarget(TargetEvent.TARGET_REMOVED, oldTargets);
-        }
-
-	endTargetTransaction();
-    }
-
-    private Collection getOwnerAndAllFigs(Object o) {
-        Collection c = new ArrayList();
-        c.add(o);
-        if (o instanceof Fig) {
-            if (((Fig) o).getOwner() != null) {
-                o = ((Fig) o).getOwner();
-                c.add(o);
+                }
             }
+            endTargetTransaction();
         }
-        if (!(o instanceof Fig)) {
-            Project p = ProjectManager.getManager().getCurrentProject();
-            Collection col = p.findAllPresentationsFor(o);
-            if (col != null && !col.isEmpty()) {
-                c.addAll(col);
-            }
-        }
-        return c;
     }
 
     /**
-     * @param o the object
-     * @return the owner of the fig, or if it didn't exist, the object itself
-     */
-    public Object getOwner(Object o) {
-        if (o instanceof Fig) {
-            if (((Fig) o).getOwner() != null) {
-                o = ((Fig) o).getOwner();
-            }
-        }
-        return o;
-    }
-
-    /**
-     * Returns a collection with all targets. Returns an empty collection
-     * if there are no targets. If there are several targets then the first
-     * Object by an Iterator on the returned Collection or the zero'th Object
-     * in an array on this Collection is guaranteed to be the object returned
-     * by getTarget.
-     *
-     * The value will be that of the new target(s) during a targetSet/
-     * targetAdded/targetRemoved notification, since they are just that,
-     * notifications that the target(s) has just changed.
-     *
+     * Returns a collection with all targets. Returns null if there are no
+     * targets.
      * @return A collection with all targets.
      */
     public synchronized Collection getTargets() {
-        return new ArrayList(targets);
-    }
-
-    /**
-     * If there is only one target, then it is returned.
-     * Otherwise null.
-     * 
-     * @return the one and only target
-     */
-    public synchronized Object getSingleTarget() {
-        return targets.size() == 1 ? targets.get(0) : null;
-    }
-    
-    /**
-     * @return the target from the model
-     */
-    public synchronized Collection getModelTargets() {
-        ArrayList t = new ArrayList();
-        Iterator iter = getTargets().iterator();
-        while (iter.hasNext()) {
-            t.add(determineModelTarget(iter.next()));
-        }
-        return t;
-    }
-
-    /**
-     * If there is only one model target, then it is returned.
-     * Otherwise null.
-     *
-     * @return the single model target
-     */
-    public synchronized Object getSingleModelTarget() {
-        int i = 0;
-        Iterator iter = getTargets().iterator();
-        while (iter.hasNext()) {
-            if (determineModelTarget(iter.next()) != null) {
-                i++;
-            }
-            if (i > 1) {
-                break;
-            }
-        }
-        if (i == 1) {
-            return modelTarget;
-        }
-        return null;
+        return _targets.length > 0 ? Arrays.asList(_targets) : new ArrayList();
     }
 
     /**
@@ -745,7 +485,7 @@ public final class TargetManager {
      * @param listener the listener to add
      */
     public void addTargetListener(TargetListener listener) {
-        listenerList.add(TargetListener.class, listener);
+        _listenerList.add(TargetListener.class, listener);
     }
 
     /**
@@ -753,216 +493,82 @@ public final class TargetManager {
      * @param listener the listener to remove
      */
     public void removeTargetListener(TargetListener listener) {
-        listenerList.remove(TargetListener.class, listener);
+        _listenerList.remove(TargetListener.class, listener);
     }
 
-    private void fireTargetSet(TargetEvent targetEvent) {
+    private void fireTargetSet(Object[] newTargets) {
         // Guaranteed to return a non-null array
-        Object[] listeners = listenerList.getListenerList();
+        Object[] listeners = _listenerList.getListenerList();
+        TargetEvent targetEvent =
+            new TargetEvent(this, TargetEvent.TARGET_SET, _targets, newTargets);
         for (int i = listeners.length - 2; i >= 0; i -= 2) {
-	    try {
-	        if (listeners[i] == TargetListener.class) {
-	            // Lazily create the event:
-	            ((TargetListener) listeners[i + 1]).targetSet(targetEvent);
-	        }
-	    } catch (RuntimeException e) {
-	        LOG.error("While calling targetSet for "
-	                + targetEvent
-	                + " in "
-	                + listeners[i + 1]
-	                            + " an error is thrown.",
-	                            e);
-                e.printStackTrace();
+            if (listeners[i] == TargetListener.class) {
+                // Lazily create the event:                     
+                 ((TargetListener)listeners[i + 1]).targetSet(targetEvent);
             }
         }
     }
 
-    private void fireTargetAdded(TargetEvent targetEvent) {
+    private void fireTargetAdded(Object targetAdded) {
         // Guaranteed to return a non-null array
-        Object[] listeners = listenerList.getListenerList();
+        Object[] listeners = _listenerList.getListenerList();
+        TargetEvent targetEvent =
+            new TargetEvent(
+                this,
+                TargetEvent.TARGET_SET,
+                _targets,
+                new Object[] { targetAdded });
+
         for (int i = listeners.length - 2; i >= 0; i -= 2) {
-	    try {
-		if (listeners[i] == TargetListener.class) {
-		    // Lazily create the event:
-		    ((TargetListener) listeners[i + 1])
-		        .targetAdded(targetEvent);
-		}
-	    } catch (RuntimeException e) {
-		LOG.error("While calling targetAdded for "
-			  + targetEvent
-			  + " in "
-			  + listeners[i + 1]
-			  + " an error is thrown.",
-			  e);
-                e.printStackTrace();
-	    }
+            if (listeners[i] == TargetListener.class) {
+                // Lazily create the event:                     
+                 ((TargetListener)listeners[i + 1]).targetAdded(targetEvent);
+            }
         }
     }
 
-    private void fireTargetRemoved(TargetEvent targetEvent) {
+    private void fireTargetRemoved(Object targetRemoved) {
         // Guaranteed to return a non-null array
-        Object[] listeners = listenerList.getListenerList();
+        Object[] listeners = _listenerList.getListenerList();
+        TargetEvent targetEvent =
+            new TargetEvent(
+                this,
+                TargetEvent.TARGET_SET,
+                _targets,
+                new Object[] { targetRemoved });
+
         for (int i = listeners.length - 2; i >= 0; i -= 2) {
-	    try {
-		if (listeners[i] == TargetListener.class) {
-		    // Lazily create the event:
-		    ((TargetListener) listeners[i + 1])
-		        .targetRemoved(targetEvent);
-		}
-	    } catch (RuntimeException e) {
-		LOG.warn("While calling targetRemoved for "
-			  + targetEvent
-			  + " in "
-			  + listeners[i + 1]
-			  + " an error is thrown.",
-			  e);
-                e.printStackTrace();
-	    }
+            if (listeners[i] == TargetListener.class) {
+                // Lazily create the event:                     
+                 ((TargetListener)listeners[i + 1]).targetRemoved(targetEvent);
+            }
         }
     }
 
     private void startTargetTransaction() {
-        inTransaction = true;
+        _inTransaction = true;
     }
 
     private boolean isInTargetTransaction() {
-        return inTransaction;
+        return _inTransaction;
     }
 
     private void endTargetTransaction() {
-
-        boolean addAttributeEnabled;
-        if (targets.size() == 1) {
-            Object target = determineModelTarget(targets.get(0));
-            if ((Model.getFacade().isAClass(target)
-                    || Model.getFacade().isAUseCase(target)
-                    || (Model.getFacade().isAFeature(target)
-                        && Model.getFacade().isAClass(
-                            Model.getFacade().getOwner(target)))
-                    || (Model.getFacade().isAFeature(target)
-                        && Model.getFacade().isAUseCase(
-                            Model.getFacade().getOwner(target)))
-                    || Model.getFacade().isAAssociationEnd(target))) {
-                addAttributeEnabled = true;
-            } else {
-                addAttributeEnabled = false;
-            }
-        } else {
-            addAttributeEnabled = false;
-        }
-
-        boolean addOperationEnabled;
-        if (targets.size() == 1) {
-            Object target = determineModelTarget(targets.get(0));
-            if ((Model.getFacade().isAClassifier(target)
-                    || Model.getFacade().isAFeature(target))
-                    && !Model.getFacade().isASignal(target)) {
-                addOperationEnabled = true;
-            } else {
-                addOperationEnabled = false;
-            }
-        } else {
-            addOperationEnabled = false;
-        }
-        
-        addAttributeAction.setEnabled(addAttributeEnabled);
-        addOperationAction.setEnabled(addOperationEnabled);
-        deleteAction.setEnabled(isDeleteAllowed());
-
-        inTransaction = false;
-    }
-    
-    /**
-     * Determine if the current selected targets should allow enablement of
-     * the delete action.
-     * @return true to enable delete
-     */
-    private boolean isDeleteAllowed() {
-        int size = 0;
-        try {
-            Editor ce = Globals.curEditor();
-            Vector figs = ce.getSelectionManager().getFigs();
-            size = figs.size();
-        } catch (Exception e) {
-        // Ignore
-        }
-        if (size > 0) {
-            return true;
-        }
-        Object target = TargetManager.getInstance().getTarget();
-        if (target instanceof Diagram) { // we cannot delete the last diagram
-            return (ProjectManager.getManager().getCurrentProject()
-                .getDiagrams().size() > 1);
-        }
-        if (Model.getFacade().isAModel(target)
-        // we cannot delete the model itself
-            && target.equals(ProjectManager.getManager().getCurrentProject()
-                 .getModel())) {
-            return false;
-        }
-        if (Model.getFacade().isAAssociationEnd(target)) {
-            return Model.getFacade().getOtherAssociationEnds(target).size() > 1;
-        }
-        if (Model.getStateMachinesHelper().isTopState(target)) {
-            /* we can not delete a "top" state,
-             * it comes and goes with the statemachine. Issue 2655.
-             */
-            return false;
-        }
-        return target != null;
+        _inTransaction = false;
     }
 
     /**
-     * Get the Action for creating and adding a new attribute
-     * to the single selected target (or its owner).
-     * @return the action
-     */
-    public Action getAddAttributeAction() {
-        return addAttributeAction;
-    }
-
-    /**
-     * Get the Action for creating and adding a new operation
-     * to the single selected target (or its owner).
-     * @return the action
-     */
-    public Action getAddOperationAction() {
-        return addOperationAction;
-    }
-
-    /**
-     * Get the Action for deleting the target list.
-     * @return the action
-     */
-    public AbstractAction getDeleteAction() {
-        return deleteAction;
-    }
-
-    /**
-     * Get the Action class for creating and adding a new EnumerationLiteral for
-     * the single selected target (or its owner).
-     * 
-     * @return the action
-     */
-    public Action getAddEnumerationLiteralAction() {
-        return addEnumerationLiteralAction;
-    }
-
-    /**
-     * Convenience method to return the target as fig. If the current
-     * target (retrieved by getTarget) is either a fig itself or the
-     * owner of a fig this fig will be returned. Otherwise null will
-     * be returned.
+     * Convenience method to return the target as fig. If the current target 
+     * (retrieved by getTarget) is either a fig itself or the owner of a fig this
+     * fig will be returned. Otherwise null will be returned.
      * @return the target in it's 'fig-form'
      */
     public Fig getFigTarget() {
-        return figTarget;
+        return _figTarget;
     }
 
     /**
-     * Calculates the most probable 'fig-form' of some target. Beware:
-     * The result does NOT depend on the current diagram!
-     *
+     * Calculates the most probable 'fig-form' of some target.
      * @param target the target to calculate the 'fig-form' for.
      * @return The fig-form.
      */
@@ -978,19 +584,18 @@ public final class TargetManager {
             }
         }
 
-        return target instanceof Fig ? (Fig) target : null;
+        return target instanceof Fig ? (Fig)target : null;
     }
 
     /**
-     * Returns the target in it's 'modelform'. If the target retrieved
-     * by getTarget is an UMLDiagram or a modelelement the target will
-     * be returned. If the target is a fig but owned by a modelelement
-     * that modelelement will be returned.  Otherwise null will be
-     * returned.
+     * Returns the target in it's 'modelform'. If the target retrieved by getTarget
+     * is an UMLDiagram or a modelelement the target will be returned. If the target
+     * is a fig but owned by a modelelement that modelelement will be returned. 
+     * Otherwise null will be returned.
      * @return the target in it's 'modelform'.
      */
     public Object getModelTarget() {
-        return modelTarget;
+        return _modelTarget;
 
     }
 
@@ -1001,35 +606,34 @@ public final class TargetManager {
      */
     private Object determineModelTarget(Object target) {
         if (target instanceof Fig) {
-            Object owner = ((Fig) target).getOwner();
-            if (Model.getFacade().isAModelElement(owner)) {
+            Object owner = ((Fig)target).getOwner();
+            if (ModelFacade.isABase(owner)) {
                 target = owner;
             }
         }
         return target instanceof UMLDiagram
-            || Model.getFacade().isAModelElement(target) ? target : null;
+            || ModelFacade.isABase(target) ? target : null;
 
     }
 
     /**
      * Navigates the target pointer one target forward. This implements together
      * with navigateBackward browser like functionality.
-     * @throws IllegalStateException If the target pointer is at the end of the
+     * @throws IllegalStateException If the target pointer is at the end of the 
      * history.
      */
     public void navigateForward() throws IllegalStateException {
-        historyManager.navigateForward();
+        _historyManager.navigateForward();
     }
 
     /**
-     * Navigates the target pointer one target backward. This
-     * implements together with navigateForward browser like
-     * functionality
-     * @throws IllegalStateException If the target pointer is at the
-     * beginning of the history.
+     * Navigates the target pointer one target backward. This implements together
+     * with navigateForward browser like functionality
+     * @throws IllegalStateException If the target pointer is at the beginning of the 
+     * history.
      */
     public void navigateBackward() throws IllegalStateException {
-        historyManager.navigateBackward();
+        _historyManager.navigateBackward();
     }
 
     /**
@@ -1037,90 +641,28 @@ public final class TargetManager {
      * @return true if it is possible to navigate forward.
      */
     public boolean navigateForwardPossible() {
-        return historyManager.navigateForwardPossible();
+        return _historyManager.navigateForwardPossible();
     }
 
     /**
-     * Checks if it's possible to navigate backward.
-     *
+     * Checks if it's possible to navigate backward
      * @return true if it's possible to navigate backward
      */
     public boolean navigateBackPossible() {
-        return historyManager.navigateBackPossible();
+        return _historyManager.navigateBackPossible();
     }
 
     /**
-     * Cleans the history. Needed for the JUnit tests and when instantiating a
-     * new project.
+     * Cleans the history. Needed for the JUnit tests and when instantiating a 
+     * new project
+     *
      */
     public void cleanHistory() {
-        historyManager.clean();
+        _historyManager.clean();
     }
 
-    /**
-     * @param o the object to be removed
-     */
     public void removeHistoryElement(Object o) {
-        historyManager.removeHistoryTarget(o);
+        _historyManager.removeHistoryTarget(o);
     }
 
-    /**
-     * The listener to UML model changes. 
-     * Deleted model elements are removed 
-     * from the target list or from the history. 
-     * 
-     * @author michiel
-     */
-    private abstract class Remover implements PropertyChangeListener 
-    {
-
-        private void addListener(Object o) {
-            if (Model.getFacade().isAModelElement(o)) {
-                Model.getPump().addModelEventListener(this, o, "remove");
-            } else if (o instanceof UMLDiagram) {
-                ((UMLDiagram) o).addPropertyChangeListener(this);
-            }
-        }
-
-        private void removeListener(Object o) {
-            if (Model.getFacade().isAModelElement(o)) {
-                Model.getPump().removeModelEventListener(this, o, "remove");
-            } else if (o instanceof UMLDiagram) {
-                ((UMLDiagram) o).removePropertyChangeListener(this);
-            }
-        }
-
-        private void removeAllListeners(Collection c) {
-            Iterator i = c.iterator();
-            while (i.hasNext()) {
-                removeListener(i.next());
-            }
-        }
-
-        /**
-         * @see java.beans.PropertyChangeListener#propertyChange(java.beans.PropertyChangeEvent)
-         */
-        public void propertyChange(PropertyChangeEvent evt) {
-            if ((evt instanceof DeleteInstanceEvent)
-                    && "remove".equals(evt.getPropertyName())) {
-
-                remove(evt.getSource());
-            }
-        }
-        
-        protected abstract void remove(Object obj);
-    }
-
-    private class TargetRemover extends Remover {
-        protected void remove(Object obj) {
-            removeTarget(obj);
-        }
-    }
-
-    private class HistoryRemover extends Remover {
-        protected void remove(Object obj) {
-            historyManager.removeHistoryTarget(obj);
-        }
-    }
 }
-

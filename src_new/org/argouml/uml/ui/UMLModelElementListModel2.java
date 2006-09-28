@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 2002-2006 The Regents of the University of California. All
+// Copyright (c) 2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,188 +24,153 @@
 
 package org.argouml.uml.ui;
 
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 
 import javax.swing.DefaultListModel;
-import javax.swing.JPopupMenu;
 
-import org.apache.log4j.Logger;
-import org.argouml.model.AddAssociationEvent;
-import org.argouml.model.AssociationChangeEvent;
-import org.argouml.model.AttributeChangeEvent;
-import org.argouml.model.InvalidElementException;
-import org.argouml.model.Model;
-import org.argouml.model.RemoveAssociationEvent;
+import org.argouml.model.ModelFacade;
+import org.argouml.model.uml.UmlModelEventPump;
 import org.argouml.ui.targetmanager.TargetEvent;
 import org.argouml.ui.targetmanager.TargetListener;
-import org.tigris.gef.base.Diagram;
 import org.tigris.gef.presentation.Fig;
 
+import ru.novosoft.uml.MBase;
+import ru.novosoft.uml.MElementEvent;
+import ru.novosoft.uml.MElementListener;
+
 /**
- * The model for a list that contains ModelElements. The state of the Element is
- * still kept in the model subsystem itself. This list is only to be used as the
- * model for some GUI element like UMLLinkedList.
- *
+ * The model for a list that Mbases contains. The state of the MBase is still 
+ * kept in the Mbase itself. This list is only to be used as the model for some 
+ * GUI element like UMLLinkedList 
  * @since Oct 2, 2002
  * @author jaap.branderhorst@xs4all.nl
  */
-public abstract class UMLModelElementListModel2 extends DefaultListModel
-        implements TargetListener, PropertyChangeListener {
+public abstract class UMLModelElementListModel2
+    extends DefaultListModel
+    implements TargetListener, MElementListener {
 
-    private static final Logger LOG = 
-        Logger.getLogger(UMLModelElementListModel2.class);
-    
-    private String eventName = null;
-    private Object listTarget = null;
+    private String _eventName = null;
+    protected Object _target = null;
 
     /**
      * Flag to indicate wether list events should be fired
      */
-    private boolean fireListEvents = true;
+    protected boolean _fireListEvents = true;
 
     /**
      * Flag to indicate wether the model is being build
      */
-    private boolean buildingModel = false;
-
+    protected boolean _buildingModel = false;
 
     /**
-     * Constructor to be used if the subclass does not depend on the
+     * Constructor for UMLModelElementListModel2.
+     */
+    public UMLModelElementListModel2(String eventName) {
+        super();
+        setEventName(eventName);
+    }
+
+    /**
+     * Constructor to be used if the subclass does not depend on the 
      * MELementListener methods and setTarget method implemented in this
-     * class.
+     * class
+     * @param container
      */
     public UMLModelElementListModel2() {
         super();
     }
 
     /**
-     * Constructor for UMLModelElementListModel2.
-     *
-     * @param name the name of the event to listen to, which triggers us
-     *             to update the list model from the UML data
+     * @see ru.novosoft.uml.MElementListener#listRoleItemSet(ru.novosoft.uml.MElementEvent)
      */
-    public UMLModelElementListModel2(String name) {
-        super();
-        eventName = name;
-    }
+    public void listRoleItemSet(MElementEvent e) {}
 
     /**
-     * @param building The buildingModel to set.
+     * @see ru.novosoft.uml.MElementListener#propertySet(ru.novosoft.uml.MElementEvent)
      */
-    protected void setBuildingModel(boolean building) {
-        this.buildingModel = building;
-    }
-
-    /**
-     * @param t the list target to set
-     */
-    protected void setListTarget(Object t) {
-        this.listTarget = t;
-    }
-
-    /**
-     * @see java.beans.PropertyChangeListener#propertyChange(java.beans.PropertyChangeEvent)
-     * 
-     * TODO: This should be reviewed to see if it can be improved with a view
-     * towards removing some of the overrriding methods used as workarounds for 
-     * differences between NSUML and MDR - tfm - 20060302
-     */
-    public void propertyChange(PropertyChangeEvent e) {
-        if (e instanceof AttributeChangeEvent) {
-            try {
-                if (isValidEvent(e)) {
-                    rebuildModelList();
-                }
-            } catch (InvalidElementException iee) {
-                return;
-            }
-        } else if (e instanceof AddAssociationEvent) {
-            if (isValidEvent(e)) {
-                Object o = getChangedElement(e);
-                if (o instanceof Collection) {
-                    ArrayList tempList = new ArrayList((Collection) o);
-                    Iterator it = tempList.iterator();
-                    while (it.hasNext()) {
-                        Object o2 = it.next();
-                        addElement(o2);
-                    }
-                } else {
-                    addElement(o);
-                }
-            }
-        } else if (e instanceof RemoveAssociationEvent) {
-            boolean valid = false;
-            if (!(getChangedElement(e) instanceof Collection)) {
-                valid = contains(getChangedElement(e));
-            } else {
-                Collection col = (Collection) getChangedElement(e);
-                Iterator it = col.iterator();
-                valid = true;
-                while (it.hasNext()) {
-                    Object o = it.next();
-                    if (!contains(o)) {
-                        valid = false;
-                        break;
-                    }
-                }
-            }
-            if (valid) {
-                Object o = getChangedElement(e);
-                if (o instanceof Collection) {
-                    Iterator it = ((Collection) o).iterator();
-                    while (it.hasNext()) {
-                        Object o3 = it.next();
-                        removeElement(o3);
-                    }
-                } else {
-                    removeElement(o);
-                }
-            }
-        }
-    }
-
-    /**
-     * Delete and rebuild the model list from scratch.
-     */
-    private void rebuildModelList() {
-        removeAllElements();
-        buildingModel = true;
-        try {
+    public void propertySet(MElementEvent e) {
+        if (isValidEvent(e)) {
+            removeAllElements();
+            _buildingModel = true;
             buildModelList();
-        } catch (InvalidElementException exception) {
-            /*
-             * This can throw an exception if the target has been
-             * deleted. We don't want to try locking the repository
-             * because this is called from the event delivery thread and
-             * could cause a deadlock. Instead catch the exception and
-             * leave the model empty.
-             */
-            LOG.debug("buildModelList threw exception for target " 
-                    + getTarget() + ": "
-                    + exception);
-        } finally {
-            buildingModel = false;
-        }
-        if (getSize() > 0) {
-            fireIntervalAdded(this, 0, getSize() - 1);
+            _buildingModel = false;
+            if (getSize() > 0) {
+                fireIntervalAdded(this, 0, getSize() - 1);
+            }
         }
     }
 
     /**
-     * Builds the list of elements. Called from targetChanged every time the
-     * target of the proppanel is changed. Usually the method setAllElements is
-     * called with the result.
+     * @see ru.novosoft.uml.MElementListener#recovered(ru.novosoft.uml.MElementEvent)
+     */
+    public void recovered(MElementEvent e) {}
+
+    /**
+     * @see ru.novosoft.uml.MElementListener#removed(ru.novosoft.uml.MElementEvent)
+     */
+    public void removed(MElementEvent e) {}
+
+    /**
+     * @see ru.novosoft.uml.MElementListener#roleAdded(ru.novosoft.uml.MElementEvent)
+     */
+    public void roleAdded(MElementEvent e) {
+        if (isValidEvent(e)) {
+            Object o = getChangedElement(e);
+            if (o instanceof Collection) {
+                Iterator it = ((Collection)o).iterator();
+                while (it.hasNext()) {
+                    Object o2 = it.next();
+                    addElement(it.next());
+                }
+            } else {
+                addElement(o);
+            }
+        }
+    }
+
+    /**
+     * @see ru.novosoft.uml.MElementListener#roleRemoved(ru.novosoft.uml.MElementEvent)
+     */
+    public void roleRemoved(MElementEvent e) {
+        boolean valid = false;
+        if (!(getChangedElement(e) instanceof Collection)) {
+            valid = contains(getChangedElement(e));
+        } else {
+            Collection col = (Collection)getChangedElement(e);
+            Iterator it = col.iterator();
+            valid = true;
+            while (it.hasNext()) {
+                Object o = it.next();
+                if (!contains(o)) {
+                    valid = false;
+                    break;
+                }
+            }
+        }
+        if (valid) {
+            Object o = getChangedElement(e);
+            if (o instanceof Collection) {
+                Iterator it = ((Collection)o).iterator();
+                while (it.hasNext()) {
+                    removeElement(it.next());
+                }
+            } else {
+                removeElement(o);
+            }
+        }
+    }
+
+    /**
+     * Builds the list of elements. Called from targetChanged every time the 
+     * target of the proppanel is changed. 
      */
     protected abstract void buildModelList();
 
     /**
      * Utility method to set the elements of this list to the contents of the
      * given collection.
-     * @param col the given collection
+     * @param col
      */
     protected void setAllElements(Collection col) {
         if (!isEmpty())
@@ -215,54 +180,52 @@ public abstract class UMLModelElementListModel2 extends DefaultListModel
 
     /**
      * Utility method to add a collection of elements to the model
-     * @param col the given collection
+     * @param col
      */
     protected void addAll(Collection col) {
-        if (col.size() == 0) return;
         Iterator it = col.iterator();
-        fireListEvents = false;
-        int intervalStart = getSize() == 0 ? 0 : getSize() - 1;
+        _fireListEvents = false;
+        int oldSize = getSize();
         while (it.hasNext()) {
             Object o = it.next();
             addElement(o);
         }
-        fireListEvents = true;
-        fireIntervalAdded(this, intervalStart, getSize() - 1);
+        _fireListEvents = true;
+        fireIntervalAdded(this, oldSize - 1, getSize() - 1);
     }
 
     /**
-     * Utility method to get the target. Sets the target if the target is null
+     * Utility method to get the target. Sets the _target if the _target is null
      * via the method setTarget().
      * @return MModelElement
      */
     protected Object getTarget() {
-        return listTarget;
+        return _target;
     }
 
     /**
      * Utility method to get the changed element from some event e
-     * @param e the event
-     * @return Object the changed element
+     * @param e
+     * @return Object
      */
-    protected Object getChangedElement(PropertyChangeEvent e) {
-        if (e instanceof AssociationChangeEvent) {
-            return ((AssociationChangeEvent) e).getChangedValue();
-        }
-        if (e instanceof AttributeChangeEvent) {
-            return ((AttributeChangeEvent) e).getSource();
-        }
-        return e.getNewValue();
+    protected Object getChangedElement(MElementEvent e) {
+        if (e.getAddedValue() != null)
+            return e.getAddedValue();
+        if (e.getRemovedValue() != null)
+            return e.getRemovedValue();
+        if (e.getNewValue() != null)
+            return e.getNewValue();
+        return null;
     }
 
     /**
      * @see javax.swing.DefaultListModel#contains(java.lang.Object)
      */
     public boolean contains(Object elem) {
-        if (super.contains(elem)) {
+        if (super.contains(elem))
             return true;
-        }
         if (elem instanceof Collection) {
-            Iterator it = ((Collection) elem).iterator();
+            Iterator it = ((Collection)elem).iterator();
             while (it.hasNext()) {
                 if (!super.contains(it.next())) {
                     return false;
@@ -274,110 +237,83 @@ public abstract class UMLModelElementListModel2 extends DefaultListModel
     }
 
     /**
-     * Sets the target. If the old target is a ModelElement, it also removes
+     * Sets the target. If the old target is instanceof MBase, it also removes
      * the model from the element listener list of the target. If the new target
-     * is instanceof ModelElement, the model is added as element listener to the
-     * new target. <p>
-     *      
-     * This function is called when the user changes the target. 
-     * Hence, this shall not result in any UML model changes.
-     * Hence, we block firing list events completely by setting 
-     * buildingModel to true for the duration of this function. <p>
-     * 
-     * This function looks a lot like the one in UMLComboBoxModel2.
-     * 
-     * @param theNewTarget the new target
+     * is instanceof MBase, the model is added as element listener to the new 
+     * target.
+     * @param target
      */
-    public void setTarget(Object theNewTarget) {
-        theNewTarget = theNewTarget instanceof Fig
-            ? ((Fig) theNewTarget).getOwner() : theNewTarget;
-        if (Model.getFacade().isAModelElement(theNewTarget)
-                || theNewTarget instanceof Diagram) {
-            if (Model.getFacade().isAModelElement(listTarget)) {
-                Model.getPump().removeModelEventListener(this, listTarget,
-                        eventName);
-                // Allow listening to other elements:
-                removeOtherModelEventListeners(listTarget);
+    public void setTarget(Object target) {
+        target = target instanceof Fig ? ((Fig)target).getOwner() : target;
+        if (ModelFacade.isABase(target) || ModelFacade.isADiagram(target)) {
+            if (_target instanceof MBase) {
+                UmlModelEventPump.getPump().removeModelEventListener(
+                    this,
+                    (MBase)_target,
+                    _eventName);
             }
 
-            if (Model.getFacade().isAModelElement(theNewTarget)) {
-                listTarget = theNewTarget;
-                Model.getPump().addModelEventListener(this, listTarget,
-                        eventName);
-                // Allow listening to other elements:
-                addOtherModelEventListeners(listTarget);
+            if (target instanceof MBase) {
+                _target = target;
+                // UmlModelEventPump.getPump().removeModelEventListener(this, (MBase)_target, _eventName);
+                UmlModelEventPump.getPump().addModelEventListener(
+                    this,
+                    (MBase)_target,
+                    _eventName);
 
-                rebuildModelList();
-
+                removeAllElements();
+                _buildingModel = true;
+                buildModelList();
+                _buildingModel = false;
+                if (getSize() > 0) {
+                    fireIntervalAdded(this, 0, getSize() - 1);
+                }
             } else {
-                listTarget = null;
+                _target = null;
                 removeAllElements();
             }
+
         }
     }
 
     /**
-     * This function allows subclasses to listen to more modelelements.
-     * The given target is guaranteed to be a UML modelelement.
-     * 
-     * @param oldTarget the UML modelelement
-     */
-    protected void removeOtherModelEventListeners(Object oldTarget) {
-        /* Do nothing by default. */
-    }
-
-    /**
-     * This function allows subclasses to listen to more modelelements.
-     * The given target is guaranteed to be a UML modelelement.
-     * 
-     * @param newTarget the UML modelelement
-     */
-    protected void addOtherModelEventListeners(Object newTarget) {
-        /* Do nothing by default. */
-    }
-
-    /**
-     * Returns true if the given element is valid, i.e. it may be added to the
+     * Returns true if the given element is valid, i.e. it may be added to the 
      * list of elements.
      *
-     * @param element the element to be tested
-     * @return true if valid
+     * @param element
      */
-    protected abstract boolean isValidElement(Object/*MBase*/ element);
+    protected abstract boolean isValidElement(MBase element);
 
     /**
-     * Returns true if some event is valid. An event is valid if the
-     * element changed in the event is valid. This is determined via a
-     * call to isValidElement.  This method can be overriden by
-     * subclasses if they cannot determine if it is a valid event just
-     * by checking the changed element.
-     *
-     * @param e the event
-     * @return boolean true if valid
+     * Returns true if some event is valid. An event is valid if the element
+     * changed in the event is valid. This is determined via a call to isValidElement.
+     * This method can be overriden by subclasses if they cannot determine if
+     * it is a valid event just by checking the changed element.
+     * @param e
+     * @return boolean
      */
-    protected boolean isValidEvent(PropertyChangeEvent e) {
+    protected boolean isValidEvent(MElementEvent e) {
         boolean valid = false;
         if (!(getChangedElement(e) instanceof Collection)) {
-            if ((e.getNewValue() == null && e.getOldValue() != null)
-                    // Don't test changed element if it was deleted
-                    || isValidElement(getChangedElement(e))) {
+            valid = isValidElement((MBase)getChangedElement(e));
+            if (!valid && e.getNewValue() == null && e.getOldValue() != null) {
                 valid = true; // we tried to remove a value
             }
         } else {
-            Collection col = (Collection) getChangedElement(e);
+            Collection col = (Collection)getChangedElement(e);
             Iterator it = col.iterator();
             if (!col.isEmpty()) {
                 valid = true;
                 while (it.hasNext()) {
                     Object o = it.next();
-                    if (!isValidElement(/*(MBase)*/o)) {
+                    if (!isValidElement((MBase)o)) {
                         valid = false;
                         break;
                     }
                 }
             } else {
                 if (e.getOldValue() instanceof Collection
-                    && !((Collection) e.getOldValue()).isEmpty()) {
+                    && !((Collection)e.getOldValue()).isEmpty()) {
                     valid = true;
                 }
             }
@@ -399,81 +335,62 @@ public abstract class UMLModelElementListModel2 extends DefaultListModel
      * @return String
      */
     String getEventName() {
-        return eventName;
+        return _eventName;
     }
 
     /**
-     * Sets the eventName. The eventName is the name of the
-     * MElementEvent to which the list should listen. The list is
-     * registred with UMLModelEventPump and only gets events that have
-     * a name like eventName.  This method should be called in the
-     * constructor of every subclass.
-     *
-     * @param theEventName The eventName to set
+     * Sets the eventName. The eventName is the name of the MElementEvent to
+     * which the list should listen. The list is registred with UMLModelEventPump
+     * and only gets events that have a name like eventName.
+     * This method should be called in the constructor
+     * of every subclass.
+     * @param eventName The eventName to set
      */
-    protected void setEventName(String theEventName) {
-        eventName = theEventName;
+    protected void setEventName(String eventName) {
+        _eventName = eventName;
     }
 
     /**
-     * @see TargetListener#targetAdded(TargetEvent)
+     * @see org.argouml.ui.targetmanager.TargetListener#targetAdded(org.argouml.ui.targetmanager.TargetEvent)
      */
-    public void targetAdded(TargetEvent e) {
-        setTarget(e.getNewTarget());
-    }
+    public void targetAdded(TargetEvent e) {}
 
     /**
-     * @see TargetListener#targetRemoved(TargetEvent)
+     * @see org.argouml.ui.targetmanager.TargetListener#targetRemoved(org.argouml.ui.targetmanager.TargetEvent)
      */
     public void targetRemoved(TargetEvent e) {
-        setTarget(e.getNewTarget());
+        setTarget(e.getNewTargets()[0]);
     }
 
     /**
-     * @see TargetListener#targetSet(TargetEvent)
+     * @see org.argouml.ui.targetmanager.TargetListener#targetSet(org.argouml.ui.targetmanager.TargetEvent)
      */
     public void targetSet(TargetEvent e) {
-        setTarget(e.getNewTarget());
+        setTarget(e.getNewTargets()[0]);
     }
 
     /**
-     * @see javax.swing.AbstractListModel#fireContentsChanged(
-     *          Object, int, int)
+     * @see javax.swing.AbstractListModel#fireContentsChanged(java.lang.Object, int, int)
      */
     protected void fireContentsChanged(Object source, int index0, int index1) {
-        if (fireListEvents && !buildingModel)
+        if (_fireListEvents && !_buildingModel)
             super.fireContentsChanged(source, index0, index1);
     }
 
     /**
-     * @see javax.swing.AbstractListModel#fireIntervalAdded(
-     *          Object, int, int)
+     * @see javax.swing.AbstractListModel#fireIntervalAdded(java.lang.Object, int, int)
      */
     protected void fireIntervalAdded(Object source, int index0, int index1) {
-        if (fireListEvents && !buildingModel)
+        if (_fireListEvents && !_buildingModel)
             super.fireIntervalAdded(source, index0, index1);
     }
 
     /**
-     * @see javax.swing.AbstractListModel#fireIntervalRemoved(
-     *          Object, int, int)
+     * @see javax.swing.AbstractListModel#fireIntervalRemoved(java.lang.Object, int, int)
      */
     protected void fireIntervalRemoved(Object source, int index0, int index1) {
-        if (fireListEvents && !buildingModel)
+        if (_fireListEvents && !_buildingModel)
             super.fireIntervalRemoved(source, index0, index1);
-    }
-
-    /**
-     * Override this if you want a popup menu.
-     * See for an example UMLModelElementOrderedListModel2.
-     *
-     * @param popup the popup menu
-     * @param index the selected item in the list at the moment
-     *              the mouse was clicked
-     * @return true if a popup menu is created, and needs to be shown
-     */
-    public boolean buildPopup(JPopupMenu popup, int index) {
-        return false;
     }
 
 }

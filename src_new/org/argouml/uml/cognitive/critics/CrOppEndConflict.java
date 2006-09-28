@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -21,9 +20,11 @@
 // PROVIDED HEREUNDER IS ON AN "AS IS" BASIS, AND THE UNIVERSITY OF
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
-
+// File: CrOppEndConflict.java
+// Classes: CrOppEndConflict
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
 package org.argouml.uml.cognitive.critics;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -31,47 +32,33 @@ import java.util.List;
 
 import org.argouml.cognitive.Designer;
 import org.argouml.cognitive.critics.Critic;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
-
-/**
- * Well-formedness rule [2] for MClassifier. See page 29 of UML 1.1
- * Semantics. OMG document ad/97-08-04.
- *
- * @author jrobbins
- */
+import org.argouml.model.ModelFacade;
+import org.argouml.model.uml.foundation.core.CoreHelper;
+/** Well-formedness rule [2] for MClassifier. See page 29 of UML 1.1
+ *  Semantics. OMG document ad/97-08-04. */
 //TODO: split into an inherited attr critic and a local
 //attr critic
 public class CrOppEndConflict extends CrUML {
-
-    /**
-     * The constructor.
-     */
+    
     public CrOppEndConflict() {
-        setupHeadAndDesc();
-        addSupportedDecision(UMLDecision.INHERITANCE);
-        addSupportedDecision(UMLDecision.RELATIONSHIPS);
-        addSupportedDecision(UMLDecision.NAMING);
+        setHeadline("Rename MAssociation Roles");
+        addSupportedDecision(CrUML.decINHERITANCE);
+        addSupportedDecision(CrUML.decRELATIONSHIPS);
+        addSupportedDecision(CrUML.decNAMING);
         setKnowledgeTypes(Critic.KT_SYNTAX);
         addTrigger("associationEnd");
     }
-
-    /**
-     * @see org.argouml.uml.cognitive.critics.CrUML#predicate2(
-     * java.lang.Object, org.argouml.cognitive.Designer)
-     */
+    
     public boolean predicate2(Object dm, Designer dsgr) {
         boolean problem = NO_PROBLEM;
-        if (Model.getFacade().isAClassifier(dm)) {
-            Collection col = Model.getCoreHelper().getAssociations(dm);
+        if (ModelFacade.isAClassifier(dm)) {
+            Collection col = CoreHelper.getHelper().getAssociations(dm);
             List names = new ArrayList();
             Iterator it = col.iterator();
             String name = null;
             while (it.hasNext()) {
-                name = Model.getFacade().getName(it.next());
-                if (name == null || name.equals("")) {
-                    continue;
-                }
+                name = ModelFacade.getName(it.next());
+                if (name == null || name.equals("")) continue;
                 if (names.contains(name)) {
                     problem = PROBLEM_FOUND;
                     break;
@@ -79,5 +66,6 @@ public class CrOppEndConflict extends CrUML {
             }
         }
         return problem;
-    }
+    }                
+        
 } /* end class CrOppEndConflict.java */

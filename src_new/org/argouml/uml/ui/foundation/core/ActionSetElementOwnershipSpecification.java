@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,34 +21,31 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $header$
 package org.argouml.uml.ui.foundation.core;
 
 import java.awt.event.ActionEvent;
 
-import javax.swing.Action;
-
-import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.application.api.Argo;
+import org.argouml.uml.ui.UMLChangeAction;
 import org.argouml.uml.ui.UMLCheckBox2;
-import org.tigris.gef.undo.UndoableAction;
+import ru.novosoft.uml.foundation.core.MModelElement;
+
 /**
  * @since Oct 12, 2002
  * @author jaap.branderhorst@xs4all.nl
  * @stereotype singleton
  */
-public class ActionSetElementOwnershipSpecification extends UndoableAction {
+public class ActionSetElementOwnershipSpecification extends UMLChangeAction {
 
-    private static final ActionSetElementOwnershipSpecification SINGLETON =
-        new ActionSetElementOwnershipSpecification();
+    public static final ActionSetElementOwnershipSpecification SINGLETON = new ActionSetElementOwnershipSpecification();
 
     /**
      * Constructor for ActionSetElementOwnershipSpecification.
+     * @param s
      */
     protected ActionSetElementOwnershipSpecification() {
-        super(Translator.localize("Set"), null);
-        // Set the tooltip string:
-        putValue(Action.SHORT_DESCRIPTION, 
-                Translator.localize("Set"));
+        super(Argo.localize("CoreMenu", "Set"), true, NO_ICON);
     }
 
     /**
@@ -58,21 +54,13 @@ public class ActionSetElementOwnershipSpecification extends UndoableAction {
     public void actionPerformed(ActionEvent e) {
         super.actionPerformed(e);
         if (e.getSource() instanceof UMLCheckBox2) {
-            UMLCheckBox2 source = (UMLCheckBox2) e.getSource();
+            UMLCheckBox2 source = (UMLCheckBox2)e.getSource();
             Object target = source.getTarget();
-            if (Model.getFacade().isAModelElement(target)) {
-                Object m = /*(MModelElement)*/ target;
-                Model.getCoreHelper().setSpecification(m,
-                        !Model.getFacade().isSpecification(m));
+            if (target instanceof MModelElement) {
+                MModelElement m = (MModelElement)target;
+                m.setSpecification(!m.isSpecification());
             }
         }
-    }
-
-    /**
-     * @return Returns the SINGLETON.
-     */
-    public static ActionSetElementOwnershipSpecification getInstance() {
-        return SINGLETON;
     }
 
 }

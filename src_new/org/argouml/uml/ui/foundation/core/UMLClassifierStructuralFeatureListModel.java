@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,19 +21,22 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $Id$
 package org.argouml.uml.ui.foundation.core;
 
-import org.argouml.model.Model;
 import org.argouml.uml.ui.UMLModelElementListModel2;
 
+import ru.novosoft.uml.MBase;
+import ru.novosoft.uml.foundation.core.MClassifier;
+
 /**
- *
- * @author jaap.branderhorst@xs4all.nl
+ * 
+ * @author jaap.branderhorst@xs4all.nl	
  * @since Jan 26, 2003
  */
 public class UMLClassifierStructuralFeatureListModel
     extends UMLModelElementListModel2 {
-
+        
     /**
      * Constructor for UMLClassifierStructuralFeatureListModel.
      */
@@ -47,17 +49,15 @@ public class UMLClassifierStructuralFeatureListModel
      */
     protected void buildModelList() {
         if (getTarget() != null) {
-            setAllElements(
-                    Model.getFacade().getStructuralFeatures(getTarget()));
+            setAllElements(((MClassifier)getTarget()).getStructuralFeatures());
         }
     }
 
     /**
-     * @see org.argouml.uml.ui.UMLModelElementListModel2#isValidElement(Object)
+     * @see org.argouml.uml.ui.UMLModelElementListModel2#isValidElement(ru.novosoft.uml.MBase)
      */
-    protected boolean isValidElement(Object/*MBase*/ element) {
-        return Model.getFacade().getStructuralFeatures(getTarget())
-        	.contains(element);
+    protected boolean isValidElement(MBase element) {
+        return ((MClassifier)getTarget()).getStructuralFeatures().contains(element);
     }
 
 }

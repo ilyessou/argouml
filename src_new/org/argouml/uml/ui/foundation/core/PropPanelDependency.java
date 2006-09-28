@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -27,35 +27,26 @@ package org.argouml.uml.ui.foundation.core;
 import javax.swing.JList;
 import javax.swing.JScrollPane;
 
-import org.argouml.i18n.Translator;
-import org.argouml.uml.ui.ActionNavigateNamespace;
+import org.argouml.application.api.Argo;
+
+import org.argouml.swingext.Orientation;
+import org.argouml.uml.ui.PropPanelButton;
+import org.argouml.uml.ui.UMLComboBoxNavigator;
 import org.argouml.uml.ui.UMLLinkedList;
-import org.argouml.uml.ui.foundation.extension_mechanisms.ActionNewStereotype;
 import org.argouml.util.ConfigLoader;
-import org.tigris.swidgets.Orientation;
 
-/**
- * The properties panel for a Dependency.
- *
- */
 public class PropPanelDependency extends PropPanelRelationship {
-
-    /**
-     * The serial version.
-     */
-    private static final long serialVersionUID = 3665986064546532722L;
 
     /**
      * The scrollpane with the modelelement that is the supplier of this
      * dependency
      */
-    private JScrollPane supplierScroll;
-
+    protected JScrollPane _supplierScroll;
     /**
      * The scrollpane with the modelelement that is the client of this
      * dependency
      */
-    private JScrollPane clientScroll;
+    protected JScrollPane _clientScroll;
 
     /**
      * 'default' constructor used if a modelelement is a child of dependency (or
@@ -64,21 +55,18 @@ public class PropPanelDependency extends PropPanelRelationship {
     public PropPanelDependency() {
         this("Dependency", ConfigLoader.getTabPropsOrientation());
 
-        addField(Translator.localize("label.name"),
-                getNameTextField());
-        addField(Translator.localize("label.namespace"),
-                getNamespaceSelector());
+        addField(Argo.localize("UMLMenu", "label.name"), getNameTextField());
+        addField(Argo.localize("UMLMenu", "label.stereotype"), new UMLComboBoxNavigator(this, Argo.localize("UMLMenu", "tooltip.nav-stereo"), getStereotypeBox()));
+        addField(Argo.localize("UMLMenu", "label.namespace"), getNamespaceComboBox());
 
-        addSeparator();
+        addSeperator();
 
-        addField(Translator.localize("label.suppliers"),
-                supplierScroll);
-        addField(Translator.localize("label.clients"),
-                clientScroll);
+        addField(Argo.localize("UMLMenu", "label.suppliers"), _supplierScroll);
+        addField(Argo.localize("UMLMenu", "label.clients"), _clientScroll);
 
-        addAction(new ActionNavigateNamespace());
-        addAction(new ActionNewStereotype());
-        addAction(getDeleteAction());
+        new PropPanelButton(this, buttonPanel, _navUpIcon, Argo.localize("UMLMenu", "button.go-up"), "navigateNamespace", null);
+        new PropPanelButton(this, buttonPanel, _deleteIcon, Argo.localize("UMLMenu", "button.delete-association"), "removeElement", null);
+
     }
 
     /**
@@ -87,28 +75,12 @@ public class PropPanelDependency extends PropPanelRelationship {
      * @see org.argouml.uml.ui.PropPanel#PropPanel(String, Orientation)
      */
     protected PropPanelDependency(String name, Orientation orientation) {
-        super(name, lookupIcon(name), orientation);
-        JList supplierList = new UMLLinkedList(
-                new UMLDependencySupplierListModel(), true);
-        supplierScroll = new JScrollPane(supplierList);
+        super(name, orientation);
+        JList supplierList = new UMLLinkedList(new UMLDependencySupplierListModel(), true);
+        _supplierScroll = new JScrollPane(supplierList);
 
-        JList clientList = new UMLLinkedList(
-                new UMLDependencyClientListModel(), true);
-        clientScroll = new JScrollPane(clientList);
-    }
-
-    /**
-     * @return Returns the supplierScroll.
-     */
-    protected JScrollPane getSupplierScroll() {
-        return supplierScroll;
-    }
-
-    /**
-     * @return Returns the clientScroll.
-     */
-    protected JScrollPane getClientScroll() {
-        return clientScroll;
+        JList clientList = new UMLLinkedList(new UMLDependencyClientListModel(), true);
+        _clientScroll = new JScrollPane(clientList);
     }
 
 

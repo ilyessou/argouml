@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,34 +21,39 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $Id$
 package org.argouml.uml.ui.foundation.core;
 
-import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import javax.swing.Action;
+
+import org.argouml.application.api.Argo;
 import org.argouml.uml.ui.UMLCheckBox2;
 
+import ru.novosoft.uml.foundation.core.MGeneralizableElement;
+
 /**
- *
- * @author jaap.branderhorst@xs4all.nl
+ * 
+ * @author jaap.branderhorst@xs4all.nl	
  * @since Jan 27, 2003
  */
 public class UMLGeneralizableElementLeafCheckBox extends UMLCheckBox2 {
 
     /**
      * Constructor for UMLGeneralizableElementLeafCheckBox.
+     * @param text
+     * @param a
+     * @param propertySetName
      */
     public UMLGeneralizableElementLeafCheckBox() {
-        super(Translator.localize("checkbox.leaf-lc"),
-                ActionSetGeneralizableElementLeaf.getInstance(), "isLeaf");
+        super(Argo.localize("UMLMenu", "label.leaf"), ActionSetGeneralizableElementLeaf.SINGLETON, "isLeaf");
     }
 
     /**
      * @see org.argouml.uml.ui.UMLCheckBox2#buildModel()
      */
     public void buildModel() {
-        if (getTarget() != null) {
-            setSelected(Model.getFacade().isLeaf(getTarget()));
-        }
+        if (getTarget() != null)
+            setSelected(((MGeneralizableElement)getTarget()).isLeaf());
     }
 
 

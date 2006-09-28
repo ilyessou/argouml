@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 2002-2006 The Regents of the University of California. All
+// Copyright (c) 2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,8 +24,11 @@
 
 package org.argouml.uml.ui.behavior.use_cases;
 
-import org.argouml.model.Model;
 import org.argouml.uml.ui.UMLModelElementListModel2;
+
+import ru.novosoft.uml.MBase;
+import ru.novosoft.uml.behavior.use_cases.MExtend;
+import ru.novosoft.uml.behavior.use_cases.MExtensionPoint;
 
 /**
  * @since Oct 6, 2002
@@ -36,6 +39,7 @@ public class UMLExtensionPointExtendListModel
 
     /**
      * Constructor for UMLExtensionPointExtendListModel.
+     * @param container
      */
     public UMLExtensionPointExtendListModel() {
         super("extend");
@@ -45,15 +49,14 @@ public class UMLExtensionPointExtendListModel
      * @see org.argouml.uml.ui.UMLModelElementListModel2#buildModelList()
      */
     protected void buildModelList() {
-        setAllElements(Model.getFacade().getExtends(getTarget()));
+        setAllElements(((MExtensionPoint)getTarget()).getExtends());
     }
 
     /**
-     * @see org.argouml.uml.ui.UMLModelElementListModel2#isValidElement(Object)
+     * @see org.argouml.uml.ui.UMLModelElementListModel2#isValidElement(MBase)
      */
-    protected boolean isValidElement(Object/*MBase*/ o) {
-        return Model.getFacade().isAExtend(o)
-            && Model.getFacade().getExtends(getTarget()).contains(o);
+    protected boolean isValidElement(MBase o) {
+        return o instanceof MExtend && ((MExtensionPoint)getTarget()).getExtends().contains(o);
     }
 
 }

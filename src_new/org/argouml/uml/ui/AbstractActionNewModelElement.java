@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -25,58 +24,35 @@
 // $Id$
 package org.argouml.uml.ui;
 
-import javax.swing.Action;
-
-import org.argouml.application.helpers.ResourceLoaderWrapper;
-import org.argouml.i18n.Translator;
-import org.tigris.gef.undo.UndoableAction;
+import org.argouml.application.api.Argo;
+import ru.novosoft.uml.foundation.core.MModelElement;
 
 /**
  * @since Oct 3, 2002
  * @author jaap.branderhorst@xs4all.nl
  */
-public abstract class AbstractActionNewModelElement extends UndoableAction {
+public abstract class AbstractActionNewModelElement extends UMLChangeAction {
 
-    private Object/*MModelElement*/ target;
-
-    /**
-     * The constructor.
-     * Defaults to name "action.new", global and NO_ICON
-     */
+    private MModelElement _target;
+    
     protected AbstractActionNewModelElement() {
-        super(Translator.localize("action.new"), null);
-        // Set the tooltip string:
-        putValue(Action.SHORT_DESCRIPTION, 
-                Translator.localize("action.new"));
-    }
-
-    /**
-     * The constructor.
-     *
-     * @param name the to be localized name of the action
-     */
-    protected AbstractActionNewModelElement(String name) {
-        super(Translator.localize(name), 
-                ResourceLoaderWrapper.lookupIcon(name));
-        // Set the tooltip string:
-        putValue(Action.SHORT_DESCRIPTION, 
-                Translator.localize(name));
-    }
-
+        super(Argo.localize("CoreMenu", "action.new"), true, NO_ICON);
+    }  
+    
      /**
      * Returns the target.
      * @return MModelElement
      */
-    public Object/*MModelElement*/ getTarget() {
-        return target;
+    public MModelElement getTarget() {
+        return _target;
     }
 
     /**
      * Sets the target.
-     * @param theTarget The target to set
+     * @param target The target to set
      */
-    public void setTarget(Object theTarget) {
-        target = theTarget;
+    public void setTarget(Object target) {
+        _target = (MModelElement)target;
     }
-
+       
 }

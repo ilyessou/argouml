@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,66 +23,84 @@
 
 package org.argouml.uml.ui.foundation.core;
 
-import javax.swing.JList;
-import javax.swing.JScrollPane;
+import java.awt.GridLayout;
 
-import org.argouml.i18n.Translator;
-import org.argouml.uml.ui.ActionNavigateNamespace;
-import org.argouml.uml.ui.UMLLinkedList;
-import org.argouml.uml.ui.foundation.extension_mechanisms.ActionNewStereotype;
+import javax.swing.JPanel;
+
+import org.argouml.application.api.Argo;
+import org.argouml.uml.ui.PropPanelButton;
+import org.argouml.uml.ui.UMLCheckBox;
+import org.argouml.uml.ui.UMLReflectionBooleanProperty;
+
 import org.argouml.util.ConfigLoader;
+import org.argouml.uml.ui.UMLComboBoxNavigator;
+
+import ru.novosoft.uml.foundation.core.MComponent;
 
 /**
- * PropPanel for a UML Component.
+ * PropPanel for a UML component.
+ *
+ * <p>$Id$
+ *
+ * @todo this property panel needs refactoring to remove dependency on
+ *       old gui components.
  *
  * @author 5eichler@informatik.uni-hamburg.de
  */
 public class PropPanelComponent extends PropPanelClassifier {
 
-    /**
-     * The serial version.
-     */
-    private static final long serialVersionUID = 1551050121647608478L;
+  public PropPanelComponent() {
+    super("Component", ConfigLoader.getTabPropsOrientation());
+    Class mclass = MComponent.class;
 
-    /**
-     * Construct a property panel for Component elements.
-     */
-    public PropPanelComponent() {
-        super("Component",
-            lookupIcon("Component"),
-            ConfigLoader.getTabPropsOrientation());
-        addField(Translator.localize("label.name"),
-                getNameTextField());
-        addField(Translator.localize("label.namespace"),
-                getNamespaceSelector());
-        add(getModifiersPanel());
+    addField(Argo.localize("UMLMenu", "label.name"), getNameTextField());
+    addField(Argo.localize("UMLMenu", "label.stereotype"), new UMLComboBoxNavigator(this, Argo.localize("UMLMenu", "tooltip.nav-stereo"),getStereotypeBox()));
+    addField(Argo.localize("UMLMenu", "label.namespace"), getNamespaceComboBox());
+    _modifiersPanel.add(new UMLCheckBox(Argo.localize("UMLMenu", "checkbox.active-uc"),this,new UMLReflectionBooleanProperty("isActive",mclass,"isActive","setActive")));
+    addField(Argo.localize("UMLMenu", "label.modifiers"), _modifiersPanel);
 
-        addSeparator();
+    addSeperator();
 
-        addField(Translator.localize("label.generalizations"),
-                getGeneralizationScroll());
-        addField(Translator.localize("label.specializations"),
-                getSpecializationScroll());
+    addField(Argo.localize("UMLMenu", "label.generalizations"), getGeneralizationScroll());
+    addField(Argo.localize("UMLMenu", "label.specializations"), getSpecializationScroll());
 
-        addSeparator();
+    addSeperator();
 
-        addField(Translator.localize("label.client-dependencies"),
-                getClientDependencyScroll());
-        addField(Translator.localize("label.supplier-dependencies"),
-                getSupplierDependencyScroll());
+    addField(Argo.localize("UMLMenu", "label.client-dependencies"), getClientDependencyScroll());
+    addField(Argo.localize("UMLMenu", "label.supplier-dependencies"), getSupplierDependencyScroll());
 
-        JList resList = new UMLLinkedList(new UMLComponentResidentListModel());
-        addField(Translator.localize("label.residents"),
-                new JScrollPane(resList));
+    new PropPanelButton(this,buttonPanel,_navUpIcon, Argo.localize("UMLMenu", "button.go-up"),"navigateUp",null);
+    new PropPanelButton(this,buttonPanel,_deleteIcon, Argo.localize("UMLMenu", "button.delete-class"),"removeElement",null);
 
-        addAction(new ActionNavigateNamespace());
-        addAction(getActionNewReception());
-        addAction(new ActionNewStereotype());
-        addAction(getDeleteAction());
 
-    }
+//    addCaption(Argo.localize("UMLMenu", "label.name"),1,0,0);
+//    addField(getNameTextField(),1,0,0);
+//
+//    addCaption(Argo.localize("UMLMenu", "label.stereotype"),2,0,0);
+//    addField(getStereotypeBox(),2,0,0);
+//
+//    addCaption(Argo.localize("UMLMenu", "label.namespace"),3,0,0);
+//    addField(getNamespaceComboBox(),3,0,0);
+//
+//    addCaption(Argo.localize("UMLMenu", "label.modifiers"),4,0,1);
+//    JPanel modifiersPanel = new JPanel(new GridLayout(0,3));
+//    modifiersPanel.add(new UMLCheckBox(Argo.localize("UMLMenu", "checkbox.abstract-lc"),this,new UMLReflectionBooleanProperty("isAbstract",mclass,"isAbstract","setAbstract")));
+//    modifiersPanel.add(new UMLCheckBox(Argo.localize("UMLMenu", "checkbox.final-lc"),this,new UMLReflectionBooleanProperty("isLeaf",mclass,"isLeaf","setLeaf")));
+//    modifiersPanel.add(new UMLCheckBox(localize("root"),this,new UMLReflectionBooleanProperty("isRoot",mclass,"isRoot","setRoot")));
+//    addField(modifiersPanel,4,0,0);
+//
+//    addCaption("Generalizations:",0,1,1);
+//    addField(getGeneralizationScroll(),0,1,1);
+//
+//    addCaption("Specializations:",1,1,1);
+//    addField(getSpecializationScroll(),1,1,1);
+//
+//    new PropPanelButton(this,buttonPanel,_navUpIcon, Argo.localize("UMLMenu", "button.go-up"),"navigateUp",null);
+//    new PropPanelButton(this,buttonPanel,_deleteIcon,localize("Delete component"),"removeElement",null);
+  }
 
 
 } /* end class PropPanelComponent */
+
 
 

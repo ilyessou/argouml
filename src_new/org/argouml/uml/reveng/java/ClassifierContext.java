@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,6 +21,8 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $Id$
+
 /*
   JavaRE - Code generation and reverse engineering for UML and Java
   Copyright (C) 2000 Marcus Andersson andersson@users.sourceforge.net
@@ -29,7 +30,7 @@
 
 package org.argouml.uml.reveng.java;
 
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
 
 /**
    This context is a specific classifier.
@@ -43,27 +44,25 @@ class ClassifierContext extends Context
        Create a new context from a classifier.
 
        @param base Based on this context.
-       @param classifier Represents this classifier.
+       @param mClassifier Represents this classifier.
     */
-    public ClassifierContext(Context base, Object classifier)
+    public ClassifierContext(Context base, Object mClassifier)
     {
 	super(base);
-	this.mClassifier = classifier;
+	this.mClassifier = mClassifier;
     }
 
     public Object getInterface(String name)
 	throws ClassifierNotFoundException
     {
 	// Check if it is this interface
-	if (name.equals(Model.getFacade().getName(mClassifier))
-	    && Model.getFacade().isAInterface(mClassifier))
-	{
+	if(name.equals(ModelFacade.getName(mClassifier)) && ModelFacade.isAInterface(mClassifier)) {
 	    return mClassifier;
 	}
 	else {
 	    // Continue the search through the rest of the model
-	    if (getContext() != null) {
-		return getContext().getInterface(name);
+	    if(context != null) {
+		return context.getInterface(name);
 	    }
 	    else {
 		return null;
@@ -81,13 +80,13 @@ class ClassifierContext extends Context
 	throws ClassifierNotFoundException
     {
 	// Check if it is this classifier
-	if (classifierName.equals(Model.getFacade().getName(mClassifier))) {
+	if(classifierName.equals(ModelFacade.getName(mClassifier))) {
 	    return mClassifier;
 	}
 	else {
 	    // Continue the search through the rest of the model
-	    if (getContext() != null) {
-		return getContext().get(classifierName);
+	    if(context != null) {
+		return context.get(classifierName);
 	    }
 	    else {
 		return null;

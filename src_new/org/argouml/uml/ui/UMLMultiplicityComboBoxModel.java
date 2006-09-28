@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,44 +21,45 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $Id$
 package org.argouml.uml.ui;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import org.argouml.model.Model;
+import ru.novosoft.uml.foundation.data_types.MMultiplicity;
 
 /**
  * A model for multiplicities. This model is instantiated with a few default
- * values.
- * @author jaap.branderhorst@xs4all.nl
+ * values. 
+ * @author jaap.branderhorst@xs4all.nl	
  * @since Jan 5, 2003
  */
 public abstract class UMLMultiplicityComboBoxModel extends UMLComboBoxModel2 {
-
+    
     private static List multiplicityList = new ArrayList();
-
+    
     static {
-        multiplicityList.add("1");
-        multiplicityList.add("0..1");
-        multiplicityList.add("0..*");
-        multiplicityList.add("1..*");
-    }
+        multiplicityList.add(MMultiplicity.M0_N);
+        multiplicityList.add(MMultiplicity.M0_1);
+        multiplicityList.add(MMultiplicity.M1_1);
+        multiplicityList.add(MMultiplicity.M1_N);
+    }  
 
     /**
      * Constructor for UMLMultiplicityComboBoxModel.
-     *
-     * @param propertySetName the name of the property set
+     * @param propertySetName
+     * @param clearable
      */
     public UMLMultiplicityComboBoxModel(String propertySetName) {
         super(propertySetName, false);
     }
 
     /**
-     * @see org.argouml.uml.ui.UMLComboBoxModel2#isValidElement(Object)
+     * @see org.argouml.uml.ui.UMLComboBoxModel2#isValidElement(ru.novosoft.uml.MBase)
      */
     protected boolean isValidElement(Object element) {
-        return element instanceof String;
+        return element instanceof MMultiplicity;
     }
 
     /**
@@ -67,40 +67,29 @@ public abstract class UMLMultiplicityComboBoxModel extends UMLComboBoxModel2 {
      */
     protected void buildModelList() {
         setElements(multiplicityList);
-	Object t = getTarget();
-	if (Model.getFacade().isAModelElement(t)) {
-	    addElement(Model.getFacade().getMultiplicity(t));
-	}
-    }
+    }    
 
     /**
      * @see org.argouml.uml.ui.UMLComboBoxModel2#addElement(java.lang.Object)
      */
     public void addElement(Object o) {
-        if (o == null) {
-            return;
-        }
-        if (Model.getFacade().isAMultiplicity(o)) {
-            o = Model.getFacade().toString(o);
-            if ("".equals(o)) {
-                o = "1";
-            }
-        }
+        if (o == null) return;
         if (!multiplicityList.contains(o) && isValidElement(o)) {
             multiplicityList.add(o);
         }
-        super.addElement(o);
-    }
+        super.addElement(o);        
+    }    
 
-
+    
 
     /**
      * @see javax.swing.ComboBoxModel#setSelectedItem(java.lang.Object)
      */
-    public void setSelectedItem(Object anItem) {
-        addElement(anItem);
-        super.setSelectedItem((anItem == null) ? null 
-                : Model.getFacade().toString(anItem));
+    public void setSelectedItem(Object anItem) {        
+        if (!contains(anItem) && anItem instanceof MMultiplicity) {
+            addElement(anItem);
+        }        
+        super.setSelectedItem(anItem);        
     }
 
 }

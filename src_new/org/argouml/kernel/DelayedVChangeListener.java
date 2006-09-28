@@ -1,4 +1,3 @@
-// $Id$
 // Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
@@ -24,17 +23,10 @@
 
 package org.argouml.kernel;
 
-import java.beans.PropertyChangeEvent;
+import java.beans.*;
 
-/**
- * This appears to be a gui specific class, therefore it does not belong in
- * the Kernel.
- */
 public interface DelayedVChangeListener {
 
-    /**
-     * @param pce the event
-     */
-    public void delayedVetoableChange(PropertyChangeEvent pce);
+  public void delayedVetoableChange(PropertyChangeEvent pce);
 
 } /* end interface DelayedVChangeListener */

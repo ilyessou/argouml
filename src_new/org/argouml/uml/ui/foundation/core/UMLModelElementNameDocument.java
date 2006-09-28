@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,10 +21,12 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $header$
 package org.argouml.uml.ui.foundation.core;
 
-import org.argouml.model.Model;
 import org.argouml.uml.ui.UMLPlainTextDocument;
+
+import ru.novosoft.uml.foundation.core.MModelElement;
 
 /**
  * @since Oct 10, 2002
@@ -35,6 +36,8 @@ public class UMLModelElementNameDocument extends UMLPlainTextDocument {
 
     /**
      * Constructor for UMLModelElementNameDocument.
+     * @param panel
+     * @param propertyList
      */
     public UMLModelElementNameDocument() {
         super("name");
@@ -44,14 +47,14 @@ public class UMLModelElementNameDocument extends UMLPlainTextDocument {
      * @see org.argouml.uml.ui.UMLPlainTextDocument#setProperty(java.lang.String)
      */
     protected void setProperty(String text) {
-        Model.getCoreHelper().setName(getTarget(), text);
+        ((MModelElement)getTarget()).setName(text);
     }
 
     /**
      * @see org.argouml.uml.ui.UMLPlainTextDocument#getProperty()
      */
     protected String getProperty() {
-        return Model.getFacade().getName(getTarget());
+        return ((MModelElement)getTarget()).getName();
     }
 
 }

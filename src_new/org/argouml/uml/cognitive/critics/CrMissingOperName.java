@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,69 +21,61 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+
+// File:CrMissingOperName.java
+// Classes:CrMissingOperName
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.cognitive.critics;
 
-import org.argouml.cognitive.Designer;
-import org.argouml.cognitive.ToDoItem;
-import org.argouml.cognitive.critics.Critic;
-import org.argouml.cognitive.ui.Wizard;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
+import java.util.*;
 
-/**
- * A critic to detect whether an operation has a name.
- */
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
+import ru.novosoft.uml.model_management.*;
+
+import org.argouml.kernel.*;
+import org.argouml.cognitive.*;
+import org.argouml.cognitive.critics.*;
+
 public class CrMissingOperName extends CrUML {
 
-    /**
-     * The constructor.
-     */
-    public CrMissingOperName() {
-        setupHeadAndDesc();
-	addSupportedDecision(UMLDecision.NAMING);
-	setKnowledgeTypes(Critic.KT_SYNTAX);
-	addTrigger("name");
-    }
+  public CrMissingOperName() {
+    setHeadline("Choose a name");
+    addSupportedDecision(CrUML.decNAMING);
+    setKnowledgeTypes(Critic.KT_SYNTAX);
+    addTrigger("name");
+  }
 
-    /**
-     * @see org.argouml.uml.cognitive.critics.CrUML#predicate2(
-     * java.lang.Object, org.argouml.cognitive.Designer)
-     */
-    public boolean predicate2(Object dm, Designer dsgr) {
-	if (!(Model.getFacade().isAOperation(dm))) return NO_PROBLEM;
-	Object oper = /*(MOperation)*/ dm;
-	String myName = Model.getFacade().getName(oper);
-	if (myName == null || myName.equals("")) return PROBLEM_FOUND;
-	if (myName.length() == 0) return PROBLEM_FOUND;
-	return NO_PROBLEM;
-    }
+  public boolean predicate2(Object dm, Designer dsgr) {
+    if (!(dm instanceof MOperation)) return NO_PROBLEM;
+    MOperation oper = (MOperation) dm;
+    String myName = oper.getName();
+    if (myName == null || myName.equals("")) return PROBLEM_FOUND;
+    if (myName.length() == 0) return PROBLEM_FOUND;
+    return NO_PROBLEM;
+  }
 
-    /**
-     * @see org.argouml.cognitive.critics.Critic#initWizard(
-     *         org.argouml.cognitive.ui.Wizard)
-     */
-    public void initWizard(Wizard w) {
-	if (w instanceof WizMEName) {
-	    ToDoItem item = (ToDoItem) w.getToDoItem();
-	    Object me = /*(MModelElement)*/ item.getOffenders().elementAt(0);
-	    String ins = super.getInstructions();
-	    String sug = super.getDefaultSuggestion();
-	    if (Model.getFacade().isAOperation(me)) {
-		Object a = /*(MOperation)*/ me;
-		int count = 1;
-		if (Model.getFacade().getOwner(a) != null)
-		    count = Model.getFacade().getFeatures(
-		            Model.getFacade().getOwner(a)).size();
-		sug = "oper" + (count + 1);
-	    }
-	    ((WizMEName) w).setInstructions(ins);
-	    ((WizMEName) w).setSuggestion(sug);
-	}
+  public void initWizard(Wizard w) {
+    if (w instanceof WizMEName) {
+      ToDoItem item = w.getToDoItem();
+      MModelElement me = (MModelElement) item.getOffenders().elementAt(0);
+      String ins = "Set the name of this attribute.";
+      String sug = "AttributeName";
+      if (me instanceof MOperation) {
+	MOperation a = (MOperation) me;
+	int count = 1;
+	if (a.getOwner() != null)
+	  count = a.getOwner().getFeatures().size();
+	sug = "oper" + (count + 1);
+      }
+      ((WizMEName)w).setInstructions(ins);
+      ((WizMEName)w).setSuggestion(sug);
     }
-
-    /**
-     * @see org.argouml.cognitive.critics.Critic#getWizardClass(org.argouml.cognitive.ToDoItem)
-     */
-    public Class getWizardClass(ToDoItem item) { return WizMEName.class; }
+  }
+  public Class getWizardClass(ToDoItem item) { return WizMEName.class; }
 
 } /* end class CrMissingOperName */
+

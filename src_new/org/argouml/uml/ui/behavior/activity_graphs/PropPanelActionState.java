@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,62 +21,46 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: PropPanelState.java
+// Classes: PropPanelState
+// Original Author: your email address here
+// $Id$
+
 package org.argouml.uml.ui.behavior.activity_graphs;
 
-import javax.swing.ImageIcon;
+import org.argouml.application.api.Argo;
 
-import org.argouml.i18n.Translator;
-import org.tigris.swidgets.Orientation;
-import org.argouml.uml.ui.behavior.state_machines.AbstractPropPanelState;
+import org.argouml.uml.ui.UMLComboBoxNavigator;
+import org.argouml.uml.ui.UMLTextField2;
+import org.argouml.uml.ui.behavior.state_machines.PropPanelState;
+import org.argouml.uml.ui.foundation.core.UMLModelElementNameDocument;
 import org.argouml.util.ConfigLoader;
 
-/**
- * User interface panel shown at the bottom of the screen that allows the user
- * to edit the properties of the selected UML model element.
- */
-public class PropPanelActionState extends AbstractPropPanelState {
+/** User interface panel shown at the bottom of the screen that allows
+ *  the user to edit the properties of the selected UML model
+ *  element. */
 
-    /**
-     * The serial version.
-     */
-    private static final long serialVersionUID = 4936258091606712050L;
+public class PropPanelActionState extends PropPanelState {
 
-    /**
-     * Construct a default property panel for an Action State.
-     */
+    ////////////////////////////////////////////////////////////////
+    // contructors
     public PropPanelActionState() {
-        this("Action State", lookupIcon("ActionState"), 
-                ConfigLoader.getTabPropsOrientation());
-    }
 
-    /**
-     * Construct a property panel for an Action State with the given params.
-     *
-     * @param name the name of the properties panel
-     * @param icon the icon to be shown next to the name
-     * @param orientation the orientation of the panel
-     */
-    public PropPanelActionState(String name, ImageIcon icon,
-            Orientation orientation) {
+        super("Action State", _actionStateIcon, ConfigLoader.getTabPropsOrientation());
 
-        super(name, icon, orientation);
+        addField(Argo.localize("UMLMenu", "label.name"), getNameTextField());
+        addField(Argo.localize("UMLMenu", "label.stereotype"), new UMLComboBoxNavigator(this, Argo.localize("UMLMenu", "tooltip.nav-stereo"), getStereotypeBox()));
+        addField(Argo.localize("UMLMenu", "label.namespace"), getNamespaceScroll());
 
-        addField(Translator.localize("label.name"),
-                getNameTextField());
-        addField(Translator.localize("label.container"),
-                getContainerScroll());
-        addField(Translator.localize("label.entry"),
-                getEntryScroll());
+        addField(Argo.localize("UMLMenu", "label.entry"), entryScroll);
+        addField(Argo.localize("UMLMenu", "label.exit"), exitScroll);
+        addField(Argo.localize("UMLMenu", "label.do-activity"), doScroll);
 
-        addField(Translator.localize("label.deferrable"),
-                getDeferrableEventsScroll());
+        addSeperator();
 
-        addSeparator();
-
-        addField(Translator.localize("label.incoming"),
-                getIncomingScroll());
-        addField(Translator.localize("label.outgoing"),
-                getOutgoingScroll());
+        addField(Argo.localize("UMLMenu", "label.incoming"), incomingScroll);
+        addField(Argo.localize("UMLMenu", "label.outgoing"), outgoingScroll);
+        addField(Argo.localize("UMLMenu", "label.internal-transitions"), internalTransitionsScroll);
 
     }
 

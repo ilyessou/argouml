@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 2002-2006 The Regents of the University of California. All
+// Copyright (c) 2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,8 +24,11 @@
 
 package org.argouml.uml.ui.foundation.core;
 
-import org.argouml.model.Model;
 import org.argouml.uml.ui.UMLModelElementListModel2;
+
+import ru.novosoft.uml.MBase;
+import ru.novosoft.uml.foundation.core.MDependency;
+import ru.novosoft.uml.foundation.core.MModelElement;
 
 /**
  * @since Oct 12, 2002
@@ -36,6 +39,7 @@ public class UMLModelElementSupplierDependencyListModel
 
     /**
      * Constructor for UMLModelElementSupplierDependencyListModel.
+     * @param container
      */
     public UMLModelElementSupplierDependencyListModel() {
         super("supplierDependency");
@@ -45,19 +49,16 @@ public class UMLModelElementSupplierDependencyListModel
      * @see org.argouml.uml.ui.UMLModelElementListModel2#buildModelList()
      */
     protected void buildModelList() {
-        if (getTarget() != null) {
-            setAllElements(
-                    Model.getFacade().getSupplierDependencies(getTarget()));
+        if (_target != null) {
+            setAllElements(((MModelElement)getTarget()).getSupplierDependencies());
         }
     }
 
     /**
-     * @see org.argouml.uml.ui.UMLModelElementListModel2#isValidElement(Object)
+     * @see org.argouml.uml.ui.UMLModelElementListModel2#isValidElement(MBase)
      */
-    protected boolean isValidElement(Object/*MBase*/ o) {
-        return Model.getFacade().isADependency(o)
-            && Model.getFacade().getSupplierDependencies(getTarget())
-            	.contains(o);
+    protected boolean isValidElement(MBase o) {
+        return o instanceof MDependency && ((MModelElement)getTarget()).getSupplierDependencies().contains(o);
     }
 
 }

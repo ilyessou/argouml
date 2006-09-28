@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,12 +21,14 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $header$
 package org.argouml.uml.ui.behavior.state_machines;
 
-import org.argouml.kernel.Project;
-import org.argouml.kernel.ProjectManager;
-import org.argouml.model.Model;
+import org.argouml.model.uml.behavioralelements.statemachines.StateMachinesHelper;
 import org.argouml.uml.ui.UMLComboBoxModel2;
+import ru.novosoft.uml.MBase;
+import ru.novosoft.uml.behavior.state_machines.MStateMachine;
+import ru.novosoft.uml.behavior.state_machines.MSubmachineState;
 
 /**
  * @since Dec 15, 2002
@@ -43,12 +44,10 @@ public class UMLSubmachineStateComboBoxModel extends UMLComboBoxModel2 {
     }
 
     /**
-     * @see org.argouml.uml.ui.UMLComboBoxModel2#isValidElement(Object)
+     * @see org.argouml.uml.ui.UMLComboBoxModel2#isValidElement(ru.novosoft.uml.MBase)
      */
     protected boolean isValidElement(Object element) {
-        return (Model.getFacade().isAStateMachine(element)
-            && element != Model.getStateMachinesHelper()
-                .getStateMachine(getTarget()));
+        return (element instanceof MStateMachine && element != StateMachinesHelper.getHelper().getStateMachine(getTarget()));
     }
 
     /**
@@ -56,10 +55,7 @@ public class UMLSubmachineStateComboBoxModel extends UMLComboBoxModel2 {
      */
     protected void buildModelList() {
         removeAllElements();
-        Project p = ProjectManager.getManager().getCurrentProject();
-        Object model = p.getModel();
-        setElements(Model.getStateMachinesHelper()
-                .getAllPossibleStatemachines(model, getTarget()));
+        setElements(StateMachinesHelper.getHelper().getAllPossibleStatemachines(getTarget()));
     }
 
     /**
@@ -67,7 +63,7 @@ public class UMLSubmachineStateComboBoxModel extends UMLComboBoxModel2 {
      */
     protected Object getSelectedModelElement() {
         if (getTarget() != null) {
-            return Model.getFacade().getSubmachine(getTarget());
+            return ((MSubmachineState)getTarget()).getSubmachine();
         }
         return null;
     }

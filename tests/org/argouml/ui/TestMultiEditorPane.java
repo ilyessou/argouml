@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2003 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,18 +21,12 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $Id$
 package org.argouml.ui;
 
-import java.awt.Component;
-
-import javax.swing.JTabbedPane;
+import org.argouml.application.security.ArgoSecurityManager;
 
 import junit.framework.TestCase;
-
-import org.argouml.model.Model;
-import org.argouml.ui.targetmanager.TargetEvent;
-import org.argouml.uml.diagram.static_structure.ui.UMLClassDiagram;
-import org.tigris.gef.presentation.FigText;
 
 /**
  * @author jaap.branderhorst@xs4all.nl
@@ -43,91 +36,38 @@ public class TestMultiEditorPane extends TestCase {
 
     /**
      * Constructor for TestMultiEditorPane.
-     *
-     * @param arg0 is the name of the test case.
+     * @param arg0
      */
     public TestMultiEditorPane(String arg0) {
         super(arg0);
     }
-
+    
     /**
-     * Test setting a target.
+     * @see junit.framework.TestCase#setUp()
      */
-    public void testTargetSet() {
-        try {
+     protected void setUp() throws Exception {
+         super.setUp();
+         ArgoSecurityManager.getInstance().setAllowExit(true);
+     }
+     
+     protected void tearDown() throws Exception {
+         super.tearDown();
+     }
+     
+     /**
+      * Tests the construction of the multieditorpane. Can we construct a
+      * multieditorpane and even have an editor in it?
+      */
+     public void testConstruction() {
+         try {
             MultiEditorPane pane = new MultiEditorPane();
-            Component[] tabs = pane.getTabs().getComponents();
-            Object target = new Object();
-            boolean[] shouldBeEnabled = getShouldBeEnabled(target, tabs);
-            TargetEvent e =
-                new TargetEvent(this,
-				TargetEvent.TARGET_SET,
-				new Object[] {
-				    null,
-				},
-				new Object[] {
-				    target,
-				});
-            pane.targetSet(e);
-            assertEnabled(pane.getTabs(), shouldBeEnabled);
-            target = new UMLClassDiagram();
-            shouldBeEnabled = getShouldBeEnabled(target, tabs);
-            e = new TargetEvent(
-				this,
-				TargetEvent.TARGET_SET,
-				new Object[] {
-				    null,
-				},
-				new Object[] {
-				    target
-				});
-            pane.targetSet(e);
-            assertEnabled(pane.getTabs(), shouldBeEnabled);
-            target = Model.getCoreFactory().createClass();
-            shouldBeEnabled = getShouldBeEnabled(target, tabs);
-            e =
-                new TargetEvent(this,
-				TargetEvent.TARGET_SET,
-				new Object[] {
-				    null,
-				},
-				new Object[] {
-				    target,
-				});
-            pane.targetSet(e);
-            assertEnabled(pane.getTabs(), shouldBeEnabled);
-            target = new FigText(0, 0, 0, 0);
-            shouldBeEnabled = getShouldBeEnabled(target, tabs);
-            e = new TargetEvent(this,
-				TargetEvent.TARGET_SET,
-				new Object[] {
-				    null,
-				},
-				new Object[] {
-				    target,
-				});
-            pane.targetSet(e);
-            assertEnabled(pane.getTabs(), shouldBeEnabled);
-        } catch (Exception ex) {
-            // on a headless system (without display) this will crash
-        }
-    }
-
-    private boolean[] getShouldBeEnabled(Object target, Component[] tabs) {
-        boolean[] shouldBeEnabled = new boolean[tabs.length];
-        for (int i = 0; i < tabs.length; i++) {
-            shouldBeEnabled[i] = ((TabTarget) tabs[i]).shouldBeEnabled(target);
-        }
-        return shouldBeEnabled;
-    }
-
-    private void assertEnabled(
-        JTabbedPane tabbedPane,
-        boolean[] shouldBeEnabled) {
-        for (int i = 0; i < shouldBeEnabled.length; i++) {
-            assertEquals(shouldBeEnabled[i], tabbedPane.isEnabledAt(i));
-        }
-    }
-
-
+             assertNotNull(pane);             
+             assertEquals(pane.getComponents().length, 1);
+         } catch (Exception ex) {
+             // on a headless system (without display) this will crash
+         }
+     }
+     
+     
+     
 }

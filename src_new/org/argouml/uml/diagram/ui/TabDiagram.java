@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2003 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,31 +21,23 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $Id$
+
 package org.argouml.uml.diagram.ui;
 
 import java.awt.BorderLayout;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
+import java.awt.Component;
 import java.awt.event.MouseEvent;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Vector;
 
 import javax.swing.JComponent;
 import javax.swing.JPanel;
-import javax.swing.JToolBar;
-import javax.swing.RepaintManager;
 import javax.swing.border.EtchedBorder;
 
-import org.apache.log4j.Logger;
-import org.argouml.application.api.Argo;
-import org.argouml.application.api.Configuration;
+import org.apache.log4j.Category;
 import org.argouml.ui.ProjectBrowser;
-import org.argouml.ui.AbstractArgoJPanel;
+import org.argouml.ui.TabSpawnable;
 import org.argouml.ui.targetmanager.TargetEvent;
 import org.argouml.ui.targetmanager.TargetManager;
 import org.argouml.uml.ui.ActionCopy;
@@ -63,81 +54,72 @@ import org.tigris.gef.event.GraphSelectionListener;
 import org.tigris.gef.event.ModeChangeEvent;
 import org.tigris.gef.event.ModeChangeListener;
 import org.tigris.gef.graph.GraphModel;
+import org.tigris.gef.graph.presentation.DefaultGraphModel;
 import org.tigris.gef.graph.presentation.JGraph;
 import org.tigris.gef.presentation.Fig;
-import org.tigris.toolbar.ToolBarFactory;
-
+import org.tigris.gef.ui.ToolBar;
 
 /**
- * The TabDiagram is the tab in the multieditorpane that holds a diagram. The
- * TabDiagram consists of a JGraph (with the figs) and a toolbar.
- * It used to be possible (in past versions of ArgoUML)
+ * The TabDiagram is the tab in the multieditorpane that holds a diagram. The 
+ * TabDiagram consists of a JGraph (with the figs) and a toolbar. It is possible
  * to spawn objects of this class into a dialog via the spawn method of its
  * parent.
  */
 public class TabDiagram
-    extends AbstractArgoJPanel
+    extends TabSpawnable
     implements TabModelTarget, GraphSelectionListener, ModeChangeListener {
 
-    /**
-     * Logger.
-     */
-    private static final Logger LOG = Logger.getLogger(TabDiagram.class);
+    private Category cat = Category.getInstance(TabDiagram.class);
 
     ////////////////////////////////////////////////////////////////
     // instance variables
 
     /**
-     * The diagram object.
+     * the diagram object
      */
-    private UMLDiagram target;
+    protected UMLDiagram _target;
 
     /**
-     * The GEF JGraph in where the figs are painted.
+     * The GEF JGraph in where the figs are painted
      */
-    private JGraph graph;
+    protected JGraph _jgraph;
 
     /**
-     * Prevents target event cycles between this and the TargetManager.
+     * used but there doesn't appear to be a purpose.
      */
-    private boolean updatingSelection;
+    protected boolean _shouldBeEnabled = true;
 
     /**
-     * The toolbar that is positioned just above
-     * the diagram containing the drawing tools.
+     * the GEF toolbar that is positioned just above
+     * the diagram. is added to diagramPanel
      */
-    private JToolBar toolBar;
+    protected ToolBar _toolBar;
 
     ////////////////////////////////////////////////////////////////
     // constructors
 
     /**
-     * Default constructor.
+     * calls the other constructor.
      */
     public TabDiagram() {
         this("Diagram");
     }
 
-    /**
-     * Constructor.
-     *
-     * @param tag The type of diagram that we are creating.
-     */
     public TabDiagram(String tag) {
         super(tag);
         setLayout(new BorderLayout());
-        graph = new DnDJGraph();
-        graph.setDrawingSize((612 - 30) * 2, (792 - 55 - 20) * 2);
+        _jgraph = new ArgoJGraph();
+        _jgraph.setDrawingSize((612 - 30) * 2, (792 - 55 - 20) * 2);
         // TODO: should update to size of diagram contents
 
         Globals.setStatusBar(ProjectBrowser.getInstance());
         JPanel p = new JPanel();
         p.setLayout(new BorderLayout());
         p.setBorder(new EtchedBorder(EtchedBorder.LOWERED));
-        p.add(graph, BorderLayout.CENTER);
+        p.add(_jgraph, BorderLayout.CENTER);
         add(p, BorderLayout.CENTER);
-        graph.addGraphSelectionListener(this);
-        graph.addModeChangeListener(this);
+        _jgraph.addGraphSelectionListener(this);
+        _jgraph.addModeChangeListener(this);
     }
 
     /**
@@ -151,92 +133,78 @@ public class TabDiagram
     public Object clone() {
         // next statement gives us a clone JGraph but not a cloned Toolbar
         TabDiagram newPanel = new TabDiagram();
-        if (target != null) {
-            newPanel.setTarget(target);
+        // next statement moves the toolbar to the newPanel
+        if (_target != null) {
+            newPanel.setTarget(_target);
         }
-        newPanel.setToolBar(ToolBarFactory.createToolBar(true/*rollover*/,
-                                                         target.getActions(),
-                                                         false/*floating*/));
-        setToolBar(ToolBarFactory.createToolBar(true/*rollover*/,
-                                                target.getActions(),
-                                                false/*floating*/));
+        newPanel.setToolBar(_target.getToolBar());
         return newPanel;
+
     }
 
     /**
-     * @see org.argouml.ui.TabTarget#setTarget(java.lang.Object)
-     *
      * Sets the target of the tab. The target should allways be an instance of
      * UMLDiagram
      * @param t
-     * @deprecated As of ArgoUml version 0.13.5, the visibility of
-     * this method will change in the future, replaced by {@link
-     * org.argouml.ui.targetmanager.TargetManager}.
+     * @deprecated As of ArgoUml version 0.13.5,
+     *             the visibility of this method will change in the future,
+     *             replaced by {@link org.argouml.ui.targetmanager.TargetManager}.
      */
     public void setTarget(Object t) {
 
         if (!(t instanceof UMLDiagram)) {
+            _shouldBeEnabled = false;
             // This is perfectly normal and happens among other things
             // within the call to setDiagram (below).
-            LOG.debug("target is null in set target or "
-		      + "not an instance of UMLDiagram");
+            cat.debug(
+                "target is null in set target or not an instance of UMLDiagram");
             return;
         }
-        UMLDiagram newTarget = (UMLDiagram) t;
+        if (_target != null) {
+            _target.removeAsTarget();
+        }
+        UMLDiagram target = (UMLDiagram)t;
 
-        setToolBar(newTarget.getJToolBar());
-        
-        graph.removeGraphSelectionListener(this);
-        graph.setDiagram(newTarget);
-        graph.addGraphSelectionListener(this);
-        target = newTarget;
+        target.setAsTarget();
+
+        _shouldBeEnabled = true;
+        setToolBar(target.getToolBar());
+        _jgraph.removeGraphSelectionListener(this);
+        _jgraph.setDiagram(target);
+        _jgraph.addGraphSelectionListener(this);
+        _target = target;
     }
 
-    /**
-     * @see org.argouml.ui.TabTarget#getTarget()
-     */
     public Object getTarget() {
-        return target;
+        return _target;
     }
 
-    /**
-     * Getter for the Toolbar.
-     *
-     * @return The ToolBar.
-     */
-    public JToolBar getToolBar() {
-        return toolBar;
+    public ToolBar getToolBar() {
+        return _toolBar;
     }
 
-    /**
-     * @see org.argouml.ui.TabTarget#refresh()
-     */
     public void refresh() {
-        setTarget(target);
+        setTarget(_target);
     }
 
-    /**
-     * @see org.argouml.ui.TabTarget#shouldBeEnabled(java.lang.Object)
-     */
-    public boolean shouldBeEnabled(Object newTarget) {
-        return newTarget instanceof UMLDiagram;
+    public boolean shouldBeEnabled(Object target) {
+
+        if (target instanceof UMLDiagram) {
+            _shouldBeEnabled = true;
+        } else {
+            _shouldBeEnabled = false;
+        }
+
+        return _shouldBeEnabled;
     }
 
     ////////////////////////////////////////////////////////////////
     // accessors
 
-    /**
-     * Getter for the {@link JGraph}.
-     *
-     * @return The JGraph.
-     */
     public JGraph getJGraph() {
-        return graph;
+        return _jgraph;
     }
 
-    /**
-     * @see java.awt.Component#setVisible(boolean)
-     */
     public void setVisible(boolean b) {
         super.setVisible(b);
         getJGraph().setVisible(b);
@@ -248,90 +216,47 @@ public class TabDiagram
     /**
      * In the selectionChanged method not only the selection of this
      * diagram is set but also the selection in the projectbrowser.
-     *
-     * @param gse The event.
      */
     public void selectionChanged(GraphSelectionEvent gse) {
-        if (!updatingSelection) {
-            updatingSelection = true;
-            Vector sels = gse.getSelections(); // the new selection
-            ActionCut.getInstance().setEnabled(sels != null && !sels.isEmpty());
-
-            // TODO: If ActionCopy is no longer a singleton, how shall
-            //       this work?
-            ActionCopy.getInstance()
-                    .setEnabled(sels != null && !sels.isEmpty());
-            /*
-             * ActionPaste.getInstance().setEnabled( Globals.clipBoard
-             * != null && !Globals.clipBoard.isEmpty());
-             */
-            // the old selection
-            Collection currentSelection =
-                TargetManager.getInstance().getTargets();
-
-            List removedTargets = new ArrayList(currentSelection);
-            Iterator i = sels.iterator();
-            while (i.hasNext()) {
-                Object o = i.next();
-                o = TargetManager.getInstance().getOwner(o);
-                if (currentSelection.contains(o)) {
-                    removedTargets.remove(o); // remains selected
-                } else {
-                    // add to selection
-                    TargetManager.getInstance().addTarget(o);
-                }
-            }
-            i = removedTargets.iterator();
-            while (i.hasNext()) {
-                Object o = i.next();
-                // remove from selection
-                TargetManager.getInstance().removeTarget(o);
-            }
-            updatingSelection = false;
-        }
+        Vector sels = gse.getSelections();
+        ActionCut.getInstance().setEnabled(sels != null && !sels.isEmpty());
+        ActionCopy.getInstance().setEnabled(sels != null && !sels.isEmpty());
+        /*
+        ActionPaste.getInstance().setEnabled(
+            Globals.clipBoard != null && !Globals.clipBoard.isEmpty());
+            */
+        TargetManager.getInstance().setTargets(sels);
 
     }
 
-    /**
-     * @param listener the listener to be removed
-     */
     public void removeGraphSelectionListener(GraphSelectionListener listener) {
-        graph.removeGraphSelectionListener(listener);
+        _jgraph.removeGraphSelectionListener(listener);
     }
 
-    /**
-     * @see org.tigris.gef.event.ModeChangeListener#modeChange(org.tigris.gef.event.ModeChangeEvent)
-     */
     public void modeChange(ModeChangeEvent mce) {
-        LOG.debug("TabDiagram got mode change event");
+        cat.debug("TabDiagram got mode change event");
         if (!Globals.getSticky() && Globals.mode() instanceof ModeSelect) {
-//            if (_target instanceof UMLDiagram) {
-	    target.deselectAllTools();
-//            }
+            if (_target instanceof UMLDiagram)
+                _target.getToolBar().unpressAllButtons();
         }
     }
 
-
-    /**
-     * @param listener the listener to be removed
-     */
     public void removeModeChangeListener(ModeChangeListener listener) {
-        graph.removeModeChangeListener(listener);
+        _jgraph.removeModeChangeListener(listener);
     }
 
     /**
-     * Sets the toolbar.  Adds the toolbar to the north borderlayout
-     * position of the diagram.<p>
-     *
-     * @param toolbar is the toolbar to be set.
+     * Sets the toolbar. Adds the toolbar to the north borderlayout position of
+     * the diagram.
+     * @param toolbar
      */
-    public void setToolBar(JToolBar toolbar) {
+    public void setToolBar(ToolBar toolbar) {
         if (!Arrays.asList(getComponents()).contains(toolbar)) {
-            if (target != null) {
-                remove(((UMLDiagram) getTarget()).getJToolBar());
+            if (_target != null) {
+                remove(((UMLDiagram)getTarget()).getToolBar());
             }
             add(toolbar, BorderLayout.NORTH);
-            toolBar = toolbar;
+
             invalidate();
             validate();
             repaint();
@@ -339,194 +264,147 @@ public class TabDiagram
     }
 
     /**
-     * @see org.argouml.ui.targetmanager.TargetListener#targetAdded(
-     *          TargetEvent)
+     * @see org.argouml.ui.targetmanager.TargetListener#targetAdded(org.argouml.ui.targetmanager.TargetEvent)
      */
     public void targetAdded(TargetEvent e) {
-        setTarget(e.getNewTarget());
-        select(e.getNewTargets());
+        // we can neglect this, the TabDiagram allways selects the first target
+        // in a set of targets. The first target can only be 
+        // changed in a targetRemoved or a TargetSet event
     }
 
     /**
-     * @see org.argouml.ui.targetmanager.TargetListener#targetRemoved(
-     *          TargetEvent)
+     * @see org.argouml.ui.targetmanager.TargetListener#targetRemoved(org.argouml.ui.targetmanager.TargetEvent)
      */
     public void targetRemoved(TargetEvent e) {
         // how to handle empty target lists?
         // probably the TabDiagram should only show an empty pane in that case
-        setTarget(e.getNewTarget());
+        setTarget(e.getNewTargets()[0]);
         select(e.getNewTargets());
+
     }
 
     /**
-     * @see org.argouml.ui.targetmanager.TargetListener#targetSet(
-     *          org.argouml.ui.targetmanager.TargetEvent)
+     * @see org.argouml.ui.targetmanager.TargetListener#targetSet(org.argouml.ui.targetmanager.TargetEvent)
      */
     public void targetSet(TargetEvent e) {
-        setTarget(e.getNewTarget());
+        setTarget(e.getNewTargets()[0]);
         select(e.getNewTargets());
     }
 
     private void select(Object[] targets) {
-        LayerManager manager = graph.getEditor().getLayerManager();
+        _jgraph.deselectAll();
+        LayerManager manager = _jgraph.getEditor().getLayerManager();
         Vector figList = new Vector();
         for (int i = 0; i < targets.length; i++) {
             if (targets[i] != null) {
-                Object theTarget = null;
-                if (targets[i] instanceof Fig
-		        && manager.getActiveLayer().getContents().contains(
-		                targets[i])) {
-		    theTarget = targets[i];
-                } else {
-		    theTarget = manager.presentationFor(targets[i]);
-                }
-
-                if (theTarget != null && !figList.contains(theTarget)) {
-                    figList.add(theTarget);
+                Object target =
+                    (targets[i] instanceof Fig
+                        && manager.getContents().contains(targets[i]))
+                        ? targets[i]
+                        : manager.presentationFor(targets[i]);
+                if (target != null) {
+                    figList.add(target);
                 }
             }
         }
+        _jgraph.select(figList);
 
-	if (!figList.equals(graph.selectedFigs())) {
-            graph.deselectAll();
-            graph.select(figList);
-	}
     }
 
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = -3305029387374936153L;
 }
-
 
 /**
- * The ArgoUML editor.
+ * UMLJGraph is a JGraph that updates the Figs representing modelelements if
+ * they are in the clipping area.
+ * @author jaap.branderhorst@xs4all.nl
+ * @since Apr 13, 2003
  */
-class ArgoEditor extends Editor {
-    private RenderingHints  argoRenderingHints;
+class ArgoJGraph extends JGraph {
 
-    /**
-     * Constructor for the Editor.
-     *
-     * @param d The Diagram that this editor works in.
-     */
-    public ArgoEditor(Diagram d) {
-	super(d);
-        setupRenderingHints();
-    }
+    
 
-    /**
-     * Constructor for the Editor.
-     *
-     * @param gm The Graphmodel.
-     * @param c The component.
-     */
-    public ArgoEditor(GraphModel gm, JComponent c) {
-	super(gm, c);
-        setupRenderingHints();
-    }
-
-    /**
-     * @see java.awt.event.MouseListener#mouseEntered(java.awt.event.MouseEvent)
-     */
-    public void mouseEntered(MouseEvent me) {
-	if (getActiveTextEditor() != null) {
-            getActiveTextEditor().requestFocus();
+    public boolean equals(Object o) {
+        if (o instanceof ArgoJGraph) {
+            ArgoJGraph a = (ArgoJGraph)o;            
+            if (((this._currentDiagramId != null && this._currentDiagramId.equals(a._currentDiagramId)) || (this._currentDiagramId == null && a._currentDiagramId == null))
+                && this.getEditor().equals(a.getEditor()))
+                return true;
         }
-	translateMouseEvent(me);
-	Globals.curEditor(this);
-	pushMode((FigModifyingMode) Globals.mode());
-	setUnderMouse(me);
-	_modeManager.mouseEntered(me);
+        return false;
     }
 
-    /**
-     * Invoked when the mouse has been moved (with no buttons down).
-     *
-     * @see java.awt.event.MouseMotionListener#mouseMoved(java.awt.event.MouseEvent)
-     * @param me The {@link MouseEvent}.
-     */
-    public void mouseMoved(MouseEvent me) {
-	//- RedrawManager.lock();
-	translateMouseEvent(me);
-	Globals.curEditor(this);
-	setUnderMouse(me);
-        Fig currentFig = getCurrentFig();
-	if (currentFig != null && Globals.getShowFigTips()) {
-	    String tip = currentFig.getTipString(me);
-	    if (tip != null && (getJComponent() != null)) {
-	        JComponent c = getJComponent();
-	        if (c.getToolTipText() == null
-		    || !(c.getToolTipText().equals(tip))) {
-	            c.setToolTipText(tip);
-	        }
-            }
-	} else if (getJComponent() != null
-		   && getJComponent().getToolTipText() != null) {
-            getJComponent().setToolTipText(null); //was ""
-	}
-
-	_selectionManager.mouseMoved(me);
-	_modeManager.mouseMoved(me);
-	//- RedrawManager.unlock();
-	//- _redrawer.repairDamage();
+    /** Make a new JGraph with a new DefaultGraphModel.
+       * @see uci.graph.DefaultGraphModel */
+    public ArgoJGraph() {
+        this(new DefaultGraphModel());
     }
 
-    /**
-     * Overridden to set Argo-specific RenderingHints to determine whether
-     * or not antialiasing should be turned on.
-     *
-     * @see org.tigris.gef.base.Editor#paint(java.awt.Graphics)
-     */
-    public synchronized void paint(Graphics g) {
-        if (!shouldPaint()) {
-            return;
-        }
-
-        if (g instanceof Graphics2D) {
-            Graphics2D g2 = (Graphics2D) g;
-            g2.setRenderingHints(argoRenderingHints);
-	    double scale = getScale();
-            g2.scale(scale, scale);
-        }
-        getLayerManager().paint(g);
-        //getLayerManager().getActiveLayer().paint(g);
-        if (_canSelectElements) {
-            _selectionManager.paint(g);
-            _modeManager.paint(g);
-        }
+    /** Make a new JGraph with a the GraphModel and Layer from the given
+     *  Diagram. */
+    public ArgoJGraph(Diagram d) {
+        this(new ArgoEditor(d));
     }
 
-    /**
-     * Construct a new set of RenderingHints to reflect current user
-     * settings.
-     */
-    private void setupRenderingHints() {
-        argoRenderingHints = new RenderingHints(null);
-
-        argoRenderingHints.put(RenderingHints.KEY_FRACTIONALMETRICS,
-            RenderingHints.VALUE_FRACTIONALMETRICS_ON);
-
-        if (Configuration.getBoolean(Argo.KEY_SMOOTH_EDGES, false)) {
-            argoRenderingHints.put(RenderingHints.KEY_RENDERING,
-                RenderingHints.VALUE_RENDER_QUALITY);
-            argoRenderingHints.put(RenderingHints.KEY_ANTIALIASING,
-                RenderingHints.VALUE_ANTIALIAS_ON);
-            argoRenderingHints.put(RenderingHints.KEY_TEXT_ANTIALIASING,
-                RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-        } else {
-            argoRenderingHints.put(RenderingHints.KEY_RENDERING,
-                RenderingHints.VALUE_RENDER_SPEED);
-            argoRenderingHints.put(RenderingHints.KEY_ANTIALIASING,
-                RenderingHints.VALUE_ANTIALIAS_OFF);
-            argoRenderingHints.put(RenderingHints.KEY_TEXT_ANTIALIASING,
-                RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
-        }
+    /** Make a new JGraph with the given GraphModel */
+    public ArgoJGraph(GraphModel gm) {
+        this(new ArgoEditor(gm, null));
     }
+    
+    /** Make a new JGraph with the given Editor.  All JGraph contructors
+     *  eventually call this contructor. */
+    public ArgoJGraph(Editor ed) {
+        super(ed); 
+    }
+        
 
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = -799007144549997407L;
 }
+
+class ArgoEditor extends Editor {
+        
+        public ArgoEditor(Diagram d) {
+            super(d);
+        }
+        
+        public ArgoEditor(GraphModel gm, Component c) {
+            super(gm, c);
+        }
+
+        /**
+         * @see java.awt.event.MouseListener#mouseEntered(java.awt.event.MouseEvent)
+         */
+        public void mouseEntered(MouseEvent me) {
+            if (_activeTextEditor != null)
+                _activeTextEditor.requestFocus();         
+            translateMouseEvent(me);
+            Globals.curEditor(this);
+            mode((FigModifyingMode)Globals.mode());
+            setUnderMouse(me);
+            _modeManager.mouseEntered(me);
+        }
+        
+    /** Invoked when the mouse button has been moved (with no buttons no down). */
+        public void mouseMoved(MouseEvent me) {
+            //- RedrawManager.lock();
+            translateMouseEvent(me);
+            Globals.curEditor(this);
+            setUnderMouse(me);
+            if (_curFig != null && Globals.getShowFigTips()) {
+                String tip = _curFig.getTipString(me);
+                if (tip != null && tip.length() > 0 && !tip.endsWith(" "))
+                    tip += " ";
+                if (tip != null && (getAwtComponent() instanceof JComponent)) {
+                    if (((JComponent)getAwtComponent()).getToolTipText() != null && !((JComponent)getAwtComponent()).getToolTipText().equals(tip))
+                    ((JComponent)getAwtComponent()).setToolTipText(tip);
+                }
+            } else if (getAwtComponent() instanceof JComponent) {
+                if (((JComponent)getAwtComponent()).getToolTipText() != null)            
+                    ((JComponent)getAwtComponent()).setToolTipText(null); //was ""
+            }
+
+            _selectionManager.mouseMoved(me);
+            _modeManager.mouseMoved(me);
+            //- RedrawManager.unlock();
+            //- _redrawer.repairDamage();
+        }
+
+    }

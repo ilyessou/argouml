@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -28,63 +28,44 @@ import javax.swing.JComboBox;
 import javax.swing.JList;
 import javax.swing.JScrollPane;
 
-import org.argouml.i18n.Translator;
-import org.argouml.uml.diagram.ui.ActionAddMessage;
-import org.argouml.uml.ui.ActionNavigateContainerElement;
+import org.argouml.application.api.Argo;
+
+import org.argouml.uml.ui.PropPanelButton;
 import org.argouml.uml.ui.UMLComboBox2;
-import org.argouml.uml.ui.UMLComboBoxNavigator;
 import org.argouml.uml.ui.UMLLinkedList;
 import org.argouml.uml.ui.foundation.core.PropPanelAssociation;
 import org.argouml.util.ConfigLoader;
 
-/**
- * The properties panel for an AssociationRole.
- *
- */
 public class PropPanelAssociationRole extends PropPanelAssociation {
 
-    /**
-     * The serial version.
-     */
-    private static final long serialVersionUID = 7693759162647306494L;
+    ////////////////////////////////////////////////////////////////
+    // attributes
+    protected JComboBox _baseField;
 
-    /**
-     * Construct a property panel for an AssociationRole.
-     */
+    ////////////////////////////////////////////////////////////////
+    // contructors
     public PropPanelAssociationRole() {
         super("Association Role", ConfigLoader.getTabPropsOrientation());
 
-        addField(Translator.localize("label.name"),
-                getNameTextField());
-        addField(Translator.localize("label.namespace"),
-		 getNamespaceScroll());
+        addField(Argo.localize("UMLMenu", "label.name"), getNameTextField());
+        addField(Argo.localize("UMLMenu", "label.stereotype"), getStereotypeBox());
+        addField(Argo.localize("UMLMenu", "label.namespace"), getNamespaceScroll());
 
-        JComboBox baseComboBox =
-	    new UMLComboBox2(new UMLAssociationRoleBaseComboBoxModel(),
-                new ActionSetAssociationRoleBase());
-        addField(Translator.localize("label.base"), 
-            new UMLComboBoxNavigator(
-                this,
-                Translator.localize("label.association.navigate.tooltip"), 
-                baseComboBox));
+        JComboBox baseComboBox = new UMLComboBox2(new UMLAssociationRoleBaseComboBoxModel(), ActionSetAssociationRoleBase.SINGLETON);
+        addField(Argo.localize("UMLMenu", "label.base"), baseComboBox);
 
-        addSeparator();
+        addSeperator();
 
-        JList assocEndList = new UMLLinkedList(
-                new UMLAssociationRoleAssociationEndRoleListModel());
-	// only binary associationroles are allowed
-        assocEndList.setVisibleRowCount(2);
-        addField(Translator.localize("label.associationrole-ends"),
-		 new JScrollPane(assocEndList));
+        JList assocEndList = new UMLLinkedList(new UMLAssociationRoleAssociationEndRoleListModel());
+        assocEndList.setVisibleRowCount(2); // only binary associationroles are allowed
+        addField(Argo.localize("UMLMenu", "label.associationrole-ends"), new JScrollPane(assocEndList));
 
-        JList messageList =
-	    new UMLLinkedList(new UMLAssociationRoleMessageListModel());
-        addField(Translator.localize("label.messages"),
-		 new JScrollPane(messageList));
+        JList messageList = new UMLLinkedList(new UMLAssociationRoleMessageListModel());
+        addField(Argo.localize("UMLMenu", "label.messages"), new JScrollPane(messageList));
 
-        addAction(new ActionNavigateContainerElement());
-        addAction(ActionAddMessage.getSingleton());
-        addAction(getDeleteAction());
+        new PropPanelButton(this, buttonPanel, _navUpIcon, Argo.localize("UMLMenu", "button.go-up"), "navigateUp", null);
+        new PropPanelButton(this, buttonPanel, _deleteIcon, localize("Delete"), "removeElement", null);
+
     }
 
 } /* end class PropPanelAssociationRole */

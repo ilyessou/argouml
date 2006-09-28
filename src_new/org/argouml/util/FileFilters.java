@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,11 +21,11 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $Id$
+
 package org.argouml.util;
 
 import javax.swing.filechooser.FileFilter;
-
-import org.argouml.i18n.Translator;
 
 /** This class handles the the various file extensions.
  * It's not clear whether all of these are supported
@@ -43,84 +42,71 @@ public class FileFilters {
     /**
      * This is a filter for uncompressed project format.
      */
-    public static final SuffixFilter UNCOMPRESSED_FILE_FILTER = new
-        SuffixFilter(FileConstants.UNCOMPRESSED_FILE_EXT.substring(1),
+    public static final SuffixFilter UncompressedFileFilter = new
+        SuffixFilter(FileConstants.UNCOMPRESSED_FILE_EXT.substring(1), 
                      "Argo uncompressed project file");
-
+  
     /**
      * This is a filter for compressed project format.
      */
-    public static final SuffixFilter COMPRESSED_FILE_FILTER = new
-        SuffixFilter(FileConstants.COMPRESSED_FILE_EXT.substring(1),
+    public static final SuffixFilter CompressedFileFilter = new
+        SuffixFilter(FileConstants.COMPRESSED_FILE_EXT.substring(1), 
                      "Argo compressed project file");
-
+  
     /**
      * This is a filter for xmi files.
      */
-    public static final SuffixFilter XMI_FILTER = new
+    public static final SuffixFilter XMIFilter = new
         SuffixFilter("xmi", "XML Metadata Interchange");
-
+  
     /** This is for Precision Graphics Markup Language
      * a very old and now mostly dead standard.
      * see W3C.org for more info
-     */
-    public static final SuffixFilter PGML_FILTER = new
+     */  
+    public static final SuffixFilter PGMLFilter = new
         SuffixFilter("pgml", "Argo diagram");
 
     /** This should read or write a config file
      * but as yet not fully implemented.
-     */
-    public static final SuffixFilter CONFIG_FILTER = new
+     */  
+    public static final SuffixFilter ConfigFilter = new
         SuffixFilter("config", "Argo configutation file");
 
     /** History Filter...Argo has trouble with remembering
      * things at times. Maybe this filter helps.
      * status is unknown. last reveiwed 8 months ago.
-     */
-    public static final SuffixFilter HIST_FILTER = new
+     */  
+    public static final SuffixFilter HistFilter = new
         SuffixFilter("hist", "Argo history file");
 
-    /**
-     * Log file filter.
-     */
-    public static final SuffixFilter LOG_FILTER = new
+    public static final SuffixFilter LogFilter = new
         SuffixFilter("log", "Argo usage log");
 
     /** Java Source File Filter */
-    public static final SuffixFilter JAVA_FILE_FILTER = new
-        SuffixFilter("java", Translator.localize("combobox.filefilter.java"));
+    public static final SuffixFilter JavaFilter = new
+        SuffixFilter("java", "Java Source File");
 
     /** Java Class File Filter */
-    public static final SuffixFilter JAVA_CLASS_FILTER = new
+    public static final SuffixFilter JavaClassFilter = new
         SuffixFilter("class", "Java Class File");
 
     /** Java JAR File Filter */
-    public static final SuffixFilter JAVA_JAR_FILTER = new
+    public static final SuffixFilter JavaJarFilter = new
         SuffixFilter("jar", "Java JAR File");
 
-    /** 
-     * This writes the GIF file.
-     */
-    public static final SuffixFilter GIF_FILTER = new
-        SuffixFilter("gif", Translator.localize("combobox.filefilter.gif"));
+    /** This writes the GIF file, known issues
+     * http://argouml.tigris.org/issues/show_bug.cgi?id=396
+     * http://argouml.tigris.org/issues/show_bug.cgi?id=407
+     *
+     */  
+    public static final SuffixFilter GIFFilter = new
+        SuffixFilter("gif", "GIF image");
 
-    /**
-     * Filter for portable network graphics (png) files.
-     */
-    public static final SuffixFilter PNG_FILTER = new
-        SuffixFilter("png", Translator.localize("combobox.filefilter.png"));
+    public static final SuffixFilter PSFilter = new
+        SuffixFilter("ps", "PostScript file");
 
-    /**
-     * This writes a Postscript file.
-     */
-    public static final SuffixFilter PS_FILTER = new
-        SuffixFilter("ps", Translator.localize("combobox.filefilter.ps"));
-
-    /**
-     * This writes an E-Postscript file.
-     */
-    public static final SuffixFilter EPS_FILTER = new
-        SuffixFilter("eps", Translator.localize("combobox.filefilter.eps"));
+    public static final SuffixFilter EPSFilter = new
+        SuffixFilter("eps", "Encapsulated PostScript file");
 
     /** SVG is the standard set by the W3C re vector graphics
      * The current output for SVG goes through GEF.
@@ -141,23 +127,18 @@ public class FileFilters {
      * is considered very useful for modeling the
      * behaviors of a class for example in state or
      * sequence diagrams.
-     */
-    public static final SuffixFilter SVG_FILTER = new
-        SuffixFilter("svg", Translator.localize("combobox.filefilter.svg"));
-
-    /** Filter for IDL files */
-    public static final SuffixFilter IDL_FILTER = new
-		SuffixFilter("idl", "Interface Definition Language file");
-
+     */  
+    public static final SuffixFilter SVGFilter = new
+        SuffixFilter("svg", "Scalable Vector Graphics file");
+  
     /**
-     * Returns the suffix for which a FileFilter filters.
+     * Returns the suffix for which a FileFilter filters. 
      * @param filter The FileFilter from which we want to know the suffix
-     * @return String The suffix of the FileFilter.
-     * Returns null if the FileFilter is not an instance of SuffixFilter.
+     * @return String The suffix of the FileFilter. Returns null if the FileFilter is not an instance of SuffixFilter.
      */
     public static String getSuffix(FileFilter filter) {
         if (filter instanceof SuffixFilter) {
-            return ((SuffixFilter) filter).getSuffix();
+            return ((SuffixFilter)filter)._suffix;
         }
         return null;
     }

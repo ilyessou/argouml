@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,13 +21,13 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $header$
 package org.argouml.uml.ui.behavior.state_machines;
 
 import javax.swing.JMenu;
 import javax.swing.JPopupMenu;
 
-import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.application.api.Argo;
 import org.argouml.uml.ui.ActionRemoveModelElement;
 import org.argouml.uml.ui.UMLModelElementListModel2;
 import org.argouml.uml.ui.UMLMutableLinkedList;
@@ -38,75 +37,51 @@ import org.argouml.uml.ui.UMLMutableLinkedList;
  * @author jaap.branderhorst@xs4all.nl
  */
 public class UMLCompositeStateSubvertexList extends UMLMutableLinkedList {
-
+    
     private class PopupMenu extends JPopupMenu {
-
+        
         /**
          * Constructor for PopupMenu.
          */
         public PopupMenu() {
             super();
-
-            JMenu pMenu = new JMenu();
-            pMenu.setText(Translator.localize("button.new-pseudostate"));
-            pMenu.add(new ActionNewPseudoState(
-                    Model.getPseudostateKind().getChoice(),
-                    "label.pseudostate.choice"));
-            pMenu.add(new ActionNewPseudoState(
-                    Model.getPseudostateKind().getInitial(),
-                    "label.pseudostate.initial"));
-            pMenu.add(new ActionNewPseudoState(
-                    Model.getPseudostateKind().getDeepHistory(),
-                    "label.pseudostate.deephistory"));
-            pMenu.add(new ActionNewPseudoState(
-                    Model.getPseudostateKind().getJunction(),
-                    "label.pseudostate.junction"));
-            pMenu.add(new ActionNewPseudoState(
-                    Model.getPseudostateKind().getShallowHistory(),
-                    "label.pseudostate.shallowhistory"));
-            pMenu.add(new ActionNewPseudoState(
-                    Model.getPseudostateKind().getFork(),
-                    "label.pseudostate.fork"));
-            pMenu.add(new ActionNewPseudoState(
-                    Model.getPseudostateKind().getJoin(),
-                    "label.pseudostate.join"));
-
+            
             JMenu newMenu = new JMenu();
-            newMenu.setText(Translator.localize("action.new"));
-            newMenu.add(pMenu);
-
-            newMenu.add(ActionNewSynchState.getInstance());
-            ActionNewSynchState.getInstance().setTarget(getTarget());
-            newMenu.add(ActionNewStubState.getInstance());
-            ActionNewStubState.getInstance().setTarget(getTarget());
-            newMenu.add(ActionNewCompositeState.getSingleton());
-            ActionNewCompositeState.getSingleton().setTarget(getTarget());
-            newMenu.add(ActionNewSimpleState.getSingleton());
-            ActionNewSimpleState.getSingleton().setTarget(getTarget());
-            newMenu.add(ActionNewFinalState.getSingleton());
-            ActionNewFinalState.getSingleton().setTarget(getTarget());
-            newMenu.add(ActionNewSubmachineState.getInstance());
-            ActionNewSubmachineState.getInstance().setTarget(getTarget());
+            newMenu.setText(Argo.localize("CoreMenu", "New"));
+            ActionNewPseudoState.SINGLETON.setTarget(getTarget());
+            newMenu.add(ActionNewPseudoState.SINGLETON);
+            newMenu.add(ActionNewSynchState.SINGLETON);
+            ActionNewSynchState.SINGLETON.setTarget(getTarget());
+            newMenu.add(ActionNewStubState.SINGLETON);
+            ActionNewStubState.SINGLETON.setTarget(getTarget());
+            newMenu.add(ActionNewCompositeState.SINGLETON);
+            ActionNewCompositeState.SINGLETON.setTarget(getTarget());
+            newMenu.add(ActionNewSimpleState.SINGLETON);
+            ActionNewSimpleState.SINGLETON.setTarget(getTarget());
+            newMenu.add(ActionNewFinalState.SINGLETON);
+            ActionNewFinalState.SINGLETON.setTarget(getTarget());
+            newMenu.add(ActionNewSubmachineState.SINGLETON);
+            ActionNewSubmachineState.SINGLETON.setTarget(getTarget());
             add(newMenu);
-
+            
             addSeparator();
-
+            
             ActionRemoveModelElement.SINGLETON.setTarget(getSelectedValue());
-            ActionRemoveModelElement.SINGLETON.setObjectToRemove(
-                    getSelectedValue());
             add(ActionRemoveModelElement.SINGLETON);
         }
-
+        
 
     }
-
+    
     /**
      * Constructor for UMLCompositeStateSubvertexList.
-     * @param dataModel the data model
+     * @param container
+     * @param dataModel
+     * @param popup
      */
     public UMLCompositeStateSubvertexList(
         UMLModelElementListModel2 dataModel) {
-        super(dataModel);
+        super(dataModel, null);
     }
 
     /**

@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,15 +21,15 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $header$
 package org.argouml.uml.ui.behavior.state_machines;
 
 import java.awt.event.ActionEvent;
 
 import javax.swing.Action;
 
-import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
-import org.argouml.ui.targetmanager.TargetManager;
+import org.argouml.application.api.Argo;
+import org.argouml.model.uml.behavioralelements.statemachines.StateMachinesFactory;
 import org.argouml.uml.ui.AbstractActionNewModelElement;
 
 /**
@@ -39,26 +38,14 @@ import org.argouml.uml.ui.AbstractActionNewModelElement;
  */
 public class ActionNewPseudoState extends AbstractActionNewModelElement {
 
-    private Object kind;
-
+    public static ActionNewPseudoState SINGLETON = new ActionNewPseudoState();
+    
     /**
      * Constructor for ActionNewPseudoState.
      */
-    public ActionNewPseudoState() {
+    protected ActionNewPseudoState() {
         super();
-        putValue(Action.NAME, Translator.localize("button.new-pseudostate"));
-    }
-
-    /**
-     * The constructor.
-     *
-     * @param k the pseudostate kind
-     * @param n the to be localized name for the pseudostate kind
-     */
-    public ActionNewPseudoState(Object k, String n) {
-        super();
-        kind = k;
-        putValue(Action.NAME, Translator.localize(n));
+        putValue(Action.NAME, Argo.localize("UMLMenu", "button.new-pseudostate"));
     }
 
     /**
@@ -66,11 +53,8 @@ public class ActionNewPseudoState extends AbstractActionNewModelElement {
      */
     public void actionPerformed(ActionEvent e) {
         super.actionPerformed(e);
-        Object target = TargetManager.getInstance().getModelTarget();
-        Object ps =
-            Model.getStateMachinesFactory().buildPseudoState(target);
-        if (kind != null) {
-            Model.getCoreHelper().setKind(ps, kind);
-        }
+        StateMachinesFactory.getFactory().buildPseudoState(getTarget());
     }
+    
+
 }

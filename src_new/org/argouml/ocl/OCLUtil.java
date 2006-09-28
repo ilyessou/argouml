@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2003 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,94 +23,90 @@
 
 package org.argouml.ocl;
 
-import java.util.Collection;
-import java.util.Iterator;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
 
-import org.argouml.model.Model;
+import java.util.*;
 
 /**
  * Helper methods for OCL support.
  *
  * @author Steffen Zschaler
  */
-public final class OCLUtil {
+public final class OCLUtil extends Object {
 
-    /** OCLUtil shall not be instantiated! */
-    private OCLUtil () { }
+  /** OCLUtil shall not be instantiated! */
+  private OCLUtil () {}
 
-    /**
-     * Get the inner-most enclosing namespace for the model element.
-     *
-     * @param me the modelelement
-     * @return a namespace
-     */
-    public static Object getInnerMostEnclosingNamespace (Object me) {
-
-        if (Model.getFacade().isAFeature(me)) {
-            me = Model.getFacade().getOwner(me);
-        }
-
-        if (!Model.getFacade().isANamespace(me)) {
-            throw new IllegalArgumentException();
-        }
-
-	return me;
+  /**
+   * Get the inner-most enclosing namespace for the model element.
+   */
+  public static MNamespace getInnerMostEnclosingNamespace (MModelElement me) {
+    while ((me != null) &&
+           (! (me instanceof MNamespace))) {
+      me = me.getModelElementContainer();
     }
 
-    /**
-     * Return a context string for the given model element.
-     *
-     * @param me the model element for which to create a context string.
-     *
-     * @return the context string for the model element.
-     */
-    public static String getContextString (final Object me) {
-	if (me == null || !(Model.getFacade().isAModelElement(me)))
+    return (MNamespace) me;
+  }
+
+  /**
+   * Return a context string for the given model element.
+   *
+   * @param me the model element for which to create a context string.
+   *
+   * @return the context string for the model element.
+   */
+  public static String getContextString (final Object me) {
+	if (me == null || !(me instanceof MModelElement))
 	    return "";
-	Object mnsContext =
-	    getInnerMostEnclosingNamespace (me);
+    MNamespace mnsContext = getInnerMostEnclosingNamespace ((MModelElement)me);
 
-	if (Model.getFacade().isABehavioralFeature(me)) {
-	    StringBuffer sbContext = new StringBuffer ("context ");
-	    sbContext.append (Model.getFacade().getName(mnsContext));
-	    sbContext.append ("::");
-	    sbContext.append (Model.getFacade().getName(me));
-	    sbContext.append (" (");
+    if (me instanceof MBehavioralFeature) {
+      StringBuffer sbContext =
+          new StringBuffer ("context ")
+            .append (mnsContext.getName())
+            .append ("::")
+            .append (((MModelElement)me).getName())
+            .append (" (");
 
-	    Collection lParams = Model.getFacade().getParameters(me);
-	    String sReturnType = null;
-	    boolean fFirstParam = true;
+      List lParams = ((MBehavioralFeature) me).getParameters();
+      String sReturnType = null;
+      boolean fFirstParam = true;
 
-	    for (Iterator i = lParams.iterator(); i.hasNext();) {
-		Object mp = i.next(); //MParameter
+      for (Iterator i = lParams.iterator(); i.hasNext();) {
+        MParameter mp = (MParameter) i.next();
 
-		if (Model.getFacade().isReturn(mp)) {
-		    sReturnType = Model.getFacade().getName(
-                                    Model.getFacade().getType(mp));
-                } else {
-		    if (fFirstParam) {
-			fFirstParam = false;
-		    } else {
-			sbContext.append ("; ");
-		    }
+        switch (mp.getKind().getValue()) {
+          case MParameterDirectionKind._RETURN:
+            sReturnType = mp.getType().getName();
+            break;
 
-		    sbContext.append(
-		            Model.getFacade().getType(mp)).append(": ");
-		    sbContext.append(Model.getFacade().getName(
-		            Model.getFacade().getType(mp)));
-		}
-	    }
+          default:
+            if (fFirstParam) {
+              fFirstParam = false;
+            }
+            else {
+              sbContext.append ("; ");
+            }
 
-	    sbContext.append (")");
+            sbContext.append (mp.getName())
+                     .append (": ")
+                     .append (mp.getType().getName());
+        }
+      }
 
-	    // The ocl toolkit does not like void return types
-	    if (sReturnType != null && !sReturnType.equalsIgnoreCase("void")) {
-		sbContext.append (": ").append (sReturnType);
-	    }
+      sbContext.append (")");
 
-	    return sbContext.toString();
-	} else {
-	    return "context " + Model.getFacade().getName(mnsContext);
-	}
+      // The ocl toolkit does not like void return types
+      if (sReturnType != null && !sReturnType.equalsIgnoreCase("void")) {
+        sbContext.append (": ").append (sReturnType);
+      }
+
+      return sbContext.toString();
     }
+    else {
+      return "context " + mnsContext.getName();
+    }
+  }
 }

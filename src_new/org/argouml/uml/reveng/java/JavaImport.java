@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+ // Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,11 +21,13 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+//$Id$
+
 package org.argouml.uml.reveng.java;
 
-import org.apache.log4j.Logger;
 import org.argouml.kernel.*;
 import org.argouml.uml.reveng.*;
+import org.argouml.application.api.*;
 import org.argouml.util.FileFilters;
 import org.argouml.util.SuffixFilter;
 
@@ -36,98 +37,77 @@ import java.io.*;
  * This is the main class for Java reverse engineering. It's based
  * on the Antlr Java example.
  *
+ * $Revision$
+ * $Date$
+ *
  * @author Andreas Rueckert <a_rueckert@gmx.net>
  */
 public class JavaImport extends FileImportSupport {
 
-    /** logger */
-    private static final Logger LOG = Logger.getLogger(JavaImport.class);
-
     /**
      * This method parses 1 Java file.
-     * Throws a Parser exception.
      *
-     * @see org.argouml.application.api.PluggableImport#parseFile(
-     * org.argouml.kernel.Project, java.lang.Object,
-     * org.argouml.uml.reveng.DiagramInterface, org.argouml.uml.reveng.Import)
+     * @param f The input file for the parser.
+     * @exception Exception Parser exception.
      */
-    public void parseFile(Project p, Object o, DiagramInterface diagram,
-			  Import theImport)
+    public void parseFile( Project p, Object o, DiagramInterface diagram, Import _import)
 	throws Exception {
-	if (o instanceof File) {
-	    File f = (File) o;
-	    // Create a scanner that reads from the input stream passed to us
-	    String encoding = theImport.getInputSourceEncoding();
-	    FileInputStream in = new FileInputStream(f);
-	    JavaLexer lexer =
-		new JavaLexer(
-		    new BufferedReader(new InputStreamReader(in, encoding)));
-	    // We use a special Argo token, that stores the preceding
-	    // whitespaces.
-	    lexer.setTokenObjectClass("org.argouml.uml.reveng.java.ArgoToken");
+		if (o instanceof File ) {
+			File f = (File)o;
+			// Create a scanner that reads from the input stream passed to us
+			JavaLexer lexer = new JavaLexer(new BufferedReader(new FileReader(f)));
 
-	    // Create a parser that reads from the scanner
-	    JavaRecognizer parser = new JavaRecognizer(lexer);
+			// We use a special Argo token, that stores the preceding
+			// whitespaces.
+			lexer.setTokenObjectClass( "org.argouml.uml.reveng.java.ArgoToken");
 
-	    // Create a modeller for the parser
-	    Modeller modeller = new Modeller(p.getModel(),
-					     diagram, theImport,
-					     getAttribute().isSelected(),
-					     getDatatype().isSelected(),
-					     f.getName());
+			// Create a parser that reads from the scanner
+			JavaRecognizer parser = new JavaRecognizer( lexer);
 
-	    // Print the name of the current file, so we can associate
-	    // exceptions to the file.
-	    LOG.info("Parsing " + f.getAbsolutePath());
+			// Create a modeller for the parser
+			Modeller modeller = new Modeller(p.getModel(),
+                                         diagram, _import,
+					 attribute.isSelected(),
+					 datatype.isSelected(),
+                                         f.getName());
 
-            modeller.setAttribute("level", theImport.getAttribute("level"));
+			// Print the name of the current file, so we can associate
+			// exceptions to the file.
+			Argo.log.info("Parsing " + f.getAbsolutePath());
 
-            try {
-		// start parsing at the compilationUnit rule
-		parser.compilationUnit(modeller, lexer);
-            } catch (Exception e) {
-                LOG.error(e.getClass().getName()
-			  + " Exception in file: "
-			  + f.getCanonicalPath() + " "
-			  + f.getName(), e);
-                throw e;
-            }
-	    in.close();
+			// start parsing at the compilationUnit rule
+			parser.compilationUnit(modeller, lexer);
+		}
+    }
+
+	/** 
+	 * Provides an array of suffix filters for the module.
+	 * @return SuffixFilter[] files with these suffixes will be processed.
+	 */
+	public SuffixFilter[] getSuffixFilters() {
+		SuffixFilter[] result = {FileFilters.JavaFilter};
+		return result;
 	}
-    }
+	
+		/** Display name of the module. */
+		public String getModuleName() {
+			return "Java";
+		}
 
-    /**
-     * Provides an array of suffix filters for the module.
-     * @return SuffixFilter[] files with these suffixes will be processed.
-     */
-    public SuffixFilter[] getSuffixFilters() {
-	SuffixFilter[] result = {FileFilters.JAVA_FILE_FILTER};
-	return result;
-    }
+		/** Textual description of the module. */
+		public String getModuleDescription() {
+			return "Java import from files";
+		}
 
-    /**
-     * Display name of the module.
-     *
-     * @see org.argouml.application.api.ArgoModule#getModuleName()
-     */
-    public String getModuleName() {
-	return "Java";
-    }
-
-    /**
-     * Textual description of the module.
-     *
-     * @see org.argouml.application.api.ArgoModule#getModuleDescription()
-     */
-    public String getModuleDescription() {
-	return "Java import from files";
-    }
-
-    /**
-     * @see org.argouml.application.api.ArgoModule#getModuleKey()
-     */
-    public String getModuleKey() {
-	return "module.import.java-files";
-    }
+		public String getModuleKey() {
+			return "module.import.java-files";
+		}
 
 }
+
+
+
+
+
+
+

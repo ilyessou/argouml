@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,189 +23,170 @@
 
 package org.argouml.cognitive.ui;
 
-import java.util.Enumeration;
-import java.util.Vector;
+import java.util.*;
 
-import org.apache.log4j.Logger;
-import org.argouml.cognitive.Decision;
-import org.argouml.cognitive.Designer;
-import org.argouml.cognitive.ToDoItem;
-import org.argouml.cognitive.ToDoListEvent;
-import org.argouml.cognitive.ToDoListListener;
+import org.apache.log4j.Category;
+import org.argouml.cognitive.*;
 
-/**
- * Represents a perspective for ToDo items: grouping by decision type.
- *
- */
 public class ToDoByDecision extends ToDoPerspective
-    implements ToDoListListener {
-    private static final Logger LOG =
-        Logger.getLogger(ToDoByDecision.class);
+implements ToDoListListener {
+    protected static Category cat = 
+        Category.getInstance(ToDoByDecision.class);
 
 
-    /**
-     * The constructor.
-     *
-     */
-    public ToDoByDecision() {
-	super("combobox.todo-perspective-decision");
-	addSubTreeModel(new GoListToDecisionsToItems());
+  public ToDoByDecision() {
+    super("combobox.todo-perspective-decision");
+    addSubTreeModel(new GoListToDecisionsToItems());
+  }
+
+  //public String toString() { return "Decision"; }
+
+  ////////////////////////////////////////////////////////////////
+  // DecisionModelListener implementation
+
+  ////////////////////////////////////////////////////////////////
+  // ToDoListListener implementation
+
+  public void toDoItemsChanged(ToDoListEvent tde) {
+    cat.debug("toDoItemChanged");
+    Vector items = tde.getToDoItems();
+    int nItems = items.size();
+    Object path[] = new Object[2];
+    path[0] = Designer.TheDesigner.getToDoList();
+
+    Vector decs = Designer.TheDesigner.getDecisions();
+    java.util.Enumeration enum = decs.elements();
+    while (enum.hasMoreElements()) {
+      Decision dec = (Decision) enum.nextElement();
+      int nMatchingItems = 0;
+      path[1] = dec;
+      for (int i = 0; i < nItems; i++) {
+	ToDoItem item = (ToDoItem) items.elementAt(i);
+	if (!item.supports(dec)) continue;
+	nMatchingItems++;
+      }
+      if (nMatchingItems == 0) continue;
+      int childIndices[] = new int[nMatchingItems];
+      Object children[] = new Object[nMatchingItems];
+      nMatchingItems = 0;
+      for (int i = 0; i < nItems; i++) {
+	ToDoItem item = (ToDoItem) items.elementAt(i);
+	if (!item.supports(dec)) continue;
+	childIndices[nMatchingItems] = getIndexOfChild(dec, item);
+	children[nMatchingItems] = item;
+	nMatchingItems++;
+      }
+      fireTreeNodesChanged(this, path, childIndices, children);
     }
+  }
 
-    ////////////////////////////////////////////////////////////////
-    // ToDoListListener implementation
+  public void toDoItemsAdded(ToDoListEvent tde) {
+    cat.debug("toDoItemAdded");
+    Vector items = tde.getToDoItems();
+    int nItems = items.size();
+    Object path[] = new Object[2];
+    path[0] = Designer.TheDesigner.getToDoList();
 
-    /**
-     * @see org.argouml.cognitive.ToDoListListener#toDoItemsChanged(org.argouml.cognitive.ToDoListEvent)
-     */
-    public void toDoItemsChanged(ToDoListEvent tde) {
-	LOG.debug("toDoItemChanged");
-	Vector items = tde.getToDoItems();
-	int nItems = items.size();
-	Object[] path = new Object[2];
-	path[0] = Designer.theDesigner().getToDoList();
-
-	Vector decs = Designer.theDesigner().getDecisionModel().getDecisions();
-	Enumeration elems = decs.elements();
-	while (elems.hasMoreElements()) {
-	    Decision dec = (Decision) elems.nextElement();
-	    int nMatchingItems = 0;
-	    path[1] = dec;
-	    for (int i = 0; i < nItems; i++) {
-		ToDoItem item = (ToDoItem) items.elementAt(i);
-		if (!item.supports(dec)) continue;
-		nMatchingItems++;
-	    }
-	    if (nMatchingItems == 0) continue;
-	    int[] childIndices = new int[nMatchingItems];
-	    Object[] children = new Object[nMatchingItems];
-	    nMatchingItems = 0;
-	    for (int i = 0; i < nItems; i++) {
-		ToDoItem item = (ToDoItem) items.elementAt(i);
-		if (!item.supports(dec)) continue;
-		childIndices[nMatchingItems] = getIndexOfChild(dec, item);
-		children[nMatchingItems] = item;
-		nMatchingItems++;
-	    }
-	    fireTreeNodesChanged(this, path, childIndices, children);
-	}
+    Vector decs = Designer.TheDesigner.getDecisions();
+    java.util.Enumeration enum = decs.elements();
+    while (enum.hasMoreElements()) {
+      Decision dec = (Decision) enum.nextElement();
+      int nMatchingItems = 0;
+      path[1] = dec;
+      for (int i = 0; i < nItems; i++) {
+	ToDoItem item = (ToDoItem) items.elementAt(i);
+	if (!item.supports(dec)) continue;
+	nMatchingItems++;
+      }
+      if (nMatchingItems == 0) continue;
+      int childIndices[] = new int[nMatchingItems];
+      Object children[] = new Object[nMatchingItems];
+      nMatchingItems = 0;
+      for (int i = 0; i < nItems; i++) {
+	ToDoItem item = (ToDoItem) items.elementAt(i);
+	if (!item.supports(dec)) continue;
+	childIndices[nMatchingItems] = getIndexOfChild(dec, item);
+	children[nMatchingItems] = item;
+	nMatchingItems++;
+      }
+      fireTreeNodesInserted(this, path, childIndices, children);
     }
+  }
 
-    /**
-     * @see org.argouml.cognitive.ToDoListListener#toDoItemsAdded(org.argouml.cognitive.ToDoListEvent)
-     */
-    public void toDoItemsAdded(ToDoListEvent tde) {
-	LOG.debug("toDoItemAdded");
-	Vector items = tde.getToDoItems();
-	int nItems = items.size();
-	Object[] path = new Object[2];
-	path[0] = Designer.theDesigner().getToDoList();
+  public void toDoItemsRemoved(ToDoListEvent tde) {
+    cat.debug("toDoItemRemoved");
+    ToDoList list = Designer.TheDesigner.getToDoList(); //source?
+    Vector items = tde.getToDoItems();
+    int nItems = items.size();
+    Object path[] = new Object[2];
+    path[0] = Designer.TheDesigner.getToDoList();
 
-	Vector decs = Designer.theDesigner().getDecisionModel().getDecisions();
-	Enumeration elems = decs.elements();
-	while (elems.hasMoreElements()) {
-	    Decision dec = (Decision) elems.nextElement();
-	    int nMatchingItems = 0;
-	    path[1] = dec;
-	    for (int i = 0; i < nItems; i++) {
-		ToDoItem item = (ToDoItem) items.elementAt(i);
-		if (!item.supports(dec)) continue;
-		nMatchingItems++;
-	    }
-	    if (nMatchingItems == 0) continue;
-	    int[] childIndices = new int[nMatchingItems];
-	    Object[] children = new Object[nMatchingItems];
-	    nMatchingItems = 0;
-	    for (int i = 0; i < nItems; i++) {
-		ToDoItem item = (ToDoItem) items.elementAt(i);
-		if (!item.supports(dec)) continue;
-		childIndices[nMatchingItems] = getIndexOfChild(dec, item);
-		children[nMatchingItems] = item;
-		nMatchingItems++;
-	    }
-	    fireTreeNodesInserted(this, path, childIndices, children);
-	}
+    Vector decs = Designer.TheDesigner.getDecisions();
+    java.util.Enumeration enum = decs.elements();
+    while (enum.hasMoreElements()) {
+      Decision dec = (Decision) enum.nextElement();
+      cat.debug("toDoItemRemoved updating decision node!");
+      boolean anyInDec = false;
+      for (int i = 0; i < nItems; i++) {
+	ToDoItem item = (ToDoItem) items.elementAt(i);
+	if (item.supports(dec)) anyInDec = true;
+      }
+      if (!anyInDec) continue;
+      path[1] = dec;
+      //fireTreeNodesChanged(this, path, childIndices, children);
+      fireTreeStructureChanged(path);
     }
+  }
 
-    /**
-     * @see org.argouml.cognitive.ToDoListListener#toDoItemsRemoved(org.argouml.cognitive.ToDoListEvent)
-     */
-    public void toDoItemsRemoved(ToDoListEvent tde) {
-	LOG.debug("toDoItemRemoved");
-	Vector items = tde.getToDoItems();
-	int nItems = items.size();
-	Object[] path = new Object[2];
-	path[0] = Designer.theDesigner().getToDoList();
-
-	Vector decs = Designer.theDesigner().getDecisionModel().getDecisions();
-	Enumeration elems = decs.elements();
-	while (elems.hasMoreElements()) {
-	    Decision dec = (Decision) elems.nextElement();
-	    LOG.debug("toDoItemRemoved updating decision node!");
-	    boolean anyInDec = false;
-	    for (int i = 0; i < nItems; i++) {
-		ToDoItem item = (ToDoItem) items.elementAt(i);
-		if (item.supports(dec)) anyInDec = true;
-	    }
-	    if (!anyInDec) continue;
-	    path[1] = dec;
-	    //fireTreeNodesChanged(this, path, childIndices, children);
-	    fireTreeStructureChanged(path);
-	}
-    }
-
-    /**
-     * @see org.argouml.cognitive.ToDoListListener#toDoListChanged(org.argouml.cognitive.ToDoListEvent)
-     */
-    public void toDoListChanged(ToDoListEvent tde) { }
+  public void toDoListChanged(ToDoListEvent tde) { }
 
 
-    //   public static Decision decisionUNCATEGORIZED =
-    //   new Decision("Uncategorized", 1);
+//   public static Decision decisionUNCATEGORIZED =
+//   new Decision("Uncategorized", 1);
 
-    //   protected boolean isNeeded(ToDoPseudoNode node) {
-    //     PredicateDecision pd = (PredicateDecision) node.getPredicate();
-    //     Decision d = pd.getDecision();
-    //     Enumeration items = _root.elements();
-    //     while (items.hasMoreElements()) {
-    //       ToDoItem item = (ToDoItem) items.nextElement();
-    //       if (item.getPoster().supports(d)) return true;
-    //     }
-    //     return false;
-    //   }
+//   protected boolean isNeeded(ToDoPseudoNode node) {
+//     PredicateDecision pd = (PredicateDecision) node.getPredicate();
+//     Decision d = pd.getDecision();
+//     java.util.Enumeration items = _root.elements();
+//     while (items.hasMoreElements()) {
+//       ToDoItem item = (ToDoItem) items.nextElement();
+//       if (item.getPoster().supports(d)) return true;
+//     }
+//     return false;
+//   }
 
-    //   protected Vector addNewPseudoNodes(ToDoItem item) {
-    //     Vector newNodes = new Vector();
-    //     Vector decs = item.getPoster().getSupportedDecisions();
-    //     if (decs == null) {
-    //       addNodeIfNeeded(Decision.UNSPEC, newNodes);
-    //     }
-    //     else {
-    //       Enumeration elems = decs.elements();
-    //       while (elems.hasMoreElements()) {
-    // 	Decision itemDec = (Decision) elems.nextElement();
-    // 	addNodeIfNeeded(itemDec, newNodes);
-    //       }
-    //     }
-    //     return newNodes;
-    //   }
+//   protected Vector addNewPseudoNodes(ToDoItem item) {
+//     Vector newNodes = new Vector();
+//     Vector decs = item.getPoster().getSupportedDecisions();
+//     if (decs == null) {
+//       addNodeIfNeeded(Decision.UNSPEC, newNodes);
+//     }
+//     else {
+//       java.util.Enumeration enum = decs.elements();
+//       while (enum.hasMoreElements()) {
+// 	Decision itemDec = (Decision) enum.nextElement();
+// 	addNodeIfNeeded(itemDec, newNodes);
+//       }
+//     }
+//     return newNodes;
+//   }
 
 
-    //   protected void addNodeIfNeeded(Decision itemDec, Vector newNodes) {
-    //     Enumeration elems = _pseudoNodes.elements();
-    //     while (elems.hasMoreElements()) {
-    //       ToDoPseudoNode node = (ToDoPseudoNode) elems.nextElement();
-    //       PredicateDecision pd = (PredicateDecision) node.getPredicate();
-    //       Decision nodeDec = pd.getDecision();
-    //       //if (nodeDec.getName().equals(itemDec.getName())) return;
-    //       if (nodeDec == itemDec) return;
-    //     }
-    //     PredicateDecision pred = new PredicateDecision(itemDec);
-    //     ToDoPseudoNode newNode = new ToDoPseudoNode(_root, pred);
-    //     newNode.setLabel(itemDec.getName());
-    //     _pseudoNodes.addElement(newNode);
-    //     newNodes.addElement(newNode);
-    //   }
+//   protected void addNodeIfNeeded(Decision itemDec, Vector newNodes) {
+//     java.util.Enumeration enum2 = _pseudoNodes.elements();
+//     while (enum2.hasMoreElements()) {
+//       ToDoPseudoNode node = (ToDoPseudoNode) enum2.nextElement();
+//       PredicateDecision pd = (PredicateDecision) node.getPredicate();
+//       Decision nodeDec = pd.getDecision();
+//       //if (nodeDec.getName().equals(itemDec.getName())) return;
+//       if (nodeDec == itemDec) return;
+//     }
+//     PredicateDecision pred = new PredicateDecision(itemDec);
+//     ToDoPseudoNode newNode = new ToDoPseudoNode(_root, pred);
+//     newNode.setLabel(itemDec.getName());
+//     _pseudoNodes.addElement(newNode);
+//     newNodes.addElement(newNode);
+//   }
 
 } /* end class ToDoByDecision */
 

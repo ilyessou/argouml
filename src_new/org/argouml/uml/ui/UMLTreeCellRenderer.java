@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -29,38 +28,37 @@ import java.awt.Component;
 import javax.swing.Icon;
 import javax.swing.JLabel;
 import javax.swing.JTree;
-import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 
+import org.apache.log4j.Category;
+import org.argouml.application.api.Argo;
 import org.argouml.application.helpers.ResourceLoaderWrapper;
-import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
+import org.argouml.ui.targetmanager.TargetManager;
+import org.argouml.uml.diagram.activity.ui.UMLActivityDiagram;
+import org.argouml.uml.diagram.collaboration.ui.UMLCollaborationDiagram;
+import org.argouml.uml.diagram.deployment.ui.UMLDeploymentDiagram;
+import org.argouml.uml.diagram.sequence.ui.UMLSequenceDiagram;
+import org.argouml.uml.diagram.state.ui.UMLStateDiagram;
+import org.argouml.uml.diagram.static_structure.ui.UMLClassDiagram;
 import org.argouml.uml.diagram.ui.UMLDiagram;
+import org.argouml.uml.diagram.use_case.ui.UMLUseCaseDiagram;
 
 /**
- * UMTreeCellRenderer determines how the entries in the Explorerpane
- * and ToDoList will be represented graphically.<p>
+ * UMTreeCellRenderer determines how the entries in the Navigationpane
+ * and ToDoList will be represented graphically.
  *
- * In particular it makes decisions about the icons to use,
- * in order to display an Explorerpane artifact depending on the kind
- * of object to be displayed.<p>
- *
- * This class must be efficient as it is called many 1000's of times.
+ * <p>In particular it makes decisions about the icons
+ *  to use in order to display a Navigationpane artifact depending on the kind
+ *  of object to be displayed.
  */
 public class UMLTreeCellRenderer extends DefaultTreeCellRenderer {
 
-    // get localised strings once only
-    private static String name = Translator.localize("label.name");
-    private static String typeName = Translator.localize("label.type");
+    private Category cat = Category.getInstance(this.getClass());
 
     ////////////////////////////////////////////////////////////////
     // TreeCellRenderer implementation
 
-    /**
-     * @see javax.swing.tree.TreeCellRenderer#getTreeCellRendererComponent(
-     * javax.swing.JTree, java.lang.Object, boolean, boolean, boolean, int,
-     * boolean)
-     */
     public Component getTreeCellRendererComponent(
         JTree tree,
         Object value,
@@ -68,11 +66,12 @@ public class UMLTreeCellRenderer extends DefaultTreeCellRenderer {
         boolean expanded,
         boolean leaf,
         int row,
-        boolean hasFocusParam) {
-
-	if (value instanceof DefaultMutableTreeNode) {
-	    value = ((DefaultMutableTreeNode) value).getUserObject();
-	}
+        boolean _hasFocus) {
+        if (TargetManager.getInstance().getTargets().contains(value)) {
+            sel = true;           
+        } else {
+            sel = false;          
+        }
 
         Component r =
             super.getTreeCellRendererComponent(
@@ -82,39 +81,49 @@ public class UMLTreeCellRenderer extends DefaultTreeCellRenderer {
                 expanded,
                 leaf,
                 row,
-                hasFocusParam);
+                _hasFocus);
 
         if (r instanceof JLabel) {
-            JLabel lab = (JLabel) r;
+            JLabel lab = (JLabel)r;
+            Icon icon =
+                ResourceLoaderWrapper.getResourceLoaderWrapper().lookupIcon(
+                    value);
 
-            // setting the icon
-            Icon icon = ResourceLoaderWrapper.getInstance().lookupIcon(value);
-            if (icon != null) {
+            if (icon != null)
                 lab.setIcon(icon);
-            }
+            else
+                cat.warn("UMLTreeCellRenderer: using default Icon");
 
-            // setting the tooltip to type and name
-            String type = null;
-            if (Model.getFacade().isAModelElement(value)) {
-                type = Model.getFacade().getUMLClassName(value);
+            // setting the tooltip
+            String tip = null;
+            if (ModelFacade.isAModelElement(value)) {
+                tip = ModelFacade.getUMLClassName(value);
             } else if (value instanceof UMLDiagram) {
-                type = ((UMLDiagram) value).getLabelName();
-            }
 
-            if (type != null) {
-                StringBuffer buf = new StringBuffer();
-                buf.append("<html>");
-                buf.append(name);
-                buf.append(' ');
-                buf.append(lab.getText());
-                buf.append("<br>");
-                buf.append(typeName);
-                buf.append(' ');
-                buf.append(type);
-                lab.setToolTipText(buf.toString());
-            } else {
-                lab.setToolTipText(lab.getText());
-            }
+                if (value instanceof UMLActivityDiagram)
+                    tip = Argo.localize("UMLMenu", "label.activity-diagram");
+                else if (value instanceof UMLSequenceDiagram)
+                    tip = Argo.localize("UMLMenu", "label.sequence-diagram");
+                else if (value instanceof UMLCollaborationDiagram)
+                    tip =
+                        Argo.localize("UMLMenu", "label.collaboration-diagram");
+                else if (value instanceof UMLDeploymentDiagram)
+                    tip = Argo.localize("UMLMenu", "label.deployment-diagram");
+                else if (value instanceof UMLStateDiagram)
+                    tip = Argo.localize("UMLMenu", "label.state-chart-diagram");
+                else if (value instanceof UMLUseCaseDiagram)
+                    tip = Argo.localize("UMLMenu", "label.usecase-diagram");
+                else if (value instanceof UMLClassDiagram)
+                    tip = Argo.localize("UMLMenu", "label.class-diagram");
+            } else
+                // TODO I18n
+                tip = (value == null) ? "empty" : value.toString() + " ";
+
+            // lab.setToolTipText(tip);
+            if ((tree.getToolTipText() != null
+                && !tree.getToolTipText().equals(tip))
+                || (tree.getToolTipText() == null && tip != null))
+                tree.setToolTipText(tip);
         }
         return r;
     }

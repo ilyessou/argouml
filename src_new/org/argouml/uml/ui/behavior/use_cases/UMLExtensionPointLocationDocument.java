@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,15 +21,14 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
-
+// $header$
 package org.argouml.uml.ui.behavior.use_cases;
 
-import org.argouml.model.Model;
 import org.argouml.uml.ui.UMLPlainTextDocument;
 
+import ru.novosoft.uml.behavior.use_cases.MExtensionPoint;
+
 /**
- * The model for the location field of an extension point of a usecase.
- *
  * @since Oct 6, 2002
  * @author jaap.branderhorst@xs4all.nl
  */
@@ -38,8 +36,10 @@ public class UMLExtensionPointLocationDocument extends UMLPlainTextDocument {
 
     /**
      * Constructor for UMLExtensionPointLocationDocument.
+     * @param panel
+     * @param propertyList
      */
-    public UMLExtensionPointLocationDocument() {
+    public UMLExtensionPointLocationDocument() {   
         super("location");
     }
 
@@ -47,14 +47,14 @@ public class UMLExtensionPointLocationDocument extends UMLPlainTextDocument {
      * @see org.argouml.uml.ui.UMLPlainTextDocument#setProperty(java.lang.String)
      */
     protected void setProperty(String text) {
-        Model.getUseCasesHelper().setLocation(getTarget(), text);
+        ((MExtensionPoint)getTarget()).setLocation(text);
     }
 
     /**
      * @see org.argouml.uml.ui.UMLPlainTextDocument#getProperty()
      */
     protected String getProperty() {
-        return Model.getFacade().getLocation(getTarget());
+        return ((MExtensionPoint)getTarget()).getLocation();
     }
 
 }

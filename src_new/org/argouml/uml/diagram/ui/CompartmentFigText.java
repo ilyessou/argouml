@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2001 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,29 +21,40 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: CompartmentFigText.java
+// Classes: CompartmentFigText
+// Original Author: thn
+
+// 8 Apr 2002: Jeremy Bennett (mail@jeremybennett.com). Extended to support
+// the display of extension points within use cases.
+
+
 package org.argouml.uml.diagram.ui;
 
 import java.awt.Color;
 
-import org.apache.log4j.Logger;
-import org.argouml.uml.notation.NotationProvider;
+import org.apache.log4j.Category;
+import org.argouml.ui.targetmanager.TargetManager;
 import org.tigris.gef.presentation.Fig;
+import org.tigris.gef.presentation.FigText;
+
+import ru.novosoft.uml.foundation.core.MFeature;
+import ru.novosoft.uml.foundation.core.MModelElement;
 
 /**
- * A FigText class extension for FigClass/FigInterface/FigUseCase
- * compartments.<p>
+ * <p>A FigText class extension for FigClass/FigInterface/FigUseCase
+ *   compartments.</p>
  *
- * This implementation now supports the extension point compartment in
- * a use case.<p>
- *
- * @author thn
+ * <p>This implementation now supports the extension point compartment in a use
+ *   case. The {@link #getFeature()} and {@link #setFeature(MFeature)} methods
+ *   are now deprecated in favour of the more generic {@link
+ *   #getModelElement()} and {@link #setModelElement(MModelElement)}
+ *   methods.</p>
  */
-public class CompartmentFigText extends FigSingleLineText {
-    /**
-     * Logger.
-     */
-    private static final Logger LOG =
-	Logger.getLogger(CompartmentFigText.class);
+
+public class CompartmentFigText extends FigText
+{
+    protected static Category cat = Category.getInstance(CompartmentFigText.class);
 
     ///////////////////////////////////////////////////////////////////////////
     //
@@ -53,192 +63,237 @@ public class CompartmentFigText extends FigSingleLineText {
     ///////////////////////////////////////////////////////////////////////////
 
     /**
-     * The bounding figure of the compartment containing this fig text.<p>
+     * <p>The bounding figure of the compartment containing this fig text.</p>
      */
-    private Fig           refFig;
+
+    protected Fig           _refFig;
+
 
     /**
-     * The notation provider for the text shown in this compartment.
+     * <p>Record whether we are currently highlighted.</p>
      */
-    private NotationProvider notationProvider;
+
+    protected boolean       _isHighlighted = false;
+
+
+    /**
+     * <p>The model element with which we are associated.</p>
+     */
+
+    protected MModelElement _modelElement = null;
+
+
+    ///////////////////////////////////////////////////////////////////////////
+    //
+    // constructors
+    //
+    ///////////////////////////////////////////////////////////////////////////
+
+    /**
+     * <p>Build a new compartment figText of the given dimensions, within the
+     *   compartment described by <code>aFig</code>.</p>
+     *
+     * <p>Invoke the parent constructor, then set the reference to the
+     *   associated compartment figure. The associated FigText is marked as
+     *   expand only.</p>
+     *
+     * <p><em>Warning</em>. Won't work properly if <code>aFig</code> is
+     *   null. A warning is printed.</p>
+     *
+     * @param x     X coordinate of the top left of the FigText.
+     *
+     * @param y     Y coordinate of the top left of the FigText.
+     *
+     * @param w     Width of the FigText.
+     *
+     * @param h     Height of the FigText.
+     *
+     * @param aFig  The figure describing the whole compartment
+     */
+
+    public CompartmentFigText(int x, int y, int w, int h, Fig aFig) {
+        super(x,y,w,h,true);
+
+        // Set the enclosing compartment fig. Warn if its null (which will
+        // break).
+
+        _refFig = aFig;
+
+        if (_refFig == null) {
+            cat.warn(this.getClass().toString() +
+                               ": Cannot create with null compartment fig");
+        }
+    }
+
+
+    ///////////////////////////////////////////////////////////////////////////
+    //
+    // Accessors
+    //
+    ///////////////////////////////////////////////////////////////////////////
+
+
+    // The following method overrides are necessary for proper graphical
+    // behavior
+
+    /**
+     * <p>Override for correct graphical behaviour.</p>
+     *
+     * @param w  Desired line width. Overridden and set to zero anyway.
+     */
+
+    public void setLineWidth(int w) {
+        super.setLineWidth(0);
+    }
+
+
+    /**
+     * <p>Override for correct graphical behaviour.</p>
+     *
+     * @return  Current line width&mdash;always 1.
+     */
+
+    public int getLineWidth() {
+        return 1;
+    }
+
     
     /**
-     * Record whether we are currently highlighted.<p>
-     */
-    private boolean       isHighlighted;
-
-    /**
-     * Build a new compartment figText of the given dimensions, within
-     * the compartment described by <code>aFig</code>.<p>
-     *
-     * Invoke the parent constructor, then set the reference to the
-     * associated compartment figure. The associated FigText is marked
-     * as expand only.<p>
-     *
-     * <em>Warning</em>. Won't work properly if <code>aFig</code> is
-     * null. A warning is printed.<p>
-     *
-     * @param x      X coordinate of the top left of the FigText.
-     *
-     * @param y      Y coordinate of the top left of the FigText.
-     *
-     * @param w      Width of the FigText.
-     *
-     * @param h      Height of the FigText.
-     *
-     * @param aFig  The figure describing the whole compartment
-     * 
-     * @param np    The notationProvider. 
-     *                      See NotationProviderFactory2.
-     */
-    public CompartmentFigText(int x, int y, int w, int h, Fig aFig, 
-            NotationProvider np) {
-        super(x, y, w, h, true);
-
-        if (np == null) {
-            LOG.warn("Need a NotationProvider for CompartmentFigText.");
-        }
-        notationProvider = np;
-
-        // Set the enclosing compartment fig. Warn if its null (which will
-        // break).
-        refFig = aFig;
-
-        if (refFig == null) {
-            LOG.warn(this.getClass().toString()
-		     + ": Cannot create with null compartment fig");
-        }
-    }
-
-    /**
-     * Build a new compartment figText of the given dimensions, within
-     * the compartment described by <code>aFig</code>.<p>
-     *
-     * Invoke the parent constructor, then set the reference to the
-     * associated compartment figure. The associated FigText is marked
-     * as expand only.<p>
-     *
-     * <em>Warning</em>. Won't work properly if <code>aFig</code> is
-     * null. A warning is printed.<p>
-     *
-     * @param x      X coordinate of the top left of the FigText.
-     *
-     * @param y      Y coordinate of the top left of the FigText.
-     *
-     * @param w      Width of the FigText.
-     *
-     * @param h      Height of the FigText.
-     *
-     * @param aFig  The figure describing the whole compartment
-     * 
-     * @param property The property this Fig should listen for
-     */
-    public CompartmentFigText(int x, int y, int w, int h, Fig aFig, 
-            String property) {
-        this(x, y, w, h, aFig, new String[] {property});
-    }
-
-    /**
-     * Build a new compartment figText of the given dimensions, within
-     * the compartment described by <code>aFig</code>.<p>
-     *
-     * Invoke the parent constructor, then set the reference to the
-     * associated compartment figure. The associated FigText is marked
-     * as expand only.<p>
-     *
-     * <em>Warning</em>. Won't work properly if <code>aFig</code> is
-     * null. A warning is printed.<p>
-     *
-     * @param x      X coordinate of the top left of the FigText.
-     *
-     * @param y      Y coordinate of the top left of the FigText.
-     *
-     * @param w      Width of the FigText.
-     *
-     * @param h      Height of the FigText.
-     *
-     * @param aFig  The figure describing the whole compartment
-     * 
-     * @param properties The properties this Fig should listen for
-     */
-    public CompartmentFigText(int x, int y, int w, int h, Fig aFig, 
-            String[] properties) {
-        super(x, y, w, h, true, properties);
-        
-        if (aFig == null) {
-            throw new IllegalArgumentException("A refFig must be provided");
-        }
-
-        // Set the enclosing compartment fig. Warn if its null (which will
-        // break).
-        refFig = aFig;
-    }
-
-    /**
-     * Override for correct graphical behaviour.<p>
+     * <p>Override for correct graphical behaviour.</p>
      *
      * @return  Current fill status&mdash;always <code>true</code>.
      */
+
     public boolean getFilled() {
-        return false;
+        return true;
     }
 
+
     /**
-     * Override for correct graphical behaviour.<p>
+     * <p>Override for correct graphical behaviour.</p>
      *
      * @return  Current fill colour&mdash;always the fill colour of the
      *          associated compartment fig.
      */
-    public Color getLineColor() {
-        return refFig.getLineColor();
+
+    public Color getFillColor() {
+        return _refFig.getFillColor();
     }
 
+
     /**
-     * Mark whether this item is to be highlighted.<p>
+     * <p>Override for correct graphical behaviour.</p>
      *
-     * If it is highlighted, make the superclass line width 1 rather
-     * than 0 and set the associated component fig as the target in
-     * the browser.<p>
+     * @return  Current fill colour&mdash;always the fill colour of the
+     *          associated compartment fig.
+     */
+
+    public Color getLineColor() {
+        return _refFig.getLineColor();
+    }
+
+
+    /**
+     * <p>Mark whether this item is to be highlighted.</p>
+     *
+     * <p>If it is highlighted, make the superclass line width 1 rather than 0
+     *   and set the associated component fig as the target in the browser.</p>
      *
      * @param flag  <code>true</code> if the entry is to be highlighted,
      *              <code>false</code> otherwise.
      */
+
     public void setHighlighted(boolean flag) {
-        isHighlighted = flag;
-        if (isHighlighted) {
-            super.setLineWidth(1);
-        } else {
-            super.setLineWidth(0);
+        _isHighlighted = flag;
+        super.setLineWidth(_isHighlighted ? 1 : 0);
+
+        if (flag && (_modelElement != null)) {
+            TargetManager.getInstance().setTarget(_modelElement);
         }
     }
 
 
     /**
-     * Return whether this item is highlighted.<p>
+     * <p>Return whether this item is highlighted.</p>
      *
      * @return  <code>true</code> if the entry is highlighted,
      *          <code>false</code> otherwise.
      */
+
     public boolean isHighlighted() {
-        return isHighlighted;
+        return _isHighlighted;
     }
 
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = 3830572062785308980L;
 
     /**
-     * @return Returns the notationProvider for the text in this compartment.
+     * <p>Set the NSUML feature associated with this compartment.</p>
+     *
+     * <p><em>Note</em>. This is implemented using {@link
+     *   #setModelElement(MModelElement)}.</p>
+     *
+     * @param feature  The feature to set.
+     *
+     * @deprecated  As of ArgoUml version 0.9.9, Use the more general {@link
+     *              #setModelElement(MModelElement)} instead.
      */
-    public NotationProvider getNotationProvider() {
-        return notationProvider;
+
+    public void setFeature(MFeature feature) {
+        setOwner(feature);
     }
 
+
     /**
-     * @param np The notationProvider to set.
+     * <p>Get the NSUML feature associated with this compartment.</p>
+     *
+     * <p><em>Note</em>. This is implemented using {@link #getModelElement()}
+     *   and will return <code>null</code> if that does not return an instance
+     *   of {@link MFeature}.</p>
+     *
+     * @return  The feature associated with this compartment or 
+     * 		null if none can be found.
+     *
+     * @deprecated  As of ArgoUml version 0.9.9, Use the more general
+     * {@link #getOwner()} instead.
      */
-    void setNotationProvider(NotationProvider np) {
-        this.notationProvider = np;
+
+    public MFeature getFeature() {
+        MModelElement modelElement = (MModelElement)getOwner();
+
+        if (modelElement instanceof MFeature) {
+            return (MFeature) getOwner();
+        }
+        else {
+            return null;
+        }
     }
+
+
+    /**
+     * <p>Set the NSUML model element associated with this compartment.</p>
+     *
+     * @param modelElement  The model element to set.
+     * 
+     * @deprecated As of ArgoUml version 0.9.9, use the more general setOwner
+     */
+
+    public void setModelElement(MModelElement modelElement) {
+
+        setOwner(modelElement);
+    }
+
+
+    /**
+     * <p>Get the NSUML modelElement associated with this compartment.</p>
+     *
+     * @return  The modelElement associated with this compartment.
+     * 
+     * @deprecated As of ArgoUml version 0.9.9, use getOwner()
+     */
+
+    public MModelElement getModelElement() {
+
+        return (MModelElement)getOwner();
+    }
+
 } /* End of class CompartmentFigText */
+

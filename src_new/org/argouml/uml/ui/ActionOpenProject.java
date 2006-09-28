@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2003 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,149 +24,254 @@
 
 package org.argouml.uml.ui;
 
-import java.awt.event.ActionEvent;
-import java.io.File;
-
-import javax.swing.AbstractAction;
-import javax.swing.Action;
-import javax.swing.JFileChooser;
-import javax.swing.filechooser.FileFilter;
-
-import org.argouml.application.api.CommandLineInterface;
-import org.argouml.application.api.Configuration;
-import org.argouml.application.helpers.ResourceLoaderWrapper;
-import org.argouml.i18n.Translator;
+import org.apache.log4j.Category;
+import org.argouml.application.api.Argo;
 import org.argouml.kernel.Project;
-import org.argouml.kernel.ProjectManager;
-import org.argouml.persistence.AbstractFilePersister;
-import org.argouml.persistence.PersistenceManager;
-import org.argouml.ui.ArgoFrame;
-import org.argouml.ui.ProjectBrowser;
+import org.argouml.kernel.*;
+import org.argouml.cognitive.Designer;
+import org.argouml.ui.*;
+import org.argouml.xml.argo.*;
+import org.argouml.util.*;
+import org.argouml.util.osdep.*;
+
+import org.tigris.gef.base.*;
+import org.xml.sax.SAXException;
+import javax.xml.parsers.ParserConfigurationException;
+
+import java.io.*;
+import java.net.*;
+import java.awt.event.*;
+import java.text.MessageFormat;
+
+import javax.swing.*;
 
 /**
  * Action that loads the project.
- * This will throw away the project that we were working with up to this
+ * This will throw away the project that we were working with up to this 
  * point so some extra caution.
  *
  * @see ActionSaveProject
+ * @stereotype singleton
  */
-public class ActionOpenProject extends AbstractAction
-    implements CommandLineInterface {
+public class ActionOpenProject extends UMLAction {
+
+    protected static Category cat =
+        Category.getInstance(org.argouml.uml.ui.ActionOpenProject.class);
+
+    ////////////////////////////////////////////////////////////////
+    // static variables
+
+    public static ActionOpenProject SINGLETON = new ActionOpenProject();
+
+    public static final String separator = System.getProperty("file.separator");
 
     ////////////////////////////////////////////////////////////////
     // constructors
 
-    /**
-     * Constructor for this action.
-     */
-    public ActionOpenProject() {
-        super(Translator.localize("action.open-project"),
-                ResourceLoaderWrapper.lookupIcon("action.open-project"));
-        // Set the tooltip string:
-        putValue(Action.SHORT_DESCRIPTION, 
-                Translator.localize("action.open-project"));
+    protected ActionOpenProject() {
+        super("action.open-project");
     }
 
     ////////////////////////////////////////////////////////////////
     // main methods
 
-
-    /**
-     * Performs the action of opening a project.
+    /** Performs the action.
      *
      * @param e an event
      */
     public void actionPerformed(ActionEvent e) {
+        ProjectBrowser pb = ProjectBrowser.getInstance();
         Project p = ProjectManager.getManager().getCurrentProject();
-        PersistenceManager pm = PersistenceManager.getInstance();
 
-        if (!ProjectBrowser.getInstance().askConfirmationAndSave()) {
-            return;
-        }
+        if (p != null && p.needsSave()) {
+            String t =
+                MessageFormat.format(
+                    Argo.localize(
+                        "Actions",
+                        "optionpane.open-project-save-changes-to"),
+                    new Object[] { p.getName()});
 
-        // next line does give user.home back but this is not
-        // compliant with how the project.uri works and therefore
-        // open and save project as give different starting
-        // directories.  String directory =
-        // Globals.getLastDirectory();
-        JFileChooser chooser = null;
-        if (p != null && p.getURI() != null) {
-            File file = new File(p.getURI());
-            if (file.getParentFile() != null) {
-                chooser = new JFileChooser(file.getParent());
-            }
-        } else {
-            chooser = new JFileChooser();
-        }
+            int response =
+                JOptionPane.showConfirmDialog(
+                    pb,
+                    t,
+                    t,
+                    JOptionPane.YES_NO_CANCEL_OPTION);
 
-        if (chooser == null) {
-            chooser = new JFileChooser();
-        }
+            if (response == JOptionPane.CANCEL_OPTION)
+                return;
+            if (response == JOptionPane.YES_OPTION) {
+                boolean safe = false;
 
-        chooser.setDialogTitle(
-                Translator.localize("filechooser.open-project"));
-
-        chooser.setAcceptAllFileFilterUsed(false);
-
-        // adding project files icon
-        chooser.setFileView(ProjectFileView.getInstance());
-        
-        pm.setOpenFileChooserFilter(chooser);
-
-        String fn = Configuration.getString(
-                PersistenceManager.KEY_OPEN_PROJECT_PATH);
-        if (fn.length() > 0) {
-            chooser.setSelectedFile(new File(fn));
-        }
-
-        int retval = chooser.showOpenDialog(ArgoFrame.getInstance());
-        if (retval == JFileChooser.APPROVE_OPTION) {
-            File theFile = chooser.getSelectedFile();
-
-            if (!theFile.canRead()) {
-                /* Try adding the extension from the chosen filter. */
-                FileFilter ffilter = chooser.getFileFilter();
-                if (ffilter instanceof AbstractFilePersister) {
-                    AbstractFilePersister afp = 
-                        (AbstractFilePersister) ffilter;
-                    File m =
-                        new File(theFile.getPath() + "."
-                                + afp.getExtension());
-                    if (m.canRead()) {
-                        theFile = m;
-                    }
+                if (ActionSaveProject.SINGLETON.shouldBeEnabled()) {
+                    safe = ActionSaveProject.SINGLETON.trySave(true);
                 }
-                if (!theFile.canRead()) {
-                    /* Try adding the default extension. */
-                    File n =
-                        new File(theFile.getPath() + "."
-                                + pm.getDefaultExtension());
-                    if (n.canRead()) {
-                        theFile = n;
+                if (!safe) {
+                    safe = ActionSaveProjectAs.SINGLETON.trySave(false);
+                }
+                if (!safe)
+                    return;
+            }
+        }
+
+        try {
+            // next line does give user.home back but this is not compliant with how 
+            // the project.url works and therefore open and save project as give 
+            // different starting directories.
+            // String directory = Globals.getLastDirectory();
+            JFileChooser chooser = null;
+            if (p != null && p.getURL() != null) {
+                File file = new File(p.getURL().getFile());
+                if (file.getParentFile() != null)
+                    chooser = OsUtil.getFileChooser(file.getParent());
+            } else
+                chooser = OsUtil.getFileChooser();
+
+            // JFileChooser chooser = OsUtil.getFileChooser (directory);
+
+            if (chooser == null)
+                chooser = OsUtil.getFileChooser();
+
+            chooser.setDialogTitle(
+                Argo.localize("Actions", "filechooser.open-project"));
+            SuffixFilter filter = FileFilters.CompressedFileFilter;
+            chooser.addChoosableFileFilter(filter);
+            chooser.addChoosableFileFilter(FileFilters.UncompressedFileFilter);
+            chooser.addChoosableFileFilter(FileFilters.XMIFilter);
+            chooser.setFileFilter(filter);
+
+            int retval = chooser.showOpenDialog(pb);
+            if (retval == 0) {
+                File theFile = chooser.getSelectedFile();
+                if (theFile != null) {
+
+                    String path = theFile.getParent();
+                    Globals.setLastDirectory(path);
+                    URL url = theFile.toURL();
+                    if (url != null) {
+			loadProject(url);
                     }
+
                 }
             }
-            if (theFile != null) {
-                Configuration.setString(
-                        PersistenceManager.KEY_OPEN_PROJECT_PATH,
-                        theFile.getPath());
-
-                ProjectBrowser.getInstance().loadProjectWithProgressMonitor(
-                		theFile, true);
-            }
+        } catch (IOException ignore) {
+            cat.error("got an IOException in ActionOpenProject", ignore);
         }
     }
 
+
+
     /**
-     * Execute this action from the command line.
-     *
-     * @see org.argouml.application.api.CommandLineInterface#doCommand(String)
-     * @param argument is the url of the project we load.
-     * @return true if it is OK.
+     * Loads the project file and opens all kinds of error message windows
+     * if it doesn't work for some reason. In those cases it preserves
+     * the old project.
+     * 
+     * @param url the url to open.
      */
-    public boolean doCommand(String argument) {
-        return ProjectBrowser.getInstance()
-            .loadProject(new File(argument), false, null);
+    public void loadProject(URL url) {
+
+        Project oldProject = ProjectManager.getManager().getCurrentProject();
+
+	// TODO:
+        // This is actually a hack! Some diagram types
+        // (like the state diagrams) access the current
+        // diagram to get some info. This might cause 
+        // problems if there's another state diagram
+        // active, so I remove the current project, before
+        // loading the new one.
+
+        Designer.disableCritiquing();
+        Designer.clearCritiquing();
+
+        Project p = null;
+        try {
+            p = ProjectManager.getManager().loadProject(url);
+
+            ProjectBrowser.getInstance().showStatus(
+                MessageFormat.format(
+                    Argo.localize(
+                        "Actions",
+                        "label.open-project-status-read"),
+                    new Object[] { url.toString()}));
+        } catch (ParserConfigurationException ex) {
+            showErrorPane(
+                "Could not load the project "
+                    + url.toString()
+                    + " due to configuration errors.\n"
+                    + "Please read the instructions at www.argouml.org on the"
+                    + " requirements of argouml and how to install it.");
+            p = oldProject;
+        } catch (IllegalFormatException ex) {
+            showErrorPane(
+                "Could not load the project "
+                    + url.toString()
+                    + "\n"
+                    + "The format of the file is not supported.");
+            p = oldProject;
+        } catch (java.io.FileNotFoundException ex) {
+            showErrorPane(
+                "Could not load the project "
+                    + url.toString()
+                    + "\n"
+                    + "The file was not found.");
+            p = oldProject;
+        } catch (IOException io) {
+            // now we have to handle the case of a corrupted XMI file
+            showErrorPane(
+                "Could not load the project "
+                    + url.toString()
+                    + "\n"
+                    + "Project file probably corrupted.\n"
+                    + "\n"
+                    + io.getMessage()+"\n"
+                    + "\n"
+                    + "Please file a bug report at argouml.tigris.org including"
+                    + " the corrupted project file.");
+            p = oldProject;
+        } catch (SAXException ex) {
+            showErrorPane(
+                "Could not load the project "
+                    + url.toString()
+                    + "\n"
+                    + "Project file probably corrupted.\n"
+                    + "If the problem keeps persisting, please file a bug report at www.argouml.org.\n");
+            p = oldProject;
+        } finally {
+            if (!ArgoParser.SINGLETON.getLastLoadStatus()) {
+                p = oldProject;
+                showErrorPane(
+                    "Problem in loading the project "
+                        + url.toString()
+                        + "\n"
+                        + "Project file probably corrupt from "
+                        + "an earlier version or ArgoUML.\n"
+                        + "Error message:\n"
+                        + ArgoParser.SINGLETON.getLastLoadMessage()
+                        + "\n"
+                        + "Since the project was incorrectly "
+                        + "saved some things might be missing "
+                        + "from before you saved it.\n"
+                        + "These things cannot be restored. "
+                        + "You can continue working with what "
+                        + "was actually loaded.\n");
+            }
+            ProjectManager.getManager().setCurrentProject(p);
+            Designer.enableCritiquing();
+        }
+    }
+
+
+    /**
+     * Open a Message Dialog with an error message.
+     *
+     * @param message the message to display.
+     */
+    private void showErrorPane(String message) {
+        JOptionPane.showMessageDialog(
+            ProjectBrowser.getInstance(),
+            message,
+            "Error",
+            JOptionPane.ERROR_MESSAGE);
     }
 
 } /* end class ActionOpenProject */

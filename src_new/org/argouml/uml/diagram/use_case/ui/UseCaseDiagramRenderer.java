@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,34 +21,43 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: UseCaseDiagramRenderer.java
+// Classes: UseCaseDiagramRenderer
+// Original Author: abonner@ics.uci.edu
+// $Id$
+
+// 3 Apr 2002: Jeremy Bennett (mail@jeremybennett.com). Extended to support the
+// Extend and Include relationships. JavaDoc added for clarity.
+
+
 package org.argouml.uml.diagram.use_case.ui;
 
-import java.util.Map;
-
-import org.apache.log4j.Logger;
-import org.argouml.model.Model;
-import org.argouml.ui.GraphChangeAdapter;
-import org.argouml.uml.diagram.UmlDiagramRenderer;
-import org.argouml.uml.diagram.static_structure.ui.CommentEdge;
-import org.argouml.uml.diagram.static_structure.ui.FigComment;
-import org.argouml.uml.diagram.static_structure.ui.FigEdgeNote;
-import org.argouml.uml.diagram.static_structure.ui.FigPackage;
+import org.apache.log4j.Category;
 import org.argouml.uml.diagram.ui.FigAssociation;
 import org.argouml.uml.diagram.ui.FigDependency;
-import org.argouml.uml.diagram.ui.FigEdgeModelElement;
 import org.argouml.uml.diagram.ui.FigGeneralization;
-import org.argouml.uml.diagram.ui.FigNodeModelElement;
 import org.tigris.gef.base.Layer;
+import org.tigris.gef.graph.GraphEdgeRenderer;
 import org.tigris.gef.graph.GraphModel;
+import org.tigris.gef.graph.GraphNodeRenderer;
 import org.tigris.gef.presentation.FigEdge;
 import org.tigris.gef.presentation.FigNode;
+import ru.novosoft.uml.behavior.use_cases.MActor;
+import ru.novosoft.uml.behavior.use_cases.MExtend;
+import ru.novosoft.uml.behavior.use_cases.MInclude;
+import ru.novosoft.uml.behavior.use_cases.MUseCase;
+import ru.novosoft.uml.foundation.core.MAssociation;
+import ru.novosoft.uml.foundation.core.MDependency;
+import ru.novosoft.uml.foundation.core.MGeneralization;
+import ru.novosoft.uml.foundation.core.MModelElement;
+
 
 // could be singleton
 
 /**
- * This class defines a renderer object for UML Use Case Diagrams. In a
- * Class Diagram the following UML objects are displayed with the
- * following Figs:<p>
+ * <p>This class defines a renderer object for UML Use Case Diagrams. In a
+ *   Class Diagram the following UML objects are displayed with the
+ *   following Figs:</p>
  *
  * <pre>
  *   UML Object       ---  Fig
@@ -58,123 +66,100 @@ import org.tigris.gef.presentation.FigNode;
  *   MUseCase         ---  FigUseCase
  * </pre>
  *
- * Provides {@link #getFigNodeFor} to implement the
- * {@link org.tigris.gef.graph.GraphNodeRenderer} interface and
- * {@link #getFigEdgeFor} to implement the
- * {@link org.tigris.gef.graph.GraphEdgeRenderer} interface.<p>
+ * <p>Provides {@link #getFigNodeFor} to implement the {@link
+ *   GraphNodeRenderer} interface and {@link #getFigEdgeFor} to implement the
+ *   {@link GraphEdgeRenderer} interface.</p>
  *
- * <em>Note</em>. Should be implemented as a singleton - we don't really
- * need a separate instance for each use case diagram.<p>
- *
- * @author abonner
+ * <p><em>Note</em>. Should be implemented as a singleton - we don't really
+ *   need a separate instance for each use case diagram.</p>
  */
-public class UseCaseDiagramRenderer extends UmlDiagramRenderer {
-    /**
-     * Logger.
-     */
-    private static final Logger LOG =
-        Logger.getLogger(UseCaseDiagramRenderer.class);
+
+public class UseCaseDiagramRenderer
+    implements GraphNodeRenderer, GraphEdgeRenderer {
+        protected static Category cat = Category.getInstance(UseCaseDiagramRenderer.class);
 
 
     /**
-     * Return a Fig that can be used to represent the given node.<p>
+     * <p>Return a Fig that can be used to represent the given node.</p>
      *
      * @param gm    The graph model for which we are rendering.
      *
      * @param lay   The layer in the graph on which we want this figure.
      *
-     * @param node  The node to be rendered (an model element object)
-     *
-     * @param styleAttributes an optional map of attributes to style the fig
+     * @param node  The node to be rendered (an NSUML object)
      *
      * @return      The fig to be used, or <code>null</code> if we can't create
      *              one.
      */
-    public FigNode getFigNodeFor(GraphModel gm, Layer lay, Object node,
-            Map styleAttributes) {
 
-        FigNodeModelElement figNode = null;
+    public FigNode getFigNodeFor(GraphModel gm, Layer lay, Object node) {
 
         // Create a new version of the relevant fig
 
-        if (Model.getFacade().isAActor(node)) {
-            figNode = new FigActor(gm, node);
-        } else if (Model.getFacade().isAUseCase(node)) {
-            figNode = new FigUseCase(gm, node);
-        } else if (Model.getFacade().isAComment(node)) {
-            figNode = new FigComment(gm, node);
-        } else if (Model.getFacade().isAPackage(node)) {
-            figNode = new FigPackage(gm, node);
-        } else {
-            LOG.debug(this.getClass().toString()
-                  + ": getFigNodeFor(" + gm.toString() + ", "
-                  + lay.toString() + ", " + node.toString()
-                  + ") - cannot create this sort of node.");
-            return null;
-            // TODO: Shouldn't we throw an excdeption here?!?!
+        if (node instanceof MActor) {
+            return new FigActor(gm, node);
+        }
+        else if (node instanceof MUseCase) {
+            return new FigUseCase(gm, node);
         }
 
-        figNode.setDiElement(
-                GraphChangeAdapter.getInstance().createElement(gm, node));
+        // If we get here we were asked for a fig we can't handle.
 
-        return figNode;
+        cat.debug(this.getClass().toString() +
+                           ": getFigNodeFor(" + gm.toString() + ", " +
+                           lay.toString() + ", " + node.toString() +
+                           ") - cannot create this sort of node.");
+        return null;
     }
 
 
     /**
-     * Return a Fig that can be used to represent the given edge.<p>
+     * <p>Return a Fig that can be used to represent the given edge.</p>
      *
-     * Generally the same code as for the ClassDiagram, since it's very
-     * related to it. Deal with each of the edge types in turn.<p>
+     * <p>Generally the same code as for the ClassDiagram, since it's very
+     *   related to it. Deal with each of the edge types in turn.</p>
      *
      * @param gm    The graph model for which we are rendering.
      *
      * @param lay   The layer in the graph on which we want this figure.
      *
-     * @param edge  The edge to be rendered (an model element object)
-     *
-     * @param styleAttributes an optional map of attributes to style the fig
+     * @param edge  The edge to be rendered (an NSUML object)
      *
      * @return      The fig to be used, or <code>null</code> if we can't create
      *              one.
-     *
-     * @see org.tigris.gef.graph.GraphEdgeRenderer#getFigEdgeFor(
-     *         org.tigris.gef.graph.GraphModel, org.tigris.gef.base.Layer,
-     *         java.lang.Object, java.util.Map)
      */
-    public FigEdge getFigEdgeFor(GraphModel gm, Layer lay, Object edge,
-            Map styleAttributes) {
 
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("making figedge for " + edge);
-        }
+    public FigEdge getFigEdgeFor(GraphModel gm, Layer lay, Object edge) {
 
-        if (edge == null) {
-            throw new IllegalArgumentException("A model edge must be supplied");
-        }
+        cat.debug("making figedge for " + edge);
 
-        FigEdgeModelElement newEdge = null;
+        // If the edge is an association, we'll need a FigAssociation
 
-        if (Model.getFacade().isAAssociation(edge)) {
-            // If the edge is an association, we'll need a FigAssociation
-            Object   asc         = /*(MAssociation)*/ edge;
+        if (edge instanceof MAssociation) {
+            MAssociation   asc         = (MAssociation) edge;
             FigAssociation ascFig      = new FigAssociation(asc, lay);
 
-            newEdge = ascFig;
-        } else if (Model.getFacade().isAGeneralization(edge)) {
-            // Generalization needs a FigGeneralization
-            Object   gen    = /*(MGeneralization)*/ edge;
+            return ascFig;
+        }
+
+        // Generalization needs a FigGeneralization
+
+        else if (edge instanceof MGeneralization) {
+            MGeneralization   gen    = (MGeneralization) edge;
             FigGeneralization genFig = new FigGeneralization(gen, lay);
-            newEdge = genFig;
-        } else if (Model.getFacade().isAExtend(edge)) {
-            // Extend relationship
-            Object   ext    = /*(MExtend)*/ edge;
+            return genFig;
+        }
+
+        // Extend relationship
+
+        else if (edge instanceof MExtend) {
+            MExtend   ext    = (MExtend) edge;
             FigExtend extFig = new FigExtend(ext);
 
             // The nodes at the two ends
 
-            Object base      = Model.getFacade().getBase(ext);
-            Object extension = Model.getFacade().getExtension(ext);
+            MUseCase base      = ext.getBase();
+            MUseCase extension = ext.getExtension();
 
             // The figs for the two end nodes
 
@@ -190,14 +175,21 @@ public class UseCaseDiagramRenderer extends UmlDiagramRenderer {
             extFig.setDestPortFig(baseFN);
             extFig.setDestFigNode(baseFN);
 
-            newEdge = extFig;
-        } else if (Model.getFacade().isAInclude(edge)) {
-            // Include relationship is very like extend.
-            Object   inc    = /*(MInclude)*/ edge;
+            return extFig;
+        }
+
+        // Include relationship is very like extend. Watch out for the NSUML
+        // bug here.
+
+        else if (edge instanceof MInclude) {
+            MInclude   inc    = (MInclude) edge;
             FigInclude incFig = new FigInclude(inc);
 
-            Object base     = Model.getFacade().getBase(inc);
-            Object addition = Model.getFacade().getAddition(inc);
+            // The nodes at the two ends. NSUML has a bug which gets base and
+            // additon reversed, so we must reverse their accessors here.
+
+            MUseCase base     = inc.getAddition();
+            MUseCase addition = inc.getBase();
 
             // The figs for the two end nodes
 
@@ -212,20 +204,23 @@ public class UseCaseDiagramRenderer extends UmlDiagramRenderer {
             incFig.setDestPortFig(additionFN);
             incFig.setDestFigNode(additionFN);
 
-            newEdge = incFig;
-        } else if (Model.getFacade().isADependency(edge)) {
-            // Dependency needs a FigDependency
-            Object   dep    = /*(MDependency)*/ edge;
+            return incFig;
+        }
+
+        // Dependency needs a FigDependency
+
+        else if (edge instanceof MDependency) {
+            MDependency   dep    = (MDependency) edge;
             FigDependency depFig = new FigDependency(dep);
 
             // Where there is more than one supplier or client, take the first
             // element in each case. There really ought to be a check that
             // there are some here for safety.
 
-            Object supplier =
-                 ((Model.getFacade().getSuppliers(dep).toArray())[0]);
-            Object client =
-                 ((Model.getFacade().getClients(dep).toArray())[0]);
+            MModelElement supplier =
+                (MModelElement)((dep.getSuppliers().toArray())[0]);
+            MModelElement client =
+                (MModelElement)((dep.getClients().toArray())[0]);
 
             // The figs for the two end nodes
 
@@ -240,58 +235,22 @@ public class UseCaseDiagramRenderer extends UmlDiagramRenderer {
             depFig.setDestPortFig(supplierFN);
             depFig.setDestFigNode(supplierFN);
 
-            newEdge = depFig;
-        } else if (edge instanceof CommentEdge) {
-            newEdge = new FigEdgeNote(edge, lay);
+            return depFig;
         }
 
-        if (newEdge == null) {
-            throw new IllegalArgumentException(
-                    "Don't know how to create FigEdge for model type "
-                    + edge.getClass().getName());
-        } else {
-            if (newEdge.getSourcePortFig() == null) {
-                Object source;
-                if (edge instanceof CommentEdge) {
-                    source = ((CommentEdge) edge).getSource();
-                } else {
-                    source = Model.getUmlHelper().getSource(edge);
-                }
-                setSourcePort(newEdge, (FigNode) lay.presentationFor(source));
-            }
-            if (newEdge.getDestPortFig() == null) {
-                Object dest;
-                if (edge instanceof CommentEdge) {
-                    dest = ((CommentEdge) edge).getDestination();
-                } else {
-                    dest = Model.getUmlHelper().getDestination(edge);
-                }
-                setDestPort(newEdge, (FigNode) lay.presentationFor(dest));
-            }
-            if (newEdge.getSourcePortFig() == null
-                    || newEdge.getDestPortFig() == null) {
-                throw new IllegalStateException("Edge of type "
-                    + newEdge.getClass().getName()
-                    + " created with no source or destination port");
-            }
-        }
+        // If we get here, we can't handle this sort of edge.
 
-        newEdge.setDiElement(
-                GraphChangeAdapter.getInstance().createElement(gm, edge));
+        // What about realizations? They are not distinct objects in my UML
+        // model maybe they should be, just as an implementation issue, dont
+        // remove any of the methods that are there now.
 
-        return newEdge;
-    }
+        cat.debug(this.getClass().toString() +
+                           ": getFigEdgeFor(" + gm.toString() + ", " +
+                           lay.toString() + ", " + edge.toString() +
+                           ") - needs more work to handle this sort of edge");
+        return null;
+  }
 
-    private void setSourcePort(FigEdge edge, FigNode source) {
-        edge.setSourcePortFig(source);
-        edge.setSourceFigNode(source);
-    }
-
-    private void setDestPort(FigEdge edge, FigNode dest) {
-        edge.setDestPortFig(dest);
-        edge.setDestFigNode(dest);
-    }
-
-    static final long serialVersionUID = 2217410137377934879L;
+  static final long serialVersionUID = 2217410137377934879L;
 
 } /* end class UseCaseDiagramRenderer */

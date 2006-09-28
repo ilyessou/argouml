@@ -1,16 +1,15 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
-// and this paragraph appear in all copies. This software program and
+// and this paragraph appear in all copies.  This software program and
 // documentation are copyrighted by The Regents of the University of
 // California. The software program and documentation are supplied "AS
 // IS", without any accompanying services from The Regents. The Regents
 // does not warrant that the operation of the program will be
 // uninterrupted or error-free. The end-user understands that the program
 // was developed for research purposes and is advised not to rely
-// exclusively on the program for any reason. IN NO EVENT SHALL THE
+// exclusively on the program for any reason.  IN NO EVENT SHALL THE
 // UNIVERSITY OF CALIFORNIA BE LIABLE TO ANY PARTY FOR DIRECT, INDIRECT,
 // SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, INCLUDING LOST PROFITS,
 // ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN IF
@@ -21,6 +20,14 @@
 // PROVIDED HEREUNDER IS ON AN "AS IS" BASIS, AND THE UNIVERSITY OF
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+
+// File: TabStyle.java
+// Classes: TabStyle
+// Original Author:
+// $Id$
+
+// 12 Apr 2002: Jeremy Bennett (mail@jeremybennett.com). Extended to support
+// use case style panel that handles optional display of extension points.
 
 package org.argouml.uml.ui;
 
@@ -39,486 +46,362 @@ import org.argouml.kernel.DelayedChangeNotify;
 import org.argouml.kernel.DelayedVChangeListener;
 import org.argouml.kernel.Project;
 import org.argouml.kernel.ProjectManager;
-import org.argouml.model.Model;
-import org.argouml.ui.AbstractArgoJPanel;
-import org.argouml.ui.ArgoDiagram;
+import org.argouml.model.ModelFacade;
 import org.argouml.ui.StylePanel;
+import org.argouml.ui.StylePanelFig;
 import org.argouml.ui.TabFigTarget;
+import org.argouml.ui.TabSpawnable;
 import org.argouml.ui.targetmanager.TargetEvent;
 import org.argouml.ui.targetmanager.TargetListener;
-import org.argouml.uml.util.namespace.Namespace;
-import org.argouml.uml.util.namespace.StringNamespace;
-import org.argouml.uml.util.namespace.StringNamespaceElement;
+import org.argouml.uml.diagram.state.ui.FigSimpleState;
+import org.argouml.uml.diagram.state.ui.FigTransition;
+import org.argouml.uml.diagram.static_structure.ui.FigClass;
+import org.argouml.uml.diagram.static_structure.ui.FigInstance;
+import org.argouml.uml.diagram.static_structure.ui.FigInterface;
+import org.argouml.uml.diagram.static_structure.ui.FigLink;
+import org.argouml.uml.diagram.static_structure.ui.StylePanelFigClass;
+import org.argouml.uml.diagram.static_structure.ui.StylePanelFigInterface;
+import org.argouml.uml.diagram.ui.FigAssociation;
+import org.argouml.uml.diagram.ui.FigEdgeModelElement;
+import org.argouml.uml.diagram.ui.FigGeneralization;
+import org.argouml.uml.diagram.ui.FigNodeModelElement;
+import org.argouml.uml.diagram.ui.FigRealization;
+import org.argouml.uml.diagram.ui.SPFigEdgeModelElement;
+import org.argouml.uml.diagram.use_case.ui.FigActor;
+import org.argouml.uml.diagram.use_case.ui.FigUseCase;
+import org.argouml.uml.diagram.use_case.ui.StylePanelFigUseCase;
 import org.tigris.gef.presentation.Fig;
 
 /**
- * Provides support for changing the appearance of a diagram element. For each
- * class of a diagram element, the TabStyle class attempts to find an according
- * class of StylePanel which contains the attributes to be modified in terms of
- * style.
- * <p>
- * The constructor of TabStyle takes an array argument which contains possible
- * base names for these style panels, or by default StylePanel and SP,
- * alternating between these two prefixes and the namespace of the Fig class or
- * <code>org.argouml.ui</code>. With this configuration, the stylepanel for
- * e.g. <code>org.argouml.uml.diagram.static.structure.ui.FigClass</code>,
- * will be looked at in the following places:
- * <ul>
- * <li>org.argouml.uml.diagram.static_structure.ui.StylePanelFigClass
- * <li>org.argouml.uml.diagram.static_structure.ui.SPFigClass
- * <li>org.argouml.ui.StylePanelFigClass
- * <li>org.argouml.ui.SPFigClass
- * </ul>
- * It continues to traverse the superclass structure until a matching class has
- * been found, e.g.
- * <ul>
- * <li>org.argouml.uml.diagram.ui.StylePanelFigNodeModelElement
- * <li>org.argouml.uml.diagram.ui.SPFigNodeModelElement
- * <li>org.argouml.ui.StylePanelFigNodeModelElement
- * <li>org.argouml.ui.SPFigNodeModelElement
- * </ul>
- * If a stylepanel had been found, it will be stored in a cache, which can also
- * be initialized in <code>initPanels()</code> <p>
- *
- * According the decision taken in issue 502, this tab is renamed "Presentation"
- * for the user. And the Presentation tab shall contain presentation options,
- * and no semantic UML properties (which belong in the "Properties" panel).
- * In contrast, the diagram pop-up menu for a model element
- * may access both presentation options as well as semantic UML properties. <p>
- *
- * Note also that the semantic properties of a UML model element exist in one
- * copy only but the presentation options exist in one copy per diagram
- * that the model element is showing in. E.g. a class could have
- * attributes hidden in one diagram and showing in another. So, for the user
- * it would be very logical to seperate these 2 kinds of settings
- * on different tabs.
- *
+ * Provides support for changing the appearance of a diagram element.
  */
-public class TabStyle extends AbstractArgoJPanel implements TabFigTarget,
-        PropertyChangeListener, DelayedVChangeListener {
-
-    private static final Logger LOG = Logger.getLogger(TabStyle.class);
-
-    private Fig target;
-
-    private boolean shouldBeEnabled = false;
-
-    private JPanel blankPanel = new JPanel();
-
-    private Hashtable panels = new Hashtable();
-
-    private JPanel lastPanel = null;
-
+public class TabStyle
+    extends TabSpawnable
+    implements TabFigTarget, PropertyChangeListener, DelayedVChangeListener {
+        
+    private Logger _cat = Logger.getLogger(this.getClass());
+    
+    ////////////////////////////////////////////////////////////////
+    // instance variables
+    protected Fig _target;
+    protected boolean _shouldBeEnabled = false;
+    protected JPanel _blankPanel = new JPanel();
+    protected Hashtable _panels = new Hashtable();
+    protected JPanel _lastPanel = null;
     /**
-     * The stylepanel shown by the tab style.
+     * The stylepanel shown by the tab style. 
      */
-    private StylePanel stylePanel = null;
+    protected StylePanel _stylePanel = null;
+    protected String _panelClassBaseName = "";
+    protected String _alternativeBase = "";
 
-    private String[] stylePanelNames;
+    private EventListenerList _listenerList = new EventListenerList();
 
-    private EventListenerList listenerList = new EventListenerList();
-
-    /**
-     * The constructor.
-     *
-     * @param tabName the name of the tab
-     * @param spn style panel names
-     */
-    public TabStyle(String tabName, String[] spn) {
+    ////////////////////////////////////////////////////////////////
+    // constructor
+    public TabStyle(String tabName, String panelClassBase, String altBase) {
         super(tabName);
-        this.stylePanelNames = spn;
+        _panelClassBaseName = panelClassBase;
+        _alternativeBase = altBase;
         setLayout(new BorderLayout());
+        //setFont(new Font("Dialog", Font.PLAIN, 10));
         initPanels();
     }
 
-    /**
-     * Construct a default stylepanel with basenames <code>StylePanel</code>
-     * and <code>SP</code>, resulting in the lookup order described above.
-     */
     public TabStyle() {
-        this("tab.style", new String[] {"StylePanel", "SP"});
+        this("tab.style", "style.StylePanel", "style.SP");
     }
 
-    /**
-     * Initialize the hashtable of pre lookup panels.
-     *
-     */
     protected void initPanels() {
+        StylePanelFigClass spfc = new StylePanelFigClass();
+        StylePanelFigInterface spfi = new StylePanelFigInterface();
+        StylePanelFigUseCase spfuc = new StylePanelFigUseCase();
+        SPFigEdgeModelElement spfeme = new SPFigEdgeModelElement();
+        StylePanelFig spf = new StylePanelFig();
 
+        _panels.put(FigClass.class, spfc);
+        _panels.put(FigUseCase.class, spfuc);
+        _panels.put(FigNodeModelElement.class, spf);
+        _panels.put(FigEdgeModelElement.class, spfeme);
+        _panels.put(FigInterface.class, spfi);
+        _panels.put(FigAssociation.class, spfeme);
+        _panels.put(FigSimpleState.class, spf);
+        _panels.put(FigTransition.class, spfeme);
+        _panels.put(FigActor.class, spf);
+        _panels.put(FigInstance.class, spf);
+        _panels.put(FigLink.class, spfeme);
+        _panels.put(FigGeneralization.class, spfeme);
+        _panels.put(FigRealization.class, spfeme);
     }
 
-    /**
-     * Adds a style panel to the internal list. This allows a plugin to add and
-     * register a new style panel at run-time. This property style will then be
-     * displayed in the details pane whenever an element of the given metaclass
-     * is selected.
-     *
-     * @param c
-     *            the metaclass whose details show be displayed in the property
-     *            panel p
-     * @param s
-     *            an instance of the style panel for the metaclass m
-     */
+    /** Adds a style panel to the internal list. This allows a plugin to
+    *  add and register a new style panel at run-time. This property style will
+    *  then be displayed in the detatils pane whenever an element of the given 
+    *  metaclass is selected.
+    *
+    * @param c the metaclass whose details show be displayed in the property panel p
+    * @param s an instance of the style panel for the metaclass m
+    *
+    */
     public void addPanel(Class c, StylePanel s) {
-        panels.put(c, s);
+        _panels.put(c, s);
     }
 
     /**
-     * Sets the target of the style tab.
+     * Sets the target of the style tab. 
      *
-     * @deprecated As of ArgoUml version 0.13.5, the visibility of this method
-     *             will change in the future, replaced by
-     *             {@link org.argouml.ui.targetmanager.TargetManager}.
-     * @param t
-     *            is the new target
+     * @deprecated As of ArgoUml version 0.13.5,
+     *             the visibility of this method will change in the future,
+     *             replaced by {@link org.argouml.ui.targetmanager.TargetManager}.
+     * @param Object the new target
      */
     public void setTarget(Object t) {
-        if (target != null) target.removePropertyChangeListener(this);
+        if (_target != null)
+            _target.removePropertyChangeListener(this);
 
-        // the responsibility of determining if the given target is a
-        // correct one for this tab has been moved from the
-        // DetailsPane to the member tabs of th detailpane. Reason for
-        // this is that the detailspane is configurable and cannot
-        // know what's the correct target for some tab.
+        // the responsibility of determining if the given target is a correct one 
+        // for this tab has been moved from the DetailsPane to the member tabs of th
+        // detailpane. Reason for this is that the detailspane is configurable and
+        // cannot know what's the correct target for some tab.
         if (!(t instanceof Fig)) {
-            if (Model.getFacade().isAModelElement(t)) {
+            if (ModelFacade.isABase(t)) {
                 Project p = ProjectManager.getManager().getCurrentProject();
                 Collection col = p.findFigsForMember(t);
                 if (col == null || col.isEmpty()) {
                     return;
+                } else {
+                    t = col.iterator().next();
+                    if (!(t instanceof Fig)) return;
                 }
-                t = col.iterator().next();
-                if (!(t instanceof Fig)) return;
             } else {
                 return;
             }
-
+      
         }
 
-        target = (Fig) t;
-        if (target != null) target.addPropertyChangeListener(this);
-        if (lastPanel != null) {
-            remove(lastPanel);
-            if (lastPanel instanceof TargetListener) {
-                removeTargetListener((TargetListener) lastPanel);
+        _target = (Fig) t;
+        if (_target != null)
+            _target.addPropertyChangeListener(this);
+        if (_lastPanel != null) {
+            remove(_lastPanel);
+            if (_lastPanel instanceof TargetListener) {
+                removeTargetListener((TargetListener) _lastPanel);
             }
         }
         if (t == null) {
-            add(blankPanel, BorderLayout.NORTH);
-            shouldBeEnabled = false;
-            lastPanel = blankPanel;
+            add(_blankPanel, BorderLayout.NORTH);
+            _shouldBeEnabled = false;
+            _lastPanel = _blankPanel;
             return;
         }
-        shouldBeEnabled = true;
-        stylePanel = null;
+        _shouldBeEnabled = true;
+        _stylePanel = null;
         Class targetClass = t.getClass();
-
-        stylePanel = findPanelFor(targetClass);
-
-        if (stylePanel != null) {
-            if (stylePanel instanceof TargetListener) {
-                // TargetManager now replaces the old
-                // functionality of
-                // setTarget
-                removeTargetListener(stylePanel);
-                addTargetListener(stylePanel);
-            } else {
-                stylePanel.setTarget(target);
-            }
-            add(stylePanel, BorderLayout.NORTH);
-            shouldBeEnabled = true;
-            lastPanel = stylePanel;
+        while (targetClass != null && _stylePanel == null) {
+            _stylePanel = findPanelFor(targetClass);
+            targetClass = targetClass.getSuperclass();
+        }
+        if (_stylePanel != null) {
+            if (_stylePanel instanceof TargetListener) {
+                // TargetManager now replaces the old functionality of setTarget
+                removeTargetListener(_stylePanel);
+                addTargetListener(_stylePanel);
+            } else
+                _stylePanel.setTarget(_target);
+            add((JPanel) _stylePanel, BorderLayout.NORTH);
+            _shouldBeEnabled = true;
+            _lastPanel = (JPanel) _stylePanel;
         } else {
-            add(blankPanel, BorderLayout.NORTH);
-            shouldBeEnabled = false;
-            lastPanel = blankPanel;
+            add(_blankPanel, BorderLayout.NORTH);
+            _shouldBeEnabled = false;
+            _lastPanel = _blankPanel;
         }
         validate();
         repaint();
     }
 
-    /**
-     * @see org.argouml.ui.TabTarget#refresh()
-     */
     public void refresh() {
-        setTarget(target);
+        setTarget(_target);
     }
+      
 
-    /**
-     * Find the stylepanel for a given target class.
-     *
-     * @param targetClass
-     *            the target class
-     * @return a Stylepanel object or <code>null</code> on error
-     */
     public StylePanel findPanelFor(Class targetClass) {
-        Class panelClass = null;
-        TabFigTarget p = (TabFigTarget) panels.get(targetClass);
+        TabFigTarget p = (TabFigTarget) _panels.get(targetClass);
         if (p == null) {
-            Class newClass = targetClass;
-            while (newClass != null && panelClass == null) {
-                panelClass = panelClassFor(newClass);
-                newClass = newClass.getSuperclass();
-            }
-            if (panelClass == null) return null;
+            Class panelClass = panelClassFor(targetClass);
+            if (panelClass == null)
+                return null;
             try {
                 p = (TabFigTarget) panelClass.newInstance();
             } catch (IllegalAccessException ignore) {
-                LOG.error(ignore);
                 return null;
             } catch (InstantiationException ignore) {
-                LOG.error(ignore);
                 return null;
             }
-            panels.put(targetClass, p);
-        }
-        LOG.debug("found style for " + targetClass.getName() + "("
-                + p.getClass() + ")");
-        return (StylePanel) p;
-
+            _panels.put(targetClass, p);
+        } else
+            _cat.debug("found style for " + targetClass.getName());
+        return (StylePanel)p;
     }
 
-    /**
-     * Get the class for the required stylepanel.
-     *
-     * @param targetClass the class of the current seelcted target.
-     * @return the panel class for the class given or
-     * null if none available.
-     */
     public Class panelClassFor(Class targetClass) {
-        if (targetClass == null) return null;
+        String pack = "org.argouml.ui";
+        String base = getClassBaseName();
+        String alt = getAlternativeClassBaseName();
 
-        StringNamespace classNs = (StringNamespace) StringNamespace
-                .parse(targetClass);
-
-        StringNamespace baseNs = (StringNamespace) StringNamespace.parse(
-                "org.argouml.ui.", Namespace.JAVA_NS_TOKEN);
-
-        StringNamespaceElement targetClassElement =
-        	(StringNamespaceElement) classNs.peekNamespaceElement();
-
-        LOG.debug("Attempt to find style panel for: " + classNs);
-
-        classNs.popNamespaceElement();
-
-        Class cls;
-
-        for (int i = 0; i < stylePanelNames.length; i++) {
-            try {
-                cls = Class.forName(classNs.toString() + "."
-                        + stylePanelNames[i] + targetClassElement);
-                return cls;
-            } catch (ClassNotFoundException ignore) {
-                LOG.debug("ClassNotFoundException. Could not find class:"
-                        + classNs.toString() + "." + stylePanelNames[i]
-                        + targetClassElement);
-            }
-            try {
-                cls = Class.forName(baseNs.toString() + "."
-                        + stylePanelNames[i] + targetClassElement);
-                return cls;
-            } catch (ClassNotFoundException ignore) {
-                LOG.debug("ClassNotFoundException. Could not find class:"
-                        + classNs.toString() + "." + stylePanelNames[i]
-                        + targetClassElement);
-            }
+        String targetClassName = targetClass.getName();
+        int lastDot = targetClassName.lastIndexOf(".");
+        if (lastDot > 0)
+            targetClassName = targetClassName.substring(lastDot + 1);
+        try {
+            String panelClassName = pack + "." + base + targetClassName;
+            Class cls = Class.forName(panelClassName);
+            return cls;
+        } catch (ClassNotFoundException ignore) {
+        }
+        try {
+            String panelClassName = pack + "." + alt + targetClassName;
+            Class cls = Class.forName(panelClassName);
+            return cls;
+        } catch (ClassNotFoundException ignore) {
         }
         return null;
     }
 
-    /**
-     * @return the style panel names
-     */
-    protected String[] getStylePanelNames() {
-        return stylePanelNames;
+    protected String getClassBaseName() {
+        return _panelClassBaseName;
     }
 
-    /**
-     * Return the current target for this stylepanel.
-     *
-     * @see org.argouml.ui.TabTarget#getTarget()
-     */
+    protected String getAlternativeClassBaseName() {
+        return _alternativeBase;
+    }
+
     public Object getTarget() {
-        return target;
+        return _target;
     }
 
-    /**
-     * @see org.argouml.ui.TabTarget#shouldBeEnabled(java.lang.Object)
-     */
-    public boolean shouldBeEnabled(Object targetItem) {
+    public boolean shouldBeEnabled(Object target) {
 
-        if (!(targetItem instanceof Fig)) {
-            if (Model.getFacade().isAModelElement(targetItem)) {
+        if (!(target instanceof Fig)) {
+            if (ModelFacade.isABase(target)) {
                 Project p = ProjectManager.getManager().getCurrentProject();
-                ArgoDiagram diagram = p.getActiveDiagram();
-                if (diagram == null) {
-                    shouldBeEnabled = false;
+                Collection col = p.findFigsForMember(target);
+                if (col == null || col.isEmpty()) {
+                    _shouldBeEnabled = false;
                     return false;
+                } else {
+                    target = col.iterator().next();
                 }
-
-                Fig f = diagram.presentationFor(targetItem);
-                if (f == null) {
-                    shouldBeEnabled = false;
-                    return false;
-                }
-                targetItem = f;
             } else {
-                shouldBeEnabled = false;
+                _shouldBeEnabled = false;
                 return false;
             }
         }
 
-        shouldBeEnabled = true;
+        _shouldBeEnabled = true;
+        _stylePanel = null;
 
-        Class targetClass = targetItem.getClass();
-        stylePanel = findPanelFor(targetClass);
-        targetClass = targetClass.getSuperclass();
-
-        if (stylePanel == null) {
-            shouldBeEnabled = false;
+        Class targetClass = target.getClass();
+        while (targetClass != null && _stylePanel == null) {
+            _stylePanel = findPanelFor(targetClass);
+            targetClass = targetClass.getSuperclass();
+        }
+        if (_stylePanel == null) {
+            _shouldBeEnabled = false;
         }
 
-        return shouldBeEnabled;
+        return _shouldBeEnabled;
     }
 
-//    /**
-//     * @see org.argouml.ui.TabTarget#shouldBeEnabled(java.lang.Object)
-//     */
-//    public boolean shouldBeEnabled(Object targetItem) {
-//
-//        if (!(targetItem instanceof Fig)) {
-//            if (Model.getFacade().isAModelElement(targetItem)) {
-//                Project p = ProjectManager.getManager().getCurrentProject();
-//                Fig f = p.getActiveDiagram().presentationFor(targetItem);
-//
-//                if (f != null)
-//                    targetItem = f;
-//                else {
-//                    _shouldBeEnabled = false;
-//                    return false;
-//                }
-//            } else {
-//                _shouldBeEnabled = false;
-//                return false;
-//            }
-//        }
-//
-//        _shouldBeEnabled = true;
-//
-//        Class targetClass = targetItem.getClass();
-//        stylePanel = findPanelFor(targetClass);
-//        targetClass = targetClass.getSuperclass();
-//
-//        if (stylePanel == null) {
-//            _shouldBeEnabled = false;
-//        }
-//
-//        return _shouldBeEnabled;
-//    }
+    ////////////////////////////////////////////////////////////////
+    // PropertyChangeListener implementation
 
-    /**
-     * @see org.argouml.ui.targetmanager.TargetListener#targetAdded(org.argouml.ui.targetmanager.TargetEvent)
-     */
     public void propertyChange(PropertyChangeEvent pce) {
         DelayedChangeNotify delayedNotify = new DelayedChangeNotify(this, pce);
         SwingUtilities.invokeLater(delayedNotify);
     }
 
-    /**
-     * @see org.argouml.kernel.DelayedVChangeListener#delayedVetoableChange(java.beans.PropertyChangeEvent)
-     */
     public void delayedVetoableChange(PropertyChangeEvent pce) {
-        if (stylePanel != null) stylePanel.refresh(pce);
+        if (_stylePanel != null)
+            _stylePanel.refresh(pce);
     }
 
     /**
-     * @see TargetListener#targetAdded(TargetEvent)
-     */
+         * @see org.argouml.ui.targetmanager.TargetListener#targetAdded(org.argouml.ui.targetmanager.TargetEvent)
+         */
     public void targetAdded(TargetEvent e) {
-        setTarget(e.getNewTarget());
+        // we can neglect this, the TabProps allways selects the first target
+        // in a set of targets. The first target can only be 
+        // changed in a targetRemoved or a TargetSet event
         fireTargetAdded(e);
 
     }
 
     /**
-     * @see TargetListener#targetRemoved(TargetEvent)
+     * @see org.argouml.ui.targetmanager.TargetListener#targetRemoved(org.argouml.ui.targetmanager.TargetEvent)
      */
     public void targetRemoved(TargetEvent e) {
         // how to handle empty target lists?
-        // probably the TabProps should only show an empty pane in that
-        // case
-        setTarget(e.getNewTarget());
+        // probably the TabProps should only show an empty pane in that case
+        setTarget(e.getNewTargets()[0]);
         fireTargetRemoved(e);
 
     }
 
     /**
-     * @see TargetListener#targetSet(TargetEvent)
+     * @see org.argouml.ui.targetmanager.TargetListener#targetSet(org.argouml.ui.targetmanager.TargetEvent)
      */
     public void targetSet(TargetEvent e) {
-        setTarget(e.getNewTarget());
+        setTarget(e.getNewTargets()[0]);
         fireTargetSet(e);
 
     }
 
     /**
      * Adds a listener.
-     *
-     * @param listener
-     *            the listener to add
+     * @param listener the listener to add
      */
     private void addTargetListener(TargetListener listener) {
-        listenerList.add(TargetListener.class, listener);
+        _listenerList.add(TargetListener.class, listener);
     }
 
     /**
      * Removes a target listener.
-     *
-     * @param listener
-     *            the listener to remove
+     * @param listener the listener to remove
      */
     private void removeTargetListener(TargetListener listener) {
-        listenerList.remove(TargetListener.class, listener);
+        _listenerList.remove(TargetListener.class, listener);
     }
 
-    /**
-     * @param targetEvent
-     */
     private void fireTargetSet(TargetEvent targetEvent) {
         //          Guaranteed to return a non-null array
-        Object[] listeners = listenerList.getListenerList();
+        Object[] listeners = _listenerList.getListenerList();
         for (int i = listeners.length - 2; i >= 0; i -= 2) {
             if (listeners[i] == TargetListener.class) {
-                // Lazily create the event:
-                ((TargetListener) listeners[i + 1]).targetSet(targetEvent);
+                // Lazily create the event:                     
+                 ((TargetListener) listeners[i + 1]).targetSet(targetEvent);
             }
         }
     }
 
-    /**
-     * @param targetEvent
-     */
     private void fireTargetAdded(TargetEvent targetEvent) {
         // Guaranteed to return a non-null array
-        Object[] listeners = listenerList.getListenerList();
+        Object[] listeners = _listenerList.getListenerList();
 
         for (int i = listeners.length - 2; i >= 0; i -= 2) {
             if (listeners[i] == TargetListener.class) {
-                // Lazily create the event:
-                ((TargetListener) listeners[i + 1]).targetAdded(targetEvent);
+                // Lazily create the event:                     
+                 ((TargetListener) listeners[i + 1]).targetAdded(targetEvent);
             }
         }
     }
 
-    /**
-     * @param targetEvent
-     */
     private void fireTargetRemoved(TargetEvent targetEvent) {
         // Guaranteed to return a non-null array
-        Object[] listeners = listenerList.getListenerList();
+        Object[] listeners = _listenerList.getListenerList();
         for (int i = listeners.length - 2; i >= 0; i -= 2) {
             if (listeners[i] == TargetListener.class) {
-                // Lazily create the event:
+                // Lazily create the event:                     
                 ((TargetListener) listeners[i + 1]).targetRemoved(targetEvent);
             }
         }

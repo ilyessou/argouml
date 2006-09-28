@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,275 +23,240 @@
 
 package org.argouml.uml;
 
-import java.util.Collection;
-import java.util.Iterator;
+import java.util.*;
+import java.beans.*;
 
-import org.argouml.model.Model;
-import org.argouml.util.MyTokenizer;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.extension_mechanisms.*;
+import ru.novosoft.uml.foundation.data_types.*;
+import ru.novosoft.uml.model_management.*;
 
-/**
- * This class handles the Documentation of ModelElements.
- * Documentation is represented internally by the tagged value "documentation",
- * but it has its own tab-panel to ease user handling.
- *
- */
 public class DocumentationManager {
 
-    /**
-     * The system's native line-ends, for when things are written to file.
+  public static String getDocs(Object o, String indent) {
+    /*
+     * Added 2001-10-05 STEFFEN ZSCHALER
      */
-    private static final String LINE_SEPARATOR =
-	System.getProperty("line.separator");
+    String sResult = defaultFor(o,indent);
 
-    /**
-     * This function returns the documentation in C-style comment format.
-     *
-     * @param o the ModelElement
-     * @param indent the current indentation for new lines
-     * @return the documentation, as a String
-     */
-    public static String getDocs(Object o, String indent) {
-        return getDocs(o, indent, "/** ", " *  ", " */");
-    }
-
-    /**
-     * @param o the ModelElement
-     * @param indent the current indentation for new lines
-     * @param header is the first line
-     * @param prefix is inserted at every line before the doc
-     * @param footer is the closing line
-     * @return the string that represents the documentation
-     *         for the given ModelElement
-     */
-    public static String getDocs(Object o, String indent, String header,
-				 String prefix, String footer) {
-        String sResult = defaultFor(o, indent);
-
-        if (Model.getFacade().isAModelElement(o)) {
-            Iterator iter = Model.getFacade().getTaggedValues(o);
-            if (iter != null) {
-                while (iter.hasNext()) {
-                    Object tv = iter.next();
-                    String tag = Model.getFacade().getTagOfTag(tv);
-                    if (tag.equals("documentation") || tag.equals("javadocs")) {
-                        sResult = Model.getFacade().getValueOfTag(tv);
-                        // give priority to "documentation"
-                        if (tag.equals("documentation")) break;
-                    }
-                }
-            }
+    if (o instanceof MModelElement) {
+      Collection tValues = ((MModelElement) o).getTaggedValues();
+      if (!tValues.isEmpty()) {
+        Iterator iter = tValues.iterator();
+        while(iter.hasNext()) {
+          MTaggedValue tv = (MTaggedValue)iter.next();
+          String tag = tv.getTag();
+          if (tag.equals("documentation") || tag.equals("javadocs")) {
+            sResult = tv.getValue();
+            if (tag.equals("documentation")) break; // give priority to "documentation"
+          }
         }
-
-        if (sResult == null)
-            return "(No comment)";
-
-	StringBuffer result = new StringBuffer();
-	if (header != null) {
-	    result.append(header).append(LINE_SEPARATOR);
-	}
-
-	if (indent != null) {
-	    if (prefix != null) {
-		prefix = indent + prefix;
-	    }
-
-	    if (footer != null) {
-		footer = indent + footer;
-	    }
-	}
-
-	appendComment(result, prefix, sResult, 0);
-
-	if (footer != null) {
-	    result.append(footer);
-	}
-
-        return result.toString();
+      }
     }
 
-    /**
-     * @param o the ModelElement. If it is not a ModelElement,
-     *          then you'll get a IllegalArgumentException
-     * @param s the string representing the documentation
+    /*
+     * Removed final return 2001-10-05 STEFFEN ZSCHALER
+     *
+     * Was:
+     *
+    return defaultFor(o);
+     *
      */
-    public static void setDocs(Object o, String s) {
-        Model.getCoreHelper().setTaggedValue(o, "documentation", s);
+
+    /*
+     * Added 2001-10-05 STEFFEN ZSCHALER
+     *
+     * Add comment signature.
+     */
+    if (sResult != null) {
+      sResult = "/** " + sResult;
+
+      for (int nNewLinePos = sResult.indexOf ('\n');
+           nNewLinePos >= 0;
+           nNewLinePos = sResult.indexOf ('\n', nNewLinePos + 1)) {
+        sResult = sResult.substring (0, nNewLinePos + 1) +
+                  indent + " *  " + sResult.substring (nNewLinePos + 1);
+      }
+
+      return sResult + '\n' + indent + " */";
     }
+    else {
+      return "(No comment)";
+    }
+  }
 
-    /**
-     * Determine whether documentation is associated with the given
-     * element or not.
-     *
-     * Added 2001-10-05 STEFFEN ZSCHALER for use by
-     * org.argouml.language.java.generator.CodeGenerator
-     *
-     * @param o The given element.
-     * @return true if the given element has docs.
-     */
-    public static boolean hasDocs(Object o) {
-        if (Model.getFacade().isAModelElement(o)) {
-            Iterator i = Model.getFacade().getTaggedValues(o);
+  public static void setDocs(Object o, String s) {
+	  ((MModelElement)o).setTaggedValue("documentation", s);
+  }
 
-            if (i != null) {
-                while (i.hasNext()) {
-                    Object tv = i.next();
-                    String tag = Model.getFacade().getTagOfTag(tv);
-                    String value = Model.getFacade().getValueOfTag(tv);
-                    if (("documentation".equals(tag) || "javadocs".equals(tag))
-                        && value != null && value.trim().length() > 0) {
-                        return true;
-                    }
-                }
-            }
+  /**
+   * Determine whether documentation is associated with the given element or not.
+   *
+   * Added 2001-10-05 STEFFEN ZSCHALER for use by org.argouml.language.java.generator.CodeGenerator
+   *
+   */
+  public static boolean hasDocs (Object o) {
+    if (o instanceof MModelElement) {
+      Collection tValues = ((MModelElement) o).getTaggedValues();
+
+      if (! tValues.isEmpty()) {
+        for (Iterator i = tValues.iterator(); i.hasNext();) {
+          MTaggedValue tv = (MTaggedValue) i.next();
+          String tag = tv.getTag();
+          String value = tv.getValue();
+          if ((tag.equals("documentation") || tag.equals("javadocs"))
+              && value != null && value.trim().length() > 0) {
+            return true;
+          }
         }
-        return false;
+      }
+    }
+    return false;
+  }
+
+  ////////////////////////////////////////////////////////////////
+  // default documentation
+
+  public static String defaultFor(Object o, String indent) {
+    if (o instanceof MClass) {
+      /*
+       * Changed 2001-10-05 STEFFEN ZSCHALER
+       *
+       * Was (space added below!):
+       *
+      return
+	"/** A class that represents ...\n"+
+	" * \n"+
+	" * @see OtherClasses\n"+
+	" * @author your_name_here\n"+
+	" * /";
+       *
+       */
+      return " A class that represents ...\n\n" +
+             indent + " @see OtherClasses\n" +
+             indent + " @author your_name_here";
+    }
+    if (o instanceof MAttribute) {
+      /*
+       * Changed 2001-10-05 STEFFEN ZSCHALER
+       *
+       * Was (space added below!):
+       *
+      return
+	"/** An attribute that represents ...\n"+
+	" * /";
+       *
+       */
+      return " An attribute that represents ...";
     }
 
-    /**
-     * Generate default documentation.
-     *
-     * @param o the ModelElement
-     * @param indent the current indentation string for new lines
-     * @return the default documentation
-     */
-    public static String defaultFor(Object o, String indent) {
-	if (Model.getFacade().isAClass(o)) {
-            // TODO: Needs localization
-	    return " A class that represents ...\n\n"
-		+ indent + " @see OtherClasses\n"
-		+ indent + " @author your_name_here";
-	}
-	if (Model.getFacade().isAAttribute(o)) {
-
-	    return " An attribute that represents ...";
-	}
-
-	if (Model.getFacade().isAOperation(o)) {
-	    return " An operation that does...\n\n"
-		+ indent + " @param firstParam a description of this parameter";
-	}
-	if (Model.getFacade().isAInterface(o)) {
-	    return " An interface defining operations expected of ...\n\n"
-		+ indent + " @see OtherClasses\n"
-		+ indent + " @author your_name_here";
-	}
-	if (Model.getFacade().isAModelElement(o)) {
-	    return "\n";
-	}
-
-	return null;
+    if (o instanceof MOperation) {
+      /*
+       * Changed 2001-10-05 STEFFEN ZSCHALER
+       *
+       * Was (space added below!):
+       *
+      return
+	"/** An operation that does ...\n"+
+	" * \n"+
+	" * @param firstParamName  a description of this parameter\n"+
+	" * /";
+       *
+       */
+      return " An operation that does...\n\n" +
+             indent + " @param firstParam a description of this parameter";
+    }
+    if (o instanceof MInterface) {
+      /*
+       * Changed 2001-10-05 STEFFEN ZSCHALER
+       *
+       * Was (space added below!):
+       *
+      return
+	"/** A interface defining operations expected of ...\n"+
+	" * \n"+
+	" * @see OtherClasses\n"+
+	" * @author your_name_here\n"+
+	" * /";
+       *
+       */
+      return " A interface defining operations expected of ...\n\n" +
+             indent + " @see OtherClasses\n" +
+             indent + " @author your_name_here";
+    }
+    if (o instanceof MModelElement) {
+      /*
+       * Changed 2001-10-05 STEFFEN ZSCHALER
+       *
+       * Was (space added below!):
+       *
+      return
+	"/**\n"+
+	" * \n"+
+	" * /";
+       *
+       */
+      return "\n";
     }
 
-
-    ////////////////////////////////////////////////////////////////
-    // comments
-
-    /**
-     * Get the comments (the notes in a diagram) for a modelelement.<p>
+    /*
+     * Changed 2001-10-05 STEFFEN ZSCHALER
      *
-     * This returns a c-style comments.
+     * Was:
+    return "(No documentation)";
      *
-     * @param o The modelelement.
-     * @return a String.
      */
-    public static String getComments(Object o) {
-        return getComments(o, "/*", " * ", " */");
-    }
+    return null;
+  }
 
-    /**
-     * Get the comments (the notes in a diagram) for a modelelement.
-     *
-     * @return a string with the comments.
-     * @param o The given modelelement.
-     * @param header is the comment header.
-     * @param prefix is the comment prefix (on every line).
-     * @param footer is the comment footer.
-     */
-    public static String getComments(Object o,
-				     String header, String prefix,
-				     String footer) {
-	StringBuffer result = new StringBuffer();
-	if (header != null) {
-	    result.append(header).append(LINE_SEPARATOR);
-	}
 
-	if (Model.getFacade().isAModelElement(o)) {
-	    Collection comments = Model.getFacade().getComments(o);
-	    if (!comments.isEmpty()) {
-		int nlcount = 2;
-		for (Iterator iter = comments.iterator(); iter.hasNext();) {
-		    Object c = iter.next();
-		    String s = Model.getFacade().getName(c);
-		    nlcount = appendComment(result,
-					    prefix,
-					    s,
-					    nlcount > 1 ? 0 : 1);
-		}
-	    } else {
-		return "";
+  ////////////////////////////////////////////////////////////////
+  // comments
+
+  /**
+   * Get the comments (the notes in a diagram) for a modelelement.
+   */
+  public static String getComments(Object o) {
+      StringBuffer result = new StringBuffer();
+
+      if(o instanceof MModelElement) {
+	  Collection comments = ((MModelElement) o).getComments();
+	  if (!comments.isEmpty()) {
+	    for(Iterator iter = comments.iterator(); iter.hasNext(); ) {
+		  MComment c = (MComment)iter.next();
+		  String s = (c.getName()!=null) ? c.getName().trim() : null;
+		  if (s != null && s.length() > 0) {
+		    if(result.length() > 0) {
+		       result.append("\n");
+		    }
+		    result.append(s);
+	      }
 	    }
-	} else {
-	    return "";
-	}
+      }
+      }
 
-	if (footer != null) {
-	    result.append(footer).append(LINE_SEPARATOR);
-	}
+      // If there are no comments, just return an empty string.
+      if(result.length() == 0)
+	  return "";
 
-	return result.toString();
-    }
+      // Let every line start with a '*'.
+      for(int i=0; i < result.length() - 1; i++) {
+	  if(result.charAt(i) == '\n') {
+	      result.insert(i+1, " * ");
+	  }
+      }
 
-    /**
-     * Append a string to sb which is chopped into lines and each line
-     * prefixed with prefix.
-     *
-     * @param sb the StringBuffer to append to.
-     * @param prefix the prefix to each line.
-     * @param comment the text to reformat.
-     * @param nlprefix the number of empty lines to prefix the comment with.
-     * @return the number of pending empty lines.
-     */
-    private static int appendComment(StringBuffer sb, String prefix,
-				      String comment, int nlprefix) {
-	int nlcount = 0;
+      // I add a CR before the end of the comment, so I remove a CR at the
+      // end of the last note.
+      if(result.charAt(result.length()-1) == '\n') {
+	  result.deleteCharAt(result.length()-1);
+      }
 
-	for (; nlprefix > 0; nlprefix--) {
-	    if (prefix != null)
-		sb.append(prefix);
-	    sb.append(LINE_SEPARATOR);
-	    nlcount++;
-	}
-
-	if (comment == null) {
-	    return nlcount;
-	}
-
-	MyTokenizer tokens = new MyTokenizer(comment,
-					     "",
-					     MyTokenizer.LINE_SEPARATOR);
-
-	while (tokens.hasMoreTokens()) {
-	    String s = tokens.nextToken();
-	    if (!s.startsWith("\r") && !s.startsWith("\n")) {
-		if (prefix != null)
-		    sb.append(prefix);
-		sb.append(s);
-		sb.append(LINE_SEPARATOR);
-		nlcount = 0;
-	    } else if (nlcount > 0) {
-		if (prefix != null)
-		    sb.append(prefix);
-		sb.append(LINE_SEPARATOR);
-		nlcount++;
-	    } else {
-		nlcount++;
-	    }
-	}
-
-	return nlcount;
-    }
+      return "/*\n * " + result.toString() + "\n */\n";
+  }
 
 } /* end class DocumentationManager */
+
 
 
 

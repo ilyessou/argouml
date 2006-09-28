@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,71 +23,78 @@
 
 package org.argouml.cognitive.ui;
 
-import java.awt.Dimension;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.Vector;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.*;
+import javax.swing.*;
+import javax.swing.event.*;
+import javax.swing.tree.*;
 
-import javax.swing.BorderFactory;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JSlider;
-import javax.swing.SwingConstants;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.model_management.*;
 
-import org.argouml.cognitive.Decision;
-import org.argouml.cognitive.DecisionModel;
-import org.argouml.cognitive.Designer;
-import org.argouml.cognitive.Translator;
-import org.argouml.ui.ArgoDialog;
+import org.argouml.cognitive.*;
 
-
-/** A dialog to set the priorities for decisions. These will be evaluated
+/** A dialog to set the priorities for decisions. These will be evulated
  *  against the critics, so that the user will only see todo items which match
- *  the priorities for a certain decision.
+ *  the priorties for a certain decision.
  */
-public class DesignIssuesDialog extends ArgoDialog implements ChangeListener {
+public class DesignIssuesDialog extends JDialog
+    implements ActionListener, ChangeListener {
+    public static int _numDecisionModel = 0;
 
     ////////////////////////////////////////////////////////////////
     // constants
+    public final int WIDTH = 300;
+    public final int HEIGHT = 450;
+
     ////////////////////////////////////////////////////////////////
     // instance variables
-    private JPanel  mainPanel = new JPanel();
-    private Hashtable slidersToDecisions = new Hashtable();
-    private Hashtable slidersToDigits = new Hashtable();
+    protected JPanel  _mainPanel = new JPanel();
+    protected JButton _okButton = new JButton("OK");
+    protected Hashtable _slidersToDecisions = new Hashtable();
+    protected Hashtable _slidersToDigits = new Hashtable();
 
     ////////////////////////////////////////////////////////////////
     // constructors
 
-    /**
-     * The constructor.
-     */
-    public DesignIssuesDialog() {
-        super(Translator.localize("dialog.title.design-issues"), false);
+    public DesignIssuesDialog(Frame parent) {
+        super(parent, "Design Issues", false);
 
-        final int width = 320;
-        final int height = 400;
-
+        int x = parent.getLocation().x + (parent.getSize().width - WIDTH) / 2;
+        int y = parent.getLocation().y + (parent.getSize().height - HEIGHT) / 2;
+        setLocation(x, y);
+        setSize(WIDTH, HEIGHT);
+        Container content = getContentPane();
+        content.setLayout(new BorderLayout());
         initMainPanel();
+        JScrollPane scroll =
+            new JScrollPane(_mainPanel,
+                            ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,
+                            ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        content.add(scroll, BorderLayout.CENTER);
 
-        JScrollPane scroll = new JScrollPane(mainPanel);
-        scroll.setPreferredSize(new Dimension(width, height));
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
+        JPanel buttonInner = new JPanel(new GridLayout(1, 1));
+        buttonInner.add(_okButton);
+        buttonPanel.add(buttonInner);
 
-        setContent(scroll);
+        content.add(buttonPanel, BorderLayout.SOUTH);
+        _okButton.addActionListener(this);
+
+        getRootPane().setDefaultButton(_okButton);
+
+        _numDecisionModel++;
     }
 
 
-    private void initMainPanel() {
-        DecisionModel dm = Designer.theDesigner().getDecisionModel();
+    public void initMainPanel() {
+        DecisionModel dm = Designer.TheDesigner.getDecisionModel();
         Vector decs = dm.getDecisions();
 
         GridBagLayout gb = new GridBagLayout();
-        mainPanel.setLayout(gb);
-        mainPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        _mainPanel.setLayout(gb);
 
         GridBagConstraints c = new GridBagConstraints();
         c.fill = GridBagConstraints.BOTH;
@@ -100,55 +106,53 @@ public class DesignIssuesDialog extends ArgoDialog implements ChangeListener {
         c.gridy = 0;
         c.gridx = 0;
         c.gridwidth = 1;
-        JLabel decTitleLabel = new JLabel(
-            Translator.localize("label.decision"));
+        JLabel decTitleLabel = new JLabel("Decision");
         gb.setConstraints(decTitleLabel, c);
-        mainPanel.add(decTitleLabel);
+        _mainPanel.add(decTitleLabel);
 
         c.gridy = 0;
         c.gridx = 2;
         c.gridwidth = 8;
-        JLabel priLabel = new JLabel(
-            Translator.localize("label.decision-priority"));
+        JLabel priLabel = new JLabel("Priority");
         gb.setConstraints(priLabel, c);
-        mainPanel.add(priLabel);
+        _mainPanel.add(priLabel);
 
         c.gridy = 1;
         c.gridx = 2;
         c.gridwidth = 2;
-        JLabel offLabel = new JLabel(Translator.localize("label.off"));
+        JLabel offLabel = new JLabel("Off");
         gb.setConstraints(offLabel, c);
-        mainPanel.add(offLabel);
+        _mainPanel.add(offLabel);
 
         c.gridy = 1;
         c.gridx = 4;
         c.gridwidth = 2;
-        JLabel lowLabel = new JLabel(Translator.localize("label.low"));
+        JLabel lowLabel = new JLabel("Low");
         gb.setConstraints(lowLabel, c);
-        mainPanel.add(lowLabel);
+        _mainPanel.add(lowLabel);
 
         c.gridy = 1;
         c.gridx = 6;
         c.gridwidth = 2;
-        JLabel mediumLabel = new JLabel(Translator.localize("label.medium"));
+        JLabel mediumLabel = new JLabel("Medium");
         gb.setConstraints(mediumLabel, c);
-        mainPanel.add(mediumLabel);
+        _mainPanel.add(mediumLabel);
 
         c.gridy = 1;
         c.gridx = 8;
         c.gridwidth = 2;
-        JLabel highLabel = new JLabel(Translator.localize("label.high"));
+        JLabel highLabel = new JLabel("High");
         gb.setConstraints(highLabel, c);
-        mainPanel.add(highLabel);
+        _mainPanel.add(highLabel);
 
 
         c.gridy = 2;
-        Enumeration elems = decs.elements();
-        while (elems.hasMoreElements()) {
-            Decision d = (Decision) elems.nextElement();
+        java.util.Enumeration enum = decs.elements();
+        while (enum.hasMoreElements()) {
+            Decision d = (Decision) enum.nextElement();
             JLabel decLabel = new JLabel(d.getName());
             JLabel valueLabel = new JLabel(getValueText(d.getPriority()));
-            JSlider decSlide =
+            JSlider decSlide = 
                 new JSlider(SwingConstants.HORIZONTAL,
                             1, 4, (d.getPriority() == 0 ? 4 : d.getPriority()));
 
@@ -159,75 +163,74 @@ public class DesignIssuesDialog extends ArgoDialog implements ChangeListener {
             // decSlide.setPaintLabels(true);
             decSlide.addChangeListener(this);
             Dimension origSize = decSlide.getPreferredSize();
-            Dimension smallSize =
-                new Dimension(origSize.width / 2, origSize.height);
+            Dimension smallSize = 
+                new Dimension(origSize.width/2, origSize.height);
             decSlide.setSize(smallSize);
             decSlide.setPreferredSize(smallSize);
 
-            slidersToDecisions.put(decSlide, d);
-            slidersToDigits.put(decSlide, valueLabel);
+            _slidersToDecisions.put(decSlide, d);
+            _slidersToDigits.put(decSlide, valueLabel);
 
             c.gridx = 0;
             c.gridwidth = 1;
             c.weightx = 0.0;
             c.ipadx = 3;
             gb.setConstraints(decLabel, c);
-            mainPanel.add(decLabel);
+            _mainPanel.add(decLabel);
 
             c.gridx = 1;
             c.gridwidth = 1;
             c.weightx = 0.0;
             c.ipadx = 0;
             gb.setConstraints(valueLabel, c);
-            mainPanel.add(valueLabel);
+            _mainPanel.add(valueLabel);
 
             c.gridx = 2;
             c.gridwidth = 8;
             c.weightx = 1.0;
             gb.setConstraints(decSlide, c);
-            mainPanel.add(decSlide);
+            _mainPanel.add(decSlide);
 
             c.gridy++;
         }
     }
-
+  
     ////////////////////////////////////////////////////////////////
     // event handlers
+  
+    public void actionPerformed(ActionEvent e) {
+        if (e.getSource() == _okButton) {
+            setVisible(false);
+            dispose();
+        }
+    }
 
-    /**
-     * @see javax.swing.event.ChangeListener#stateChanged(javax.swing.event.ChangeEvent)
-     */
+
     public void stateChanged(ChangeEvent ce) {
         JSlider srcSlider = (JSlider) ce.getSource();
-        Decision d = (Decision) slidersToDecisions.get(srcSlider);
-        JLabel valLab = (JLabel) slidersToDigits.get(srcSlider);
+        Decision d = (Decision) _slidersToDecisions.get(srcSlider);
+        JLabel valLab = (JLabel) _slidersToDigits.get(srcSlider);
         int pri = srcSlider.getValue();
         d.setPriority((pri == 4) ? 0 : pri);
         valLab.setText(getValueText(pri));
     }
 
-    private String getValueText(int priority) {
+    protected String getValueText(int priority) {
         String label = "";
         switch(priority) {
-        case 1:
-	    label = "    1";
-	    break;
-        case 2:
-	    label = "    2";
-	    break;
-        case 3:
-	    label = "    3";
-	    break;
-        case 0:
-        case 4:
-	    label = Translator.localize("label.off");
-	    break;
+        case 0: label = " off"; break;
+        case 1: label = "   1"; break;
+        case 2: label = "   2"; break;
+        case 3: label = "   3"; break;
+        case 4: label = " off"; break;
         }
         return label;
     }
-
+ 
 } /* end class DesignIssuesDialog */
 
 
 
 ////////////////////////////////////////////////////////////////
+
+

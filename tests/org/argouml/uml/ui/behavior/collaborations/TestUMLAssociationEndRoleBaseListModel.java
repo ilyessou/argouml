@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,133 +21,97 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $header$
 package org.argouml.uml.ui.behavior.collaborations;
-
-import java.util.Collection;
-import java.util.Iterator;
 
 import junit.framework.TestCase;
 
-import org.argouml.model.Model;
+import org.argouml.application.security.ArgoSecurityManager;
+import org.argouml.model.uml.UmlFactory;
+import org.argouml.model.uml.behavioralelements.collaborations.CollaborationsFactory;
+import org.argouml.model.uml.foundation.core.CoreFactory;
 import org.argouml.uml.ui.UMLModelElementListModel2;
+
+import ru.novosoft.uml.MFactoryImpl;
+import ru.novosoft.uml.behavior.collaborations.MAssociationEndRole;
+import ru.novosoft.uml.behavior.collaborations.MAssociationRole;
+import ru.novosoft.uml.foundation.core.MAssociation;
+import ru.novosoft.uml.foundation.core.MAssociationEnd;
 
 /**
  * @since Oct 27, 2002
  * @author jaap.branderhorst@xs4all.nl
  */
 public class TestUMLAssociationEndRoleBaseListModel extends TestCase {
-
-    private Object elem;
+    
+    private int oldEventPolicy;
+    private MAssociationEndRole elem;
     private UMLModelElementListModel2 model;
-    private Object baseAssoc;
-    private Object baseEnd;
-    private Object assocRole;
-
+    private MAssociation baseAssoc;
+    private MAssociationEnd baseEnd;
+    private MAssociationRole assocRole; 
+    
     /**
      * Constructor for TestUMLAssociationEndRoleBaseListModel.
-     *
-     * @param arg0 is the name of the test case.
+     * @param arg0
      */
     public TestUMLAssociationEndRoleBaseListModel(String arg0) {
-        super(arg0);
+        super(arg0);       
     }
 
+    
 
     /**
      * @see junit.framework.TestCase#setUp()
      */
     protected void setUp() throws Exception {
         super.setUp();
-
-        Object classifier = Model.getCoreFactory().createClass();
-        Object collaboration =
-            Model.getCollaborationsFactory().buildCollaboration(classifier);
-
-        elem = Model.getCollaborationsFactory().createAssociationEndRole();
-
-        Object classNamespace =
-	    Model.getModelManagementFactory().createPackage();
-        baseAssoc =
-            Model.getCoreFactory().buildAssociation(
-                    Model.getCoreFactory().buildClass("from", classNamespace),
-                    false,
-                    Model.getCoreFactory().buildClass("to", classNamespace),
-                    true,
-                    "association");
-        Model.getCoreHelper().addOwnedElement(collaboration, baseAssoc);
-
-        Object from =
-            Model.getCollaborationsFactory().buildClassifierRole(collaboration);
-        Object to =
-            Model.getCollaborationsFactory().buildClassifierRole(collaboration);
-
-        assocRole =
-            Model.getCollaborationsFactory().buildAssociationRole(from, to);
-
-        Model.getCoreHelper().setName(assocRole, "TestAssocRole");
-
-        Model.getCoreHelper().setAssociation(elem, assocRole);
-        Model.getCollaborationsHelper().setBase(assocRole, baseAssoc);
-
-        baseEnd = Model.getCoreFactory().createAssociationEnd();
-        Model.getCoreHelper().setAssociation(baseEnd, baseAssoc);
-
+        ArgoSecurityManager.getInstance().setAllowExit(true); 
+        UmlFactory.getFactory().setGuiEnabled(false);
+        elem = CollaborationsFactory.getFactory().createAssociationEndRole();
+        baseEnd = CoreFactory.getFactory().createAssociationEnd();
+        assocRole = CollaborationsFactory.getFactory().createAssociationRole();
+        baseAssoc = CoreFactory.getFactory().createAssociation();
+        elem.setAssociation(assocRole);
+        assocRole.setBase(baseAssoc);
+        baseEnd.setAssociation(baseAssoc);
+        oldEventPolicy = MFactoryImpl.getEventPolicy();
+        MFactoryImpl.setEventPolicy(MFactoryImpl.EVENT_POLICY_IMMEDIATE);
         model = new UMLAssociationEndRoleBaseListModel();
         model.setTarget(elem);
-        Model.getPump().flushModelEvents();
     }
 
     /**
      * @see junit.framework.TestCase#tearDown()
      */
     protected void tearDown() throws Exception {
-        Model.getUmlFactory().delete(elem);
-        Model.getUmlFactory().delete(assocRole);
-
-        Collection connections = Model.getFacade().getConnections(baseAssoc);
-        Model.getUmlFactory().delete(baseAssoc);
-
-        Iterator iter = connections.iterator();
-        while (iter.hasNext()) {
-            Model.getUmlFactory().delete(iter.next());
-        }
-        connections = null;
-
-        Model.getUmlFactory().delete(baseEnd);
-        model = null;
         super.tearDown();
+        UmlFactory.getFactory().delete(elem);
+        UmlFactory.getFactory().delete(assocRole);
+        UmlFactory.getFactory().delete(baseAssoc);
+        UmlFactory.getFactory().delete(baseEnd);
+        MFactoryImpl.setEventPolicy(oldEventPolicy);
+        model = null;
     }
-
-    /**
-     * Test setting the Base.
-     */
+    
     public void testAdd() {
-        Model.getCollaborationsHelper().setBase(elem, baseEnd);
-        Model.getPump().flushModelEvents();
+        elem.setBase(baseEnd);
         assertEquals(1, model.getSize());
         assertEquals(baseEnd, model.getElementAt(0));
     }
-
-    /**
-     * Testing that we have an empty model to begin with.
-     */
+    
     public void testEmpty() {
         assertEquals(0, model.getSize());
         try {
             model.getElementAt(0);
             fail();
-        } catch (ArrayIndexOutOfBoundsException ex) {
-            // This is what we expect.
         }
+        catch (Exception ex) {};
     }
-
-    /**
-     * Test removing.
-     */
+    
     public void testRemove() {
-        Model.getCollaborationsHelper().setBase(elem, baseEnd);
-        Model.getCollaborationsHelper().setBase(elem, null);
-        Model.getPump().flushModelEvents();
+        elem.setBase(baseEnd);
+        elem.setBase(null);
         assertEquals(0, model.getSize());
     }
 

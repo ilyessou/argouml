@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,37 +21,35 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $Id$
 package org.argouml.uml.ui.behavior.use_cases;
 
-import java.util.Collection;
 import java.util.Vector;
 
-import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.application.api.Argo;
 import org.argouml.uml.ui.AbstractActionAddModelElement;
+import ru.novosoft.uml.behavior.use_cases.MExtend;
 
 /**
  * @since Oct 6, 2002
  * @author jaap.branderhorst@xs4all.nl
  * @stereotype singleton
  */
-public class ActionAddExtendExtensionPoint
-    extends AbstractActionAddModelElement {
-
-    private static final ActionAddExtendExtensionPoint SINGLETON =
-        new ActionAddExtendExtensionPoint();
+public class ActionAddExtendExtensionPoint extends AbstractActionAddModelElement {
+ 
+    public final static ActionAddExtendExtensionPoint SINGLETON = new ActionAddExtendExtensionPoint();
     /**
      * Constructor for ActionAddExtendExtensionPoint.
      */
     protected ActionAddExtendExtensionPoint() {
         super();
     }
-
+    
     /**
      * @see org.argouml.uml.ui.AbstractActionAddModelElement#doIt(java.util.Vector)
      */
     protected void doIt(Vector selected) {
-        Model.getUseCasesHelper().setExtensionPoints(getTarget(), selected);
+        ((MExtend)getTarget()).setExtensionPoints(selected);
     }
 
     /**
@@ -61,10 +58,7 @@ public class ActionAddExtendExtensionPoint
     protected Vector getChoices() {
         Vector ret = new Vector();
         if (getTarget() != null) {
-            Object extend = /*(MExtend)*/getTarget();
-            Collection c = Model.getFacade().getExtensionPoints(
-                    Model.getFacade().getBase(extend));
-            ret.addAll(c);
+            ret.addAll(((MExtend)getTarget()).getBase().getExtensionPoints());
         }
         return ret;
     }
@@ -73,8 +67,7 @@ public class ActionAddExtendExtensionPoint
      * @see org.argouml.uml.ui.AbstractActionAddModelElement#getDialogTitle()
      */
     protected String getDialogTitle() {
-        return Translator.localize(
-                "dialog.title.add-extensionpoints");
+        return Argo.localize("UMLMenu", "dialog.title.add-extensionpoints");
     }
 
     /**
@@ -82,15 +75,8 @@ public class ActionAddExtendExtensionPoint
      */
     protected Vector getSelected() {
         Vector ret = new Vector();
-        ret.addAll(Model.getFacade().getExtensionPoints(getTarget()));
+        ret.addAll(((MExtend)getTarget()).getExtensionPoints());
         return ret;
-    }
-
-    /**
-     * @return Returns the SINGLETON.
-     */
-    public static ActionAddExtendExtensionPoint getInstance() {
-        return SINGLETON;
     }
 
 }

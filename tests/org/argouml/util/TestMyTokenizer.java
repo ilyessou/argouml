@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -29,485 +28,370 @@ import java.util.Vector;
 
 import junit.framework.TestCase;
 
-/**
- * Testing the MyTokenizer class.
- *
- */
+import org.argouml.application.security.ArgoSecurityManager;
+
 public class TestMyTokenizer extends TestCase {
-
-    /**
-     * The constructor.
-     *
-     * @param str the name of the test.
-     */
-    public TestMyTokenizer(String str) {
-	super(str);
-    }
-
-    /**
-     * Test the constructor.
-     */
-    public void testConstructor1() {
-	Vector seps = new Vector();
-	seps.add(MyTokenizer.DOUBLE_QUOTED_SEPARATOR);
-	seps.add(MyTokenizer.SINGLE_QUOTED_SEPARATOR);
-
-	String str1 = "A String";
-	String delim1 = " ";
- 	String res1[] = {
-	    "A", " ", "String"
-	};
-
-	checkConstr(str1, delim1, res1);
-	checkConstr(str1, delim1, res1, MyTokenizer.SINGLE_QUOTED_SEPARATOR);
-	checkConstr(str1, delim1, res1, MyTokenizer.DOUBLE_QUOTED_SEPARATOR);
-	checkConstr(str1, delim1, res1, MyTokenizer.PAREN_EXPR_SEPARATOR);
-	checkConstr(
-		    str1,
-		    delim1,
-		    res1,
-		    MyTokenizer.PAREN_EXPR_STRING_SEPARATOR);
-	checkConstr(str1, delim1, res1, seps);
-    }
-
-    /**
-     * Test the constructor.
-     */
-    public void testConstructor2() {
-	Vector seps = new Vector();
-	seps.add(MyTokenizer.DOUBLE_QUOTED_SEPARATOR);
-	seps.add(MyTokenizer.SINGLE_QUOTED_SEPARATOR);
-
-	String str2 = "public newAttr [1..*] : Type = Val {param}";
-	String delim2 = " ,\t,<<,>>,[,],:,=,{,},\\,";
-	String res2[] = {
-	    "public",
-	    " ",
-	    "newAttr",
-	    " ",
-	    "[",
-	    "1..*",
-	    "]",
-	    " ",
-	    ":",
-	    " ",
-	    "Type",
-	    " ",
-	    "=",
-	    " ",
-	    "Val",
-	    " ",
-	    "{",
-	    "param",
-	    "}"
-	};
-
-	checkConstr(str2, delim2, res2);
-	checkConstr(str2, delim2, res2, MyTokenizer.SINGLE_QUOTED_SEPARATOR);
-	checkConstr(str2, delim2, res2, MyTokenizer.DOUBLE_QUOTED_SEPARATOR);
-	checkConstr(str2, delim2, res2, MyTokenizer.PAREN_EXPR_SEPARATOR);
-	checkConstr(
-		    str2,
-		    delim2,
-		    res2,
-		    MyTokenizer.PAREN_EXPR_STRING_SEPARATOR);
-	checkConstr(str2, delim2, res2, seps);
-    }
-
-    /**
-     * Test the constructor.
-     */
-    public void testConstructor3() {
-	Vector seps = new Vector();
-	seps.add(MyTokenizer.DOUBLE_QUOTED_SEPARATOR);
-	seps.add(MyTokenizer.SINGLE_QUOTED_SEPARATOR);
-
-	String str3 = "<< stereo >> newAttr";
-	String delim3 = " ,\t,<<,>>,[,],:,=,{,},\\,";
-	String res3[] = {
-	    "<<", " ", "stereo", " ", ">>", " ", "newAttr"
-	};
-
-	checkConstr(str3, delim3, res3);
-	checkConstr(str3, delim3, res3, MyTokenizer.SINGLE_QUOTED_SEPARATOR);
-	checkConstr(str3, delim3, res3, MyTokenizer.DOUBLE_QUOTED_SEPARATOR);
-	checkConstr(str3, delim3, res3, MyTokenizer.PAREN_EXPR_SEPARATOR);
-	checkConstr(
-		    str3,
-		    delim3,
-		    res3,
-		    MyTokenizer.PAREN_EXPR_STRING_SEPARATOR);
-	checkConstr(str3, delim3, res3, seps);
-    }
-
-    /**
-     * Test the constructor.
-     */
-    public void testConstructor4() {
-	Vector seps = new Vector();
-	seps.add(MyTokenizer.DOUBLE_QUOTED_SEPARATOR);
-	seps.add(MyTokenizer.SINGLE_QUOTED_SEPARATOR);
-
-	String str4 = " newAttr = \": h\" ";
-	String delim4 = " ,\t,<<,>>,[,],:,=,{,},\\,";
-	String res4dot1[] = {
-	    " ", "newAttr", " ", "=", " ", "\"", ":", " ", "h\"", " "
-	};
-	String res4dot2[] = {
-	    " ", "newAttr", " ", "=", " ", "\": h\"", " "
-	};
-
-	checkConstr(str4, delim4, res4dot1);
-	checkConstr(str4, delim4, res4dot1,
-	            MyTokenizer.SINGLE_QUOTED_SEPARATOR);
-	checkConstr(str4, delim4, res4dot2,
-	            MyTokenizer.DOUBLE_QUOTED_SEPARATOR);
-	checkConstr(str4, delim4, res4dot1, MyTokenizer.PAREN_EXPR_SEPARATOR);
-	checkConstr(
-		    str4,
-		    delim4,
-		    res4dot1,
-		    MyTokenizer.PAREN_EXPR_STRING_SEPARATOR);
-	checkConstr(str4, delim4, res4dot2, seps);
-    }
-
-    /**
-     * Test the constructor.
-     */
-    public void testConstructor5() {
-	Vector seps = new Vector();
-	seps.add(MyTokenizer.DOUBLE_QUOTED_SEPARATOR);
-	seps.add(MyTokenizer.SINGLE_QUOTED_SEPARATOR);
-
-	String str5 = " newAttr = \': h\' ";
-	String delim5 = " ,\t,<<,>>,[,],:,=,{,},\\,";
-	String res5dot1[] = {
-	    " ", "newAttr", " ", "=", " ", "\'", ":", " ", "h\'", " "
-	};
-	String res5dot2[] = {
-	    " ", "newAttr", " ", "=", " ", "\': h\'", " "
-	};
-
-	checkConstr(str5, delim5, res5dot1);
-	checkConstr(str5, delim5, res5dot2,
-	            MyTokenizer.SINGLE_QUOTED_SEPARATOR);
-	checkConstr(str5, delim5, res5dot1,
-	            MyTokenizer.DOUBLE_QUOTED_SEPARATOR);
-	checkConstr(str5, delim5, res5dot1, MyTokenizer.PAREN_EXPR_SEPARATOR);
-	checkConstr(
-		    str5,
-		    delim5,
-		    res5dot1,
-		    MyTokenizer.PAREN_EXPR_STRING_SEPARATOR);
-	checkConstr(str5, delim5, res5dot2, seps);
-    }
-
-    /**
-     * Test the constructor.
-     */
-    public void testConstructor6() {
-	Vector seps = new Vector();
-	seps.add(MyTokenizer.DOUBLE_QUOTED_SEPARATOR);
-	seps.add(MyTokenizer.SINGLE_QUOTED_SEPARATOR);
-
-	String str6 = "newAttr = (: ()h) ";
-	String delim6 = " ,\t,<<,>>,[,],:,=,{,},\\,";
-	String res6dot1[] = {
-	    "newAttr", " ", "=", " ", "(", ":", " ", "()h)", " "
-	};
-	String res6dot2[] = {
-	    "newAttr", " ", "=", " ", "(: ()h)", " "
-	};
-
-	checkConstr(str6, delim6, res6dot1);
-	checkConstr(str6, delim6, res6dot1,
-	            MyTokenizer.SINGLE_QUOTED_SEPARATOR);
-	checkConstr(str6, delim6, res6dot1,
-	            MyTokenizer.DOUBLE_QUOTED_SEPARATOR);
-	checkConstr(str6, delim6, res6dot2, MyTokenizer.PAREN_EXPR_SEPARATOR);
-	checkConstr(
-		    str6,
-		    delim6,
-		    res6dot2,
-		    MyTokenizer.PAREN_EXPR_STRING_SEPARATOR);
-	checkConstr(str6, delim6, res6dot1, seps);
-    }
-
-    /**
-     * Test the constructor.
-     */
-    public void testConstructor7() {
-	Vector seps = new Vector();
-	seps.add(MyTokenizer.DOUBLE_QUOTED_SEPARATOR);
-	seps.add(MyTokenizer.SINGLE_QUOTED_SEPARATOR);
-
-	String str7 = "newAttr = (\"\\\" )(\" () \'\\\' )(\')";
-	String delim7 = " ,\t,<<,>>,[,],:,=,{,},\\,";
-	String res7dot1[] = {
-	    "newAttr",
-	    " ",
-	    "=",
-	    " ",
-	    "(\"\\\"",
-	    " ",
-	    ")(\"",
-	    " ",
-	    "()",
-	    " ",
-	    "\'\\\'",
-	    " ",
-	    ")(\')"
-	};
-	String res7dot2[] = {
-	    "newAttr",
-	    " ",
-	    "=",
-	    " ",
-	    "(\"\\\"",
-	    " ",
-	    ")(\"",
-	    " ",
-	    "()",
-	    " ",
-	    "\'\\\' )(\'",
-	    ")"
-	};
-	String res7dot3[] = {
-	    "newAttr",
-	    " ",
-	    "=",
-	    " ",
-	    "(",
-	    "\"\\\" )(\"",
-	    " ",
-	    "()",
-	    " ",
-	    "\'\\\'",
-	    " ",
-	    ")(\')"
-	};
-	String res7dot4[] = {
-	    "newAttr",
-	    " ",
-	    "=",
-	    " ",
-	    "(\"\\\" )",
-	    "(\" () \'\\\' )",
-	    "(\')"
-	};
-	String res7dot5[] = {
-	    "newAttr", " ", "=", " ", "(\"\\\" )(\" () \'\\\' )(\')"
-	};
-	String res7dot6[] = {
-	    "newAttr",
-	    " ",
-	    "=",
-	    " ",
-	    "(",
-	    "\"\\\" )(\"",
-	    " ",
-	    "()",
-	    " ",
-	    "\'\\\' )(\'",
-	    ")"
-	};
-
-	checkConstr(str7, delim7, res7dot1);
-	checkConstr(str7, delim7, res7dot2,
-	            MyTokenizer.SINGLE_QUOTED_SEPARATOR);
-	checkConstr(str7, delim7, res7dot3,
-	            MyTokenizer.DOUBLE_QUOTED_SEPARATOR);
-	checkConstr(str7, delim7, res7dot4, MyTokenizer.PAREN_EXPR_SEPARATOR);
-	checkConstr(
-		    str7,
-		    delim7,
-		    res7dot5,
-		    MyTokenizer.PAREN_EXPR_STRING_SEPARATOR);
-	checkConstr(str7, delim7, res7dot6, seps);
-    }
-
-    /**
-     * Test putToken().
-     */
-    public void testPutToken() {
-	MyTokenizer st = new MyTokenizer("Hello old friend", " ");
-	int oidx;
-
-	assertTrue("Token 1", "Hello".equals(st.nextToken()));
-
-	oidx = st.getTokenIndex();
-	st.putToken(",");
-	assertTrue("PutToken 1", ",".equals(st.nextToken()));
-	assertTrue("PutTokenIndex 1", oidx == st.getTokenIndex());
-
-	assertTrue("Token 2", " ".equals(st.nextToken()));
-	assertTrue("Token 3", "old".equals(st.nextToken()));
-
-	oidx = st.getTokenIndex();
-	st.putToken(",");
-	st.putToken(";");
-	assertTrue("PutToken 2", ";".equals(st.nextToken()));
-	assertTrue("PutTokenIndex 2", oidx == st.getTokenIndex());
-
-	st.putToken("?");
-	assertTrue("PutToken 3", "?".equals(st.nextToken()));
-	assertTrue("PutTokenIndex 3", oidx == st.getTokenIndex());
-
-	assertTrue("Token 4", " ".equals(st.nextToken()));
-	assertTrue("Token 5", "friend".equals(st.nextToken()));
-
-	assertTrue("MoreTokens 1", !st.hasMoreTokens());
-	st.putToken("?");
-	assertTrue("MoreTokens 2", st.hasMoreTokens());
-	assertTrue("PutToken 4", "?".equals(st.nextToken()));
-	assertTrue("MoreTokens 3", !st.hasMoreTokens());
-
-	try {
-	    st.putToken(null);
-	    assertTrue("Allows nulls", false);
-	} catch (NullPointerException npe) {
+	public TestMyTokenizer(String str) {
+		super(str);
 	}
-    }
 
-    /**
-     * Test lineseparators.
-     */
-    public void testLineSeparator() {
-	MyTokenizer st = new MyTokenizer("str1\nstr2\r\nstr3\rstr4",
-					 "",
-					 MyTokenizer.LINE_SEPARATOR);
-	MyTokenizer st2 = new MyTokenizer("\n\n\r\n\r\n\r\r",
-					  "",
-					  MyTokenizer.LINE_SEPARATOR);
+	public void testConstructors() {
+		Vector seps = new Vector();
+		seps.add(MyTokenizer.DOUBLE_QUOTED_SEPARATOR);
+		seps.add(MyTokenizer.SINGLE_QUOTED_SEPARATOR);
 
-	assertEquals(st.nextElement(), "str1");
-	assertEquals(st.nextElement(), "\n");
-	assertEquals(st.nextElement(), "str2");
-	assertEquals(st.nextElement(), "\r\n");
-	assertEquals(st.nextElement(), "str3");
-	assertEquals(st.nextElement(), "\r");
-	assertEquals(st.nextElement(), "str4");
-	assertTrue(!st.hasMoreElements());
+		String str1 = "A String";
+		String delim1 = " ";
+		String res1[] = { "A", " ", "String" };
 
-	assertEquals(st2.nextElement(), "\n");
-	assertEquals(st2.nextElement(), "\n");
-	assertEquals(st2.nextElement(), "\r\n");
-	assertEquals(st2.nextElement(), "\r\n");
-	assertEquals(st2.nextElement(), "\r");
-	assertEquals(st2.nextElement(), "\r");
-	assertTrue(!st2.hasMoreElements());
-    }
+		String str2 = "public newAttr [1..*] : Type = Val {param}";
+		String delim2 = " ,\t,<<,>>,[,],:,=,{,},\\,";
+		String res2[] =
+			{
+				"public",
+				" ",
+				"newAttr",
+				" ",
+				"[",
+				"1..*",
+				"]",
+				" ",
+				":",
+				" ",
+				"Type",
+				" ",
+				"=",
+				" ",
+				"Val",
+				" ",
+				"{",
+				"param",
+				"}" };
 
-    private void checkConstr(String str, String delim, String res[]) {
-	MyTokenizer tokenizer = new MyTokenizer(str, delim);
-	String tok;
-	int i;
-	int idx = 0;
+		String str3 = "<< stereo >> newAttr";
+		String delim3 = " ,\t,<<,>>,[,],:,=,{,},\\,";
+		String res3[] = { "<<", " ", "stereo", " ", ">>", " ", "newAttr" };
 
-	for (i = 0; i < res.length; i++) {
-	    assertTrue(
-		       "MyTokenizer(\"" + str + "\", \"" + delim
-		           + "\") lacks tokens",
-		       tokenizer.hasMoreTokens());
-	    tok = tokenizer.nextToken();
-	    assertTrue("tokenIndex broken", idx == tokenizer.getTokenIndex());
-	    idx += tok.length();
-	    assertTrue(
-		       "MyTokenizer(\""
-		       + str
-		       + "\", \""
-		       + delim
-		       + "\") has wrong token \""
-		       + tok
-		       + "\" != \""
-		       + res[i]
-		       + "\"",
-		       res[i].equals(tok));
+		String str4 = " newAttr = \": h\" ";
+		String delim4 = " ,\t,<<,>>,[,],:,=,{,},\\,";
+		String res4_1[] =
+			{ " ", "newAttr", " ", "=", " ", "\"", ":", " ", "h\"", " " };
+		String res4_2[] = { " ", "newAttr", " ", "=", " ", "\": h\"", " " };
+
+		String str5 = " newAttr = \': h\' ";
+		String delim5 = " ,\t,<<,>>,[,],:,=,{,},\\,";
+		String res5_1[] =
+			{ " ", "newAttr", " ", "=", " ", "\'", ":", " ", "h\'", " " };
+		String res5_2[] = { " ", "newAttr", " ", "=", " ", "\': h\'", " " };
+
+		String str6 = "newAttr = (: ()h) ";
+		String delim6 = " ,\t,<<,>>,[,],:,=,{,},\\,";
+		String res6_1[] =
+			{ "newAttr", " ", "=", " ", "(", ":", " ", "()h)", " " };
+		String res6_2[] = { "newAttr", " ", "=", " ", "(: ()h)", " " };
+
+		String str7 = "newAttr = (\"\\\" )(\" () \'\\\' )(\')";
+		String delim7 = " ,\t,<<,>>,[,],:,=,{,},\\,";
+		String res7_1[] =
+			{
+				"newAttr",
+				" ",
+				"=",
+				" ",
+				"(\"\\\"",
+				" ",
+				")(\"",
+				" ",
+				"()",
+				" ",
+				"\'\\\'",
+				" ",
+				")(\')" };
+		String res7_2[] =
+			{
+				"newAttr",
+				" ",
+				"=",
+				" ",
+				"(\"\\\"",
+				" ",
+				")(\"",
+				" ",
+				"()",
+				" ",
+				"\'\\\' )(\'",
+				")" };
+		String res7_3[] =
+			{
+				"newAttr",
+				" ",
+				"=",
+				" ",
+				"(",
+				"\"\\\" )(\"",
+				" ",
+				"()",
+				" ",
+				"\'\\\'",
+				" ",
+				")(\')" };
+		String res7_4[] =
+			{
+				"newAttr",
+				" ",
+				"=",
+				" ",
+				"(\"\\\" )",
+				"(\" () \'\\\' )",
+				"(\')" };
+		String res7_5[] =
+			{ "newAttr", " ", "=", " ", "(\"\\\" )(\" () \'\\\' )(\')" };
+		String res7_6[] =
+			{
+				"newAttr",
+				" ",
+				"=",
+				" ",
+				"(",
+				"\"\\\" )(\"",
+				" ",
+				"()",
+				" ",
+				"\'\\\' )(\'",
+				")" };
+
+		checkConstr(str1, delim1, res1);
+		checkConstr(str1, delim1, res1, MyTokenizer.SINGLE_QUOTED_SEPARATOR);
+		checkConstr(str1, delim1, res1, MyTokenizer.DOUBLE_QUOTED_SEPARATOR);
+		checkConstr(str1, delim1, res1, MyTokenizer.PAREN_EXPR_SEPARATOR);
+		checkConstr(
+			str1,
+			delim1,
+			res1,
+			MyTokenizer.PAREN_EXPR_STRING_SEPARATOR);
+		checkConstr(str1, delim1, res1, seps);
+
+		checkConstr(str2, delim2, res2);
+		checkConstr(str2, delim2, res2, MyTokenizer.SINGLE_QUOTED_SEPARATOR);
+		checkConstr(str2, delim2, res2, MyTokenizer.DOUBLE_QUOTED_SEPARATOR);
+		checkConstr(str2, delim2, res2, MyTokenizer.PAREN_EXPR_SEPARATOR);
+		checkConstr(
+			str2,
+			delim2,
+			res2,
+			MyTokenizer.PAREN_EXPR_STRING_SEPARATOR);
+		checkConstr(str2, delim2, res2, seps);
+
+		checkConstr(str3, delim3, res3);
+		checkConstr(str3, delim3, res3, MyTokenizer.SINGLE_QUOTED_SEPARATOR);
+		checkConstr(str3, delim3, res3, MyTokenizer.DOUBLE_QUOTED_SEPARATOR);
+		checkConstr(str3, delim3, res3, MyTokenizer.PAREN_EXPR_SEPARATOR);
+		checkConstr(
+			str3,
+			delim3,
+			res3,
+			MyTokenizer.PAREN_EXPR_STRING_SEPARATOR);
+		checkConstr(str3, delim3, res3, seps);
+
+		checkConstr(str4, delim4, res4_1);
+		checkConstr(str4, delim4, res4_1, MyTokenizer.SINGLE_QUOTED_SEPARATOR);
+		checkConstr(str4, delim4, res4_2, MyTokenizer.DOUBLE_QUOTED_SEPARATOR);
+		checkConstr(str4, delim4, res4_1, MyTokenizer.PAREN_EXPR_SEPARATOR);
+		checkConstr(
+			str4,
+			delim4,
+			res4_1,
+			MyTokenizer.PAREN_EXPR_STRING_SEPARATOR);
+		checkConstr(str4, delim4, res4_2, seps);
+
+		checkConstr(str5, delim5, res5_1);
+		checkConstr(str5, delim5, res5_2, MyTokenizer.SINGLE_QUOTED_SEPARATOR);
+		checkConstr(str5, delim5, res5_1, MyTokenizer.DOUBLE_QUOTED_SEPARATOR);
+		checkConstr(str5, delim5, res5_1, MyTokenizer.PAREN_EXPR_SEPARATOR);
+		checkConstr(
+			str5,
+			delim5,
+			res5_1,
+			MyTokenizer.PAREN_EXPR_STRING_SEPARATOR);
+		checkConstr(str5, delim5, res5_2, seps);
+
+		checkConstr(str6, delim6, res6_1);
+		checkConstr(str6, delim6, res6_1, MyTokenizer.SINGLE_QUOTED_SEPARATOR);
+		checkConstr(str6, delim6, res6_1, MyTokenizer.DOUBLE_QUOTED_SEPARATOR);
+		checkConstr(str6, delim6, res6_2, MyTokenizer.PAREN_EXPR_SEPARATOR);
+		checkConstr(
+			str6,
+			delim6,
+			res6_2,
+			MyTokenizer.PAREN_EXPR_STRING_SEPARATOR);
+		checkConstr(str6, delim6, res6_1, seps);
+
+		checkConstr(str7, delim7, res7_1);
+		checkConstr(str7, delim7, res7_2, MyTokenizer.SINGLE_QUOTED_SEPARATOR);
+		checkConstr(str7, delim7, res7_3, MyTokenizer.DOUBLE_QUOTED_SEPARATOR);
+		checkConstr(str7, delim7, res7_4, MyTokenizer.PAREN_EXPR_SEPARATOR);
+		checkConstr(
+			str7,
+			delim7,
+			res7_5,
+			MyTokenizer.PAREN_EXPR_STRING_SEPARATOR);
+		checkConstr(str7, delim7, res7_6, seps);
 	}
-	assertTrue(
-		   "MyTokenizer(\""
-		   + str
-		   + "\", \""
-		   + delim
-		   + "\") has too many tokens",
-		   !tokenizer.hasMoreTokens());
-    }
 
-    private void checkConstr(
-			     String str,
-			     String delim,
-			     String res[],
-			     CustomSeparator sep) {
-	MyTokenizer tokenizer = new MyTokenizer(str, delim, sep);
-	String tok;
-	int i;
-	int idx = 0;
+	public void testPutToken() {
+		MyTokenizer st = new MyTokenizer("Hello old friend", " ");
+		int oidx;
 
-	for (i = 0; i < res.length; i++) {
-	    assertTrue(
-		       "MyTokenizer(\"" + str + "\", \"" + delim
-		           + "\") lacks tokens",
-		       tokenizer.hasMoreTokens());
-	    tok = tokenizer.nextToken();
-	    assertTrue("tokenIndex broken", idx == tokenizer.getTokenIndex());
-	    idx += tok.length();
-	    assertTrue(
-		       "MyTokenizer(\""
-		       + str
-		       + "\", \""
-		       + delim
-		       + "\") has wrong token \""
-		       + tok
-		       + "\" != \""
-		       + res[i]
-		       + "\"",
-		       res[i].equals(tok));
+		assertTrue("Token 1", "Hello".equals(st.nextToken()));
+
+		oidx = st.getTokenIndex();
+		st.putToken(",");
+		assertTrue("PutToken 1", ",".equals(st.nextToken()));
+		assertTrue("PutTokenIndex 1", oidx == st.getTokenIndex());
+
+		assertTrue("Token 2", " ".equals(st.nextToken()));
+		assertTrue("Token 3", "old".equals(st.nextToken()));
+
+		oidx = st.getTokenIndex();
+		st.putToken(",");
+		st.putToken(";");
+		assertTrue("PutToken 2", ";".equals(st.nextToken()));
+		assertTrue("PutTokenIndex 2", oidx == st.getTokenIndex());
+
+		st.putToken("?");
+		assertTrue("PutToken 3", "?".equals(st.nextToken()));
+		assertTrue("PutTokenIndex 3", oidx == st.getTokenIndex());
+
+		assertTrue("Token 4", " ".equals(st.nextToken()));
+		assertTrue("Token 5", "friend".equals(st.nextToken()));
+
+		assertTrue("MoreTokens 1", !st.hasMoreTokens());
+		st.putToken("?");
+		assertTrue("MoreTokens 2", st.hasMoreTokens());
+		assertTrue("PutToken 4", "?".equals(st.nextToken()));
+		assertTrue("MoreTokens 3", !st.hasMoreTokens());
+
+		try {
+			st.putToken(null);
+			assertTrue("Allows nulls", false);
+		} catch (NullPointerException npe) {
+		}
 	}
-	assertTrue(
-		   "MyTokenizer(\""
-		   + str
-		   + "\", \""
-		   + delim
-		   + "\") has too many tokens",
-		   !tokenizer.hasMoreTokens());
-    }
 
-    private void checkConstr(
-			     String str,
-			     String delim,
-			     String res[],
-			     Collection seps) {
-	MyTokenizer tokenizer = new MyTokenizer(str, delim, seps);
-	String tok;
-	int i;
-	int idx = 0;
+	private void checkConstr(String str, String delim, String res[]) {
+		MyTokenizer tokenizer = new MyTokenizer(str, delim);
+		String tok;
+		int i;
+		int idx = 0;
 
-	for (i = 0; i < res.length; i++) {
-	    assertTrue(
-		       "MyTokenizer(\"" + str + "\", \"" + delim
-		           + "\") lacks tokens",
-		       tokenizer.hasMoreTokens());
-	    tok = tokenizer.nextToken();
-	    assertTrue("tokenIndex broken", idx == tokenizer.getTokenIndex());
-	    idx += tok.length();
-	    assertTrue(
-		       "MyTokenizer(\""
-		       + str
-		       + "\", \""
-		       + delim
-		       + "\") has wrong token \""
-		       + tok
-		       + "\" != \""
-		       + res[i]
-		       + "\"",
-		       res[i].equals(tok));
+		for (i = 0; i < res.length; i++) {
+			assertTrue(
+				"MyTokenizer(\"" + str + "\", \"" + delim + "\") lacks tokens",
+				tokenizer.hasMoreTokens());
+			tok = tokenizer.nextToken();
+			assertTrue("tokenIndex broken", idx == tokenizer.getTokenIndex());
+			idx += tok.length();
+			assertTrue(
+				"MyTokenizer(\""
+					+ str
+					+ "\", \""
+					+ delim
+					+ "\") has wrong token \""
+					+ tok
+					+ "\" != \""
+					+ res[i]
+					+ "\"",
+				res[i].equals(tok));
+		}
+		assertTrue(
+			"MyTokenizer(\""
+				+ str
+				+ "\", \""
+				+ delim
+				+ "\") has too many tokens",
+			!tokenizer.hasMoreTokens());
 	}
-	assertTrue(
-		   "MyTokenizer(\""
-		   + str
-		   + "\", \""
-		   + delim
-		   + "\") has too many tokens",
-		   !tokenizer.hasMoreTokens());
-    }
+
+	private void checkConstr(
+		String str,
+		String delim,
+		String res[],
+		CustomSeparator sep) {
+		MyTokenizer tokenizer = new MyTokenizer(str, delim, sep);
+		String tok;
+		int i;
+		int idx = 0;
+
+		for (i = 0; i < res.length; i++) {
+			assertTrue(
+				"MyTokenizer(\"" + str + "\", \"" + delim + "\") lacks tokens",
+				tokenizer.hasMoreTokens());
+			tok = tokenizer.nextToken();
+			assertTrue("tokenIndex broken", idx == tokenizer.getTokenIndex());
+			idx += tok.length();
+			assertTrue(
+				"MyTokenizer(\""
+					+ str
+					+ "\", \""
+					+ delim
+					+ "\") has wrong token \""
+					+ tok
+					+ "\" != \""
+					+ res[i]
+					+ "\"",
+				res[i].equals(tok));
+		}
+		assertTrue(
+			"MyTokenizer(\""
+				+ str
+				+ "\", \""
+				+ delim
+				+ "\") has too many tokens",
+			!tokenizer.hasMoreTokens());
+	}
+
+	private void checkConstr(
+		String str,
+		String delim,
+		String res[],
+		Collection seps) {
+		MyTokenizer tokenizer = new MyTokenizer(str, delim, seps);
+		String tok;
+		int i;
+		int idx = 0;
+
+		for (i = 0; i < res.length; i++) {
+			assertTrue(
+				"MyTokenizer(\"" + str + "\", \"" + delim + "\") lacks tokens",
+				tokenizer.hasMoreTokens());
+			tok = tokenizer.nextToken();
+			assertTrue("tokenIndex broken", idx == tokenizer.getTokenIndex());
+			idx += tok.length();
+			assertTrue(
+				"MyTokenizer(\""
+					+ str
+					+ "\", \""
+					+ delim
+					+ "\") has wrong token \""
+					+ tok
+					+ "\" != \""
+					+ res[i]
+					+ "\"",
+				res[i].equals(tok));
+		}
+		assertTrue(
+			"MyTokenizer(\""
+				+ str
+				+ "\", \""
+				+ delim
+				+ "\") has too many tokens",
+			!tokenizer.hasMoreTokens());
+	}
+	/* (non-Javadoc)
+	     * @see junit.framework.TestCase#setUp()
+	     */
+	protected void setUp() throws Exception {
+		super.setUp();
+		ArgoSecurityManager.getInstance().setAllowExit(true);
+	}
 }

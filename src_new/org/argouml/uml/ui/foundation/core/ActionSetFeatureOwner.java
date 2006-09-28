@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -27,33 +26,30 @@ package org.argouml.uml.ui.foundation.core;
 
 import java.awt.event.ActionEvent;
 
-import javax.swing.Action;
-
-import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.application.api.Argo;
+import org.argouml.uml.ui.UMLChangeAction;
 import org.argouml.uml.ui.UMLComboBox2;
-import org.tigris.gef.undo.UndoableAction;
+
+import ru.novosoft.uml.foundation.core.MClassifier;
+import ru.novosoft.uml.foundation.core.MFeature;
 
 /**
  * @since Nov 6, 2002
  * @author jaap.branderhorst@xs4all.nl
  */
-public class ActionSetFeatureOwner extends UndoableAction {
+public class ActionSetFeatureOwner extends UMLChangeAction {
 
-    private static final ActionSetFeatureOwner SINGLETON =
-        new ActionSetFeatureOwner();
-
+      public static final ActionSetFeatureOwner SINGLETON = new ActionSetFeatureOwner();
+    
     /**
      * Constructor for ActionSetStructuralFeatureType.
+     * @param s
      */
     protected ActionSetFeatureOwner() {
-        super(Translator.localize("Set"), null);
-        // Set the tooltip string:
-        putValue(Action.SHORT_DESCRIPTION, 
-                Translator.localize("Set"));
+        super(Argo.localize("CoreMenu", "Set"), true, NO_ICON);
     }
 
-
+    
 
     /**
      * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
@@ -61,36 +57,25 @@ public class ActionSetFeatureOwner extends UndoableAction {
     public void actionPerformed(ActionEvent e) {
         super.actionPerformed(e);
         Object source = e.getSource();
-        Object oldClassifier = null;
-        Object newClassifier = null;
-        Object feature = null;
+        MClassifier oldClassifier = null;
+        MClassifier newClassifier = null;
+        MFeature feature = null;
         if (source instanceof UMLComboBox2) {
-            UMLComboBox2 box = (UMLComboBox2) source;
+            UMLComboBox2 box = (UMLComboBox2)source;
             Object o = box.getTarget();
-            if (Model.getFacade().isAFeature(o)) {
-                feature = /*(MFeature)*/ o;
-                oldClassifier = Model.getFacade().getOwner(feature);
+            if (o instanceof MFeature) {
+                feature = (MFeature)o;
+                oldClassifier = feature.getOwner();
             }
             o = box.getSelectedItem();
-            if (Model.getFacade().isAClassifier(o)) {
-                newClassifier = /*(MClassifier)*/ o;
+            if (o instanceof MClassifier) {
+                newClassifier = (MClassifier)o;
             }
         }
-        if (newClassifier != oldClassifier
-                && feature != null
-                && newClassifier != null) {
-            Model.getCoreHelper().setOwner(feature, newClassifier);
+        if (newClassifier != oldClassifier && feature != null && newClassifier != null) {
+            feature.setOwner(newClassifier);
         }
-
-    }
-
-
-
-    /**
-     * @return Returns the sINGLETON.
-     */
-    public static ActionSetFeatureOwner getInstance() {
-        return SINGLETON;
+        
     }
 
 }

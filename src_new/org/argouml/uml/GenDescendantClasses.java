@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,62 +23,46 @@
 
 package org.argouml.uml;
 
-import java.util.Collection;
-import java.util.Enumeration;
-import java.util.Vector;
+import java.util.*;
 
-import org.argouml.model.Model;
-import org.tigris.gef.util.ChildGenerator;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
+
+import org.tigris.gef.util.*;
+
 /** Utility class to generate the subclasses of a class.  It
  *  recursively moves down the class hierarchy.  But it does that in a
- *  safe way that will nothang in case of cyclic inheritance.
+ *  safe way that will nothang in case of cyclic inheritance. 
  *  @stereotype singleton
  */
 
 public class GenDescendantClasses implements ChildGenerator {
-    private static final GenDescendantClasses SINGLETON =
-        new GenDescendantClasses();
+  public static GenDescendantClasses SINGLETON = new GenDescendantClasses();
 
-    /**
-     * @return Returns the sINGLETON.
-     */
-    public static GenDescendantClasses getSINGLETON() {
-        return SINGLETON;
+  public Enumeration gen(Object o) {
+    Vector res = new Vector();
+    if (!(o instanceof MGeneralizableElement)) return res.elements();
+
+    MGeneralizableElement cls = (MGeneralizableElement) o;
+    Collection gens = cls.getSpecializations();
+    if (gens == null) return res.elements();
+    accumulateDescendants(cls, res);
+    return res.elements();
+  }
+
+
+  public void accumulateDescendants(MGeneralizableElement cls, Vector accum) {
+    Vector gens = new Vector(cls.getSpecializations());
+    if (gens == null) return;
+    int size = gens.size();
+    for (int i = 0; i < size; i++) {
+      MGeneralization g = (MGeneralization) (gens.elementAt(i));
+      MGeneralizableElement ge = g.getChild();
+      if (!accum.contains(ge)) {
+	accum.add(ge);
+	accumulateDescendants(cls, accum);
+      }
     }
-
-    /**
-     * @see org.tigris.gef.util.ChildGenerator#gen(java.lang.Object)
-     */
-    public Enumeration gen(Object o) {
-	Vector res = new Vector();
-	if (!(Model.getFacade().isAGeneralizableElement(o))) {
-	    return res.elements();
-        }
-
-	Object cls = /*(MGeneralizableElement)*/ o;
-	Collection gens = Model.getFacade().getSpecializations(cls);
-	if (gens == null) return res.elements();
-	accumulateDescendants(cls, res);
-	return res.elements();
-    }
-
-
-    /**
-     * @param cls the starting class (in fact GeneralizableElement)
-     * @param accum the accumulated list of descendents
-     */
-    public void accumulateDescendants(Object/*MGeneralizableElement*/ cls,
-            Vector accum) {
-	Vector gens = new Vector(Model.getFacade().getSpecializations(cls));
-	if (gens == null) return;
-	int size = gens.size();
-	for (int i = 0; i < size; i++) {
-	    Object g = /*(MGeneralization)*/ (gens.elementAt(i));
-	    Object ge = Model.getFacade().getChild(g);
-	    if (!accum.contains(ge)) {
-		accum.add(ge);
-		accumulateDescendants(cls, accum);
-	    }
-	}
-    }
+  }
 } /* end class GenDescendantClasses */
+

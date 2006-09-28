@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2001 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -23,7 +22,8 @@
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 package org.argouml.application.events;
-import org.argouml.application.api.ArgoEventListener;
+import org.argouml.application.api.*;
+import org.argouml.application.modules.*;
 
 /** An interface that objects interested in NotationEvent
  *  notifications must extend.
@@ -36,33 +36,26 @@ public interface ArgoNotationEventListener extends ArgoEventListener {
 
     /**
      * Invoked when any aspect of the notation has been changed.
-     * @param e <code>ArgoNotationEvent</code> describing the change.
      */
     public void notationChanged(ArgoNotationEvent e);
 
     /**
      * Invoked when a notation has been added.
-     * @param e <code>ArgoNotationEvent</code> describing the added notation.
      */
     public void notationAdded(ArgoNotationEvent e);
 
     /**
      * Invoked when a notation has been removed.
-     * @param e <code>ArgoNotationEvent</code> describing the removed notation.
      */
     public void notationRemoved(ArgoNotationEvent e);
 
     /**
      * Invoked when a notation provider has been added.
-     * @param e <code>ArgoNotationEvent</code> describing
-     * the added notation provider.
      */
     public void notationProviderAdded(ArgoNotationEvent e);
 
     /**
      * Invoked when a notation provider has been removed.
-     * @param e <code>ArgoNotationEvent</code> describing
-     * the removed notation provider.
      */
     public void notationProviderRemoved(ArgoNotationEvent e);
 

@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,22 +21,21 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $Id$
 package org.argouml.uml.ui.foundation.core;
 
-import java.util.ArrayList;
-import java.util.List;
+import org.argouml.uml.ui.UMLModelElementListModel2;
 
-import org.argouml.model.Model;
-import org.argouml.uml.ui.UMLModelElementOrderedListModel2;
+import ru.novosoft.uml.MBase;
+import ru.novosoft.uml.foundation.core.MClassifier;
 
 /**
- *
- * @author jaap.branderhorst@xs4all.nl
+ * 
+ * @author jaap.branderhorst@xs4all.nl	
  * @since Jan 26, 2003
  */
-public class UMLClassifierFeatureListModel
-    extends UMLModelElementOrderedListModel2 {
-
+public class UMLClassifierFeatureListModel extends UMLModelElementListModel2 {
+   
     /**
      * Constructor for UMLClassifierFeatureListModel.
      */
@@ -50,33 +48,15 @@ public class UMLClassifierFeatureListModel
      */
     protected void buildModelList() {
         if (getTarget() != null) {
-            setAllElements(Model.getFacade().getFeatures(getTarget()));
+            setAllElements(((MClassifier)getTarget()).getFeatures());
         }
     }
 
     /**
-     * @see org.argouml.uml.ui.UMLModelElementListModel2#isValidElement(Object)
+     * @see org.argouml.uml.ui.UMLModelElementListModel2#isValidElement(ru.novosoft.uml.MBase)
      */
-    protected boolean isValidElement(Object/*MBase*/ element) {
-        return Model.getFacade().getFeatures(getTarget()).contains(element);
+    protected boolean isValidElement(MBase element) {
+        return ((MClassifier)getTarget()).getFeatures().contains(element);
     }
 
-    /**
-     * @see org.argouml.uml.ui.UMLModelElementOrderedListModel2#moveTo(int, int)
-     */
-    protected void moveDown(int index1) {
-        int index2 = index1 + 1;
-        Object clss = getTarget();
-        List c = new ArrayList(Model.getFacade().getFeatures(clss));
-        Object mem1 = c.get(index1);
-        Object mem2 = c.get(index2);
-        List cc = new ArrayList(c);
-        cc.remove(mem1);
-        cc.remove(mem2);
-        Model.getCoreHelper().setFeatures(clss, cc);
-        c.set(index1, mem2);
-        c.set(index2, mem1);
-        Model.getCoreHelper().setFeatures(clss, c);
-        buildModelList();
-    }
 }

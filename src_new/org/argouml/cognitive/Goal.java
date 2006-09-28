@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,99 +23,41 @@
 
 package org.argouml.cognitive;
 
+import org.argouml.application.api.*;
 
-/**
- * This class models a goal of a designer.
- *
- */
 public class Goal {
 
-    // TODO: values
+  // TODO: values
 
-    ////////////////////////////////////////////////////////////////
-    // constants
+  ////////////////////////////////////////////////////////////////
+  // constants
+  public static final Goal UNSPEC = new Goal("goal.unspecified", 1);
+  
+  ////////////////////////////////////////////////////////////////
+  // instance variables
+  protected String _name;
+  protected int _priority;
+  
+  ////////////////////////////////////////////////////////////////
+  // constructor
+  public Goal(String n, int p) {
+    setName(Argo.localize("Cognitive", n));
+    setPriority(p);
+  }
 
-    /**
-     * The unspecified goal.
-     */
-    private static final Goal UNSPEC = new Goal("label.goal.unspecified", 1);
+  ////////////////////////////////////////////////////////////////
+  // accessors
 
-    ////////////////////////////////////////////////////////////////
-    // instance variables
-    /**
-     * The localized name.
-     */
-    private String name;
+  public boolean equals(Object d2) {
+    if (!(d2 instanceof Goal)) return false;
+    return ((Goal)d2).getName().equals(getName());
+  }
+  
+  public String getName() { return _name; }
+  public void setName(String n) { _name = n; }
+  public int getPriority() { return _priority; }
+  public void setPriority(int p) { _priority = p; }
 
-    /**
-     * The priority.
-     */
-    private int priority;
-
-    /**
-     * The constructor.
-     *
-     * @param n the name (to be localized)
-     * @param p the priority
-     */
-    public Goal(String n, int p) {
-	name = Translator.localize(n);
-	priority = p;
-    }
-
-    ////////////////////////////////////////////////////////////////
-    // accessors
-
-    /**
-     * @see java.lang.Object#hashCode()
-     */
-    public int hashCode() {
-        if (name == null) {
-            return 0;
-        }
-        return name.hashCode();
-    }
-
-    /**
-     * @see java.lang.Object#equals(java.lang.Object)
-     */
-    public boolean equals(Object d2) {
-	if (!(d2 instanceof Goal)) {
-	    return false;
-	}
-	return ((Goal) d2).getName().equals(getName());
-    }
-
-    /**
-     * @return the localized name
-     */
-    public String getName() { return name; }
-
-    /**
-     * @param n the localized name
-     */
-    public void setName(String n) { name = n; }
-
-    /**
-     * @return the priority
-     */
-    public int getPriority() { return priority; }
-
-    /**
-     * @param p the priority
-     */
-    public void setPriority(int p) { priority = p; }
-
-    /**
-     * @see java.lang.Object#toString()
-     */
-    public String toString() { return getName(); }
-
-    /**
-     * @return Returns the unspecified goal.
-     */
-    public static Goal getUnspecifiedGoal() {
-        return UNSPEC;
-    }
-
+  public String toString() { return getName(); }
+  
 } /* end class Goal */

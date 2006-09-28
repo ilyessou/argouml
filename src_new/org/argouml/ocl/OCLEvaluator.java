@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2003 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,115 +23,75 @@
 
 package org.argouml.ocl;
 
-import java.util.Iterator;
+import java.util.*;
 
-import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
-import org.tigris.gef.base.Diagram;
-import org.tigris.gef.ocl.ExpansionException;
+import org.argouml.model.ModelFacade;
 
 
-/**
- * OCLEvaluator is responsible for evaluating simple OCL expressions.
- * Such expressions are for example used in the critiques.<p>
- *
- * @stereotype singleton
+/** OCLEvaluator is responsible for evaluating simple OCL expressions.
+ *  Such expressions are for example used in the critiques.
+ *  @stereotype singleton
  */
 public class OCLEvaluator extends org.tigris.gef.ocl.OCLEvaluator {
 
-    /**
-     * The constructor.
-     *
-     */
-    public OCLEvaluator() {
+    protected OCLEvaluator() {
     }
 
-    /**
-     * @see org.tigris.gef.ocl.OCLEvaluator#evalToString(java.lang.Object,
-     * java.lang.String)
-     */
-    protected synchronized String evalToString(Object self, String expr)
-        throws ExpansionException {
+    public static OCLEvaluator SINGLETON = new OCLEvaluator();
+
+    public synchronized String evalToString(Object self, String expr) {
         String res = null;
-        if (GET_NAME_EXPR_1.equals(expr)
-                && Model.getFacade().isAModelElement(self)) {
-            res = Model.getFacade().getName(self);
-            if (res == null || "".equals(res)) {
-                res = Translator.localize("misc.name.anon");
-            }
+        if (GET_NAME_EXPR_1.equals(expr) && ModelFacade.isAModelElement(self)) 
+        {
+            res = ModelFacade.getName(self);
+            if (res == null || "".equals(res)) res = "(anon)";
         }
-        if (GET_NAME_EXPR_2.equals(expr)
-                && Model.getFacade().isAModelElement(self)) {
-            res = Model.getFacade().getName(self);
-            if (res == null || "".equals(res)) {
-                res = Translator.localize("misc.name.anon");
-            }
+        if (GET_NAME_EXPR_2.equals(expr) && ModelFacade.isAModelElement(self))
+        {
+            res = ModelFacade.getName(self);
+            if (res == null || "".equals(res)) res = "(anon)";
         }
-        if (GET_OWNER_EXPR.equals(expr) && Model.getFacade().isAFeature(self)) {
-            res = Model.getFacade().getName(self);
-            if (res == null || "".equals(res)) {
-                res = Translator.localize("misc.name.anon");
-            }
+        if (GET_OWNER_EXPR.equals(expr) && ModelFacade.isAFeature(self)) {
+            res = ModelFacade.getName(self);
+            if (res == null || "".equals(res)) res = "(anon)";
         }
-        if (GET_NAME_EXPR_1.equals(expr) && self instanceof Diagram) {
-            res = Model.getFacade().getName(self);
-            if (res == null || "".equals(res)) {
-                res = Translator.localize("misc.name.anon");
-            }
+        if (GET_NAME_EXPR_1.equals(expr) && ModelFacade.isADiagram(self)) {
+            res = ModelFacade.getName(self);
+            if (res == null || "".equals(res)) res = "(anon)";
         }
-        if (GET_NAME_EXPR_2.equals(expr) && self instanceof Diagram) {
-            res = Model.getFacade().getName(self);
-            if (res == null || "".equals(res)) {
-                res = Translator.localize("misc.name.anon");
-            }
+        if (GET_NAME_EXPR_2.equals(expr) && ModelFacade.isADiagram(self)) {
+            res = ModelFacade.getName(self);
+            if (res == null || "".equals(res)) res = "(anon)";
         }
     /*
         if (GET_OWNER_EXPR.equals(expr) && self instanceof Diagram) {
             res = ((Diagram)self).getOwner().getName();
-            if (res == null || "".equals(res)) {
-                res = Translator.localize("misc.name.anon");
-            }
+            if (res == null || "".equals(res)) res = "(anon)";
         }
     */
-        if (res == null) {
-            res = evalToString(self, expr, ", ");
-        }
+        if (res == null) res = evalToString(self, expr, ", ");
         return res;
     }
 
-    /**
-     * @see org.tigris.gef.ocl.OCLEvaluator#evalToString(java.lang.Object,
-     * java.lang.String, java.lang.String)
-     */
-    protected synchronized String evalToString(
-            Object self,
-            String expr,
-            String sep)
-    	throws ExpansionException {
-
+    public synchronized String evalToString(Object self,
+                                            String expr, String sep) {
         _scratchBindings.put("self", self);
         java.util.List values = eval(_scratchBindings, expr);
         _strBuf.setLength(0);
         Iterator iter = values.iterator();
-        while (iter.hasNext()) {
+        while(iter.hasNext()) {
             Object v = iter.next();
-            if (Model.getFacade().isAModelElement(v)) {
-                v = Model.getFacade().getName(v);
-                if ("".equals(v)) {
-                    v = Translator.localize("misc.name.anon");
-                }
+            if (ModelFacade.isAModelElement(v)) {
+                v = ModelFacade.getName(v);
+                if ("".equals(v)) v = "(anon)";
             }
-            if (Model.getFacade().isAExpression(v)) {
-                v = Model.getFacade().getBody(v);
-                if ("".equals(v)) {
-                    v = "(unspecified)";
-                }
+            if (ModelFacade.isAExpression(v)) {
+                v = ModelFacade.getBody(v);
+                if ("".equals(v)) v = "(unspecified)";
             }
-            if (!"".equals(v)) {
+            if (! "".equals(v)) {
                 _strBuf.append(v);
-                if (iter.hasNext()) {
-                    _strBuf.append(sep);
-                }
+                if (iter.hasNext()) _strBuf.append(sep);
             }
         }
         return _strBuf.toString();

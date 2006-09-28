@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,103 +21,69 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+
+// File: CrNameConflict.java
+// Classes: CrNameConflict
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.cognitive.critics;
 
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
-
 import org.argouml.cognitive.Designer;
-import org.argouml.cognitive.ListSet;
 import org.argouml.cognitive.ToDoItem;
 import org.argouml.cognitive.critics.Critic;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
-import org.argouml.uml.cognitive.UMLToDoItem;
+import org.argouml.kernel.Wizard;
+import org.argouml.model.ModelFacade;
 
-/**
- * Well-formedness rule [1] for MNamespace. See page 33 of UML 1.1 Semantics.
- * OMG document ad/97-08-04.
- */
+
+/** Well-formedness rule [1] for MNamespace. See page 33 of UML 1.1
+ *  Semantics. OMG document ad/97-08-04. */
+
 public class CrNameConflict extends CrUML {
 
-    /**
-     * The constructor.
-     */
     public CrNameConflict() {
-        setupHeadAndDesc();
-        addSupportedDecision(UMLDecision.NAMING);
+        setHeadline("Revise Name to Avoid Conflict");
+        addSupportedDecision(CrUML.decNAMING);
         setKnowledgeTypes(Critic.KT_SYNTAX);
         addTrigger("name");
         addTrigger("feature_name");
     }
 
-    /**
-     * @see org.argouml.uml.cognitive.critics.CrUML#predicate2(
-     *      java.lang.Object, org.argouml.cognitive.Designer)
-     */
-    public boolean predicate2(Object dm, Designer dsgr) {
-        return computeOffenders(dm).size() > 1;
-    }
-
-    /**
-     * @see org.argouml.cognitive.critics.Critic#toDoItem( java.lang.Object,
-     *      org.argouml.cognitive.Designer)
-     */
-    public ToDoItem toDoItem(Object dm, Designer dsgr) {
-        ListSet offs = computeOffenders(dm);
-        return new UMLToDoItem(this, offs, dsgr);
-    }
-
-    /**
-     * @param dm
-     *            the object to check
-     * @return the set of offenders
-     */
-    protected ListSet computeOffenders(Object dm) {
-        ListSet offenderResult = new ListSet();
-        if (Model.getFacade().isANamespace(dm)) {
-            Iterator it = Model.getFacade().getOwnedElements(dm).iterator();
-            HashMap names = new HashMap();
-            while (it.hasNext()) {
-                Object name1Object = it.next();
-                if (Model.getFacade().isAGeneralization(name1Object))
-                    continue;
-                String name = Model.getFacade().getName(name1Object);
-                if (name == null)
-                    continue;
-                if ("".equals(name))
-                    continue;
-                if (names.containsKey(name)) {
-                    Object offender = names.get(name);
-                    if (!offenderResult.contains(offender)) {
-                        offenderResult.addElement(offender);
-                    }
-                    offenderResult.addElement(name1Object);
+    public boolean predicate2(Object dm, Designer dsgr) {      
+        boolean problem = NO_PROBLEM;
+        if (ModelFacade.isANamespace(dm)) {
+            Iterator it = ModelFacade.getOwnedElements(dm).iterator();
+            Collection names = new ArrayList(); 
+            while (it.hasNext()) {  
+                String name = ModelFacade.getName(it.next());
+                if (names.contains(name)) {  
+                    problem = PROBLEM_FOUND; 
+                    break;   
                 }
-                names.put(name, name1Object);
-            }
+                names.add(name); 
+            } 
+        } 
+        return problem; 
+    }
+
+    public void initWizard(Wizard w) {
+        if (w instanceof WizMEName) {
+            ToDoItem item = w.getToDoItem();
+            Object me = item.getOffenders().elementAt(0);
+            String sug = ModelFacade.getName(me);
+            String ins = "Change the name to something different.";
+            ((WizMEName)w).setInstructions(ins);
+            ((WizMEName)w).setSuggestion(sug);
+            ((WizMEName)w).setMustEdit(true);
         }
-        return offenderResult;
     }
 
-    /**
-     * @see org.argouml.cognitive.Poster#stillValid(
-     *      org.argouml.cognitive.ToDoItem, org.argouml.cognitive.Designer)
-     */
-    public boolean stillValid(ToDoItem i, Designer dsgr) {
-        if (!isActive())
-            return false;
-        ListSet offs = i.getOffenders();
+    public Class getWizardClass(ToDoItem item) { return WizMEName.class; }
 
-        // first element is e.g. the class, but we need to have its namespace
-        // to recompute the offenders.
-        Object f = offs.firstElement();
-        Object ns = Model.getFacade().getNamespace(f);
-        if (!predicate(ns, dsgr))
-            return false;
-        ListSet newOffs = computeOffenders(ns);
-        boolean res = offs.equals(newOffs);
-        return res;
-    }
 
 } /* end class CrNameConflict.java */
+

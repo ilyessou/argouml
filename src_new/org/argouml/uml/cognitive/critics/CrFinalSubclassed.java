@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2003 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,51 +22,46 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+
+// File: CrFinalSubclassed.java
+// Classes: CrFinalSubclassed
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.cognitive.critics;
 
-import java.util.Iterator;
+import java.util.*;
 
-import org.argouml.cognitive.Designer;
-import org.argouml.cognitive.critics.Critic;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
+import org.argouml.cognitive.*;
 
-/**
- * Well-formedness rule [2] for MGeneralizableElement. See page 31 of UML 1.1
- * Semantics. OMG document ad/97-08-04.
- * In UML 1.3 it is rule [2] in section 2.5.3.18 page 2-54.
- * Remove final keyword or remove subclasses
- *
- * @author jrobbins
+// Use model through ModelFacade
+import org.argouml.model.ModelFacade;
+
+/** Well-formedness rule [2] for MGeneralizableElement. See page 31 of UML 1.1
+ *  Semantics. OMG document ad/97-08-04. 
+ *  In UML 1.3 it is rule [2] in section 2.5.3.18 page 2-54.
  */
+
+import org.argouml.cognitive.critics.*;
+
 public class CrFinalSubclassed extends CrUML {
 
-    /**
-     * The constructor.
-     */
-    public CrFinalSubclassed() {
-        setupHeadAndDesc();
-	addSupportedDecision(UMLDecision.INHERITANCE);
-	setKnowledgeTypes(Critic.KT_SEMANTICS);
-	addTrigger("specialization");
-	addTrigger("isLeaf");
-    }
+  public CrFinalSubclassed() {
+    setHeadline("Remove final keyword or remove subclasses");
 
-    /**
-     * @see org.argouml.uml.cognitive.critics.CrUML#predicate2(
-     * java.lang.Object, org.argouml.cognitive.Designer)
-     */
+    addSupportedDecision(CrUML.decINHERITANCE);
+    setKnowledgeTypes(Critic.KT_SEMANTICS);
+    addTrigger("specialization");
+    addTrigger("isLeaf");
+  }
+
     public boolean predicate2(Object dm, Designer dsgr) {
-	if (!Model.getFacade().isAGeneralizableElement(dm)) {
-	    return NO_PROBLEM;
-	}
-
-	if (!Model.getFacade().isLeaf(dm)) {
-	    return NO_PROBLEM;
-	}
-
-	Iterator specs = Model.getFacade().getSpecializations(dm).iterator();
-	return specs.hasNext() ? PROBLEM_FOUND : NO_PROBLEM;
+	if (!(ModelFacade.isAGeneralizableElement(dm))) return NO_PROBLEM;
+	if (!(ModelFacade.isLeaf(dm))) return NO_PROBLEM;
+	Iterator enum = ModelFacade.getSpecializations(dm);
+	if (enum.hasNext()) return PROBLEM_FOUND;
+	return NO_PROBLEM;
     }
 
 } /* end class CrFinalSubclassed.java */

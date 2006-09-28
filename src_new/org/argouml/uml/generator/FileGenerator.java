@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 2002-2006 The Regents of the University of California. All
+// Copyright (c) 2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -29,20 +28,15 @@ package org.argouml.uml.generator;
  */
 public interface FileGenerator {
 
-    /**
-     * The fileseperation for this operating system.
-     */
-    public static final String FILE_SEPARATOR =
-	System.getProperty("file.separator");
-
+   /**
+   * The fileseperation for this operating system.
+   */
+	public final static String FILE_SEPARATOR = System.getProperty("file.separator");
     /** Generates a file for this classifier.
      * TODO:
      * This will only work for languages that have each node
      * in a separate files (one or more).
-     *
-     * @param node the node
-     * @param path the path
-     * @return filename the generated file
+     * @returns filename
      */
-    public String generateFile2(Object node, String path);
+    public String GenerateFile(Object node, String path);
 }

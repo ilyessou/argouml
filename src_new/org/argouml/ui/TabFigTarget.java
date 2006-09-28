@@ -1,4 +1,3 @@
-// $Id$
 // Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
@@ -24,9 +23,11 @@
 
 package org.argouml.ui;
 
+import org.tigris.gef.presentation.Fig;
+
 /**
  * Empty interface used to tag Tabbed panels that accept a Fig Target.
  */
-public interface TabFigTarget extends TabTarget {
+public interface TabFigTarget extends TabTarget{
 
 }

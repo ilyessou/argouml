@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2001 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -26,88 +25,60 @@ package org.argouml.uml.ui.behavior.collaborations;
 
 import javax.swing.JScrollPane;
 
-import org.argouml.i18n.Translator;
-import org.argouml.uml.ui.ActionNavigateContainerElement;
-import org.argouml.uml.ui.UMLComboBox2;
+import org.argouml.application.api.Argo;
+
 import org.argouml.uml.ui.UMLComboBoxNavigator;
 import org.argouml.uml.ui.UMLLinkedList;
 import org.argouml.uml.ui.foundation.core.PropPanelNamespace;
-import org.argouml.uml.ui.foundation.extension_mechanisms.ActionNewStereotype;
 import org.argouml.util.ConfigLoader;
 
 /**
- * Property panel for collaborations. 
+ * Property panel for collaborations. This panel is not totally finished yet.
+ * It is not possible at the moment to see any attributes or associations at the
+ * panel except for name and stereotype. Since the other attributes are not
+ * implemented correctly speaking in general terms, they are not implemented
+ * in this class either.
  *
  * @author jaap.branderhorst@xs4all.nl
  */
 public class PropPanelCollaboration extends PropPanelNamespace {
 
     /**
-     * The serial version.
-     */
-    private static final long serialVersionUID = 5642815840272293391L;
-
-    /**
-     * Construct a property panel for a Collaboration.
+     * Constructor for PropPanelCollaboration.
+     * @param title
+     * @param icon
+     * @param panelCount
      */
     public PropPanelCollaboration() {
         super("Collaboration", ConfigLoader.getTabPropsOrientation());
 
-        addField(Translator.localize("label.name"),
-                getNameTextField());
-        addField(Translator.localize("label.namespace"),
-                getNamespaceSelector());
+        addField(Argo.localize("UMLMenu", "label.name"),getNameTextField());
+        addField(Argo.localize("UMLMenu", "label.stereotype"),
+            new UMLComboBoxNavigator(this, Argo.localize("UMLMenu", "tooltip.nav-stereo"),getStereotypeBox()));
+        addField(Argo.localize("UMLMenu", "label.namespace"),getNamespaceScroll());
 
-        // the represented classifier
-        UMLComboBox2 representedClassifierComboBox =
-            new UMLComboBox2(
-                     new UMLCollaborationRepresentedClassifierComboBoxModel(),
-                     new ActionSetRepresentedClassifierCollaboration());
-        addField(Translator.localize("label.represented-classifier"),
-                new UMLComboBoxNavigator(
-                        this,
-                        Translator.localize(
-                                "label.represented-classifier."
-                                + "navigate.tooltip"),
-                        representedClassifierComboBox));
+        UMLLinkedList classifierList = new UMLLinkedList(new UMLCollaborationRepresentedClassifierListModel());
+        classifierList.setVisibleRowCount(1);
+        addField(Argo.localize("UMLMenu", "label.represented-classifier"),
+            new JScrollPane(classifierList));
 
-        // the represented operation
-        UMLComboBox2 representedOperationComboBox =
-            new UMLComboBox2(
-                     new UMLCollaborationRepresentedOperationComboBoxModel(),
-                     new ActionSetRepresentedOperationCollaboration());
-        addField(Translator.localize("label.represented-operation"),
-                new UMLComboBoxNavigator(
-                        this,
-                        Translator.localize(
-                                "label.represented-operation."
-                                + "navigate.tooltip"),
-                        representedOperationComboBox));
+        UMLLinkedList operationList = new UMLLinkedList(new UMLCollaborationRepresentedOperationListModel());
+        operationList.setVisibleRowCount(1);
+        addField(Argo.localize("UMLMenu", "label.represented-operation"),
+            new JScrollPane(operationList));
 
-        addSeparator();
+        addSeperator();
 
-        UMLLinkedList interactionList =
-	    new UMLLinkedList(new UMLCollaborationInteractionListModel());
+        UMLLinkedList interactionList = new UMLLinkedList(new UMLCollaborationInteractionListModel());
         interactionList.setVisibleRowCount(1);
-        addField(Translator.localize("label.interaction"),
+        addField(Argo.localize("UMLMenu", "label.interaction"),
             new JScrollPane(interactionList));
 
-        UMLLinkedList constrainingList =
-	    new UMLLinkedList(
-                new UMLCollaborationConstrainingElementListModel());
-        addField(Translator.localize("label.constraining-elements"),
+        UMLLinkedList constrainingList = new UMLLinkedList(new UMLCollaborationConstrainingElementListModel());
+        addField(Argo.localize("UMLMenu", "label.constraining-elements"),
             new JScrollPane(constrainingList));
 
-        addSeparator();
+        // we do not add the ownedelements since they are not of real interest
 
-        /* Add the owned-elements field 
-         * with ClassifierRoles and AssociationRoles:
-         */
-        addField(Translator.localize("label.owned-elements"),
-                getOwnedElementsScroll());
-        
-        addAction(new ActionNavigateContainerElement());
-        addAction(new ActionNewStereotype());
-        addAction(getDeleteAction());
     }
 }

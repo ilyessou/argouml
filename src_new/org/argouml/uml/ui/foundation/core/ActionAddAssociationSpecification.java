@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,38 +21,38 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $Id$
 package org.argouml.uml.ui.foundation.core;
 
 import java.util.Vector;
 
-import org.argouml.i18n.Translator;
-import org.argouml.kernel.Project;
-import org.argouml.kernel.ProjectManager;
-import org.argouml.model.Model;
+import org.argouml.application.api.Argo;
+import org.argouml.model.uml.modelmanagement.ModelManagementHelper;
 import org.argouml.uml.ui.AbstractActionAddModelElement;
 
+import ru.novosoft.uml.foundation.core.MAssociationEnd;
+import ru.novosoft.uml.foundation.core.MClassifier;
+
 /**
- *
- * @author jaap.branderhorst@xs4all.nl
+ * 
+ * @author jaap.branderhorst@xs4all.nl	
  * @since Jan 4, 2003
  */
-public class ActionAddAssociationSpecification
-    extends AbstractActionAddModelElement {
+public class ActionAddAssociationSpecification extends AbstractActionAddModelElement {
 
-    private static final ActionAddAssociationSpecification SINGLETON =
-        new ActionAddAssociationSpecification();
+    public final static ActionAddAssociationSpecification SINGLETON = new ActionAddAssociationSpecification();
     /**
      * Constructor for ActionAddExtendExtensionPoint.
      */
     protected ActionAddAssociationSpecification() {
         super();
     }
-
+    
     /**
      * @see org.argouml.uml.ui.AbstractActionAddModelElement#doIt(java.util.Vector)
      */
     protected void doIt(Vector selected) {
-        Model.getCoreHelper().setSpecifications(getTarget(), selected);
+        ((MAssociationEnd)getTarget()).setSpecifications(selected);
     }
 
     /**
@@ -62,11 +61,7 @@ public class ActionAddAssociationSpecification
     protected Vector getChoices() {
         Vector ret = new Vector();
         if (getTarget() != null) {
-            Project p = ProjectManager.getManager().getCurrentProject();
-            Object model = p.getRoot();
-            ret.addAll(Model.getModelManagementHelper()
-                .getAllModelElementsOfKindWithModel(model,
-                        Model.getMetaTypes().getClassifier()));
+            ret.addAll(ModelManagementHelper.getHelper().getAllModelElementsOfKind(MClassifier.class));
         }
         return ret;
     }
@@ -75,7 +70,7 @@ public class ActionAddAssociationSpecification
      * @see org.argouml.uml.ui.AbstractActionAddModelElement#getDialogTitle()
      */
     protected String getDialogTitle() {
-        return Translator.localize("dialog.title.add-specifications");
+        return Argo.localize("UMLMenu", "dialog.title.add-specifications");
     }
 
     /**
@@ -83,14 +78,7 @@ public class ActionAddAssociationSpecification
      */
     protected Vector getSelected() {
         Vector ret = new Vector();
-        ret.addAll(Model.getFacade().getSpecifications(getTarget()));
+        ret.addAll(((MAssociationEnd)getTarget()).getSpecifications());
         return ret;
-    }
-
-    /**
-     * @return Returns the sINGLETON.
-     */
-    public static ActionAddAssociationSpecification getInstance() {
-        return SINGLETON;
     }
 }

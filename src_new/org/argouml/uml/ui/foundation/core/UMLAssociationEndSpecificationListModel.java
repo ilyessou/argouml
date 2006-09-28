@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,21 +21,25 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $Id$
 package org.argouml.uml.ui.foundation.core;
 
-import org.argouml.model.Model;
 import org.argouml.uml.ui.UMLModelElementListModel2;
 
+import ru.novosoft.uml.MBase;
+import ru.novosoft.uml.foundation.core.MAssociationEnd;
+import ru.novosoft.uml.foundation.core.MClassifier;
+
 /**
- *
- * @author jaap.branderhorst@xs4all.nl
+ * 
+ * @author jaap.branderhorst@xs4all.nl	
  * @since Jan 4, 2003
  */
-public class UMLAssociationEndSpecificationListModel
-    extends UMLModelElementListModel2 {
+public class UMLAssociationEndSpecificationListModel extends UMLModelElementListModel2 {
 
     /**
      * Constructor for UMLAssociationEndSpecificationListModel.
+     * @param container
      */
     public UMLAssociationEndSpecificationListModel() {
         super("specification");
@@ -46,17 +49,15 @@ public class UMLAssociationEndSpecificationListModel
      * @see org.argouml.uml.ui.UMLModelElementListModel2#buildModelList()
      */
     protected void buildModelList() {
-        if (getTarget() != null) {
-            setAllElements(Model.getFacade().getSpecifications(getTarget()));
-        }
+        if (_target != null) 
+            setAllElements(((MAssociationEnd)_target).getSpecifications());
     }
 
     /**
-     * @see org.argouml.uml.ui.UMLModelElementListModel2#isValidElement(Object)
+     * @see org.argouml.uml.ui.UMLModelElementListModel2#isValidElement(MBase)
      */
-    protected boolean isValidElement(Object/*MBase*/ o) {
-        return Model.getFacade().isAClassifier(o)
-            && Model.getFacade().getSpecifications(getTarget()).contains(o);
+    protected boolean isValidElement(MBase o) {  
+        return o instanceof MClassifier && ((MAssociationEnd)getTarget()).getSpecifications().contains(o);
     }
 
 }

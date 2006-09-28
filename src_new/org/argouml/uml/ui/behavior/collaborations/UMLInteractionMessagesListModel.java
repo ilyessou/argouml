@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 2002-2006 The Regents of the University of California. All
+// Copyright (c) 2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -26,18 +26,22 @@ package org.argouml.uml.ui.behavior.collaborations;
 
 import java.util.Iterator;
 
-import org.argouml.model.Model;
 import org.argouml.uml.ui.UMLModelElementListModel2;
 
+import ru.novosoft.uml.MBase;
+import ru.novosoft.uml.behavior.collaborations.MInteraction;
+import ru.novosoft.uml.behavior.collaborations.MMessage;
+
 /**
- * List model for messages on the interaction proppanel.
- *
+ * List model for messages on the interaction proppanel. 
+ * 
  * @author jaap.branderhorst@xs4all.nl
  */
 public class UMLInteractionMessagesListModel extends UMLModelElementListModel2 {
 
     /**
      * Constructor for UMLInteractionMessagesListModel.
+     * @param container
      */
     public UMLInteractionMessagesListModel() {
         super("message");
@@ -48,18 +52,18 @@ public class UMLInteractionMessagesListModel extends UMLModelElementListModel2 {
      */
     protected void buildModelList() {
         removeAllElements();
-        Iterator it = Model.getFacade().getMessages(getTarget()).iterator();
+        Iterator it = ((MInteraction)getTarget()).getMessages().iterator();
         while (it.hasNext()) {
             addElement(it.next());
         }
     }
 
     /**
-     * @see org.argouml.uml.ui.UMLModelElementListModel2#isValidElement(Object)
+     * @see org.argouml.uml.ui.UMLModelElementListModel2#isValidElement(MBase)
      */
-    protected boolean isValidElement(Object/*MBase*/ elem) {
-        return Model.getFacade().isAMessage(elem)
-            && Model.getFacade().getInteraction(elem) == getTarget();
+    protected boolean isValidElement(MBase elem) {
+        return elem instanceof MMessage && 
+            ((MMessage)elem).getInteraction() == getTarget();
     }
 
 }

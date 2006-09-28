@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -23,90 +22,70 @@
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 package org.argouml.uml.ui;
-
-import java.beans.PropertyChangeEvent;
-
-import org.argouml.model.Model;
+import java.lang.reflect.*;
+import ru.novosoft.uml.*;
+import ru.novosoft.uml.behavior.common_behavior.MStimulus;
+import ru.novosoft.uml.behavior.common_behavior.MAction;
 
 /**
- * TODO: this class should be moved to package
- * org.argouml.uml.ui.behavior.common_behavior.
+ * @TODO this class should be moved to package
+ * org.argouml.uml.ui.behavior.common_behavior
  */
 public class UMLStimulusActionTextProperty  {
+    
+   
+    protected String _propertyName;
 
-
-    private String thePropertyName;
-
-    /**
-     * The constructor.
-     *
-     * @param propertyName the name of the property
-     */
     public UMLStimulusActionTextProperty(String propertyName) {
-        thePropertyName = propertyName;
+        _propertyName = propertyName;
     }
-
-
-    /**
-     * @param container the container of UML user interface components
-     * @param newValue the new value of the property
-     */
-    public void setProperty(UMLUserInterfaceContainer container,
-            String newValue) {
-	Object/*MStimulus*/  stimulus = container.getTarget();
-	if (stimulus != null) {
+    
+    
+    public void setProperty(UMLUserInterfaceContainer container,String newValue) {
+	MStimulus  stimulus = (MStimulus) container.getTarget();
+	if(stimulus != null) {
 
 	    String oldValue = getProperty(container);
 	    //
 	    //  if one or the other is null or they are not equal
-	    if (newValue == null
-                || oldValue == null
-                || !newValue.equals(oldValue)) {
+	    if(newValue == null || oldValue == null || !newValue.equals(oldValue)) {
 		//
-		//  as long as they aren't both null
+		//  as long as they aren't both null 
 		//   (or a really rare identical string pointer)
-		if (newValue != oldValue) {
+		if(newValue != oldValue) {
 		    // Object[] args = { newValue };
-		    Object action =
-		        Model.getFacade().getDispatchAction(stimulus);
-		    Model.getCoreHelper().setName(action, newValue);
+		  		    MAction action = stimulus.getDispatchAction();
+		    action.setName( newValue);
 		    // to rupdate the diagram set the stimulus name again
-                    // TODO: Explain that this really works also in the
-                    // MDR case. Linus is a sceptic.
-		    String dummyStr = Model.getFacade().getName(stimulus);
-		    Model.getCoreHelper().setName(stimulus, dummyStr);
+		    String dummyStr =  new String(stimulus.getName());
+		    stimulus.setName( dummyStr);
+		    
+		 
+		    
 		}
-	    }
-	}
+	    }		
+	}       
     }
-
-    /**
-     * @param container the container of UML user interface components
-     * @return the property
-     */
+    
     public String getProperty(UMLUserInterfaceContainer container) {
-        String value = null;
-	Object/*MStimulus*/ stimulus = container.getTarget();
-	if (stimulus != null) {
-	    Object action = Model.getFacade().getDispatchAction(stimulus);
-	    if (action != null) {
-                value = Model.getFacade().getName(action);
-            }
+        String value = null;       
+	MStimulus stimulus = (MStimulus) container.getTarget();
+	if(stimulus != null) {
+	    MAction action = stimulus.getDispatchAction();
+	    if (action != null) value = action.getName();
 	}
         return value;
     }
-
-    boolean isAffected(PropertyChangeEvent event) {
-        String sourceName = event.getPropertyName();
-        return (thePropertyName == null
-                || sourceName == null
-                || sourceName.equals(thePropertyName));
+    
+    boolean isAffected(MElementEvent event) {
+	String sourceName = event.getName();	
+        if(_propertyName == null || sourceName == null || sourceName.equals(_propertyName))
+            return true;
+        return false;
     }
-
-    /**
-     * Called when the target has changed.
-     */
+    
     void targetChanged() {
     }
 }
+
 

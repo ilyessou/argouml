@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,226 +21,193 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: CrUML.java
+// Classes: CrUML
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.cognitive.critics;
 
-import org.apache.log4j.Logger;
-import org.argouml.cognitive.Designer;
-import org.argouml.cognitive.ListSet;
-import org.argouml.cognitive.ToDoItem;
-import org.argouml.cognitive.critics.Critic;
-import org.argouml.cognitive.Translator;
-import org.argouml.kernel.Project;
-import org.argouml.kernel.ProjectManager;
-import org.argouml.model.Model;
-import org.argouml.ocl.CriticOclEvaluator;
-import org.argouml.uml.cognitive.UMLToDoItem;
-import org.tigris.gef.ocl.ExpansionException;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
 
-/**
- * "Abstract" Critic subclass that captures commonalities among all
- * critics in the UML domain.  This class also defines and registers
- * the categories of design decisions that the critics can
- * address. IT also deals with particular UMLToDoItems.
+import org.tigris.gef.util.*;
+import org.tigris.gef.base.Diagram;
+
+import org.apache.log4j.Category;
+import org.argouml.application.api.*;
+import org.argouml.kernel.*;
+import org.argouml.ui.*;
+import org.argouml.cognitive.*;
+import org.argouml.cognitive.critics.*;
+import org.argouml.ocl.OCLEvaluator;
+import java.io.*;
+import java.util.*;
+
+/** "Abstract" Critic subclass that captures commonalities among all
+ *  critics in the UML domain.  This class also defines and registers
+ *  the categories of design decisions that the critics can
+ *  address.
  *
  * @see org.argouml.cognitive.Designer
  * @see org.argouml.cognitive.DecisionModel
- *
- * @author jrobbins
  */
+
 public class CrUML extends Critic {
-    /**
-     * Logger.
-     */
-    private static final Logger LOG = Logger.getLogger(CrUML.class);
-
-    /**
-     * The constructor for this class.
-     */
-    public CrUML() {
-    }
-
-    /**
-     * Set the resources for this critic based on the class name.
-     *
-     * @param key is the class name.
-     */
-    public void setResource(String key) {
-        super.setHeadline(getLocalizedString(key, "-head"));
-        super.setDescription(getLocalizedString(key, "-desc"));
-    }
+    protected static Category cat = Category.getInstance(CrUML.class);
     
-    /**
-     * Returns a localized string for the current critic class.
-     * 
-     * @param suffix the suffix of the key
-     * @return the localized string
-     */
-    protected String getLocalizedString(String suffix) {
-        return getLocalizedString(getClassSimpleName(), suffix);
-    }
+  public static final Decision decINHERITANCE = new
+  Decision("decision.inheritance", 1);
 
-    /**
-     * Returns a localized string for the given key and suffix.
-     * 
-     * @param key the main key
-     * @param suffix the suffix of the key
-     * @return the localized string
-     */
-    protected String getLocalizedString(String key, String suffix) {
-        return Translator.localize("critics." + key + suffix);
-    }
-    
-    /**
-     * Loads the localized wizard's instruction.
-     * 
-     * @return the instructions
-     */
-    protected String getInstructions() {
-        return getLocalizedString("-ins");
-    }
-    
-    /**
-     * Loads the localized wizard's default suggestion.
-     * 
-     * @return the default suggestion
-     */
-    protected String getDefaultSuggestion() {
-        return getLocalizedString("-sug");
-    }
+  public static final Decision decCONTAINMENT = new
+  Decision("decision.containment", 1);
 
-    /**
-     * @see org.argouml.cognitive.critics.Critic#setHeadline(java.lang.String)
-     * 
-     * Set up the locale specific text for the critic headline 
-     * (the one liner that appears in the to-do pane)
-     * and the critic description (the detailed explanation that
-     * appears in the to-do tab of the details pane).
-     * 
-     * MVW: Maybe we can make it part of the constructor CrUML()?
-     */
-    public final void setHeadline(String s) {
-        setupHeadAndDesc();
-    }
+  public static final Decision decPATTERNS = new
+  Decision("decision.design-patterns", 1); //??
 
-    /**
-     * Set up the locale specific text for the critic headline
-     * (the one liner that appears in the to-do pane)
-     * and the critic description (the detailed explanation that
-     * appears in the to-do tab of the details pane).
-     */
-    public final void setupHeadAndDesc() {
-        setResource(getClassSimpleName());
-    }
+  public static final Decision decRELATIONSHIPS = new
+  Decision("decision.relationships", 1);
 
-    /**
-     * @see org.argouml.cognitive.critics.Critic#predicate(
-     * java.lang.Object, org.argouml.cognitive.Designer)
-     */
-    public boolean predicate(Object dm, Designer dsgr) {
-	Project p = ProjectManager.getManager().getCurrentProject();
-        if (p.isInTrash(dm)
-                || (Model.getFacade().isAModelElement(dm)
-                && Model.getUmlFactory().isRemoved(dm))) {
-            return NO_PROBLEM;
-        } else {
-            return predicate2(dm, dsgr);
-        }
-    }
+  public static final Decision decSTORAGE = new
+  Decision("decision.storage", 1);
 
-    /**
-     * This is the decision routine for the critic.
-     *
-     * @param dm is the UML entity that is being checked.
-     * @param dsgr is for future development and can be ignored.
-     *
-     * @return boolean problem found
-     */
-    public boolean predicate2(Object dm, Designer dsgr) {
-	return super.predicate(dm, dsgr);
-    }
+  public static final Decision decBEHAVIOR = new
+  Decision("decision.behavior", 1);
 
-    ////////////////////////////////////////////////////////////////
-    // display related methods
-    private static final String OCL_START = "<ocl>";
-    private static final String OCL_END = "</ocl>";
+  public static final Decision decINSTANCIATION = new
+  Decision("decision.instantiation", 1);
+
+  public static final Decision decNAMING = new
+  Decision("decision.naming", 1);
+
+  public static final Decision decMODULARITY = new
+  Decision("decision.modularity", 1);
+
+  public static final Decision decCLASS_SELECTION = new
+  Decision("decision.class-selection", 1);
+
+  public static final Decision decEXPECTED_USAGE = new
+  Decision("decision.expected-usage", 1);
+
+  public static final Decision decMETHODS = new
+  Decision("decision.methods", 1); //??
+
+  public static final Decision decCODE_GEN = new
+  Decision("decision.code-generation", 1); //??
+
+  public static final Decision decPLANNED_EXTENSIONS = new
+  Decision("decision.planned-extensions", 1);
+
+  public static final Decision decSTEREOTYPES = new
+  Decision("decision.stereotypes", 1);
+
+  public static final Decision decSTATE_MACHINES = new
+  Decision("decision.mstate-machines", 1);
+
+  /** Static initializer for this class. Called when the class is
+   *  loaded (which is before any subclass instances are instanciated). */
+  static {
+    Designer d = Designer.theDesigner();
+    d.startConsidering(decCLASS_SELECTION);
+    d.startConsidering(decNAMING);
+    d.startConsidering(decSTORAGE);
+    d.startConsidering(decINHERITANCE);
+    d.startConsidering(decCONTAINMENT);
+    d.startConsidering(decPLANNED_EXTENSIONS);
+    d.startConsidering(decSTATE_MACHINES);
+    d.startConsidering(decPATTERNS);
+    d.startConsidering(decRELATIONSHIPS);
+    d.startConsidering(decINSTANCIATION);
+    d.startConsidering(decMODULARITY);
+    d.startConsidering(decEXPECTED_USAGE);
+    d.startConsidering(decMETHODS);
+    d.startConsidering(decCODE_GEN);
+    d.startConsidering(decSTEREOTYPES);
+  }
+
+
+
+  ////////////////////////////////////////////////////////////////
+  // constructor
+
+  public CrUML() {
+  }
+
+  public void setResource(String key) {
+        String head = Argo.localize("Cognitive",key + "_head");
+        super.setHeadline(head);
+        String desc = Argo.localize("Cognitive",key + "_desc");
+        super.setDescription(desc);
+  }
+
+
+
+  /**
+   *   Will be deprecated in good time
+   */
+  public final void setHeadline(String s) {
+      //
+      //   current implementation ignores the argument
+      //     and triggers setResource()
+      String className = getClass().getName();
+      setResource(className.substring(className.lastIndexOf('.')+1));
+  }
+
+
+
+  public boolean predicate(Object dm, Designer dsgr) {
+    Project p = ProjectManager.getManager().getCurrentProject();
+    if (p.isInTrash(dm)) {
+      return NO_PROBLEM;
+    }
+    else {
+        return predicate2(dm, dsgr);
+    }
+  }
+
+  public boolean predicate2(Object dm, Designer dsgr) {
+    return super.predicate(dm, dsgr);
+  }
+
+  ////////////////////////////////////////////////////////////////
+  // display related methods
+  private static final String OCL_START = "<ocl>";
+  private static final String OCL_END = "</ocl>";
 
     /**
      * Expand text with ocl brackets in it.
      * No recursive expansion.
-     *
-     * @return the expanded text
-     * @param res is the text to expand.
-     * @param offs is the elements to replace
      */
-    public String expand(String res, ListSet offs) {
+  public String expand(String res, VectorSet offs) {
+    cat.debug("expanding: " + res);
 
-        if (offs.size() == 0) {
-	    return res;
-	}
+    if (offs.size() == 0) return res;
 
-        Object off1 = offs.firstElement();
+    Object off1 = offs.firstElement();
 
-        StringBuffer beginning = new StringBuffer("");
-        int matchPos = res.indexOf(OCL_START);
+    StringBuffer beginning = new StringBuffer("");
+    int matchPos = res.indexOf(OCL_START);
 
-        // replace all occurances of OFFENDER with the name of the
-        // first offender
-        while (matchPos != -1) {
-            int endExpr = res.indexOf(OCL_END, matchPos + 1);
-            // check if there is no OCL_END; if so, the critic expression
-            // is not correct and can not be expanded
-            if (endExpr == -1) {
-                break;
-            }
-            if (matchPos > 0) {
-                beginning.append(res.substring(0, matchPos));
-            }
-            String expr = res.substring(matchPos + OCL_START.length(), endExpr);
-            String evalStr = null;
-            try {
-                evalStr =
-		    CriticOclEvaluator.getInstance().evalToString(off1, expr);
-            } catch (ExpansionException e) {
-                // Really ought to have a CriticException to throw here.
-                LOG.error("Failed to evaluate critic expression", e);
-            }
-            if (expr.endsWith("") && evalStr.equals("")) {
-                evalStr = Translator.localize("misc.name.anon");
-            }
-            beginning.append(evalStr);
-            res = res.substring(endExpr + OCL_END.length());
-            matchPos = res.indexOf(OCL_START);
-        }
-        if (beginning.length() == 0) {
-            // return original string if no replacements made
-            return res;
-        } else {
-            return beginning.append(res).toString();
-        }
+    // replace all occurances of OFFENDER with the name of the first offender
+    while (matchPos != -1) {
+      int endExpr = res.indexOf(OCL_END, matchPos + 1);
+      // check if there is no OCL_END; if so, the critic expression 
+      // is not correct and can not be expanded
+      if (endExpr == -1) break; 
+      if (matchPos > 0) beginning.append(res.substring(0, matchPos));
+      String expr = res.substring(matchPos + OCL_START.length(), endExpr);
+      String evalStr = OCLEvaluator.SINGLETON.evalToString(off1, expr);
+      cat.debug("expr='" + expr + "' = '" + evalStr + "'");
+      if (expr.endsWith("") && evalStr.equals(""))
+	evalStr = "(anon)";
+      beginning.append(evalStr);
+      res = res.substring(endExpr + OCL_END.length());
+      matchPos = res.indexOf(OCL_START);
     }
+    if (beginning.length() == 0) // This is just to avoid creation of a new
+	return res;		// string when not needed.
+    else
+	return beginning.append(res).toString();
+  }
 
-    /**
-     * @see org.argouml.cognitive.critics.Critic#toDoItem(Object, Designer)
-     */
-    public ToDoItem toDoItem(Object dm, Designer dsgr) {
-	return new UMLToDoItem(this, dm, dsgr);
-    }
-    
-    /**
-     * Get the name of the current class.
-     * 
-     * @return the name of the current class without any leading packages
-     */
-    private final String getClassSimpleName() {
-        // TODO: This method can be replaced by getClass().getSimpleName()
-        // when Argo drops support for Java versions < 1.5
-        String className = getClass().getName();
-        return className.substring(className.lastIndexOf('.') + 1);
-    }
-
-
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = 1785043010468681602L;
 } /* end class CrUML */

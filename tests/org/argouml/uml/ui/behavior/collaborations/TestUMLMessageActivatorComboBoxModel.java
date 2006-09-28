@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,12 +21,22 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $header$
 package org.argouml.uml.ui.behavior.collaborations;
 
 import junit.framework.TestCase;
 
-import org.argouml.model.Model;
+import org.argouml.application.security.ArgoSecurityManager;
+import org.argouml.model.uml.UmlFactory;
+import org.argouml.model.uml.behavioralelements.collaborations.CollaborationsFactory;
+import org.argouml.model.uml.modelmanagement.ModelManagementFactory;
 import org.argouml.ui.targetmanager.TargetEvent;
+
+import ru.novosoft.uml.MFactoryImpl;
+import ru.novosoft.uml.behavior.collaborations.MCollaboration;
+import ru.novosoft.uml.behavior.collaborations.MInteraction;
+import ru.novosoft.uml.behavior.collaborations.MMessage;
+import ru.novosoft.uml.model_management.MModel;
 
 /**
  * @since Nov 2, 2002
@@ -35,29 +44,14 @@ import org.argouml.ui.targetmanager.TargetEvent;
  */
 public class TestUMLMessageActivatorComboBoxModel extends TestCase {
 
-    /**
-     * The number of elements that we use for the test.
-     */
-    private static final int NO_OF_ELEMENTS = 10;
-
-    /**
-     * The list of elements that we use for the test.
-     */
-    private Object[] activators;
-
-    /**
-     * The model that we test.
-     */
+    private int oldEventPolicy;
+    private MMessage[] activators;
     private UMLMessageActivatorComboBoxModel model;
-
-    /**
-     * The element that we test.
-     */
-    private Object elem;
-
+    private MMessage elem;
+    
     /**
      * Constructor for TestUMLMessageActivatorComboBoxModel.
-     * @param arg0 is the name of the test case.
+     * @param arg0
      */
     public TestUMLMessageActivatorComboBoxModel(String arg0) {
         super(arg0);
@@ -68,24 +62,24 @@ public class TestUMLMessageActivatorComboBoxModel extends TestCase {
      */
     protected void setUp() throws Exception {
         super.setUp();
-        elem = Model.getCollaborationsFactory().createMessage();
-        activators = new Object[NO_OF_ELEMENTS];
-        Object m = Model.getModelManagementFactory().createModel();
-        Object inter =
-            Model.getCollaborationsFactory().createInteraction();
-        Object col =
-            Model.getCollaborationsFactory().createCollaboration();
-        Model.getCollaborationsHelper().setContext(inter, col);
-        Model.getCoreHelper().setNamespace(col, m);
-        Model.getCollaborationsHelper().addMessage(inter, elem);
-        for (int i = 0; i < NO_OF_ELEMENTS; i++) {
-            activators[i] = Model.getCollaborationsFactory().createMessage();
-            Model.getCollaborationsHelper().addMessage(inter, activators[i]);
-        }
-        model = new UMLMessageActivatorComboBoxModel();
-        model.targetSet(new TargetEvent(this, "set", new Object[0],
-                new Object[] {elem}));
-        Model.getPump().flushModelEvents();
+        ArgoSecurityManager.getInstance().setAllowExit(true);
+        UmlFactory.getFactory().setGuiEnabled(false);
+        elem = CollaborationsFactory.getFactory().createMessage();
+        oldEventPolicy = MFactoryImpl.getEventPolicy();
+        MFactoryImpl.setEventPolicy(MFactoryImpl.EVENT_POLICY_IMMEDIATE);    
+        activators = new MMessage[10];
+        MModel m = ModelManagementFactory.getFactory().createModel();
+        MInteraction inter = CollaborationsFactory.getFactory().createInteraction();
+        MCollaboration col = CollaborationsFactory.getFactory().createCollaboration();
+        inter.setContext(col);
+        col.setNamespace(m);
+        inter.addMessage(elem);
+        for (int i = 0 ; i < 10; i++) {
+            activators[i] = CollaborationsFactory.getFactory().createMessage();
+            inter.addMessage(activators[i]);
+        }  
+        model = new UMLMessageActivatorComboBoxModel(); 
+        model.targetSet(new TargetEvent(this, "set", new Object[0], new Object[] {elem})); 
     }
 
     /**
@@ -93,50 +87,35 @@ public class TestUMLMessageActivatorComboBoxModel extends TestCase {
      */
     protected void tearDown() throws Exception {
         super.tearDown();
-        Model.getUmlFactory().delete(elem);
-        for (int i = 0; i < NO_OF_ELEMENTS; i++) {
-            Model.getUmlFactory().delete(activators[i]);
+        UmlFactory.getFactory().delete(elem);
+        for (int i = 0 ; i < 10; i++) {
+            UmlFactory.getFactory().delete(activators[i]);
         }
+        MFactoryImpl.setEventPolicy(oldEventPolicy);
         model = null;
     }
-
-    /**
-     * Test setup.
-     */
+    
     public void testSetUp() {
-        assertEquals(NO_OF_ELEMENTS, model.getSize());
-        assertTrue(model.contains(activators[NO_OF_ELEMENTS / 2]));
+        assertEquals(10, model.getSize());
+        assertTrue(model.contains(activators[5]));
         assertTrue(model.contains(activators[0]));
-        assertTrue(model.contains(activators[NO_OF_ELEMENTS - 1]));
+        assertTrue(model.contains(activators[9]));
     }
-
-    /**
-     * Test setActivator().
-     */
+    
     public void testSetActivator() {
-        Model.getCollaborationsHelper().setActivator(elem, activators[0]);
-        Model.getPump().flushModelEvents();
-        // One can only do this by changing target,
-        // so let's simulate that:
-        model.targetSet(new TargetEvent(this,
-                TargetEvent.TARGET_SET,
-                new Object[0],
-                new Object[] {
-                    elem,
-                }));
+        elem.setActivator(activators[0]);
         assertTrue(model.getSelectedItem() == activators[0]);
     }
-
-    /**
-     * Test removing.
-     */
-    public void testRemoveBase() {
-        Model.getUmlFactory().delete(activators[NO_OF_ELEMENTS - 1]);
-        Model.getPump().flushModelEvents();
-        assertEquals("The element count should have reduced",
-                NO_OF_ELEMENTS - 1, model.getSize());
-        assertTrue("The model should no longer contain the delete element",
-                !model.contains(activators[NO_OF_ELEMENTS - 1]));
+    
+    public void testSetActivatorToNull() {
+        elem.setActivator(null);
+        assertNull(model.getSelectedItem());
     }
+    
+    public void testRemoveBase() {
+        UmlFactory.getFactory().delete(activators[9]);
+        assertEquals(9, model.getSize());
+        assertTrue(!model.contains(activators[9]));
+    } 
 
 }

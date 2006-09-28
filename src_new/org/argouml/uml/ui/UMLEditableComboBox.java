@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,16 +21,15 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $Id$
+
 package org.argouml.uml.ui;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.FocusEvent;
-import java.awt.event.FocusListener;
 
-import javax.swing.Action;
 import javax.swing.BorderFactory;
 import javax.swing.ComboBoxEditor;
 import javax.swing.Icon;
@@ -47,11 +45,11 @@ import org.argouml.application.helpers.ResourceLoaderWrapper;
  * An editable combobox. Upon pressing enter the text entered by the user is
  * sent as an actioncommand to the actionlistener (this). The item that's being
  * edited is sent to the method doIt after that. The developer should implement
- * this method
- * @author jaap.branderhorst@xs4all.nl
+ * this method 
+ * @author jaap.branderhorst@xs4all.nl	
  * @since Jan 4, 2003
  */
-public abstract class UMLEditableComboBox extends UMLComboBox2 implements FocusListener {
+public abstract class UMLEditableComboBox extends UMLComboBox2 {
 
     /**
      * The comboboxeditor for editable uml comboboxes. This has to be changed
@@ -59,8 +57,8 @@ public abstract class UMLEditableComboBox extends UMLComboBox2 implements FocusL
      * the list elements. Setitem has to give the correct value. Furthermore,
      * the standard comboboxeditor (BasicComboBoxEditor) does not support
      * showing icons.
-     *
-     * @author jaap.branderhorst@xs4all.nl
+     * 
+     * @author jaap.branderhorst@xs4all.nl	
      * @since Jan 5, 2003
      */
     protected class UMLComboBoxEditor extends BasicComboBoxEditor {
@@ -68,8 +66,8 @@ public abstract class UMLEditableComboBox extends UMLComboBox2 implements FocusL
         /**
          * A panel which helps us to show the editable textfield for this
          * combobox (including the Icon).
-         *
-         * @author jaap.branderhorst@xs4all.nl
+         * 
+         * @author jaap.branderhorst@xs4all.nl	
          * @since Jan 5, 2003
          */
         private class UMLImagePanel extends JPanel {
@@ -77,12 +75,12 @@ public abstract class UMLEditableComboBox extends UMLComboBox2 implements FocusL
             /**
              * The label that shows the icon.
              */
-            private JLabel imageIconLabel = new JLabel();
+            private JLabel _imageIconLabel = new JLabel();
             /**
              * The textfield the user can edit.
              */
-            private JTextField theTextField;
-
+            private JTextField _textField;
+            
             /**
              * Constructs a UMLImagePanel
              * @param textField The textfield the user can edit
@@ -91,25 +89,23 @@ public abstract class UMLEditableComboBox extends UMLComboBox2 implements FocusL
              */
             public UMLImagePanel(JTextField textField, boolean showIcon) {
                 setLayout(new BorderLayout());
-                theTextField = textField;
+                _textField = textField;
                 setBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED));
                 if (showIcon) {
-                    // we don't want to show some nasty gray background
-                    // color, now do we?
-                    imageIconLabel.setOpaque(true);
-                    imageIconLabel.setBackground(theTextField.getBackground());
-                    add(imageIconLabel, BorderLayout.WEST);
+                    // we don't want to show some nasty gray background color, now do we?
+                    _imageIconLabel.setOpaque(true);
+                    _imageIconLabel.setBackground(_textField.getBackground());
+                    add(_imageIconLabel, BorderLayout.WEST);
                 }
-                add(theTextField, BorderLayout.CENTER);
-                theTextField.addFocusListener(UMLEditableComboBox.this);
+                add(_textField, BorderLayout.CENTER);
             }
 
             public void setText(String text) {
-                theTextField.setText(text);
+                _textField.setText(text);
             }
 
             public String getText() {
-                return theTextField.getText();
+                return _textField.getText();
             }
 
             /**
@@ -118,51 +114,47 @@ public abstract class UMLEditableComboBox extends UMLComboBox2 implements FocusL
              */
             public void setIcon(Icon i) {
                 if (i != null) {
-                    imageIconLabel.setIcon(i);
-                    // necessary to create distance between
-                    // the textfield and the icon.
-                    imageIconLabel.setBorder(BorderFactory
-                            .createEmptyBorder(0, 2, 0, 2));
+                    _imageIconLabel.setIcon(i);
+                    // necessary to create distance between the textfield and the icon.
+                    _imageIconLabel.setBorder(BorderFactory.createEmptyBorder(0, 2, 0, 2));
 
                 } else {
-                    imageIconLabel.setIcon(null);
-                    imageIconLabel.setBorder(null);
+                    _imageIconLabel.setIcon(null);
+                    _imageIconLabel.setBorder(null);
                 }
-                imageIconLabel.invalidate();
+                _imageIconLabel.invalidate();
                 validate();
                 repaint();
             }
 
             public void selectAll() {
-                theTextField.selectAll();
+                _textField.selectAll();
             }
-
+            
             public void addActionListener(ActionListener l) {
-                theTextField.addActionListener(l);
+                _textField.addActionListener(l);                
             }
-
+            
             public void removeActionListener(ActionListener l) {
-                theTextField.removeActionListener(l);
+                _textField.removeActionListener(l);
             }
 
         }
 
-        private UMLImagePanel panel;
+        private UMLImagePanel _panel;
 
         /**
          * True if an icon should be shown.
          */
-        private boolean theShowIcon;
+        private boolean _showIcon;
 
 
         /**
          * Constructor for UMLComboBoxEditor.
-         *
-         * @param showIcon true if an icon is to be shown
          */
         public UMLComboBoxEditor(boolean showIcon) {
             super();
-            panel = new UMLImagePanel(editor, showIcon);
+            _panel = new UMLImagePanel(editor, showIcon);
             setShowIcon(showIcon);
         }
 
@@ -171,11 +163,9 @@ public abstract class UMLEditableComboBox extends UMLComboBox2 implements FocusL
          */
         public void setItem(Object anObject) {
             if (((UMLComboBoxModel2) getModel()).contains(anObject)) {
-                editor.setText(((UMLListCellRenderer2) getRenderer())
-                        .makeText(anObject));
-                if (theShowIcon && (anObject != null))
-                    panel.setIcon(ResourceLoaderWrapper.getInstance()
-                            .lookupIcon(anObject));
+                editor.setText(((UMLListCellRenderer2) getRenderer()).makeText(anObject));
+                if (_showIcon)
+                    _panel.setIcon(ResourceLoaderWrapper.getResourceLoaderWrapper().lookupIcon(anObject));
             } else
                 super.setItem(anObject);
 
@@ -186,7 +176,7 @@ public abstract class UMLEditableComboBox extends UMLComboBox2 implements FocusL
          * @return boolean
          */
         public boolean isShowIcon() {
-            return theShowIcon;
+            return _showIcon;
         }
 
         /**
@@ -194,30 +184,30 @@ public abstract class UMLEditableComboBox extends UMLComboBox2 implements FocusL
          * @param showIcon The showIcon to set
          */
         public void setShowIcon(boolean showIcon) {
-            theShowIcon = showIcon;
+            _showIcon = showIcon;
         }
 
         /**
          * @see javax.swing.ComboBoxEditor#getEditorComponent()
          */
         public Component getEditorComponent() {
-            return panel;
+            return _panel;
         }
 
         /**
          * @see javax.swing.ComboBoxEditor#addActionListener(java.awt.event.ActionListener)
          */
         public void addActionListener(ActionListener l) {
-            panel.addActionListener(l);
+            _panel.addActionListener(l);
         }
-
-
+        
+        
 
         /**
          * @see javax.swing.ComboBoxEditor#removeActionListener(java.awt.event.ActionListener)
          */
         public void removeActionListener(ActionListener l) {
-            panel.removeActionListener(l);
+            _panel.removeActionListener(l);
         }
 
         /**
@@ -231,17 +221,15 @@ public abstract class UMLEditableComboBox extends UMLComboBox2 implements FocusL
          * @see javax.swing.ComboBoxEditor#getItem()
          */
         public Object getItem() {
-            return panel.getText();
+            return _panel.getText();
         }
 
     }
 
     /**
-     * @see org.argouml.uml.ui.UMLComboBox2#UMLComboBox2(
-     * UMLComboBoxModel2, Action, boolean)
+     * @see org.argouml.uml.ui.UMLComboBox2#UMLComboBox2(UMLComboBoxModel2, UMLAction, boolean)
      */
-    public UMLEditableComboBox(UMLComboBoxModel2 model, Action selectAction,
-            boolean showIcon) {
+    public UMLEditableComboBox(UMLComboBoxModel2 model, UMLAction selectAction, boolean showIcon) {
         super(model, selectAction, showIcon);
         setEditable(true);
         setEditor(new UMLComboBoxEditor(showIcon));
@@ -249,18 +237,14 @@ public abstract class UMLEditableComboBox extends UMLComboBox2 implements FocusL
     }
 
     /**
-     * @see org.argouml.uml.ui.UMLComboBox2#UMLComboBox2(
-     * UMLComboBoxModel2, Action)
+     * @see org.argouml.uml.ui.UMLComboBox2#UMLComboBox2(UMLComboBoxModel2, UMLAction)
      */
-    public UMLEditableComboBox(UMLComboBoxModel2 arg0, Action selectAction) {
-        this(arg0, selectAction, true);
+    public UMLEditableComboBox(UMLComboBoxModel2 arg0, UMLAction selectAction) {
+        this(arg0, selectAction, false);
     }
 
     /**
      * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-     * TODO: From ComboBox javadoc - "This method is public as an implementation side
-     * effect. do not call or override."
-     * We should find some other way to implement this.
      */
     public void actionPerformed(ActionEvent e) {
         super.actionPerformed(e);
@@ -269,14 +253,13 @@ public abstract class UMLEditableComboBox extends UMLComboBox2 implements FocusL
             ComboBoxEditor editor = getEditor();
             Object item = editor.getItem();
             doOnEdit(item);
-            // next statement is necessary to update the textfield
-            // if the selection is equal to what was allready
+            // next statement is necessary to update the textfield if the selection is equal to what was allready
             // selected
             if (oldValue == getSelectedItem())
                 getEditor().setItem(getSelectedItem());
         }
     }
-
+    
     /**
      * This method is called after the user has edited the editable textfield
      * and has press enter. ActionPerformed determines that the action is about
@@ -286,15 +269,4 @@ public abstract class UMLEditableComboBox extends UMLComboBox2 implements FocusL
      */
     protected abstract void doOnEdit(Object item);
 
-    final public void focusGained(FocusEvent arg0) {
-    }
-
-    /**
-     * TODO: This is a temporary method of making sure the model is updated
-     * on loss of focus of a combo box. In the long term we should attempt to
-     * update the model on each keypress.
-     */
-    final public void focusLost(FocusEvent arg0) {
-        doOnEdit(getEditor().getItem());
-    }
 }

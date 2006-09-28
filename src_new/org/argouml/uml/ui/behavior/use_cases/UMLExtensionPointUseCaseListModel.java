@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 2002-2006 The Regents of the University of California. All
+// Copyright (c) 2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,18 +24,21 @@
 
 package org.argouml.uml.ui.behavior.use_cases;
 
-import org.argouml.model.Model;
 import org.argouml.uml.ui.UMLModelElementListModel2;
+
+import ru.novosoft.uml.MBase;
+import ru.novosoft.uml.behavior.use_cases.MExtensionPoint;
+import ru.novosoft.uml.behavior.use_cases.MUseCase;
 
 /**
  * @since Oct 6, 2002
  * @author jaap.branderhorst@xs4all.nl
  */
-public class UMLExtensionPointUseCaseListModel
-    extends UMLModelElementListModel2 {
+public class UMLExtensionPointUseCaseListModel extends UMLModelElementListModel2 {
 
     /**
      * Constructor for UMLExtensionPointUseCaseListModel.
+     * @param container
      */
     public UMLExtensionPointUseCaseListModel() {
         super("useCase");
@@ -45,15 +48,14 @@ public class UMLExtensionPointUseCaseListModel
      * @see org.argouml.uml.ui.UMLModelElementListModel2#buildModelList()
      */
     protected void buildModelList() {
-        addElement(Model.getFacade().getUseCase(getTarget()));
+        addElement(((MExtensionPoint)getTarget()).getUseCase());
     }
 
     /**
-     * @see org.argouml.uml.ui.UMLModelElementListModel2#isValidElement(Object)
+     * @see org.argouml.uml.ui.UMLModelElementListModel2#isValidElement(MBase)
      */
-    protected boolean isValidElement(Object/*MBase*/ o) {
-        return Model.getFacade().isAUseCase(o)
-            && Model.getFacade().getUseCase(getTarget()) == o;
+    protected boolean isValidElement(MBase o) {
+        return o instanceof MUseCase && ((MExtensionPoint)getTarget()).getUseCase() == o;
     }
 
 }

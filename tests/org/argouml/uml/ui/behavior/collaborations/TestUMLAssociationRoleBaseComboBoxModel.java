@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,14 +21,27 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $header$
 package org.argouml.uml.ui.behavior.collaborations;
 
 import junit.framework.TestCase;
 
+import org.argouml.application.security.ArgoSecurityManager;
 import org.argouml.kernel.Project;
 import org.argouml.kernel.ProjectManager;
-import org.argouml.model.Model;
+import org.argouml.model.uml.UmlFactory;
+import org.argouml.model.uml.behavioralelements.collaborations.CollaborationsFactory;
+import org.argouml.model.uml.foundation.core.CoreFactory;
+import org.argouml.model.uml.modelmanagement.ModelManagementFactory;
 import org.argouml.ui.targetmanager.TargetEvent;
+
+import ru.novosoft.uml.MFactoryImpl;
+import ru.novosoft.uml.behavior.collaborations.MAssociationRole;
+import ru.novosoft.uml.behavior.collaborations.MClassifierRole;
+import ru.novosoft.uml.behavior.collaborations.MCollaboration;
+import ru.novosoft.uml.foundation.core.MAssociation;
+import ru.novosoft.uml.foundation.core.MClass;
+import ru.novosoft.uml.model_management.MModel;
 
 /**
  * @since Oct 30, 2002
@@ -37,156 +49,85 @@ import org.argouml.ui.targetmanager.TargetEvent;
  */
 public class TestUMLAssociationRoleBaseComboBoxModel extends TestCase {
 
-    /**
-     * The count of elements that we create in this test.
-     */
-    private static final int NO_ELEMENTS_IN_TEST = 10;
-
-    /**
-     * The element that we work on.
-     */
-    private Object elem;
-
-    /**
-     * The model that we work on.
-     */
-    private UMLAssociationRoleBaseComboBoxModel model;
-
-    /**
-     * The list of bases that we use for the test.
-     */
-    private Object[] bases;
-
+    private int oldEventPolicy;
+    protected MAssociationRole elem;
+    protected UMLAssociationRoleBaseComboBoxModel model;
+    private MAssociation[] bases;
+    
     /**
      * Constructor for TestUMLAssociationRoleBaseComboBoxModel.
-     *
-     * @param arg0 is the name of the test case.
+     * @param arg0
      */
     public TestUMLAssociationRoleBaseComboBoxModel(String arg0) {
         super(arg0);
     }
-
+    
     /**
      * @see junit.framework.TestCase#setUp()
      */
     protected void setUp() throws Exception {
         super.setUp();
+        ArgoSecurityManager.getInstance().setAllowExit(true);
+        UmlFactory.getFactory().setGuiEnabled(false);
         Project p = ProjectManager.getManager().getCurrentProject();
         model = new UMLAssociationRoleBaseComboBoxModel();
-        Object class1 = Model.getCoreFactory().createClass();
-        Object class2 = Model.getCoreFactory().createClass();
-        Object m = Model.getModelManagementFactory().createModel();
+        MClass class1 = CoreFactory.getFactory().createClass();
+        MClass class2 = CoreFactory.getFactory().createClass();
+        MModel m = ModelManagementFactory.getFactory().createModel();
         p.setRoot(m);
-        Model.getCoreHelper().setNamespace(class1, m);
-        Model.getCoreHelper().setNamespace(class2, m);
-        bases = new Object[NO_ELEMENTS_IN_TEST];
-        for (int i = 0; i < NO_ELEMENTS_IN_TEST; i++) {
-            bases[i] =
-		Model.getCoreFactory().buildAssociation(class1, class2);
+        class1.setNamespace(m);
+        class2.setNamespace(m);
+        bases = new MAssociation[10];
+        for (int i = 0; i < 10; i++) {
+            bases[i] = CoreFactory.getFactory().buildAssociation(class1, class2);
         }
-        Object role1 =
-	    Model.getCollaborationsFactory().createClassifierRole();
-        Object role2 =
-	    Model.getCollaborationsFactory().createClassifierRole();
-        Model.getCollaborationsHelper().addBase(role1, class1);
-        Model.getCollaborationsHelper().addBase(role2, class2);
-        Object col =
-	    Model.getCollaborationsFactory().createCollaboration();
-        Model.getCoreHelper().setNamespace(role1, col);
-        Model.getCoreHelper().setNamespace(role2, col);
-        elem =
-	    Model.getCollaborationsFactory().buildAssociationRole(role1, role2);
-        model.targetSet(new TargetEvent(this,
-					TargetEvent.TARGET_SET,
-					new Object[0],
-					new Object[] {
-					    elem,
-					}));
-        Model.getPump().flushModelEvents();
+        MClassifierRole role1 = CollaborationsFactory.getFactory().createClassifierRole();
+        MClassifierRole role2 = CollaborationsFactory.getFactory().createClassifierRole();
+        role1.addBase(class1);
+        role2.addBase(class2);
+        MCollaboration col = CollaborationsFactory.getFactory().createCollaboration();
+        role1.setNamespace(col);
+        role2.setNamespace(col);
+        elem = CollaborationsFactory.getFactory().buildAssociationRole(role1, role2);
+        oldEventPolicy = MFactoryImpl.getEventPolicy();
+        MFactoryImpl.setEventPolicy(MFactoryImpl.EVENT_POLICY_IMMEDIATE);   
+        model.targetSet(new TargetEvent(this, "set", new Object[0], new Object[] {elem}));
     }
-
+    
     /**
      * @see junit.framework.TestCase#tearDown()
      */
     protected void tearDown() throws Exception {
         super.tearDown();
-        Model.getUmlFactory().delete(elem);
+        UmlFactory.getFactory().delete(elem);
+        MFactoryImpl.setEventPolicy(oldEventPolicy);
         model = null;
     }
-
-    /**
-     * Test setup.
-     */
+    
     public void testSetUp() {
-        // there is one extra element due to the empty element that
-        // the user can select
-        assertEquals(NO_ELEMENTS_IN_TEST + 1, model.getSize());
-
-        // Somewhere in the middle
-        assertTrue(model.contains(bases[NO_ELEMENTS_IN_TEST / 2]));
-
+        // there is one extra element due to the empty element that the user can select
+        assertEquals(10 + 1, model.getSize());
+        assertTrue(model.contains(bases[5]));
         assertTrue(model.contains(bases[0]));
-        assertTrue(model.contains(bases[NO_ELEMENTS_IN_TEST - 1]));
+        assertTrue(model.contains(bases[9]));
     }
-
-    /**
-     * Test setting the Base.
-     */
+    
     public void testSetBase() {
-        Model.getCollaborationsHelper().setBase(elem, bases[0]);
-        Model.getPump().flushModelEvents();
+        elem.setBase(bases[0]);
         assertTrue(model.getSelectedItem() == bases[0]);
     }
-
-    /**
-     * Test setting the Base.
-     */
-    public void testChangeBase() {
-        Model.getCollaborationsHelper().setBase(elem, bases[0]);
-        Model.getPump().flushModelEvents();
-        Model.getCollaborationsHelper().setBase(elem, bases[1]);
-        Model.getPump().flushModelEvents();
-        assertTrue(model.getSelectedItem() == bases[1]);
-    }
-
-    /**
-     * Test deleting selected Base.
-     */
-    public void testDeleteBase() {
-        Model.getCollaborationsHelper().setBase(elem, bases[1]);
-        Model.getUmlFactory().delete(bases[1]);
-        Model.getPump().flushModelEvents();
-        assertNull(model.getSelectedItem());
-    }
-
-    /**
-     * Test setting the Base to null.
-     */
+    
     public void testSetBaseToNull() {
-        Model.getCollaborationsHelper().setBase(elem, bases[0]);
-        Model.getCollaborationsHelper().setBase(elem, null);
-        Model.getPump().flushModelEvents();
+        elem.setBase(null);
         assertNull(model.getSelectedItem());
     }
-
-    /**
-     * Test removing the Base.
-     */
+    
     public void testRemoveBase() {
-        Model.getUmlFactory().delete(bases[NO_ELEMENTS_IN_TEST - 1]);
-        // One can only delete a assoc by changing target,
-        // so let's simulate that:
-        /* TODO: Get rid of this! */
-        model.targetSet(new TargetEvent(this,
-                TargetEvent.TARGET_SET,
-                new Object[0],
-                new Object[] {
-                    elem,
-                }));
+        UmlFactory.getFactory().delete(bases[9]);
         // there is one extra element since removal of the base is allowed.
-        Model.getPump().flushModelEvents();
-        assertEquals(NO_ELEMENTS_IN_TEST + 1 - 1, model.getSize());
-        assertTrue(!model.contains(bases[NO_ELEMENTS_IN_TEST - 1]));
-    }
+        assertEquals(9 + 1, model.getSize());
+        assertTrue(!model.contains(bases[9]));
+    } 
+        
 
 }

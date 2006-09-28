@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,34 +21,30 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $header$
 package org.argouml.uml.ui.behavior.state_machines;
 
 import java.awt.event.ActionEvent;
 
-import javax.swing.Action;
-
-import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.application.api.Argo;
+import org.argouml.model.uml.behavioralelements.statemachines.StateMachinesHelper;
+import org.argouml.uml.ui.UMLChangeAction;
 import org.argouml.uml.ui.UMLComboBox2;
-import org.tigris.gef.undo.UndoableAction;
 
 /**
  * @since Dec 15, 2002
  * @author jaap.branderhorst@xs4all.nl
  */
-public class ActionSetSubmachineStateSubmachine extends UndoableAction {
+public class ActionSetSubmachineStateSubmachine extends UMLChangeAction {
 
-    private static final ActionSetSubmachineStateSubmachine SINGLETON =
-        new ActionSetSubmachineStateSubmachine();
+    public static final ActionSetSubmachineStateSubmachine SINGLETON = new ActionSetSubmachineStateSubmachine();
 
     /**
      * Constructor for ActionSetModelElementStereotype.
+     * @param s
      */
     protected ActionSetSubmachineStateSubmachine() {
-        super(Translator.localize("action.set"), null);
-        // Set the tooltip string:
-        putValue(Action.SHORT_DESCRIPTION, 
-                Translator.localize("action.set"));
+        super(Argo.localize("CoreMenu", "Set"), true, NO_ICON);
     }
 
     /**
@@ -58,17 +53,9 @@ public class ActionSetSubmachineStateSubmachine extends UndoableAction {
     public void actionPerformed(ActionEvent e) {
         super.actionPerformed(e);
         if (e.getSource() instanceof UMLComboBox2) {
-            UMLComboBox2 box = (UMLComboBox2) e.getSource();
-            Model.getStateMachinesHelper().setStatemachineAsSubmachine(
-                    box.getTarget(), box.getSelectedItem());
+            UMLComboBox2 box = (UMLComboBox2)e.getSource();
+            StateMachinesHelper.getHelper().setStatemachineAsSubmachine(box.getTarget(), box.getSelectedItem());
         }
-    }
-
-    /**
-     * @return Returns the SINGLETON.
-     */
-    public static ActionSetSubmachineStateSubmachine getInstance() {
-        return SINGLETON;
     }
 
 }

@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,25 +21,31 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $Id$
 package org.argouml.uml.ui.foundation.core;
 
-import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.application.api.Argo;
 import org.argouml.uml.ui.UMLCheckBox2;
 
+import ru.novosoft.uml.foundation.core.MAssociationEnd;
+import ru.novosoft.uml.foundation.data_types.MScopeKind;
+
 /**
- *
- * @author jaap.branderhorst@xs4all.nl
+ * 
+ * @author jaap.branderhorst@xs4all.nl	
  * @since Jan 4, 2003
  */
 public class UMLAssociationEndTargetScopeCheckbox extends UMLCheckBox2 {
 
     /**
      * Constructor for UMLAssociationEndTargetScopeCheckbox.
+     * @param container
+     * @param text
+     * @param a
+     * @param propertySetName
      */
     public UMLAssociationEndTargetScopeCheckbox() {
-        super(Translator.localize("label.targetscope-classifier"),
-                ActionSetAssociationEndTargetScope.getInstance(), "ordering");
+        super(Argo.localize("UMLMenu", "label.targetscope-classifier"), ActionSetAssociationEndTargetScope.SINGLETON, "ordering");
     }
 
     /**
@@ -48,9 +53,8 @@ public class UMLAssociationEndTargetScopeCheckbox extends UMLCheckBox2 {
      */
     public void buildModel() {
         if (getTarget() != null) {
-            Object associationEnd = /*(MAssociationEnd)*/ getTarget();
-            setSelected(Model.getScopeKind().getClassifier().equals(
-                    Model.getFacade().getTargetScope(associationEnd)));
+            MAssociationEnd associationEnd = (MAssociationEnd)getTarget();
+            setSelected(MScopeKind.CLASSIFIER.equals(associationEnd.getTargetScope()));
         }
     }
 }

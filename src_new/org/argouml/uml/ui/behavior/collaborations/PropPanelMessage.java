@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,118 +22,114 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+
+// File: PropPanelMessage.java
+// Classes: PropPanelMessage
+// Original Author: agauthie@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.ui.behavior.collaborations;
 
-import java.awt.event.ActionEvent;
-
-import javax.swing.Action;
-import javax.swing.Icon;
 import javax.swing.JList;
 import javax.swing.JScrollPane;
 
-import org.argouml.application.helpers.ResourceLoaderWrapper;
-import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.application.api.Argo;
+import org.argouml.model.uml.behavioralelements.commonbehavior.CommonBehaviorFactory;
+
 import org.argouml.ui.targetmanager.TargetManager;
-import org.argouml.uml.ui.AbstractActionNewModelElement;
-import org.argouml.uml.ui.ActionNavigateContainerElement;
+import org.argouml.uml.ui.PropPanelButton;
 import org.argouml.uml.ui.UMLLinkedList;
 import org.argouml.uml.ui.UMLMutableLinkedList;
 import org.argouml.uml.ui.foundation.core.PropPanelModelElement;
-import org.argouml.uml.ui.foundation.extension_mechanisms.ActionNewStereotype;
 import org.argouml.util.ConfigLoader;
 
+import ru.novosoft.uml.behavior.collaborations.MClassifierRole;
+import ru.novosoft.uml.behavior.collaborations.MMessage;
+import ru.novosoft.uml.behavior.common_behavior.MAction;
+import ru.novosoft.uml.behavior.common_behavior.MCallAction;
+import ru.novosoft.uml.foundation.extension_mechanisms.MStereotype;
+
 /**
- * Properties panel for a Message.
+ * @todo this property panel needs refactoring to remove dependency on
+ *       old gui components, specifically namesToWatch mechanism.
  */
 public class PropPanelMessage extends PropPanelModelElement {
 
-    /**
-     * Construct a new property panel for a Message.
-     */
-    public PropPanelMessage() {
-        super("Message", ConfigLoader.getTabPropsOrientation());
+  ////////////////////////////////////////////////////////////////
+  // constants
 
-        addField(Translator.localize("label.name"),
-                getNameTextField());
-        JList interactionList =
-            new UMLLinkedList(new UMLMessageInteractionListModel());
-        interactionList.setVisibleRowCount(1);
-        addField(Translator.localize("label.interaction"),
-        	 new JScrollPane(interactionList));
 
-        JList senderList = new UMLLinkedList(new UMLMessageSenderListModel());
-        senderList.setVisibleRowCount(1);
-        JScrollPane senderScroll = new JScrollPane(senderList);
-        addField(Translator.localize("label.sender"), senderScroll);
+  ////////////////////////////////////////////////////////////////
+  // contructors
+  public PropPanelMessage() {
+    super("Message", ConfigLoader.getTabPropsOrientation());
 
-        JList receiverList =
-            new UMLLinkedList(new UMLMessageReceiverListModel());
-        receiverList.setVisibleRowCount(1);
-        JScrollPane receiverScroll = new JScrollPane(receiverList);
-        addField(Translator.localize("label.receiver"),
-                receiverScroll);
+    Class mclass = MMessage.class;
 
-        addSeparator();
+    Class[] namesToWatch = { MStereotype.class, MClassifierRole.class,
+        MAction.class };
+    setNameEventListening(namesToWatch);
 
-        addField(Translator.localize("label.activator"),
-        	 new UMLMessageActivatorComboBox(this,
-        		 new UMLMessageActivatorComboBoxModel()));
+    addField(Argo.localize("UMLMenu", "label.name"), getNameTextField());
+    addField(Argo.localize("UMLMenu", "label.stereotype"), getStereotypeBox());
+    // a message does not have a namespace. removed therefore
+    // addField(Argo.localize("UMLMenu", "label.namespace"), getNamespaceScroll());
+    JList interactionList = new UMLLinkedList(new UMLMessageInteractionListModel());
+    interactionList.setVisibleRowCount(1);
+    addField(Argo.localize("UMLMenu", "label.interaction"), new JScrollPane(interactionList));
 
-        JList actionList =
-        	 new UMLMutableLinkedList(new UMLMessageActionListModel(),
-        	         null, ActionNewActionForMessage.getInstance());
-        actionList.setVisibleRowCount(1);
-        JScrollPane actionScroll = new JScrollPane(actionList);
-        addField(Translator.localize("label.action"), actionScroll);
+    JList senderList = new UMLLinkedList(new UMLMessageSenderListModel());
+    senderList.setVisibleRowCount(1);
+    JScrollPane senderScroll = new JScrollPane(senderList);
+    addField(Argo.localize("UMLMenu", "label.sender"), senderScroll);
 
-        JScrollPane predecessorScroll =
-                new JScrollPane(
-                new UMLMutableLinkedList(new UMLMessagePredecessorListModel(),
-        	ActionAddMessagePredecessor.getInstance(),
-        	null));
-        addField(Translator.localize("label.predecessor"),
-        	 predecessorScroll);
+    JList receiverList = new UMLLinkedList(new UMLMessageReceiverListModel());
+    receiverList.setVisibleRowCount(1);
+    JScrollPane receiverScroll = new JScrollPane(receiverList);
+    addField(Argo.localize("UMLMenu", "label.receiver"), receiverScroll);
 
-        addAction(new ActionNavigateContainerElement());
-        addAction(new ActionToolNewAction());
-        addAction(new ActionNewStereotype());
-        addAction(getDeleteAction());
+    addSeperator();
+
+    addField(Argo.localize("UMLMenu", "label.activator"), new UMLMessageActivatorComboBox(this, new UMLMessageActivatorComboBoxModel()));
+
+    JList actionList = new UMLMutableLinkedList(new UMLMessageActionListModel(), null, ActionNewAction.SINGLETON);
+    actionList.setVisibleRowCount(1);
+    JScrollPane actionScroll = new JScrollPane(actionList);
+    addField(Argo.localize("UMLMenu", "label.action"), actionScroll);
+
+    JScrollPane predecessorScroll = new JScrollPane(new UMLMutableLinkedList(new UMLMessagePredecessorListModel(), ActionAddMessagePredecessor.SINGLETON, null));
+    addField(Argo.localize("UMLMenu", "label.predecessor"), predecessorScroll);
+
+    new PropPanelButton(this,buttonPanel,_navUpIcon, Argo.localize("UMLMenu", "button.go-up"),"navigateInteraction",null);
+    new PropPanelButton(this,buttonPanel,_actionIcon, Argo.localize("UMLMenu", "button.add-action"),"addAction","isAddActionEnabled");
+    // ActionNewAction.SINGLETON.setTarget((MModelElement)getTarget());
+    // buttonPanel.add(new PropPanelButton2(this, ActionNewAction.SINGLETON));
+    new PropPanelButton(this,buttonPanel,_deleteIcon,localize("Delete"),"removeElement",null);
+ }
+
+
+
+    public MCallAction addAction() {
+    	MCallAction action = null;
+        Object target = getTarget();
+        if(target instanceof MMessage) {
+            action = (MCallAction)CommonBehaviorFactory.getFactory().buildAction((MMessage)target);
+        }
+        return action;
     }
 
-    private static class ActionToolNewAction
-        extends AbstractActionNewModelElement {
-
-        /**
-         * Construct an action to add a new UML Action to the Message.
-         */
-        public ActionToolNewAction() {
-            super("button.new-action");
-            putValue(Action.NAME, Translator.localize("button.new-action"));
-            Icon icon = ResourceLoaderWrapper.lookupIcon("CallAction");
-            putValue(Action.SMALL_ICON, icon);
-        }
-
-        /**
-         * @see java.awt.event.ActionListener#actionPerformed(
-         *         java.awt.event.ActionEvent)
-         */
-        public void actionPerformed(ActionEvent e) {
-            Object target = TargetManager.getInstance().getModelTarget();
-            if (Model.getFacade().isAMessage(target)) {
-                Model.getCommonBehaviorFactory().buildAction(target);
-                super.actionPerformed(e);
-            }
-        }
-
-        /**
-         * The UID.
-         */
-        private static final long serialVersionUID = -6588197204256288453L;
+    public boolean isAddActionEnabled() {
+    	return (getTarget() instanceof MMessage) && (((MMessage)getTarget()).getAction() == null);
     }
 
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = -8433911715875762175L;
+    public void navigateInteraction() {
+    	Object target = getTarget();
+        if(target instanceof MMessage) {
+            TargetManager.getInstance().setTarget(((MMessage)target).getInteraction());
+        }
+    }
+
+
+
 } /* end class PropPanelMessage */

@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,88 +21,73 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $Id$
 package org.argouml.uml.ui;
 
-import javax.swing.Action;
-
-import org.argouml.i18n.Translator;
-import org.tigris.gef.undo.UndoableAction;
+import org.argouml.application.api.Argo;
 
 /**
- * Base class for remove actions. Remove actions can remove an element
- * from the model. This can either be a total remove ('erase from
- * model') or just a remove from a list of bases as in the case of
- * classifierrole bases.<p>
- *
- * @author jaap.branderhorst@xs4all.nl
+ * Base class for remove actions. Remove actions can remove an element from the 
+ * model. This can either be a total remove ('erase from model') or just a
+ * remove from a list of bases as in the case of classifierrole bases.
+ * @author jaap.branderhorst@xs4all.nl	
  * @since Jan 25, 2003
  */
-public class AbstractActionRemoveElement extends UndoableAction {
-
+public class AbstractActionRemoveElement extends UMLChangeAction {
+    
     /**
-     * The object that owns the object that must be removed (the
-     * object that is the target of the projectbrowser in most cases).
+     * The object that owns the object that must be removed (the object that is 
+     * the target of the projectbrowser in most cases).
      */
-    private Object target;
-
-    private Object objectToRemove;
-
+    private Object _target;
+    
+    private Object _objectToRemove;
+    
     /**
      * Constructor for AbstractActionRemoveElement.
+     * @param s
      */
     protected AbstractActionRemoveElement() {
-        this(Translator.localize("Delete From Model"));
+        this(Argo.localize("CoreMenu", "Delete From Model"));
     }
-
-    /**
-     *  The constructor.
-     * @param name the name for this action
-     */
+    
     protected AbstractActionRemoveElement(String name) {
-        super(Translator.localize(name),
-                null);
-        // Set the tooltip string:
-        putValue(Action.SHORT_DESCRIPTION, 
-                Translator.localize(name));
+        super(name, true, NO_ICON);
     }
 
      /**
      * Returns the target.
-     *
      * @return MModelElement
      */
     public Object getTarget() {
-        return target;
+        return _target;
     }
 
     /**
      * Sets the target.
-     *
-     * @param theTarget The target to set
+     * @param target The target to set
      */
-    public void setTarget(Object theTarget) {
-        target = theTarget;
+    public void setTarget(Object target) {
+        _target = target;
     }
-
+    
     /**
      * Returns the objectToRemove.
-     *
      * @return Object
      */
     public Object getObjectToRemove() {
-        return objectToRemove;
+        return _objectToRemove;
     }
 
     /**
      * Sets the objectToRemove.
-     *
-     * @param theObjectToRemove The objectToRemove to set
+     * @param objectToRemove The objectToRemove to set
      */
-    public void setObjectToRemove(Object theObjectToRemove) {
-        objectToRemove = theObjectToRemove;
+    public void setObjectToRemove(Object objectToRemove) {
+        _objectToRemove = objectToRemove;
     }
-
-
+    
+    
 
     /**
      * @see javax.swing.Action#isEnabled()

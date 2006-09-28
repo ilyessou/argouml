@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,21 +21,28 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+/*
+  JavaRE - Code generation and reverse engineering for UML and Java
+  Author: Marcus Andersson andersson@users.sourceforge.net
+*/
+
+
 package org.argouml.language.java.generator;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.util.Stack;
+import org.argouml.model.uml.UmlFactory;
+
+import java.io.*;
+import java.util.*;
+
+import ru.novosoft.uml.*;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
 
 /**
- * This code piece represents a class declaration.
- *
- * JavaRE - Code generation and reverse engineering for UML and Java
- *
- * @author Marcus Andersson andersson@users.sourceforge.net
- */
-public class ClassCodePiece extends NamedCodePiece {
+   This code piece represents a class declaration.
+*/
+public class ClassCodePiece extends NamedCodePiece
+{
     /** The code piece this class represents. */
     private CodePiece classDef;
 
@@ -46,85 +52,78 @@ public class ClassCodePiece extends NamedCodePiece {
     /**
        Constructor.
 
-       @param def The code piece this class represents.
-       @param n The name of the class.
+       @param classDef The code piece this class represents.
+       @param name The name of the class.
     */
-    public ClassCodePiece(CodePiece def,
-                          String n) {
-	classDef = def;
-	name = n;
+    public ClassCodePiece(CodePiece classDef,
+                          String name)
+    {
+	this.classDef = classDef;
+	this.name = name;
     }
 
     /**
-     * @see org.argouml.language.java.generator.CodePiece#getText()
-     *
-     * Return the string representation for this piece of code.
-     */
-    public StringBuffer getText() {
+       Return the string representation for this piece of code.
+    */
+    public StringBuffer getText()
+    {
 	return classDef.getText();
     }
 
     /**
-     * @see org.argouml.language.java.generator.CodePiece#getStartPosition()
-     *
-     * Return the start position.
-     */
-    public int getStartPosition() {
+       Return the start position.
+    */
+    public int getStartPosition()
+    {
 	return classDef.getStartPosition();
     }
 
     /**
-     * @see org.argouml.language.java.generator.CodePiece#getEndPosition()
-     *
-     * Return the end position.
-     */
-    public int getEndPosition() {
+       Return the end position.
+    */
+    public int getEndPosition()
+    {
 	return classDef.getEndPosition();
     }
 
     /**
-     * @see org.argouml.language.java.generator.CodePiece#getStartLine()
-     * Return the start line
-     */
-    public int getStartLine() {
+	Return the start line
+    */
+    public int getStartLine()
+    {
 	return classDef.getStartLine();
     }
 
     /**
-     * @see org.argouml.language.java.generator.CodePiece#getEndLine()
-     *
-     * Return the end line
-     */
+	Return the end line
+    */
     public int getEndLine()
     {
 	return classDef.getEndLine();
     }
 
     /**
-     * @see org.argouml.language.java.generator.NamedCodePiece#write(
-     *         java.io.BufferedReader, java.io.BufferedWriter, java.util.Stack)
-     *
-     * Write the code this piece represents to file. This adds a new
-     * level to the stack if the class is in the model.
-     */
+       Write the code this piece represents to file. This adds a new
+       level to the stack if the class is in the model.
+    */
     public void write(BufferedReader reader,
                       BufferedWriter writer,
-                      Stack parseStateStack) throws IOException {
-	ParseState parseState = (ParseState) parseStateStack.peek();
-	Object mClass = /*(MClass)*/ parseState.newClassifier(name);
+                      Stack parseStateStack) throws Exception
+    {
+       ParseState parseState = (ParseState)parseStateStack.peek();
+       MClass mClass = (MClass)parseState.newClassifier(name);
 
-	if (mClass != null) {
-	    parseStateStack.push(new ParseState(mClass));
-	    StringBuffer sbText =
-		GeneratorJava.getInstance().generateClassifierStart(mClass);
-	    if (sbText != null) {
-		writer.write (sbText.toString());
-	    }
+       if (mClass != null) {
+           parseStateStack.push(new ParseState(mClass));
+           StringBuffer sbText = GeneratorJava.getInstance().generateClassifierStart(mClass);
+           if (sbText != null) {
+               writer.write (sbText.toString());
+           }
             // dispose code piece in reader
-            ffCodePiece(reader, null);
+            ffCodePiece(reader,null);
         } else {
             // not in model, so write the original code
-            ffCodePiece(reader, writer);
+            ffCodePiece(reader,writer);
         }
     }
 }

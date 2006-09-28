@@ -1,16 +1,16 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
-// and this paragraph appear in all copies. This software program and
+// and this paragraph appear in all copies.  This software program and
 // documentation are copyrighted by The Regents of the University of
 // California. The software program and documentation are supplied "AS
 // IS", without any accompanying services from The Regents. The Regents
 // does not warrant that the operation of the program will be
 // uninterrupted or error-free. The end-user understands that the program
 // was developed for research purposes and is advised not to rely
-// exclusively on the program for any reason. IN NO EVENT SHALL THE
+// exclusively on the program for any reason.  IN NO EVENT SHALL THE
 // UNIVERSITY OF CALIFORNIA BE LIABLE TO ANY PARTY FOR DIRECT, INDIRECT,
 // SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, INCLUDING LOST PROFITS,
 // ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN IF
@@ -24,105 +24,78 @@
 
 package org.argouml.uml.ui.model_management;
 
-import java.awt.event.ActionEvent;
-
-import javax.swing.Action;
-import javax.swing.JList;
-import javax.swing.JScrollPane;
-
-import org.argouml.i18n.Translator;
-import org.argouml.kernel.Project;
-import org.argouml.kernel.ProjectManager;
-import org.argouml.model.Model;
-import org.argouml.ui.targetmanager.TargetManager;
-import org.argouml.uml.ui.AbstractActionNewModelElement;
-import org.argouml.uml.ui.UMLLinkedList;
-import org.argouml.uml.ui.foundation.core.UMLClassifierFeatureListModel;
+import org.argouml.application.api.*;
 import org.argouml.util.ConfigLoader;
+import org.argouml.application.ArgoVersion;
+import org.argouml.model.uml.*;
+import org.argouml.model.uml.foundation.core.CoreFactory;
+import org.argouml.model.uml.behavioralelements.commonbehavior.CommonBehaviorFactory;
+import org.argouml.ui.targetmanager.TargetManager;
+import org.argouml.uml.ui.*;
+import org.argouml.uml.ui.foundation.core.*;
 
-/**
- * A property panel for UML subsystems.
- */
-public class PropPanelSubsystem extends PropPanelPackage {
+import ru.novosoft.uml.behavior.common_behavior.MReception;
+import ru.novosoft.uml.behavior.common_behavior.MSignal;
+import ru.novosoft.uml.model_management.*;
+import ru.novosoft.uml.foundation.core.*;
 
-    private JScrollPane featureScroll;
+import javax.swing.JScrollPane;
+import javax.swing.JList;
+
+/** A property panel for UML subsystems. */
+public class PropPanelSubsystem extends PropPanelPackage
+    implements PluggablePropertyPanel {
+    ////////////////////////////////////////////////////////////////
+    // instance vars
+
+    private JScrollPane _featureScroll;
 
     private static UMLClassifierFeatureListModel featureListModel =
         new UMLClassifierFeatureListModel();
-
-    /**
-     * The constructor.
-     *
-     */
+    ////////////////////////////////////////////////////////////////
+    // contructors
     public PropPanelSubsystem() {
-        super("Subsystem", lookupIcon("Subsystem"),
-                ConfigLoader.getTabPropsOrientation());
+        super("Subsystem", ConfigLoader.getTabPropsOrientation());
 
-        addField(Translator.localize("label.available-features"),
-                getFeatureScroll());
+        addField(Argo.localize("UMLMenu", "label.available-features"), getFeatureScroll());
 
-        addAction(new ActionNewOperation());
+        new PropPanelButton(this,buttonPanel,_addOpIcon, Argo.localize("UMLMenu", "button.add-operation"), "addOperation", null);
+    
     }
 
-    /**
-     * Add a new operation to this classifier.
-     *
-     * @author mvw@tigris.org
-     */
-    private static class ActionNewOperation
-        extends AbstractActionNewModelElement {
-
-        /**
-         * The key for the action name.
-         */
-        private static final String ACTION_KEY = "button.new-operation";
-
-        /**
-         * The constructor.
-         */
-        public ActionNewOperation() {
-            super(ACTION_KEY);
-            putValue(Action.NAME, Translator.localize(ACTION_KEY));
-        }
-
-        /**
-         * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-         */
-        public void actionPerformed(ActionEvent e) {
-            Object target = TargetManager.getInstance().getModelTarget();
-            if (Model.getFacade().isAClassifier(target)) {
-                Project p = ProjectManager.getManager().getCurrentProject();
-                Object model = p.getModel();
-                Object voidType = p.findType("void");
-                Object newOper =
-                    Model.getCoreFactory()
-                        .buildOperation(target, model, voidType);
-                TargetManager.getInstance().setTarget(newOper);
-                super.actionPerformed(e);
-            }
-        }
-
-        /**
-         * The UID.
-         */
-        private static final long serialVersionUID = -5149342278246959597L;
+    public Class getClassForPanel() {
+        return MSubsystemImpl.class;
     }
 
+    public String getModuleName() { return "PropPanelSubsystem"; }
+    public String getModuleDescription() { return "Property Panel for Subsystem"; }
+    public String getModuleAuthor() { return "ArgoUML Core"; }
+    public String getModuleVersion() { return ArgoVersion.getVersion(); }
+    public String getModuleKey() { return "module.propertypanel.model"; }
+
+    
+    
+    public void addOperation() {
+        Object target = getTarget();
+        if (target instanceof MClassifier) {
+            MOperation newOper =
+                UmlFactory.getFactory().getCore().buildOperation(
+                                                                 (MClassifier) target);
+            TargetManager.getInstance().setTarget(newOper);
+        }
+    }
+    
     /**
      * Returns the featureScroll.
-     *
      * @return JScrollPane
      */
     public JScrollPane getFeatureScroll() {
-        if (featureScroll == null) {
+        if (_featureScroll == null) {
             JList list = new UMLLinkedList(featureListModel);
-            featureScroll = new JScrollPane(list);
+            _featureScroll = new JScrollPane(list);
         }
-        return featureScroll;
+        return _featureScroll;
     }
 
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = -8616239241648089917L;
+
 } /* end class PropPanelSubsystem */

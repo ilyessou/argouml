@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,78 +21,65 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $header$
 package org.argouml.uml.ui.foundation.core;
 
 import java.awt.event.ActionEvent;
-import java.util.Collection;
 
-import javax.swing.Action;
-
-import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.application.api.Argo;
+import org.argouml.model.uml.foundation.extensionmechanisms.ExtensionMechanismsHelper;
+import org.argouml.uml.ui.UMLChangeAction;
 import org.argouml.uml.ui.UMLComboBox2;
-import org.tigris.gef.undo.UndoableAction;
+
+import ru.novosoft.uml.foundation.core.MModelElement;
+import ru.novosoft.uml.foundation.extension_mechanisms.MStereotype;
 
 /**
  * @since Oct 10, 2002
  * @author jaap.branderhorst@xs4all.nl
  * @stereotype singleton
  */
-public class ActionSetModelElementStereotype extends UndoableAction {
-    /**
-     * The instance.
-     */
-    private static final ActionSetModelElementStereotype SINGLETON =
-        new ActionSetModelElementStereotype();
+public class ActionSetModelElementStereotype extends UMLChangeAction {
+
+    public static final ActionSetModelElementStereotype SINGLETON = new ActionSetModelElementStereotype();
 
     /**
      * Constructor for ActionSetModelElementStereotype.
+     * @param s
      */
     protected ActionSetModelElementStereotype() {
-        super(Translator.localize("Set"), null);
-        // Set the tooltip string:
-        putValue(Action.SHORT_DESCRIPTION, 
-                Translator.localize("Set"));
+        super(Argo.localize("CoreMenu", "Set"), true, NO_ICON);
     }
 
+
+   
     /**
      * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
      */
     public void actionPerformed(ActionEvent e) {
-    	super.actionPerformed(e);
+        super.actionPerformed(e);
         Object source = e.getSource();
-        Collection oldStereo = null;
-        Object newStereo = null;
-        Object target = null;
+        MStereotype oldStereo = null;
+        MStereotype newStereo = null;
+        MModelElement target = null;
         if (source instanceof UMLComboBox2) {
-            UMLComboBox2 combo = (UMLComboBox2) source;
-            if (Model.getFacade().isAStereotype(combo.getSelectedItem())) {
-                newStereo = /*(MStereotype)*/ combo.getSelectedItem();
+            UMLComboBox2 combo = (UMLComboBox2)source;
+            if (combo.getSelectedItem() instanceof MStereotype) 
+                newStereo = (MStereotype)combo.getSelectedItem();                                
+            if (combo.getTarget() instanceof MModelElement) {
+                target = (MModelElement)combo.getTarget();
+                oldStereo = target.getStereotype();
             }
-            if (Model.getFacade().isAModelElement(combo.getTarget())) {
-                target = /*(MModelElement)*/ combo.getTarget();
-                oldStereo = Model.getFacade().getStereotypes(target);
-            }
-	    if ("".equals(combo.getSelectedItem())) {
-	        newStereo = null;
-	    }
-        }
-        if (oldStereo != null && !oldStereo.contains(newStereo)
-                && target != null) {
-            // Add stereotypes submenu
-            if (newStereo != null) {
-                Model.getCoreHelper().addStereotype(target, newStereo);
+            if (newStereo != oldStereo && target != null && newStereo != null) {
+                ExtensionMechanismsHelper.getHelper().setStereoType(target, newStereo);
+            } else
+            if (combo.getSelectedItem() != null && combo.getSelectedItem().equals("") && oldStereo != null && target != null) {
+                target.setStereotype(null);
             }
         }
+        
     }
-
-    /**
-     * @return Returns the SINGLETON.
-     */
-    public static ActionSetModelElementStereotype getInstance() {
-        return SINGLETON;
-    }
-
-
+            
+    
 
 }

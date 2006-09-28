@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,25 +21,26 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $header$
 package org.argouml.uml.ui.foundation.core;
 
-import java.beans.PropertyChangeEvent;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
-import java.util.TreeSet;
 
 import org.argouml.kernel.Project;
 import org.argouml.kernel.ProjectManager;
-import org.argouml.model.Model;
+import org.argouml.model.uml.UmlModelEventPump;
+import org.argouml.model.uml.modelmanagement.ModelManagementHelper;
 import org.argouml.uml.ui.UMLComboBoxModel2;
+
+import ru.novosoft.uml.foundation.core.MClassifier;
+import ru.novosoft.uml.foundation.core.MNamespace;
+import ru.novosoft.uml.foundation.core.MStructuralFeature;
+import ru.novosoft.uml.model_management.MModel;
 
 /**
  * The combobox model for the type belonging to some attribute.
- *
  * @since Nov 2, 2002
  * @author jaap.branderhorst@xs4all.nl
  */
@@ -48,89 +48,43 @@ public class UMLStructuralFeatureTypeComboBoxModel extends UMLComboBoxModel2 {
 
     /**
      * Constructor for UMLStructuralFeatureTypeComboBoxModel.
+     * @param container
+     * @param propertySetName
+     * @param clearable
      */
     public UMLStructuralFeatureTypeComboBoxModel() {
         super("type", false);
-        /* TODO: Investigate if the following is needed, and if so, adapt the
-         * propertyChange() below.  */
-//        Model.getPump().addClassModelEventListener(this,
-//                Model.getMetaTypes().getNamespace(), "ownedElement");
+        UmlModelEventPump.getPump().addClassModelEventListener(
+            this,
+            MNamespace.class,
+            "ownedElement");
     }
 
     /**
-     * @see org.argouml.uml.ui.UMLComboBoxModel2#isValidElement(Object)
+     * @see org.argouml.uml.ui.UMLComboBoxModel2#isValidElement(ru.novosoft.uml.MBase)
      */
     protected boolean isValidElement(Object element) {
-        return Model.getFacade().isAClass(element)
-                || Model.getFacade().isAInterface(element)
-                || Model.getFacade().isADataType(element);
-    }
-
-    /**
-     * Helper method for buildModelList.
-     * <p>
-     * Adds those elements from source that do not have the same path as any
-     * path in paths to elements, and its path to paths. Thus elements will
-     * never contain two objects with the same path, unless they are added by
-     * other means.
-     *
-     * @param elements the Set with the results
-     * @param paths the Set with the paths
-     * @param source a Collection with elements to add
-     */
-    private static void addAllUniqueModelElementsFrom(Set elements, Set paths,
-            Collection source) {
-        Iterator it2 = source.iterator();
-
-        while (it2.hasNext()) {
-            Object obj = it2.next();
-            Object path = Model.getModelManagementHelper().getPath(obj);
-            if (!paths.contains(path)) {
-                paths.add(path);
-                elements.add(obj);
-            }
-        }
+        return element instanceof MClassifier;
     }
 
     /**
      * @see org.argouml.uml.ui.UMLComboBoxModel2#buildModelList()
      */
     protected void buildModelList() {
-        Set paths = new HashSet();
-        Set elements = new TreeSet(new Comparator() {
-            public int compare(Object o1, Object o2) {
-                String name1 = getName(o1);
-                String name2 = getName(o2);
-
-                return name1.compareTo(name2);
-            }
-        });
-
+        Set elements = new HashSet();
         Project p = ProjectManager.getManager().getCurrentProject();
-        if (p == null) {
-            return;
-        }
-        Iterator it = (new ArrayList(p.getUserDefinedModels())).iterator();
-
+        Iterator it = p.getUserDefinedModels().iterator();
         while (it.hasNext()) {
-            Object model = /* (MModel) */it.next();
-
-            addAllUniqueModelElementsFrom(elements, paths, Model
-                    .getModelManagementHelper().getAllModelElementsOfKind(
-                            model, Model.getMetaTypes().getUMLClass()));
-            addAllUniqueModelElementsFrom(elements, paths, Model
-                    .getModelManagementHelper().getAllModelElementsOfKind(
-                            model, Model.getMetaTypes().getInterface()));
-            addAllUniqueModelElementsFrom(elements, paths, Model
-                    .getModelManagementHelper().getAllModelElementsOfKind(
-                            model, Model.getMetaTypes().getDataType()));
+            MModel model = (MModel)it.next();
+            elements.addAll(
+                ModelManagementHelper.getHelper().getAllModelElementsOfKind(
+                    model,
+                    MClassifier.class));
         }
-
-        addAllUniqueModelElementsFrom(elements, paths, Model
-                .getModelManagementHelper().getAllModelElementsOfKind(
-                        p.getDefaultModel(),
-                        Model.getMetaTypes().getClassifier()));
-
+        elements.addAll(
+            ModelManagementHelper.getHelper().getAllModelElementsOfKind(
+                p.getDefaultModel(),
+                MClassifier.class));
         setElements(elements);
     }
 
@@ -140,24 +94,12 @@ public class UMLStructuralFeatureTypeComboBoxModel extends UMLComboBoxModel2 {
     protected Object getSelectedModelElement() {
         Object o = null;
         if (getTarget() != null) {
-            o = Model.getFacade().getType(getTarget());
+            o = ((MStructuralFeature)getTarget()).getType();
         }
         if (o == null) {
             o = " ";
         }
         return o;
-    }
-
-    /**
-     * @see org.argouml.uml.ui.UMLComboBoxModel2#propertyChange(java.beans.PropertyChangeEvent)
-     */
-    public void propertyChange(PropertyChangeEvent evt) {
-        /*
-         * The default behavior for super implementation is
-         * to add/remove elements from the list, but it isn't
-         * that complex here, because there is no need to
-         * change the list on a simple type change.
-         */
     }
 
 }

@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,75 +23,114 @@
 
 package org.argouml.uml.diagram;
 
-
-import org.argouml.kernel.Project;
-import org.argouml.kernel.AbstractProjectMember;
-import org.argouml.ui.ArgoDiagram;
-import org.tigris.gef.util.Util;
-
 /**
  * @author Piotr Kaminski
  */
-public class ProjectMemberDiagram extends AbstractProjectMember {
 
-    private static final String MEMBER_TYPE = "pgml";
-    private static final String FILE_EXT = ".pgml";
+import java.io.Writer;
+
+import org.apache.log4j.Logger;
+import org.argouml.kernel.Project;
+import org.argouml.kernel.ProjectMember;
+import org.argouml.ui.ArgoDiagram;
+import org.argouml.uml.diagram.ui.UMLDiagram;
+import org.argouml.xml.pgml.PGMLParser;
+import org.tigris.gef.ocl.OCLExpander;
+import org.tigris.gef.ocl.TemplateReader;
+import org.tigris.gef.util.Util;
+
+import ru.novosoft.uml.foundation.core.MModelElement;
+
+public class ProjectMemberDiagram extends ProjectMember {
+
+    ////////////////////////////////////////////////////////////////
+    // constants
+
+    public static final String MEMBER_TYPE = "pgml";
+    public static final String FILE_EXT = "." + MEMBER_TYPE;
+    public static final String PGML_TEE = "/org/argouml/xml/dtd/PGML.tee";
+
+    ////////////////////////////////////////////////////////////////
+    // static variables
+
+    public static OCLExpander expander = null;
+    private Logger _cat = Logger.getLogger(this.getClass());
 
     ////////////////////////////////////////////////////////////////
     // instance variables
 
-    private ArgoDiagram diagram;
+    private ArgoDiagram _diagram;
 
     ////////////////////////////////////////////////////////////////
     // constructors
 
-    /**
-     * The constructor.
-     *
-     * @param d the diagram
-     * @param p the project
-     */
+    public ProjectMemberDiagram(String name, Project p) {
+        super(name, p);
+    }
+
     public ProjectMemberDiagram(ArgoDiagram d, Project p) {
         super(null, p);
         String s = Util.stripJunk(d.getName());
-        makeUniqueName(s);
+        //if (!(s.startsWith(_project.getBaseName() + "_")))
+        //  s = _project.getBaseName() + "_" + s;
+        setName(s);
         setDiagram(d);
+        // Make sure that the namespace has an UUID, otherwise we will not
+        // be able to match them after a save-load cycle.
+        if (d instanceof UMLDiagram) {
+            UMLDiagram u = (UMLDiagram)d;
+            if (u.getNamespace() instanceof MModelElement) {
+                MModelElement me = (MModelElement)u.getNamespace();
+                // if (me.getUUID() == null)
+                //   me.setUUID(UUIDManager.SINGLETON.getNewUUID());
+            }
+        }
     }
 
     ////////////////////////////////////////////////////////////////
     // accessors
 
-    /**
-     * @return the diagram
-     */
     public ArgoDiagram getDiagram() {
-        return diagram;
+        return _diagram;
     }
-    /**
-     * @see org.argouml.kernel.AbstractProjectMember#getType()
-     */
     public String getType() {
         return MEMBER_TYPE;
     }
-    /**
-     * @see org.argouml.kernel.AbstractProjectMember#getZipFileExtension()
-     */
-    public String getZipFileExtension() {
+    public String getFileExtension() {
         return FILE_EXT;
     }
 
-    /**
-     * @param d the diagram
-     */
-    protected void setDiagram(ArgoDiagram d) {
-        diagram = d;
+    public void load() {
+        cat.debug("Reading " + getURL());
+        PGMLParser.SINGLETON.setOwnerRegistry(getProject().getUUIDRefs());
+        ArgoDiagram d = (ArgoDiagram)PGMLParser.SINGLETON.readDiagram(getURL());
+        setDiagram(d);
+        getProject().addDiagram(d);
+
     }
-    
+
+    public void save(String path, boolean overwrite) {
+        save(path, overwrite, null);
+    }
+
+    public void save(String path, boolean overwrite, Writer writer) {
+        if (expander == null)
+            expander = new OCLExpander(TemplateReader.readFile(PGML_TEE));
+        expander.expand(writer, _diagram, "", "");
+    }
+
     /**
-     * @see org.argouml.kernel.ProjectMember#repair()
+     * Write the diagram to the given writer.
+     * @see org.argouml.kernel.ProjectMember#save(java.io.Writer)
      */
-    public String repair() {
-        return diagram.repair();
+    public void save(Writer writer) {
+        if (expander == null)
+            expander = new OCLExpander(TemplateReader.readFile(PGML_TEE));
+        expander.expand(writer, _diagram, "", "");
+    }
+
+    protected void setDiagram(ArgoDiagram diagram) {
+        _diagram = diagram;
     }
 
 } /* end class ProjectMemberDiagram */

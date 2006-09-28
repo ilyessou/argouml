@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2001 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,61 +23,53 @@
 
 
 package org.argouml.uml.ui;
-import java.util.Iterator;
-
-import org.argouml.uml.Profile;
+import org.argouml.ui.*;
+import org.argouml.uml.*;
+import ru.novosoft.uml.foundation.core.*;
+import java.util.*;
 
 /**
- * Interface supported by any container of UML user interface components.
- * This interface allows UML user interface components to determine
- * the currently selected target and profile and allows the control
- * to request a navigation.  Implemented by PropPanel.
+ *    Interface supported by any container of UML user interface components.
+ *    This interface allows UML user interface components to determine
+ *    the currently selected target and profile and allows the control
+ *    to request a navigation.  Implemented by PropPanel
  *
- * @author Curt Arnold
- * @see PropPanel
+ *    @author Curt Arnold
+ *    @see PropPanel
  */
-public interface UMLUserInterfaceContainer {
-
+public interface UMLUserInterfaceContainer extends NavigationListener {
     /**
-     * @return the current target for the container, may be null
+     *   Returns the current target for the container, may be null.
      */
     public Object getTarget();
-
     /**
-     * @return the current target for the container if the target is a
-     *      MModelElement, otherwise null
+     *   Returns the current target for the container if the target is a
+     *      MModelElement, otherwise null.
      */
-    public Object getModelElement();
-
+    public MModelElement getModelElement();
     /**
-     * @return the current profile, may not be null
+     *    Returns the current profile, may not be null.
      */
     public Profile getProfile();
-
     /**
-     * Formats the specified model element.  Typically, deferred to the
-     * profile.
-     *
-     * @param element the given element
-     * @return the formatted string
+     *    Formats the specified model element.  Typically, deferred to the
+     *    profile.
      */
-    public String formatElement(/*MModelElement*/Object element);
-
+    public String formatElement(MModelElement element);
     /**
-     * Formats a collection of model elements.  Typically, deferred to the
-     * profile.
-     *
-     * @param iter an iterator into the collection of modelelements
-     * @return the formatted string
+     *    Formats a collection of model elements.  Typically, deferred to the 
+     *    profile.
      */
     public String formatCollection(Iterator iter);
+    /**
+     *    Formats the model element as a namespace.  
+     */
+    public String formatNamespace(MNamespace ns);
 
     /**
-     * Formats the model element as a namespace.
-     *
-     * @param ns the namespace
-     * @return the formatted string
+     *     Returns a localized string corresponding to the key
+     *     @param key key for resource bundle, typically english literal
+     *     @return localized string for key based on system settings and configuration file
      */
-    public String formatNamespace(/*MNamespace*/Object ns);
-
+    public String localize(String key);    
 }

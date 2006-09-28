@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,28 +21,25 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $Id$
 package org.argouml.uml.ui;
 
-import javax.swing.Action;
-
-import org.argouml.model.Model;
+import ru.novosoft.uml.foundation.data_types.MMultiplicity;
 
 /**
  * An editable and searchable combobox to edit the multiplicity attribute of
  * some modelelement.
- *
- * @author jaap.branderhorst@xs4all.nl
+ * @author jaap.branderhorst@xs4all.nl	
  * @since Jan 5, 2003
  */
 public class UMLMultiplicityComboBox2 extends UMLSearchableComboBox {
 
     /**
      * Constructor for UMLMultiplicityComboBox2.
-     * @param arg0 the combobox model
-     * @param selectAction the action
+     * @param arg0
+     * @param selectAction
      */
-    public UMLMultiplicityComboBox2(UMLComboBoxModel2 arg0,
-            Action selectAction) {
+    public UMLMultiplicityComboBox2(UMLComboBoxModel2 arg0, UMLAction selectAction) {
         super(arg0, selectAction);
     }
 
@@ -56,23 +52,21 @@ public class UMLMultiplicityComboBox2 extends UMLSearchableComboBox {
      * @see org.argouml.uml.ui.UMLEditableComboBox#doOnEdit(java.lang.Object)
      */
     protected void doOnEdit(Object item) {
-        String text = (String) item;
-        Object/*MMultiplicity*/ multi = null;
+        String text = (String)item;
+        MMultiplicity multi = null;
         try {
-            multi =
-                Model.getDataTypesFactory()
-                	.createMultiplicity(text); //new MMultiplicity(text);
-        } catch (IllegalArgumentException e) {
+            multi = new MMultiplicity(text);
+        }
+        catch (IllegalArgumentException e) {
             Object o = search(text);
-            if (o != null ) {
-                multi = o;
+            if (o != null && o instanceof MMultiplicity) {
+                multi = (MMultiplicity)o;
             }
         }
         if (multi != null) {
             setSelectedItem(multi);
-        } else {
+        } else
             getEditor().setItem(getSelectedItem());
-        }
     }
 
 }

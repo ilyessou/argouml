@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2001 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,66 +23,55 @@
 
 package org.argouml.application.api;
 
-/**
- *   An interface which identifies an ArgoUML plug-in.
+/**  An interface which identifies an ArgoUML plug-in.
  *
- *   Plug-ins are specific modules which are replacements
+ *   <dfn>Plug-ins</dfn> are specific modules which are replacements
  *   or additions to standard Argo classes.
  *   Argo references the plug-in functionality through interfaces which
- *   define the features of each type of plug-in.<p>
+ *   define the features of each type of plug-in.
  *
  *   This interface must be extended by another interface which is used
  *   to categorize the plugins.  An example of this is the
  *   <code>PluggableNotation</code> interface,
  *   which provides all the required functionality to request
- *   a notation generator of a notation dialect.<p>
+ *   a notation generator of a notation dialect.
  *
  *   Argo will ask the <code>ModuleLoader</code>
  *   for a plug-in of a certain type.
  *   The loader will determine which plug-in to use and return a
- *   concrete class which implements that interface.<p>
+ *   concrete class which implements that interface.
  *
  *   It is the intent of this class that any Argo feature that can be
  *   replaced or extended by this means be callable only by this means.
  *
  *   @author Thierry Lach
  *   @since  0.9.4
- *   @deprecated by Linus Tolke (0.21.1 March 2006).
- *         Call registration in the appropriate subsystem from
- *         {@link org.argouml.moduleloader.ModuleInterface#enable()}.
- *         If the needed registration is not available, add it!
  */
 public interface Pluggable extends ArgoModule {
 
-    /**
-     * Constant required in plugin manifest.
-     */
-    String PLUGIN_TITLE = "ArgoUML Dynamic Load Module";
+    public static final String PLUGIN_TITLE = "ArgoUML Dynamic Load Module";
 
-    /**
-     * Constant required in plugin manifest.
-     */
-    String PLUGIN_VENDOR = "University of California";
+    public static final String PLUGIN_VENDOR = "University of California";
 
-    /**
-     * Constant required in plugin manifest.
-     */
-    String PLUGIN_PREFIX =
-	"org.argouml.application.api.Pluggable";
+    public static final String PLUGIN_PREFIX = "org.argouml.application.api.Pluggable";
+    //
+    // TODO:  jdk1.2.2 has problems with the following static
+    //                   declaration.  jdk1.3 seems to be ok.  
+    //
+    // public static final String PLUGIN_PREFIX = Pluggable.class.getName();
 
-    /**
-     *  A function which allows a plug-in to decide if it is available
-     *  under a specific context.
+    /** A function which allows a plug-in to decide if it is available
+     *  under a specific context. 
      *
      *  One example of a plugin with multiple criteria is the PluggableMenu.
      *  PluggableMenu requires the first context to be a JMenuItem
      *  which wants the PluggableMenu attached to as the context,
      *  so that it can determine that it would attach to a menu.  The
-     *  second context is an internal (non-localized) description
+     *  second context is an internal (non-localized) description 
      *  of the menu such as "File" or "View"
      *  so that the plugin can further decide.
-     *
-     *  @param context An identification of the context.
+     *  
+     *  @param context An identification of the context.  
      *                 The interpretation of criteria is specific to
      *                 the plug-in type, but must be consistent
      *                 across that type.  The plug-in must want
@@ -92,6 +80,6 @@ public interface Pluggable extends ArgoModule {
      *  @return True if the plug-in wants to make itself available
      *          for this context, otherwise false.
      */
-    boolean inContext(Object[] context);
+    public boolean inContext(Object[] context);
 
 } /* end interface Pluggable */

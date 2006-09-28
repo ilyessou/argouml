@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,125 +23,105 @@
 
 package org.argouml.cognitive.ui;
 
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import javax.swing.JLabel;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import javax.swing.border.EtchedBorder;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.*;
+import javax.swing.*;
+import javax.swing.event.*;
+import javax.swing.border.*;
 
-import org.argouml.i18n.Translator;
-import org.argouml.swingext.SpacerPanel;
+import org.argouml.kernel.*;
+import org.argouml.ui.*;
 
-
-/**
- * A non-modal wizard step that shows instructions and prompts
- * the user to enter a string.
+/** A simple non-modal wizard step that shows instructions and prompts
+ *  the user to enter a string. 
  *
  * @see org.argouml.cognitive.critics.Critic
- * @see org.argouml.cognitive.ui.Wizard
+ * @see org.argouml.kernel.Wizard
  */
+
 public class WizStepTextField extends WizStep {
-    private JTextArea instructions = new JTextArea();
-    private JLabel label = new JLabel(Translator.localize("label.value"));
-    private JTextField field = new JTextField(20);
+  JTextArea _instructions = new JTextArea();
+  JLabel _label = new JLabel("Value:");
+  JTextField _field = new JTextField(20);
 
-    /**
-     * The constructor. Since this constructor does not set the necessary
-     * instructions, textfield label and default value, it is private.
-     */
-    private WizStepTextField() {
-	instructions.setEditable(false);
-	instructions.setWrapStyleWord(true);
-	instructions.setBorder(null);
-	instructions.setBackground(getMainPanel().getBackground());
+  public WizStepTextField() {
+    _instructions.setEditable(false);
+    _instructions.setWrapStyleWord(true);
+    _instructions.setBorder(null);
+    _instructions.setBackground(_mainPanel.getBackground());
 
-	getMainPanel().setBorder(new EtchedBorder());
+    _mainPanel.setBorder(new EtchedBorder());
 
-	GridBagLayout gb = new GridBagLayout();
-	getMainPanel().setLayout(gb);
+    GridBagLayout gb = new GridBagLayout();
+    _mainPanel.setLayout(gb);
 
-	GridBagConstraints c = new GridBagConstraints();
-	c.ipadx = 3; c.ipady = 3;
-	c.weightx = 0.0; c.weighty = 0.0;
-	c.anchor = GridBagConstraints.EAST;
+    GridBagConstraints c = new GridBagConstraints();
+    c.ipadx = 3; c.ipady = 3;
+    c.weightx = 0.0; c.weighty = 0.0;
+    c.anchor = GridBagConstraints.EAST;
 
-	// TODO: should have an image of a wizard or some logo
-	JLabel image = new JLabel("");
-	//image.setMargin(new Insets(0, 0, 0, 0));
-	image.setIcon(getWizardIcon());
-	image.setBorder(null);
-	c.gridx = 0;
-	c.gridheight = 4;
-	c.gridy = 0;
-	gb.setConstraints(image, c);
-	getMainPanel().add(image);
+    // TODO: should have an image of a wizard or some logo
+    JLabel image = new JLabel("");
+    //image.setMargin(new Insets(0, 0, 0, 0));
+    image.setIcon(WIZ_ICON);
+    image.setBorder(null);
+    c.gridx = 0;
+    c.gridheight = 4;
+    c.gridy = 0;
+    gb.setConstraints(image, c);
+    _mainPanel.add(image);
 
-	c.weightx = 1.0;
-	c.gridx = 2;
-	c.gridheight = 1;
-	c.gridwidth = 3;
-	c.gridy = 0;
-	c.fill = GridBagConstraints.HORIZONTAL;
-	gb.setConstraints(instructions, c);
-	getMainPanel().add(instructions);
+    c.weightx = 1.0;
+    c.gridx = 2;
+    c.gridheight = 1;
+    c.gridwidth = 3;
+    c.gridy = 0;
+    c.fill = GridBagConstraints.HORIZONTAL;
+    gb.setConstraints(_instructions, c);
+    _mainPanel.add(_instructions);
 
-	c.gridx = 1;
-	c.gridy = 1;
-	c.weightx = 0.0;
-	c.gridwidth = 1;
-	c.fill = GridBagConstraints.NONE;
-	SpacerPanel spacer = new SpacerPanel();
-	gb.setConstraints(spacer, c);
-	getMainPanel().add(spacer);
+    c.gridx = 1;
+    c.gridy = 1;
+    c.weightx = 0.0;
+    c.gridwidth = 1;
+    c.fill = GridBagConstraints.NONE;
+    SpacerPanel spacer = new SpacerPanel();
+    gb.setConstraints(spacer, c);
+    _mainPanel.add(spacer);
 
-	c.gridx = 2;
-	c.gridy = 2;
-	c.weightx = 0.0;
-	c.gridwidth = 1;
-	gb.setConstraints(label, c);
-	getMainPanel().add(label);
+    c.gridx = 2;
+    c.gridy = 2;
+    c.weightx = 0.0;
+    c.gridwidth = 1;
+    gb.setConstraints(_label, c);
+    _mainPanel.add(_label);
 
-	c.weightx = 1.0;
-	c.fill = GridBagConstraints.HORIZONTAL;
-	c.gridx = 3;
-	c.gridy = 2;
-	gb.setConstraints(field, c);
-	getMainPanel().add(field);
+    c.weightx = 1.0;
+    c.fill = GridBagConstraints.HORIZONTAL;
+    c.gridx = 3;
+    c.gridy = 2;
+    gb.setConstraints(_field, c);
+    _mainPanel.add(_field);
 
-	//     c.gridx = 1;
-	//     c.gridy = 3;
-	//     c.gridheight = GridBagConstraints.REMAINDER;
-	//     SpacerPanel spacer2 = new SpacerPanel();
-	//     gb.setConstraints(spacer2, c);
-	//     _mainPanel.add(spacer2);
+//     c.gridx = 1;
+//     c.gridy = 3;
+//     c.gridheight = GridBagConstraints.REMAINDER;
+//     SpacerPanel spacer2 = new SpacerPanel();
+//     gb.setConstraints(spacer2, c);
+//     _mainPanel.add(spacer2);
 
-	field.getDocument().addDocumentListener(this);
-    }
+    _field.getDocument().addDocumentListener(this);
+  }
 
-    /**
-     * The constructor.
-     *
-     * @param w the wizard (ignored)
-     * @param instr the instructions
-     * @param lab the label for the textfield
-     * @param val the initial value for the textfield
-     */
-    public WizStepTextField(Wizard w, String instr, String lab, String val) {
-	this();
-	// store wizard?
-	instructions.setText(instr);
-	label.setText(lab);
-	field.setText(val);
-    }
+  public WizStepTextField(Wizard w, String instr, String lab, String val) {
+    this();
+    // store wizard?
+    _instructions.setText(instr);
+    _label.setText(lab);
+    _field.setText(val);
+  }
 
-    /**
-     * @return the resulting text
-     */
-    public String getText() { return field.getText(); }
+  public String getText() { return _field.getText(); }
 
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = -4245718254267840545L;
 } /* end class WizStepTextField */

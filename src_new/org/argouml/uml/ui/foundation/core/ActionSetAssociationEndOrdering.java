@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,64 +21,48 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $Id$
 package org.argouml.uml.ui.foundation.core;
 
 import java.awt.event.ActionEvent;
 
-import javax.swing.Action;
-
-import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.application.api.Argo;
+import org.argouml.uml.ui.UMLChangeAction;
 import org.argouml.uml.ui.UMLCheckBox2;
-import org.tigris.gef.undo.UndoableAction;
 
+import ru.novosoft.uml.foundation.core.MAssociationEnd;
+import ru.novosoft.uml.foundation.data_types.MOrderingKind;
 
 /**
- *
- * @author jaap.branderhorst@xs4all.nl
+ * 
+ * @author jaap.branderhorst@xs4all.nl	
  * @since Jan 4, 2003
  */
-public class ActionSetAssociationEndOrdering extends UndoableAction {
+public class ActionSetAssociationEndOrdering extends UMLChangeAction {
 
-    private static final ActionSetAssociationEndOrdering SINGLETON =
-	new ActionSetAssociationEndOrdering();
+    public static final ActionSetAssociationEndOrdering SINGLETON = new ActionSetAssociationEndOrdering();
 
     /**
      * Constructor for ActionSetElementOwnershipSpecification.
+     * @param s
      */
     protected ActionSetAssociationEndOrdering() {
-        super(Translator.localize("Set"), null);
-        // Set the tooltip string:
-        putValue(Action.SHORT_DESCRIPTION, 
-                Translator.localize("Set"));
+        super(Argo.localize("CoreMenu", "Set"), true, NO_ICON);
     }
-
+    
     /**
      * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
      */
     public void actionPerformed(ActionEvent e) {
         super.actionPerformed(e);
         if (e.getSource() instanceof UMLCheckBox2) {
-            UMLCheckBox2 source = (UMLCheckBox2) e.getSource();
+            UMLCheckBox2 source = (UMLCheckBox2)e.getSource();
             Object target = source.getTarget();
-            if (Model.getFacade().isAAssociationEnd(target)) {
-                Object m = /*(MAssociationEnd)*/ target;
-                if (source.isSelected()) {
-                    Model.getCoreHelper().setOrdering(m,
-                            Model.getOrderingKind().getOrdered());
-                } else {
-                    Model.getCoreHelper().setOrdering(m,
-                            Model.getOrderingKind().getUnordered());
-                }
+            if (target instanceof MAssociationEnd) {
+                MAssociationEnd m = (MAssociationEnd)target;
+                m.setOrdering(source.isSelected() ? MOrderingKind.ORDERED : MOrderingKind.UNORDERED);               
             }
         }
-    }
-
-    /**
-     * @return Returns the sINGLETON.
-     */
-    public static ActionSetAssociationEndOrdering getInstance() {
-        return SINGLETON;
     }
 
 }

@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2001 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -23,51 +22,43 @@
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 package org.argouml.ui;
+import org.argouml.application.ArgoVersion;
+import org.argouml.application.api.*;
+import org.argouml.application.helpers.*;
+import org.argouml.kernel.*;
+import org.argouml.uml.ui.UMLAction;
+import java.awt.*;
+import java.awt.event.*;
+import java.beans.*;
+import javax.swing.*;
+import java.util.*;
+import org.tigris.gef.util.*;
 
-import java.awt.BorderLayout;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
-
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JTextField;
-
-import org.argouml.application.api.Argo;
-import org.argouml.application.api.Configuration;
-import org.argouml.i18n.Translator;
-
-/**
- * Tab Panel for setting the default user attributes: name and email.
+/** Action object for handling Argo settings
  *
- * @author Thierry Lach
- * @since  0.9.4
+ *  @author Thierry Lach
+ *  @since  0.9.4
  */
-class SettingsTabUser extends JPanel
-    implements GUISettingsTabInterface {
+public class SettingsTabUser extends SettingsTabHelper
+implements SettingsTabPanel {
 
-    /**
-     * This is where the user enters full name in settings tab.
-     * This information is stored
-     * in the argo.user.properties file.
-     */
-    private JTextField userFullname;
+    /** This is where the user enters full name in settings tab
+     * unknown where this information is stored
+     * it is NOT stored in myproject.argo
+     */    
+    JTextField _fullname = null;
 
-    /**
-     * This is where the user enters email in settings tab.
-     * This information is stored
-     * in the argo.user.properties file.
-     */
-    private JTextField userEmail;
+    /** This is where the user enters email in settings tab
+     * unknown where this information is stored
+     * it is NOT stored in myproject.argo
+     */    
+    JTextField _email = null;
 
-    /**
-     * The constructor.
-     *
-     */
-    SettingsTabUser() {
+    public SettingsTabUser() {
+        super();
         setLayout(new BorderLayout());
 	JPanel top = new JPanel();
-    	top.setLayout(new GridBagLayout());
+    	top.setLayout(new GridBagLayout()); 
 
 	GridBagConstraints labelConstraints = new GridBagConstraints();
 	labelConstraints.anchor = GridBagConstraints.WEST;
@@ -89,65 +80,40 @@ class SettingsTabUser extends JPanel
 
 	labelConstraints.gridy = 0;
 	fieldConstraints.gridy = 0;
-	top.add(new JLabel(Translator.localize("label.user")),
-                labelConstraints);
-	JTextField j = new JTextField();
-        userFullname = j;
-	top.add(userFullname, fieldConstraints);
+	top.add(createLabel("label.user"), labelConstraints);
+        _fullname = createTextField();
+	top.add(_fullname, fieldConstraints);
 
 	labelConstraints.gridy = 1;
 	fieldConstraints.gridy = 1;
- 	top.add(new JLabel(Translator.localize("label.email")),
-                labelConstraints);
- 	JTextField j1 = new JTextField();
-        userEmail = j1;
-	top.add(userEmail, fieldConstraints);
+ 	top.add(createLabel("label.email"), labelConstraints);
+        _email = createTextField();
+	top.add(_email, fieldConstraints);
 
 	add(top, BorderLayout.NORTH);
     }
 
-    /**
-     * @see GUISettingsTabInterface#handleSettingsTabRefresh()
-     */
     public void handleSettingsTabRefresh() {
-        userFullname.setText(Configuration.getString(Argo.KEY_USER_FULLNAME));
-        userEmail.setText(Configuration.getString(Argo.KEY_USER_EMAIL));
+        _fullname.setText(Configuration.getString(Argo.KEY_USER_FULLNAME));
+        _email.setText(Configuration.getString(Argo.KEY_USER_EMAIL));
     }
 
-    /**
-     * @see GUISettingsTabInterface#handleSettingsTabSave()
-     */
     public void handleSettingsTabSave() {
-        Configuration.setString(Argo.KEY_USER_FULLNAME, userFullname.getText());
-        Configuration.setString(Argo.KEY_USER_EMAIL, userEmail.getText());
+        Configuration.setString(Argo.KEY_USER_FULLNAME, _fullname.getText());
+        Configuration.setString(Argo.KEY_USER_EMAIL, _email.getText());
     }
 
-    /**
-     * @see GUISettingsTabInterface#handleSettingsTabCancel()
-     */
     public void handleSettingsTabCancel() {
 	handleSettingsTabRefresh();
     }
 
-    /**
-     * @see org.argouml.ui.GUISettingsTabInterface#handleResetToDefault()
-     */
-    public void handleResetToDefault() {
-        // Do nothing - these buttons are not shown.
-    }
-
-    /**
-     * @see GUISettingsTabInterface#getTabKey()
-     */
+    public String getModuleName() { return "SettingsTabUser"; }
+    public String getModuleDescription() { return "Settings Tab for User"; }
+    public String getModuleAuthor() { return "ArgoUML Core"; }
+    public String getModuleVersion() { return ArgoVersion.getVersion(); }
+    public String getModuleKey() { return "module.settings.user"; }
     public String getTabKey() { return "tab.user"; }
-
-    /**
-     * @see GUISettingsTabInterface#getTabPanel()
-     */
-    public JPanel getTabPanel() { return this; }
-
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = -742258688091914619L;
 }
+
+
+

@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-01 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,6 +23,7 @@
 
 package org.argouml.uml.ui;
 
+import java.awt.Component;
 import java.awt.Toolkit;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.UnsupportedFlavorException;
@@ -41,14 +41,14 @@ import javax.swing.text.JTextComponent;
 
 import org.argouml.application.helpers.ResourceLoaderWrapper;
 import org.argouml.i18n.Translator;
+import org.tigris.gef.base.CmdPaste;
 import org.tigris.gef.base.Globals;
 
-/**
- * Action to paste the content of either the GEF clipboard or the
- * system clipboard.  The action is enabled if there is content on
- * either clipboard AND either the mouse hovers over the JGraph (the
- * diagram) or the caret in a UMLTextField2 or UMLTextArea2 is
- * enabled.
+/** 
+ * Action to paste the content of either the GEF clipboard or the system clipboard. 
+ * The action is enabled if there is content on either clipboard AND either the 
+ * mouse hovers over the JGraph (the diagram) or the caret in a UMLTextField2 or
+ * UMLTextArea2 is enabled. 
  */
 public class ActionPaste
     extends AbstractAction
@@ -56,35 +56,28 @@ public class ActionPaste
 
     ////////////////////////////////////////////////////////////////
     // static variables
-    /**
-     * The singelton.
-     */
-    private static ActionPaste instance = new ActionPaste();
+
+    private static ActionPaste _Instance = new ActionPaste();
 
     /**
-     * The key.
-     */
-    private static final String LOCALIZE_KEY = "action.paste";
-
-    /**
-     * Default constructor for action. We cannot use UMLChangeAction
-     * as a parent for this class since it works with shouldBeEnabled
-     * etc. which doesn't give enough control about enabling/disabling
-     * this action.
+     * Default constructor for action. We cannot use UMLChangeAction as a parent
+     * for this class since it works with shouldBeEnabled etc. which doesn't give
+     * enough control about enabling/disabling this action.
      *
      */
-    public ActionPaste() {
-        super(Translator.localize(LOCALIZE_KEY));
-        Icon icon = ResourceLoaderWrapper.lookupIcon(LOCALIZE_KEY);
-        if (icon != null) {
+    private ActionPaste() {
+        Icon icon =
+            ResourceLoaderWrapper
+                .getResourceLoaderWrapper()
+                .lookupIconResource(
+                Translator.getImageBinding("action.paste"),
+                Translator.localize("CoreMenu", "action.paste"));
+        if (icon != null)
             putValue(Action.SMALL_ICON, icon);
-        }
         putValue(
-		 Action.SHORT_DESCRIPTION,
-		 Translator.localize(LOCALIZE_KEY) + " ");
-        // setEnabled((Globals.clipBoard != null &&
-        // !Globals.clipBoard.isEmpty()) ||
-        // !isSystemClipBoardEmpty());
+            Action.SHORT_DESCRIPTION,
+            Translator.localize("CoreMenu", "action.paste") + " ");
+        // setEnabled((Globals.clipBoard != null && !Globals.clipBoard.isEmpty()) || !isSystemClipBoardEmpty());
         setEnabled(false);
     }
 
@@ -93,65 +86,65 @@ public class ActionPaste
      * @return The singleton
      */
     public static ActionPaste getInstance() {
-        return instance;
+        return _Instance;
     }
 
     /**
-     * The source textcomponent where the caret is positioned.
+     * The source textcomponent where the caret is positioned
      */
-    private JTextComponent textSource;
+    private JTextComponent _textSource;
 
     /**
-     * Copies some text or a fig.
-     *
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
+     * Flag to indicate that the mouse is hovering over the JGraph
+     */
+    private boolean _inJGraph;
+
+    /**
+     * Copies some text or a fig
      */
     public void actionPerformed(ActionEvent ae) {
         if (Globals.clipBoard != null && !Globals.clipBoard.isEmpty()) {
-        	 /* Disable pasting as long as issue 594 is not solved:*/
-//            CmdPaste cmd = new CmdPaste();
-//            cmd.doIt();
+            CmdPaste cmd = new CmdPaste();
+            cmd.doIt();
         } else {
-            if (!isSystemClipBoardEmpty() && textSource != null) {
-                textSource.paste();
+            if (!isSystemClipBoardEmpty() && _textSource != null) {
+                _textSource.paste();
             }
         }
-
+              
     }
 
+    
 
-    /**
-     * Check if there is a selection on the clipboard.
-     *
-     * @return <code>true</code> if there is.
-     */
     private boolean isSystemClipBoardEmpty() {
-	try {
-	    Object text =
-		Toolkit.getDefaultToolkit().getSystemClipboard()
-		    .getContents(null).getTransferData(DataFlavor.stringFlavor);
-	    return text == null;
-	} catch (IOException ignorable) {
-	} catch (UnsupportedFlavorException ignorable) {
-	}
-	return true;
-    }
+        //      if there is a selection on the clipboard
+         boolean hasContents = false;
+         try {
+             Object text =
+                 Toolkit
+                     .getDefaultToolkit()
+                     .getSystemClipboard()
+                     .getContents(null)
+                     .getTransferData(DataFlavor.stringFlavor);
+             return text == null;
+         } catch (IOException ignorable) {
+         } catch (UnsupportedFlavorException ignorable) {
+         }
+         return true;
+    }    
 
     /**
      * @see java.awt.event.FocusListener#focusLost(java.awt.event.FocusEvent)
      */
-    public void focusLost(FocusEvent e) {
-        if (e.getSource() == textSource) {
-            textSource = null;
-        }
+    public void focusLost(FocusEvent e) {        
+        if (e.getSource() == _textSource) _textSource = null;
     }
 
     /**
-     * @see
-     * javax.swing.event.CaretListener#caretUpdate(javax.swing.event.CaretEvent)
+     * @see javax.swing.event.CaretListener#caretUpdate(javax.swing.event.CaretEvent)
      */
     public void caretUpdate(CaretEvent e) {
-        textSource = (JTextComponent) e.getSource();
+        _textSource = (JTextComponent)e.getSource();
 
     }
 
@@ -159,7 +152,7 @@ public class ActionPaste
      * @see java.awt.event.FocusListener#focusGained(java.awt.event.FocusEvent)
      */
     public void focusGained(FocusEvent e) {
-        textSource = (JTextComponent) e.getSource();
+        _textSource = (JTextComponent)e.getSource();
     }
 
 } /* end class ActionPaste */

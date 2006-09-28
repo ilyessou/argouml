@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -27,9 +26,11 @@ package org.argouml.uml.ui.behavior.collaborations;
 
 import java.util.Vector;
 
-import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.application.api.Argo;
+import org.argouml.model.uml.behavioralelements.collaborations.CollaborationsHelper;
 import org.argouml.uml.ui.AbstractActionAddModelElement;
+
+import ru.novosoft.uml.behavior.collaborations.MMessage;
 
 /**
  * Action to add a predecessor to some message.
@@ -39,9 +40,8 @@ import org.argouml.uml.ui.AbstractActionAddModelElement;
  */
 public class ActionAddMessagePredecessor extends AbstractActionAddModelElement {
 
-    private static final ActionAddMessagePredecessor SINGLETON =
-	new ActionAddMessagePredecessor();
-
+    public final static ActionAddMessagePredecessor SINGLETON = new ActionAddMessagePredecessor();
+    
     /**
      * Constructor for ActionAddMessagePredecessor.
      */
@@ -55,8 +55,7 @@ public class ActionAddMessagePredecessor extends AbstractActionAddModelElement {
     protected Vector getChoices() {
         if (getTarget() == null) return new Vector();
         Vector vec = new Vector();
-        vec.addAll(Model.getCollaborationsHelper()
-                .getAllPossiblePredecessors(getTarget()));
+        vec.addAll(CollaborationsHelper.getHelper().getAllPossiblePredecessors((MMessage)getTarget()));
         return vec;
     }
 
@@ -64,11 +63,9 @@ public class ActionAddMessagePredecessor extends AbstractActionAddModelElement {
      * @see org.argouml.uml.ui.AbstractActionAddModelElement#getSelected()
      */
     protected Vector getSelected() {
-        if (getTarget() == null)
-	    throw new IllegalStateException(
-                "getSelected may not be called with null target");
+        if (getTarget() == null) throw new IllegalStateException("getSelected may not be called with null target");
         Vector vec = new Vector();
-        vec.addAll(Model.getFacade().getPredecessors(getTarget()));
+        vec.addAll(((MMessage)getTarget()).getPredecessors());
         return vec;
     }
 
@@ -76,26 +73,16 @@ public class ActionAddMessagePredecessor extends AbstractActionAddModelElement {
      * @see org.argouml.uml.ui.AbstractActionAddModelElement#getDialogTitle()
      */
     protected String getDialogTitle() {
-        return Translator.localize("dialog.add-predecessors");
+        return Argo.localize("UMLMenu", "dialog.add-predecessors");
     }
 
     /**
-     * @see
-     * org.argouml.uml.ui.AbstractActionAddModelElement#doIt(java.util.Vector)
+     * @see org.argouml.uml.ui.AbstractActionAddModelElement#doIt(java.util.Vector)
      */
     protected void doIt(Vector selected) {
-	if (getTarget() == null)
-	    throw new IllegalStateException(
-                "doIt may not be called with null target");
-	Object message = /*(MMessage)*/ getTarget();
-	Model.getCollaborationsHelper().setPredecessors(message, selected);
-    }
-
-    /**
-     * @return Returns the SINGLETON.
-     */
-    public static ActionAddMessagePredecessor getInstance() {
-        return SINGLETON;
+         if (getTarget() == null) throw new IllegalStateException("doIt may not be called with null target");
+         MMessage message = (MMessage)getTarget();
+         message.setPredecessors(selected);
     }
 
 }

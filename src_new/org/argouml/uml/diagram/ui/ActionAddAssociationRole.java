@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,75 +21,43 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
-package org.argouml.uml.diagram.ui;
-
-import javax.swing.Action;
-import javax.swing.Icon;
-
-import org.argouml.application.helpers.ResourceLoaderWrapper;
-import org.argouml.model.Model;
-import org.argouml.ui.CmdSetMode;
-import org.tigris.gef.base.ModeCreatePolyEdge;
-
-
-/**
- * The ActionAddAssociation class is for creating a dummy link with a
- * stimulus and a given action type. This is done in one step when a
- * new edge between two nodes is instanciated
+/*
+ * ActionAddAssociation.java
  *
  * Created on 15 February 2003, 01:01
+ */
+package org.argouml.uml.diagram.ui;
+
+import java.awt.event.ActionEvent;
+
+import ru.novosoft.uml.behavior.collaborations.MAssociationRole;
+import ru.novosoft.uml.foundation.data_types.MAggregationKind;
+
+import org.tigris.gef.base.CmdSetMode;
+import org.tigris.gef.base.ModeCreatePolyEdge;
+
+/** 
+ * The ActionAddAssociation class is for creating a dummy link with a stimulus and 
+ * a given action type. This is done in one step when a new edge between
+ * two nodes is instanciated
  *
  * @author Bob Tarling
  */
+
 public class ActionAddAssociationRole extends CmdSetMode {
-
+    
     /**
-     * Serial versoin generated for rev 1.14
-     */
-    private static final long serialVersionUID = -2842826831538374107L;
-
-    /**
-     * Construct a new ActionAddAssociationRole.
-     *
-     * @param aggregationKind the required aggregation for the association.
-     * @param unidirectional true if this is to create a unidirectional
+     * Construct a new ActionAddAssociationRole
+     * @param aggregation the required aggregation for the association.
+     * @param unidirectional true if this is to create a unidirectional 
      *        association
      * @param name the action description
      */
-    public ActionAddAssociationRole(Object aggregationKind,
-                                    boolean unidirectional,
-                                    String name) {
-        super(ModeCreatePolyEdge.class,
-              "edgeClass",
-              Model.getMetaTypes().getAssociationRole(),
-              name);
-        _modeArgs.put("aggregation", aggregationKind);
-        _modeArgs.put("unidirectional", Boolean.valueOf(unidirectional));
-    }
-
-    /**
-     * The constructor.
-     *
-     * @param aggregationKind the required aggregation for the association.
-     * @param unidirectional true if this is to create a unidirectional
-     *        association
-     * @param name the action description
-     * @param iconName the name of the icon file
-     */
-    public ActionAddAssociationRole(Object aggregationKind,
-            boolean unidirectional,
-            String name,
-            String iconName) {
-        super(ModeCreatePolyEdge.class,
-                "edgeClass",
-                Model.getMetaTypes().getAssociationRole(),
-                name);
-        _modeArgs.put("aggregation", aggregationKind);
-        _modeArgs.put("unidirectional", Boolean.valueOf(unidirectional));
-        Icon icon = ResourceLoaderWrapper.lookupIconResource(iconName, 
-                iconName);
-        if (icon != null) {
-            putValue(Action.SMALL_ICON, icon);
-        }
+    public ActionAddAssociationRole(MAggregationKind aggregation, boolean unidirectional, String name) {
+        super(ModeCreatePolyEdge.class, "edgeClass", MAssociationRole.class, name);
+        _modeArgs.put("aggregation", aggregation);
+        _modeArgs.put("unidirectional", new Boolean(unidirectional));
     }
 }
+
+

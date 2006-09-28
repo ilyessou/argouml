@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,223 +23,165 @@
 
 package org.argouml.cognitive.ui;
 
+import java.awt.Container;
+import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import javax.swing.ButtonGroup;
+import javax.swing.JButton;
+import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
-import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
-import org.apache.log4j.Logger;
+import org.apache.log4j.Category;
 import org.argouml.cognitive.Designer;
 import org.argouml.cognitive.ToDoItem;
 import org.argouml.cognitive.ToDoList;
-import org.argouml.cognitive.Translator;
 import org.argouml.cognitive.UnresolvableException;
-import org.argouml.ui.ArgoDialog;
-import org.tigris.swidgets.Dialog;
+import org.argouml.ui.ProjectBrowser;
 
-/**
- * The dialog to dismiss todo items.
- *
- */
-public class DismissToDoItemDialog extends ArgoDialog {
+public class DismissToDoItemDialog extends JDialog {
+    protected static Category cat = Category.getInstance(DismissToDoItemDialog.class);
 
-    private static final Logger LOG =
-        Logger.getLogger(DismissToDoItemDialog.class);
+  ////////////////////////////////////////////////////////////////
+  // constants
+  String BAD_GOAL_LABEL = "It is not relevant to my goals";
+  String BAD_DECISION_LABEL = "It is not of concern at the momemt";
+  String EXPLAIN_LABEL = "Reason given below";
 
-    ////////////////////////////////////////////////////////////////
-    // instance variables
+  ////////////////////////////////////////////////////////////////
+  // instance variables
+  protected JRadioButton _badGoalButton = new JRadioButton(BAD_GOAL_LABEL);
+  protected JRadioButton _badDecButton = new JRadioButton(BAD_DECISION_LABEL);
+  protected JRadioButton _explainButton = new JRadioButton(EXPLAIN_LABEL);
+  protected ButtonGroup _actionGroup = new ButtonGroup();
+  protected JButton _okButton = new JButton("Ok");
+  protected JButton _cancelButton = new JButton("Cancel");
+  protected JTextArea _explaination = new JTextArea();
+  protected ToDoItem _target;
 
-    private JRadioButton    badGoalButton;
-    private JRadioButton    badDecButton;
-    private JRadioButton    explainButton;
-    private ButtonGroup     actionGroup;
-    private JTextArea       explanation;
-    private ToDoItem        target;
+  ////////////////////////////////////////////////////////////////
+  // constructors
+  
+  public DismissToDoItemDialog() {
+    super(ProjectBrowser.getInstance(), "Dismiss To Do Item");
+    JLabel instrLabel = new JLabel("This item should be removed because");
 
-    ////////////////////////////////////////////////////////////////
-    // constructors
+    setLocation(300, 200);
+    setSize(new Dimension(300, 250));
+    Container content = getContentPane();
+    GridBagLayout gb = new GridBagLayout();
+    GridBagConstraints c = new GridBagConstraints();
+    c.fill = GridBagConstraints.BOTH;
+    c.weightx = 1.0;
+    c.ipadx = 3; c.ipady = 3;
+    c.gridwidth = 2;
 
-    /**
-     * The constructor.
-     */
-    public DismissToDoItemDialog() {
-        super(
-            Translator.localize("dialog.title.dismiss-todo-item"),
-            Dialog.OK_CANCEL_OPTION,
-            true);
+    content.setLayout(gb);
 
-        JLabel instrLabel =
-            new JLabel(Translator.localize("label.remove-item"));
+    JScrollPane explain = new JScrollPane(_explaination);
+    //set size?
 
-        badGoalButton = new JRadioButton(Translator.localize(
-            "button.not-relevant-to-my-goals"));
-        badDecButton = new JRadioButton(Translator.localize(
-            "button.not-of-concern-at-moment"));
-        explainButton = new JRadioButton(Translator.localize(
-            "button.reason-given-below"));
+    c.gridx = 0;
+    c.gridy = 0;
+    gb.setConstraints(instrLabel, c);
+    content.add(instrLabel);
+    c.gridy = 1;
+    gb.setConstraints(_badGoalButton, c);
+    content.add(_badGoalButton);
+    c.gridy = 2;
+    gb.setConstraints(_badDecButton, c);
+    content.add(_badDecButton);
+    c.gridy = 3;
+    gb.setConstraints(_explainButton, c);
+    content.add(_explainButton);
+    c.gridy = 4;
+    c.weighty = 1.0;
+    gb.setConstraints(explain, c);
+    content.add(explain);
+    //c.fill = GridBagConstraints.NONE;
+    c.gridwidth = 1;
+    c.gridy = 5;
+    c.gridx = 0;
+    c.weighty = 0.;
+    gb.setConstraints(_okButton, c);
+    content.add(_okButton);
+    c.gridx = 1;
+    c.gridwidth = 1;
+    gb.setConstraints(_cancelButton, c);
+    content.add(_cancelButton);
 
-        badGoalButton.setMnemonic(
-            Translator.localize(
-                "button.not-relevant-to-my-goals.mnemonic")
-	        .charAt(0));
-        badDecButton.setMnemonic(
-            Translator.localize(
-                "button.not-of-concern-at-moment.mnemonic")
-	        .charAt(0));
-        explainButton.setMnemonic(
-            Translator.localize("button.reason-given-below.mnemonic").charAt(
-                0));
+    _okButton.addActionListener(new ActionListener() {
+	public void actionPerformed(ActionEvent e) {
+	    if (_badGoalButton.getModel().isSelected()) {
+		badGoal(e);
+	    } else if (_badDecButton.getModel().isSelected()) {
+		badDec(e);
+	    } else if (_explainButton.getModel().isSelected()) {
+		explain(e);
+	    } else {
+		cat.warn("DissmissToDoItemDialog: Unknown action: " + e);
+	    }
+	    setVisible(false);
+	    dispose();
+	}});
+    _cancelButton.addActionListener(new ActionListener() {
+	public void actionPerformed(ActionEvent e) {
+	    setVisible(false);
+	    dispose();
+	}});
 
-        JPanel content = new JPanel();
+    _actionGroup.add(_badGoalButton);
+    _actionGroup.add(_badDecButton);
+    _actionGroup.add(_explainButton);
+    _actionGroup.setSelected(_explainButton.getModel(), true);
 
-        GridBagLayout gb = new GridBagLayout();
-        GridBagConstraints c = new GridBagConstraints();
+    _explaination.setText("<Enter Rationale Here>");
+  }
 
-        c.fill = GridBagConstraints.BOTH;
-        c.weightx = 1.0;
-        c.gridwidth = 2;
+  public void setTarget(Object t) { _target = (ToDoItem) t; }
 
-        content.setLayout(gb);
-
-        explanation = new JTextArea(6, 40);
-        explanation.setLineWrap(true);
-        explanation.setWrapStyleWord(true);
-        JScrollPane explain = new JScrollPane(explanation);
-
-        c.gridx = 0;
-        c.gridy = 0;
-
-        gb.setConstraints(instrLabel, c);
-        content.add(instrLabel);
-
-        c.gridy = 1;
-        c.insets = new Insets(5, 0, 0, 0);
-
-        gb.setConstraints(badGoalButton, c);
-        content.add(badGoalButton);
-
-        c.gridy = 2;
-
-        gb.setConstraints(badDecButton, c);
-        content.add(badDecButton);
-
-        c.gridy = 3;
-
-        gb.setConstraints(explainButton, c);
-        content.add(explainButton);
-
-        c.gridy = 4;
-        c.weighty = 1.0;
-
-        gb.setConstraints(explain, c);
-        content.add(explain);
-
-        setContent(content);
-
-        getOkButton().addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                if (badGoalButton.getModel().isSelected()) {
-                    badGoal(e);
-                }
-                else if (badDecButton.getModel().isSelected()) {
-                    badDec(e);
-                }
-                else if (explainButton.getModel().isSelected()) {
-                    explain(e);
-                }
-                else {
-                    LOG.warn("DissmissToDoItemDialog: Unknown action: " + e);
-                }
-            }
-        });
-
-        actionGroup = new ButtonGroup();
-        actionGroup.add(badGoalButton);
-        actionGroup.add(badDecButton);
-        actionGroup.add(explainButton);
-        actionGroup.setSelected(explainButton.getModel(), true);
-
-        explanation.setText(
-            Translator.localize("label.enter-rationale-here"));
-
-        badGoalButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                explanation.setEnabled(false);
-            }
-        });
-        badDecButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                explanation.setEnabled(false);
-            }
-        });
-        explainButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                explanation.setEnabled(true);
-                explanation.requestFocus();
-                explanation.selectAll();
-            }
-        });
+  /** Prepare for typing in rationale field when window is opened. */
+  public void setVisible(boolean b) {
+    super.setVisible(b);
+    if (b) {
+      _explaination.requestFocus();
+      _explaination.selectAll();
     }
+  }
 
-    /**
-     * @param t the new target object (ToDoItem)
-     */
-    public void setTarget(Object t) {
-        target = (ToDoItem) t;
+  ////////////////////////////////////////////////////////////////
+  // event handlers
+
+  private void badGoal(ActionEvent e) {
+    //cat.debug("bad goal");
+    GoalsDialog d = new GoalsDialog(ProjectBrowser.getInstance());
+    d.setVisible(true);
+  }
+
+  private void badDec(ActionEvent e) {
+    //cat.debug("bad decision");
+    DesignIssuesDialog d = new DesignIssuesDialog(ProjectBrowser.getInstance());
+    d.setVisible(true);
+  }
+
+  private void explain(ActionEvent e) {
+    //cat.debug("I can explain!");
+    //TODO: make a new history item
+    ToDoList list = Designer.TheDesigner.getToDoList();
+    try {
+      list.explicitlyResolve(_target, _explaination.getText());
+    } catch (UnresolvableException ure) {
+      cat.error("Resolve failed (ure): " + ure);
+      // TODO: Should be internationalized
+      JOptionPane.showMessageDialog(this, ure.getMessage(), "Dismiss failed", JOptionPane.ERROR_MESSAGE);
     }
-
-    /**
-     * Prepare for typing in rationale field when window is opened.
-     *
-     * @see java.awt.Component#setVisible(boolean)
-     */
-    public void setVisible(boolean b) {
-        super.setVisible(b);
-        if (b) {
-            explanation.requestFocus();
-            explanation.selectAll();
-        }
-    }
-
-    ////////////////////////////////////////////////////////////////
-    // event handlers
-
-    private void badGoal(ActionEvent e) {
-        //cat.debug("bad goal");
-        GoalsDialog d = new GoalsDialog();
-        d.setVisible(true);
-    }
-
-    private void badDec(ActionEvent e) {
-        //cat.debug("bad decision");
-        DesignIssuesDialog d = new DesignIssuesDialog();
-        d.setVisible(true);
-    }
-
-    private void explain(ActionEvent e) {
-        //TODO: make a new history item
-        ToDoList list = Designer.theDesigner().getToDoList();
-        try {
-            list.explicitlyResolve(target, explanation.getText());
-            Designer.firePropertyChange(
-                    Designer.MODEL_TODOITEM_DISMISSED, null, null);
-        }
-        catch (UnresolvableException ure) {
-            LOG.error("Resolve failed (ure): ", ure);
-            JOptionPane.showMessageDialog(
-		    this,
-		    ure.getMessage(),
-		    Translator.localize("optionpane.dismiss-failed"),
-		    JOptionPane.ERROR_MESSAGE);
-        }
-    }
+  }
 } /* end class DismissToDoItemDialog */
+

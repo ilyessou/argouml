@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 2002-2006 The Regents of the University of California. All
+// Copyright (c) 2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,30 +24,30 @@
 
 package org.argouml.uml.ui.behavior.collaborations;
 
-import java.beans.PropertyChangeEvent;
 import java.util.Collection;
-import java.util.Enumeration;
 import java.util.Iterator;
 
-import org.argouml.model.AddAssociationEvent;
-import org.argouml.model.Model;
-import org.argouml.model.RemoveAssociationEvent;
+import org.argouml.model.ModelFacade;
+import org.argouml.model.uml.UmlModelEventPump;
+import org.argouml.model.uml.behavioralelements.collaborations.CollaborationsHelper;
 import org.argouml.uml.ui.UMLModelElementListModel2;
 import org.tigris.gef.presentation.Fig;
 
+import ru.novosoft.uml.MBase;
+import ru.novosoft.uml.MElementEvent;
+import ru.novosoft.uml.behavior.collaborations.MClassifierRole;
+import ru.novosoft.uml.foundation.core.MClassifier;
+
 /**
- * List model which implements allAvailableFeatures operation for a
- * ClassifierRole as described in the well formedness rules.
- * 
  * @since Oct 4, 2002
  * @author jaap.branderhorst@xs4all.nl
- * 
  */
 public class UMLClassifierRoleAvailableFeaturesListModel
     extends UMLModelElementListModel2 {
 
     /**
      * Constructor for UMLClassifierRoleAvailableFeaturesListModel.
+     * @param container
      */
     public UMLClassifierRoleAvailableFeaturesListModel() {
         super();
@@ -57,94 +57,73 @@ public class UMLClassifierRoleAvailableFeaturesListModel
      * @see org.argouml.uml.ui.UMLModelElementListModel2#buildModelList()
      */
     protected void buildModelList() {
-        setAllElements(Model.getCollaborationsHelper()
-                .allAvailableFeatures(getTarget()));
+        setAllElements(
+            CollaborationsHelper.getHelper().allAvailableFeatures(
+                (MClassifierRole)getTarget()));
     }
 
     /**
-     * @see java.beans.PropertyChangeListener#propertyChange(java.beans.PropertyChangeEvent)
+     * @see ru.novosoft.uml.MElementListener#roleAdded(ru.novosoft.uml.MElementEvent)
      */
-    public void propertyChange(PropertyChangeEvent e) {
-        if (e instanceof AddAssociationEvent) {
-            if (e.getPropertyName().equals("base")
-                    && e.getSource() == getTarget()) {
-                Object clazz = /*(MClassifier)*/ getChangedElement(e);
-                addAll(Model.getFacade().getFeatures(clazz));
-                Model.getPump().addModelEventListener(
-                                      this,
-                                      clazz,
-                                      "feature");
-            } else if (
-                e.getPropertyName().equals("feature")
-                && Model.getFacade().getBases(getTarget()).contains(
+    public void roleAdded(MElementEvent e) {
+        if (e.getName().equals("base") && e.getSource() == getTarget()) {
+            MClassifier clazz = (MClassifier)getChangedElement(e);
+            addAll(clazz.getFeatures());
+            // UmlModelEventPump.getPump().removeModelEventListener(this, clazz, "feature");
+            UmlModelEventPump.getPump().addModelEventListener(
+                this,
+                clazz,
+                "feature");
+        } else if (
+            e.getName().equals("feature")
+                && ((MClassifierRole)getTarget()).getBases().contains(
                     e.getSource())) {
-                addElement(getChangedElement(e));
-            }
-        } else if (e instanceof RemoveAssociationEvent) {
-            if (e.getPropertyName().equals("base")
-                    && e.getSource() == getTarget()) {
-                Object clazz = /*(MClassifier)*/ getChangedElement(e);
-                Model.getPump().removeModelEventListener(
-                                     this,
-                                     clazz,
-                                     "feature");
-            } else if (
-                e.getPropertyName().equals("feature")
-                && Model.getFacade().getBases(getTarget()).contains(
-                       e.getSource())) {
-                removeElement(getChangedElement(e));
-            }
-        } else {
-            super.propertyChange(e);
+            addElement(getChangedElement(e));
         }
     }
-
 
     /**
      * @see org.argouml.uml.ui.UMLModelElementListModel2#setTarget(java.lang.Object)
      */
     public void setTarget(Object target) {
-        if (getTarget() != null) {
-            Enumeration enumeration = elements();
-            while (enumeration.hasMoreElements()) {
-                Object base = enumeration.nextElement();
-                Model.getPump().removeModelEventListener(
+        if (_target != null) {
+            Collection bases = ((MClassifierRole)getTarget()).getBases();
+            Iterator it = bases.iterator();
+            while (it.hasNext()) {
+                MBase base = (MBase)it.next();
+                UmlModelEventPump.getPump().removeModelEventListener(
                     this,
                     base,
                     "feature");
             }
-            Model.getPump().removeModelEventListener(
+            UmlModelEventPump.getPump().removeModelEventListener(
                 this,
-                getTarget(),
+                (MBase)getTarget(),
                 "base");
         }
-        
-        target = target instanceof Fig ? ((Fig) target).getOwner() : target;
-        if (!Model.getFacade().isAModelElement(target))
-            // TODO - isn't this an error condition? Should we not throw
-            // an exception or at least log.
+        target = target instanceof Fig ? ((Fig)target).getOwner() : target;
+        if (!ModelFacade.isABase(target))
             return;
-        
-        setListTarget(target);
-        if (getTarget() != null) {
-            Collection bases = Model.getFacade().getBases(getTarget());
+        _target = target;
+        if (_target != null) {
+            Collection bases = ((MClassifierRole)_target).getBases();
             Iterator it = bases.iterator();
             while (it.hasNext()) {
-                Object base = it.next();
-                Model.getPump().addModelEventListener(
+                MBase base = (MBase)it.next();
+                UmlModelEventPump.getPump().addModelEventListener(
                     this,
                     base,
                     "feature");
             }
             // make sure we know it when a classifier is added as a base
-            Model.getPump().addModelEventListener(
+            UmlModelEventPump.getPump().addModelEventListener(
                 this,
-                getTarget(),
+                (MBase)_target,
                 "base");
             removeAllElements();
-            setBuildingModel(true);
+            _buildingModel = true;
             buildModelList();
-            setBuildingModel(false);
+            _buildingModel = false;
             if (getSize() > 0) {
                 fireIntervalAdded(this, 0, getSize() - 1);
             }
@@ -152,9 +131,28 @@ public class UMLClassifierRoleAvailableFeaturesListModel
     }
 
     /**
-     * @see org.argouml.uml.ui.UMLModelElementListModel2#isValidElement(Object)
+     * @see org.argouml.uml.ui.UMLModelElementListModel2#isValidElement(MBase)
      */
-    protected boolean isValidElement(Object/*MBase*/ element) {
+    protected boolean isValidElement(MBase element) {
         return false;
     }
+
+    /**
+     * @see ru.novosoft.uml.MElementListener#roleRemoved(ru.novosoft.uml.MElementEvent)
+     */
+    public void roleRemoved(MElementEvent e) {
+        if (e.getName().equals("base") && e.getSource() == getTarget()) {
+            MClassifier clazz = (MClassifier)getChangedElement(e);
+            UmlModelEventPump.getPump().removeModelEventListener(
+                this,
+                clazz,
+                "feature");
+        } else if (
+            e.getName().equals("feature")
+                && ((MClassifierRole)getTarget()).getBases().contains(
+                    e.getSource())) {
+            removeElement(getChangedElement(e));
+        }
+    }
+
 }

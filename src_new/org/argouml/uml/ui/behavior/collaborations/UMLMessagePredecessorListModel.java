@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -27,8 +26,10 @@ package org.argouml.uml.ui.behavior.collaborations;
 
 import java.util.Iterator;
 
-import org.argouml.model.Model;
 import org.argouml.uml.ui.UMLModelElementListModel2;
+
+import ru.novosoft.uml.MBase;
+import ru.novosoft.uml.behavior.collaborations.MMessage;
 
 /**
  * @since Oct 2, 2002
@@ -36,9 +37,10 @@ import org.argouml.uml.ui.UMLModelElementListModel2;
  */
 public class UMLMessagePredecessorListModel extends UMLModelElementListModel2 {
 
-
+   
     /**
      * Constructor for UMLMessagePredecessorListModel.
+     * @param container
      */
     public UMLMessagePredecessorListModel() {
         super("predecessor");
@@ -48,23 +50,21 @@ public class UMLMessagePredecessorListModel extends UMLModelElementListModel2 {
      * @see org.argouml.uml.ui.UMLModelElementListModel2#buildModelList()
      */
     protected void buildModelList() {
-        Object message = /*(MMessage)*/ getTarget();
-        removeAllElements();
-        Iterator it = Model.getFacade().getPredecessors(message).iterator();
+        MMessage message = (MMessage)getTarget();
+        removeAllElements();       
+        Iterator it = message.getPredecessors().iterator();
         while (it.hasNext()) {
             addElement(it.next());
-        }
+        }       
     }
 
     /**
-     * @see org.argouml.uml.ui.UMLModelElementListModel2#isValidElement(Object)
+     * @see org.argouml.uml.ui.UMLModelElementListModel2#isValidElement(ru.novosoft.uml.MBase)
      */
-    protected boolean isValidElement(Object/*MBase*/ elem) {
-        return Model.getFacade().isAMessage(elem)
-            && Model.getFacade().getInteraction(elem)
-            	== Model.getFacade().getInteraction(getTarget())
-            && Model.getFacade().getActivator(elem)
-            	== Model.getFacade().getActivator(getTarget());
+    protected boolean isValidElement(MBase elem) {
+        return elem instanceof MMessage && 
+            ((MMessage)elem).getInteraction() == ((MMessage)getTarget()).getInteraction() &&
+            ((MMessage)elem).getActivator() == ((MMessage)getTarget()).getActivator();
     }
 
 }

@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2001 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -25,184 +24,97 @@
 package org.argouml.ui;
 
 import java.awt.BorderLayout;
-import java.util.Arrays;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 import javax.swing.BorderFactory;
+import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
 import javax.swing.SwingConstants;
 
-import org.argouml.application.api.Configuration;
-import org.argouml.application.api.ConfigurationKey;
-import org.argouml.cognitive.ui.TabToDo;
-import org.argouml.i18n.Translator;
-import org.argouml.uml.ui.TabConstraints;
-import org.argouml.uml.ui.TabDocumentation;
-import org.argouml.uml.ui.TabProps;
-import org.argouml.uml.ui.TabSrc;
-import org.argouml.uml.ui.TabStyle;
-import org.argouml.uml.ui.TabTaggedValues;
-import org.tigris.swidgets.Property;
-import org.tigris.swidgets.PropertyTable;
+import org.argouml.application.ArgoVersion;
+import org.argouml.application.api.SettingsTabPanel;
+import org.argouml.application.helpers.SettingsTabHelper;
+import org.argouml.swingext.LabelledLayout;
 
 /**
- * Settings dialog tab panel for layout options.<p>
+ *  Tab pane for setting layout options.
  *
- * TODO: This class contains a lot of references to org.argouml.uml.ui.
- * It would probably be better to move it there.
- *
- * @author Linus Tolke
+ *  @author Linus Tolke
  */
-class SettingsTabLayout extends JPanel
-    implements GUISettingsTabInterface {
+public class SettingsTabLayout extends SettingsTabHelper implements SettingsTabPanel {
 
-    private Property	prpTodo;
-    private Property	prpProperties;
-    private Property	prpDocumentation;
-    private Property	prpStyle;
-    private Property	prpSource;
-    private Property	prpConstraints;
-    private Property	prpTaggedValues;
+    private JComboBox	_todo;
+    private JComboBox	_properties;
+    private JComboBox	_documentation;
+    private JComboBox	_style;
+    private JComboBox	_source;
+    private JComboBox	_constraints;
+    private JComboBox	_taggedValues;
 
-    /**
-     * The constructor.
-     *
-     */
-    SettingsTabLayout() {
+    public SettingsTabLayout() {
         super();
+
+        String positions[] = {"North", "South", "East"};
         setLayout(new BorderLayout());
 
-        // TODO: Localize these
-        final String[] positions = {"North", "South", "East"};
-        final String paneColumnHeader = "Pane";
-        final String positionColumnHeader = "Position";
+        int labelGap = 10;
+        int componentGap = 10;
+        JPanel top = new JPanel(new LabelledLayout(labelGap, componentGap));
 
-        JPanel top = new JPanel(new BorderLayout());
+        _todo = new JComboBox(positions);
+        addPositionSelector(top, "label.todo-pane", _todo);
 
-        prpTodo = createProperty("label.todo-pane", positions, TabToDo.class);
-        prpProperties =
-            createProperty("label.properties-pane",
-                    positions, TabProps.class);
-        prpDocumentation =
-            createProperty("label.documentation-pane",
-                    positions, TabDocumentation.class);
-        prpStyle =
-            createProperty("label.style-pane",
-                    positions, TabStyle.class);
-        prpSource =
-            createProperty("label.source-pane",
-                    positions, TabSrc.class);
-        prpConstraints =
-            createProperty("label.constraints-pane",
-                    positions, TabConstraints.class);
-        prpTaggedValues =
-            createProperty("label.tagged-values-pane",
-                    positions, TabTaggedValues.class);
+        _properties = new JComboBox(positions);
+        addPositionSelector(top, "label.properties-pane", _properties);
 
-        Property[] propertyList = new Property[] {
-            prpTodo, prpProperties, prpDocumentation, prpStyle,
-	    prpSource, prpConstraints, prpTaggedValues,
-        };
-        Arrays.sort(propertyList);
+        _documentation = new JComboBox(positions);
+        addPositionSelector(top, "label.documentation-pane", _documentation);
 
-        top.add(new JScrollPane(new PropertyTable(
-						  propertyList,
-						  paneColumnHeader,
-						  positionColumnHeader)),
-		BorderLayout.CENTER);
+        _style = new JComboBox(positions);
+        addPositionSelector(top, "label.style-pane", _style);
 
-        top.setBorder(BorderFactory.createEmptyBorder(10, 10, 0, 10));
+        _source = new JComboBox(positions);
+        addPositionSelector(top, "label.source-pane", _source);
+
+        _constraints = new JComboBox(positions);
+        addPositionSelector(top, "label.constraints-pane", _constraints);
+
+        _taggedValues = new JComboBox(positions);
+        addPositionSelector(top, "label.tagged-values-pane", _taggedValues);
+
+        top.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));		
         add(top, BorderLayout.CENTER);
 
-        JLabel restart =
-            new JLabel(Translator.localize("label.restart-application"));
+        JLabel restart = createLabel("label.restart-application");
         restart.setHorizontalAlignment(SwingConstants.CENTER);
         restart.setVerticalAlignment(SwingConstants.CENTER);
-        restart.setBorder(BorderFactory.createEmptyBorder(10, 2, 10, 2));
+        restart.setBorder(BorderFactory.createEmptyBorder(10, 2, 10, 2));		
         add(restart, BorderLayout.SOUTH);
     }
 
-    /**
-     * Create a Property for the position of the given tab pane, selecting
-     * the current display value from the user properties file.
-     */
-    private Property createProperty(String text, String[] positions,
-				    Class tab) {
-        ConfigurationKey key = makeKey(tab);
-        String currentValue = Configuration.getString(key, "South");
-        return new Property(Translator.localize(text), String.class,
-			    currentValue, positions);
+    private void addPositionSelector(JPanel panel, String text, JComboBox combo) {
+        JLabel label = createLabel(text);
+        label.setLabelFor(combo);
+        panel.add(label);
+        panel.add(combo);
     }
-
-    private void loadPosition(Property position, Class tab) {
-        ConfigurationKey key = makeKey(tab);
-        position.setCurrentValue(Configuration.getString(key, "South"));
-    }
-
-    private void savePosition(Property position, Class tab) {
-        ConfigurationKey key = makeKey(tab);
-        Configuration.setString(key, position.getCurrentValue().toString());
-    }
-
-    private ConfigurationKey makeKey(Class tab) {
-        String className = tab.getName();
-        String shortClassName =
-	    className.substring(className.lastIndexOf('.') + 1).toLowerCase();
-        ConfigurationKey key = Configuration.makeKey("layout", shortClassName);
-        return key;
-    }
-
-    /**
-     * When the setting values should be reloaded.
-     */
+    
     public void handleSettingsTabRefresh() {
-        loadPosition(prpTodo, TabToDo.class);
-        loadPosition(prpProperties, TabProps.class);
-        loadPosition(prpDocumentation, TabDocumentation.class);
-        loadPosition(prpStyle, TabStyle.class);
-        loadPosition(prpSource, TabSrc.class);
-        loadPosition(prpConstraints, TabConstraints.class);
-        loadPosition(prpTaggedValues, TabTaggedValues.class);
     }
 
-    /**
-     * When the ok or apply button is pressed.
-     */
     public void handleSettingsTabSave() {
-        savePosition(prpTodo, TabToDo.class);
-        savePosition(prpProperties, TabProps.class);
-        savePosition(prpDocumentation, TabDocumentation.class);
-        savePosition(prpStyle, TabStyle.class);
-        savePosition(prpSource, TabSrc.class);
-        savePosition(prpConstraints, TabConstraints.class);
-        savePosition(prpTaggedValues, TabTaggedValues.class);
     }
 
-    /**
-     * @see GUISettingsTabInterface#handleSettingsTabCancel()
-     */
-    public void handleSettingsTabCancel() { }
-
-    /**
-     * @see org.argouml.ui.GUISettingsTabInterface#handleResetToDefault()
-     */
-    public void handleResetToDefault() {
-        // Do nothing - these buttons are not shown.
-    }
-
-    /**
-     * @see GUISettingsTabInterface#getTabKey()
-     */
+    public void handleSettingsTabCancel() {}
+    public String getModuleName() { return "SettingsTabLayout"; }
+    public String getModuleDescription() { return "Positioning of components"; }
+    public String getModuleAuthor() { return "ArgoUML Core"; }
+    public String getModuleVersion() { return ArgoVersion.getVersion(); }
+    public String getModuleKey() { return "module.settings.layout"; }
     public String getTabKey() { return "tab.layout"; }
-
-    /**
-     * @see GUISettingsTabInterface#getTabPanel()
-     */
-    public JPanel getTabPanel() { return this; }
-
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = 739259705815092510L;
 }

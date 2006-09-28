@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-02 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,50 +21,47 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+
+// File: CrMultipleRealization.java.java
+// Classes: CrMultipleRealization.java
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.language.java.cognitive.critics;
 
-import java.util.Collection;
+import java.util.*;
 
-import org.argouml.cognitive.Designer;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
-import org.argouml.uml.cognitive.critics.CrUML;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
+
+import org.argouml.kernel.*;
+import org.argouml.model.uml.UmlHelper;
+import org.argouml.cognitive.*;
+import org.argouml.uml.cognitive.critics.*;
+import org.argouml.uml.MMUtil;
 
 // related to issue 570
 
-/**
- * Critic to check whether in java no inerface realizes another interface.
- *
- * @author jrobbins
+/** Critic to check whether in java no inerface realizes another interface
  */
 public class CrMultipleRealization extends CrUML {
 
-    /**
-     * The constructor.
-     */
-    public CrMultipleRealization() {
-        setupHeadAndDesc();;
-	addSupportedDecision(UMLDecision.INHERITANCE);
-	addSupportedDecision(UMLDecision.CODE_GEN);
-	addTrigger("generalization");
-    }
+  public CrMultipleRealization() {
+    setHeadline("Interface cannot realize another interface");
+    addSupportedDecision(CrUML.decINHERITANCE);
+    addSupportedDecision(CrUML.decCODE_GEN);
+    addTrigger("generalization");
+  }
 
-    /**
-     * @see org.argouml.uml.cognitive.critics.CrUML#predicate2(
-     * java.lang.Object, org.argouml.cognitive.Designer)
-     */
-    public boolean predicate2(Object dm, Designer dsgr) {
-	if (!(Model.getFacade().isAInterface(dm))) {
-	    return NO_PROBLEM;
-	}
-	Object inter = /*(MInterface)*/ dm;
+  public boolean predicate2(Object dm, Designer dsgr) {
+    if (!(dm instanceof MInterface)) return NO_PROBLEM;
+    MInterface inter = (MInterface) dm;
+   
+    Collection realize = UmlHelper.getHelper().getCore().getSpecifications(inter);
 
-	Collection realize =
-	    Model.getCoreHelper().getSpecifications(inter);
-
-	if (realize != null && realize.size() > 0) {
-	    return PROBLEM_FOUND;
-	}
-	return NO_PROBLEM;
-    }
+    if (realize != null && realize.size()>0) return PROBLEM_FOUND;
+    return NO_PROBLEM;
+  }
 } /* end class CrMultipleRealization.java */
+

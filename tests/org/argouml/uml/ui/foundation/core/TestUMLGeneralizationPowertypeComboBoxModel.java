@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,14 +21,22 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $header$
 package org.argouml.uml.ui.foundation.core;
 
 import junit.framework.TestCase;
 
-import org.apache.log4j.Logger;
+import org.argouml.application.security.ArgoSecurityManager;
 import org.argouml.kernel.ProjectManager;
-import org.argouml.model.Model;
+import org.argouml.model.uml.UmlFactory;
+import org.argouml.model.uml.foundation.core.CoreFactory;
+import org.argouml.model.uml.modelmanagement.ModelManagementFactory;
 import org.argouml.ui.targetmanager.TargetEvent;
+
+import ru.novosoft.uml.MFactoryImpl;
+import ru.novosoft.uml.foundation.core.MClassifier;
+import ru.novosoft.uml.foundation.core.MGeneralization;
+import ru.novosoft.uml.model_management.MModel;
 
 /**
  * @since Nov 3, 2002
@@ -37,82 +44,39 @@ import org.argouml.ui.targetmanager.TargetEvent;
  */
 public class TestUMLGeneralizationPowertypeComboBoxModel extends TestCase {
 
-    /**
-     * The number of elements used in the tests.
-     */
-    private static final int NO_OF_ELEMENTS = 10;
-
-    /**
-     * The list of elements.
-     */
-    private Object[] types;
-
-    /**
-     * The model tested.
-     */
+    private int oldEventPolicy;
+    private MClassifier[] types;
     private UMLGeneralizationPowertypeComboBoxModel model;
-
-    /**
-     * The element tested.
-     */
-    private Object elem;
-
-    /**
-     * The child of the element tested (a class).
-     */
-    private Object child;
-
-    /**
-     * The parent of the element tested (a class).
-     */
-    private Object parent;
-
-    /**
-     * The namespace of the element.
-     */
-    private Object namespace;
-
-    /**
-     * Logger.
-     */
-    private static final Logger LOG =
-        Logger.getLogger(TestUMLGeneralizationPowertypeComboBoxModel.class);
-
+    private MGeneralization elem;
+    
     /**
      * Constructor for TestUMLGeneralizationPowertypeComboBoxModel.
-     * @param arg0 is the name of the test case.
+     * @param arg0
      */
     public TestUMLGeneralizationPowertypeComboBoxModel(String arg0) {
         super(arg0);
     }
-
+    
     /**
      * @see junit.framework.TestCase#setUp()
      */
     protected void setUp() throws Exception {
         super.setUp();
-        Object mmodel =
-            Model.getModelManagementFactory().createModel();
-        Model.getCoreHelper().setName(mmodel, "untitledModel");
-        Model.getModelManagementFactory().setRootModel(mmodel);
-        namespace = Model.getModelManagementFactory().createPackage();
-        child = Model.getCoreFactory().buildClass("child", namespace);
-        parent = Model.getCoreFactory().buildClass("parent", namespace);
-        elem = Model.getCoreFactory().buildGeneralization(child, parent);
+        ArgoSecurityManager.getInstance().setAllowExit(true);
+        UmlFactory.getFactory().setGuiEnabled(false);
+        elem = CoreFactory.getFactory().createGeneralization();
+        oldEventPolicy = MFactoryImpl.getEventPolicy();
+        MFactoryImpl.setEventPolicy(MFactoryImpl.EVENT_POLICY_IMMEDIATE);
         model = new UMLGeneralizationPowertypeComboBoxModel();
-        model.targetSet(new TargetEvent(this,
-					"set",
-					new Object[0],
-					new Object[] {elem}));
-        types = new Object[NO_OF_ELEMENTS];
-        Object m = Model.getModelManagementFactory().createModel();
+        model.targetSet(new TargetEvent(this, "set", new Object[0], new Object[] {elem}));
+        types = new MClassifier[10];
+        MModel m = ModelManagementFactory.getFactory().createModel();
         ProjectManager.getManager().getCurrentProject().setRoot(m);
-        Model.getCoreHelper().setNamespace(elem, m);
-        for (int i = 0; i < NO_OF_ELEMENTS; i++) {
-            types[i] = Model.getCoreFactory().createClass();
-            Model.getCoreHelper().addOwnedElement(m, types[i]);
-        }
-        Model.getPump().flushModelEvents();
+        elem.setNamespace(m);
+        for (int i = 0 ; i < 10; i++) {
+            types[i] = CoreFactory.getFactory().createClassifier();
+            m.addOwnedElement(types[i]);
+        }      
     }
 
     /**
@@ -120,70 +84,33 @@ public class TestUMLGeneralizationPowertypeComboBoxModel extends TestCase {
      */
     protected void tearDown() throws Exception {
         super.tearDown();
-        Model.getUmlFactory().delete(elem);
-        Model.getUmlFactory().delete(child);
-        Model.getUmlFactory().delete(parent);
-        Model.getUmlFactory().delete(namespace);
-        for (int i = 0; i < NO_OF_ELEMENTS; i++) {
-            Model.getUmlFactory().delete(types[i]);
+        UmlFactory.getFactory().delete(elem);
+        for (int i = 0 ; i < 10; i++) {
+            UmlFactory.getFactory().delete(types[i]);
         }
+        MFactoryImpl.setEventPolicy(oldEventPolicy);
         model = null;
     }
-
-    /**
-     * Test setup.
-     */
+    
     public void testSetUp() {
-        Model.getPump().flushModelEvents();
-        assertTrue(model.contains(types[NO_OF_ELEMENTS / 2]));
+        assertTrue(model.contains(types[5]));
         assertTrue(model.contains(types[0]));
-        assertTrue(model.contains(types[NO_OF_ELEMENTS - 1]));
+        assertTrue(model.contains(types[9]));
     }
-
-    /**
-     * Test setPowertype().
-     */
+    
     public void testSetPowertype() {
-        LOG.info("Setting powertype");
-        Model.getCoreHelper().setPowertype(elem, types[0]);
-        Model.getPump().flushModelEvents();
-        // One can only do this by changing target,
-        // so let's simulate that:
-        model.targetSet(new TargetEvent(this,
-                TargetEvent.TARGET_SET,
-                new Object[0],
-                new Object[] {
-                    elem,
-                }));
+        elem.setPowertype(types[0]);
         assertTrue(model.getSelectedItem() == types[0]);
-        LOG.info("Powertype set");
     }
-
-    /**
-     * Test setPowertype() with null argument.
-     */
+    
     public void testSetPowertypeToNull() {
-        Model.getCoreHelper().setPowertype(elem, types[0]);
-        Model.getCoreHelper().setPowertype(elem, null);
-        Model.getPump().flushModelEvents();
-        // One can only do this by changing target,
-        // so let's simulate that:
-        model.targetSet(new TargetEvent(this,
-                TargetEvent.TARGET_SET,
-                new Object[0],
-                new Object[] {
-                    elem,
-                }));
+        elem.setPowertype(null);
         assertNull(model.getSelectedItem());
     }
-
-    /**
-     * Test deletion.
-     */
+    
     public void testRemovePowertype() {
-        Model.getUmlFactory().delete(types[NO_OF_ELEMENTS - 1]);
-        Model.getPump().flushModelEvents();
-        assertTrue(!model.contains(types[NO_OF_ELEMENTS - 1]));
-    }
+        UmlFactory.getFactory().delete(types[9]);
+        assertTrue(!model.contains(types[9]));
+    } 
 
 }

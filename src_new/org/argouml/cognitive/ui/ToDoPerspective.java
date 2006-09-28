@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,51 +23,51 @@
 
 package org.argouml.cognitive.ui;
 
-import java.util.Vector;
+import java.util.*;
+import java.awt.*;
+import java.io.Serializable;
+import javax.swing.tree.*;
+import javax.swing.event.*;
 
-import org.apache.log4j.Logger;
-import org.argouml.cognitive.ToDoItem;
-import org.argouml.ui.TreeModelComposite;
+import org.argouml.ui.*;
+import org.argouml.cognitive.*;
+
+import org.apache.log4j.Category;
 
 /**
- * This class represents a todo tree model / perspective.<p>
  *
- * A todo tree model / perspective is a collection of GoRules.
+ *<pre>
+ * This class represents:
+ *   - a todo tree model / perspective (which is a collection of GoRules)
+ *</pre>
+ *
+ * $Id$
  */
-public abstract class ToDoPerspective extends TreeModelComposite {
-
-    /**
-     * Logger.
-     */
-    private static final Logger LOG = Logger.getLogger(ToDoPerspective.class);
-
+public abstract class ToDoPerspective extends TreeModelComposite
+implements Serializable {
+    
+    private static Category cat = Category.getInstance(ToDoPerspective.class);
+    
     ////////////////////////////////////////////////////////////////
     // instance variables
-
-    /**
-     * todoList specific.
-     */
-    private boolean flat;
-
-    /**
-     * todoList specific.
-     */
-    private Vector flatChildren;
-
-    /**
-     * The constructor.
-     *
-     * @param name the name that will be localized
-     */
+    
+    /** todoList specific */
+    protected boolean _flat;
+    
+    /** todoList specific */
+    protected Vector _flatChildren;
+    
+    ////////////////////////////////////////////////////////////////
+    // constructor
     public ToDoPerspective(String name) {
-
+        
         super(name);
-        flatChildren = new Vector();
+        _flatChildren = new Vector();
     }
-
+    
     ////////////////////////////////////////////////////////////////
     // TreeModel implementation - todo specific stuff
-
+    
     /**
      * Finds the each of the children of a parent in the tree.
      *
@@ -77,83 +76,59 @@ public abstract class ToDoPerspective extends TreeModelComposite {
      * @return the child found at index. Null if index is out of bounds.
      */
     public Object getChild(Object parent, int index) {
-        if (flat && parent == getRoot()) {
-            return flatChildren.elementAt(index);
+        if (_flat && parent == _root) {
+            return _flatChildren.elementAt(index);
         }
-        return super.getChild(parent,  index);
+        return super.getChild( parent,  index);
     }
-
-    /**
-     * @see javax.swing.tree.TreeModel#getChildCount(java.lang.Object)
-     */
+    
+    /** needs documenting */
     public int getChildCount(Object parent) {
-        if (flat && parent == getRoot()) {
-            return flatChildren.size();
+        if (_flat && parent == _root) {
+            return _flatChildren.size();
         }
-        return super.getChildCount(parent);
+        return super.getChildCount( parent);
     }
-
-    /**
-     * @see javax.swing.tree.TreeModel#getIndexOfChild(java.lang.Object,
-     * java.lang.Object)
-     */
+    
+    /** needs documenting */
     public int getIndexOfChild(Object parent, Object child) {
-        if (flat && parent == getRoot()) {
-            return flatChildren.indexOf(child);
+        if (_flat && parent == _root) {
+            return _flatChildren.indexOf(child);
         }
         return super.getIndexOfChild(parent, child);
     }
-
+    
     // ------------ other methods ------------
-
-    /**
-     * todoList specific.
-     *
-     * @param b true if flat
-     */
+    
+    /** todoList specific */
     public void setFlat(boolean b) {
-        flat = false;
-        if (b) {
-	    calcFlatChildren();
-	}
-        flat = b;
+        _flat = false;
+        if (b) calcFlatChildren();
+        _flat = b;
     }
-
-    /**
-     * todoList specific.
-     *
-     * @return the flatness: true if flat
-     */
-    public boolean getFlat() { return flat; }
-
-    /**
-     * TodoList specific.
-     */
+    
+    /** todoList specific */
+    public boolean getFlat() { return _flat; }
+    
+    /** todoList specific */
     public void calcFlatChildren() {
-        flatChildren.removeAllElements();
-        addFlatChildren(getRoot());
+        _flatChildren.removeAllElements();
+        addFlatChildren(_root);
     }
-
-    /**
-     * TodoList specific.
-     *
-     * @param node the object to be added
-     */
+    
+    /** todoList specific */
     public void addFlatChildren(Object node) {
-        if (node == null) {
-	    return;
-	}
-        LOG.debug("addFlatChildren");
+        if (node == null) return;
+        cat.debug("addFlatChildren");
         // hack for to do items only, should check isLeaf(node), but that
         // includes empty folders. Really I need alwaysLeaf(node).
-        if ((node instanceof ToDoItem) && !flatChildren.contains(node)) {
-            flatChildren.addElement(node);
-	}
-
+        if ((node instanceof ToDoItem) && !_flatChildren.contains(node))
+            _flatChildren.addElement(node);
+        
         int nKids = getChildCount(node);
-        for (int i = 0; i < nKids; i++) {
+        for (int i = 0; i <nKids; i++) {
             addFlatChildren(getChild(node, i));
         }
     }
-
+    
 } /* end class ToDoPerspective */

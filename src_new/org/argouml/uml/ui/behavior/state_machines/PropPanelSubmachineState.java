@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,21 +21,18 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $header$
 package org.argouml.uml.ui.behavior.state_machines;
 
-import javax.swing.ImageIcon;
 import javax.swing.JComboBox;
 import javax.swing.JScrollPane;
 
-import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
-import org.argouml.ui.targetmanager.TargetEvent;
-import org.argouml.ui.targetmanager.TargetManager;
+import org.argouml.application.api.Argo;
+
 import org.argouml.uml.ui.UMLComboBox2;
 import org.argouml.uml.ui.UMLComboBoxNavigator;
 import org.argouml.uml.ui.UMLMutableLinkedList;
 import org.argouml.util.ConfigLoader;
-import org.tigris.swidgets.Orientation;
 
 /**
  * @since Dec 15, 2002
@@ -45,94 +41,25 @@ import org.tigris.swidgets.Orientation;
 public class PropPanelSubmachineState extends PropPanelCompositeState {
 
     /**
-     * The serial version.
-     */
-    private static final long serialVersionUID = 2384673708664550264L;
-
-    /**
-     * Construct a property panel for SubmachineState elements with the given params.
-     *
-     * @param name the name of the properties panel
-     * @param icon the icon to be shown next to the name
-     * @param orientation the orientation of the panel
-     */
-    public PropPanelSubmachineState(String name, ImageIcon icon,
-            Orientation orientation) {
-        super(name, icon, orientation);
-        initialize();
-    }
-
-    /**
-     * Construct a default property panel SubmachineState elements.
+     * Constructor for PropPanelSubmachineState.
      */
     public PropPanelSubmachineState() {
-        super("Submachine State", lookupIcon("SubmachineState"),
-                ConfigLoader.getTabPropsOrientation());
-        getTitleLabel().setText("Submachine State");
-        addField(Translator.localize("label.name"),
-                getNameTextField());
-        addField(Translator.localize("label.container"),
-                getContainerScroll());
-        JComboBox submachineBox = new UMLComboBox2(
-                new UMLSubmachineStateComboBoxModel(),
-                ActionSetSubmachineStateSubmachine.getInstance());
-        addField(Translator.localize("label.submachine"),
-                new UMLComboBoxNavigator(this, Translator.localize(
-                        "tooltip.nav-submachine"), submachineBox));
-        addField(Translator.localize("label.entry"),
-                getEntryScroll());
-        addField(Translator.localize("label.exit"),
-                getExitScroll());
-        addField(Translator.localize("label.do-activity"),
-                getDoScroll());
+        // TODO: get the submachine state it's own icon
+        super("Submachine State", _compositeStateIcon, ConfigLoader.getTabPropsOrientation());
+        addField(Argo.localize("UMLMenu", "label.name"), getNameTextField());
+        addField(Argo.localize("UMLMenu", "label.stereotype"), new UMLComboBoxNavigator(this, Argo.localize("UMLMenu", "tooltip.nav-stereo"), getStereotypeBox()));
+        addField(Argo.localize("UMLMenu", "label.container"), containerScroll);
+        JComboBox submachineBox = new UMLComboBox2(new UMLSubmachineStateComboBoxModel(), ActionSetSubmachineStateSubmachine.SINGLETON);
+        addField(Argo.localize("UMLMenu", "label.submachine"), new UMLComboBoxNavigator(this, Argo.localize("UMLMenu", "tooltip.nav-submachine"), submachineBox));
 
-        addSeparator();
+        addSeperator();
 
-        addField(Translator.localize("label.incoming"),
-                getIncomingScroll());
-        addField(Translator.localize("label.outgoing"),
-                getOutgoingScroll());
-        addField(Translator.localize("label.internal-transitions"),
-                getInternalTransitionsScroll());
+        addField(Argo.localize("UMLMenu", "label.incoming"), incomingScroll);
+        addField(Argo.localize("UMLMenu", "label.outgoing"), outgoingScroll);
 
-        addSeparator();
+        addSeperator();
 
-        addField(Translator.localize("label.subvertex"),
-                new JScrollPane(new UMLMutableLinkedList(
-                        new UMLCompositeStateSubvertexListModel(), null,
-                        ActionNewStubState.getInstance())));
-    }
-
-    /**
-     * @see org.argouml.uml.ui.behavior.state_machines.PropPanelStateVertex#addExtraButtons()
-     */
-    protected void addExtraButtons() {
-        // Intentionally do nothing.
-    }
-
-    /**
-     * @see org.argouml.uml.ui.behavior.state_machines.PropPanelCompositeState#updateExtraButtons()
-     */
-    protected void updateExtraButtons() {
-        // Intentionally do nothing.
-    }
-
-    /**
-     * @see org.argouml.ui.targetmanager.TargetListener#targetSet(org.argouml.ui.targetmanager.TargetEvent)
-     */
-    public void targetSet(TargetEvent e) {
-        super.targetSet(e);
-        if (e != null) {
-            Object source = e.getSource();
-            if (source != null
-                    && source instanceof TargetManager) {
-                Object target =
-                    ((TargetManager) e.getSource()).getModelTarget();
-                if (Model.getFacade().isASubmachineState(target)) {
-                    getTitleLabel().setText("Submachine State");
-                }
-            }
-        }
+        addField(Argo.localize("UMLMenu", "label.subvertex"), new JScrollPane(new UMLMutableLinkedList(new UMLCompositeStateSubvertexListModel(), null, ActionNewStubState.SINGLETON)));
     }
 
 }

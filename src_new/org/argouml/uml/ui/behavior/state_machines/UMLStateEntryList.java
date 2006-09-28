@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -41,11 +40,13 @@ public class UMLStateEntryList extends UMLMutableLinkedList {
 
     /**
      * Constructor for UMLStateEntryList.
-     * @param dataModel the model
+     * @param container
+     * @param dataModel
+     * @param popup
      */
     public UMLStateEntryList(
         UMLModelElementListModel2 dataModel) {
-        super(dataModel);
+        super(dataModel, null);
     }
 
     /**

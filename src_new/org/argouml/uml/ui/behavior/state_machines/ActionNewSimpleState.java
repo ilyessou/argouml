@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,14 +21,15 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $header$
 package org.argouml.uml.ui.behavior.state_machines;
 
 import java.awt.event.ActionEvent;
 
 import javax.swing.Action;
 
-import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.application.api.Argo;
+import org.argouml.model.uml.behavioralelements.statemachines.StateMachinesFactory;
 import org.argouml.uml.ui.AbstractActionNewModelElement;
 
 /**
@@ -38,29 +38,22 @@ import org.argouml.uml.ui.AbstractActionNewModelElement;
  */
 public class ActionNewSimpleState extends AbstractActionNewModelElement {
 
-    private static ActionNewSimpleState singleton = new ActionNewSimpleState();
-
+    public static ActionNewSimpleState SINGLETON = new ActionNewSimpleState();
+    
     /**
      * Constructor for ActionNewPseudoState.
      */
     protected ActionNewSimpleState() {
         super();
-        putValue(Action.NAME, Translator.localize("button.new-simplestate"));
+        putValue(Action.NAME, Argo.localize("UMLMenu", "button.new-simplestate"));
     }
-
+    
     /**
      * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
      */
     public void actionPerformed(ActionEvent e) {
         super.actionPerformed(e);
-        Model.getStateMachinesFactory().buildSimpleState(getTarget());
-    }
-
-    /**
-     * @return Returns the singleton.
-     */
-    public static ActionNewSimpleState getSingleton() {
-        return singleton;
+        StateMachinesFactory.getFactory().buildSimpleState(getTarget());
     }
 
 }

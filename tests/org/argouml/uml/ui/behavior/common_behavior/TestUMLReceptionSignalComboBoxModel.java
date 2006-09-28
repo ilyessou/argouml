@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -26,10 +26,18 @@ package org.argouml.uml.ui.behavior.common_behavior;
 
 import junit.framework.TestCase;
 
+import org.argouml.application.security.ArgoSecurityManager;
 import org.argouml.kernel.Project;
 import org.argouml.kernel.ProjectManager;
-import org.argouml.model.Model;
+import org.argouml.model.uml.UmlFactory;
+import org.argouml.model.uml.behavioralelements.commonbehavior.CommonBehaviorFactory;
+import org.argouml.model.uml.modelmanagement.ModelManagementFactory;
 import org.argouml.ui.targetmanager.TargetEvent;
+
+import ru.novosoft.uml.MFactoryImpl;
+import ru.novosoft.uml.behavior.common_behavior.MReception;
+import ru.novosoft.uml.behavior.common_behavior.MSignal;
+import ru.novosoft.uml.model_management.MModel;
 
 /**
  * @since Nov 2, 2002
@@ -37,31 +45,14 @@ import org.argouml.ui.targetmanager.TargetEvent;
  */
 public class TestUMLReceptionSignalComboBoxModel extends TestCase {
 
-    /**
-     * The number of elements used in the tests.
-     */
-    private static final int NO_OF_ELEMENTS = 10;
-
-    /**
-     * The elements that we use for the test.
-     */
-    private Object[] signals;
-
-    /**
-     * The tested model.
-     */
+    private int oldEventPolicy;
+    private MSignal[] signals;
     private UMLReceptionSignalComboBoxModel model;
-
-    /**
-     * The element.
-     */
-    private Object elem;
-
+    private MReception elem;
+    
     /**
      * Constructor for TestUMLReceptionSignalComboBoxModel.
-     *
      * @param arg0
-     *            is the name of the test case.
      */
     public TestUMLReceptionSignalComboBoxModel(String arg0) {
         super(arg0);
@@ -72,20 +63,22 @@ public class TestUMLReceptionSignalComboBoxModel extends TestCase {
      */
     protected void setUp() throws Exception {
         super.setUp();
+        ArgoSecurityManager.getInstance().setAllowExit(true);
+        UmlFactory.getFactory().setGuiEnabled(false);
         Project p = ProjectManager.getManager().getCurrentProject();
-        elem = Model.getCommonBehaviorFactory().createReception();
-        signals = new Object[NO_OF_ELEMENTS];
-        Object m = Model.getModelManagementFactory().createModel();
+        elem = CommonBehaviorFactory.getFactory().createReception();
+        oldEventPolicy = MFactoryImpl.getEventPolicy();
+        MFactoryImpl.setEventPolicy(MFactoryImpl.EVENT_POLICY_IMMEDIATE);
+        signals = new MSignal[10];
+        MModel m = ModelManagementFactory.getFactory().createModel();
         p.setRoot(m);
-        Model.getCoreHelper().setNamespace(elem, m);
-        for (int i = 0; i < NO_OF_ELEMENTS; i++) {
-            signals[i] = Model.getCommonBehaviorFactory().createSignal();
-            Model.getCoreHelper().addOwnedElement(m, signals[i]);
-        }
+        elem.setNamespace(m);
+        for (int i = 0 ; i < 10; i++) {
+            signals[i] = CommonBehaviorFactory.getFactory().createSignal();
+            m.addOwnedElement(signals[i]);
+        }      
         model = new UMLReceptionSignalComboBoxModel();
-        model.targetSet(new TargetEvent(this, "set", new Object[0],
-                new Object[] {elem}));
-        Model.getPump().flushModelEvents();
+        model.targetSet(new TargetEvent(this, "set", new Object[0], new Object[] {elem}));
     }
 
     /**
@@ -93,48 +86,36 @@ public class TestUMLReceptionSignalComboBoxModel extends TestCase {
      */
     protected void tearDown() throws Exception {
         super.tearDown();
-        Model.getUmlFactory().delete(elem);
-        for (int i = 0; i < NO_OF_ELEMENTS; i++) {
-            Model.getUmlFactory().delete(signals[i]);
+        UmlFactory.getFactory().delete(elem);
+        for (int i = 0 ; i < 10; i++) {
+            UmlFactory.getFactory().delete(signals[i]);
         }
+        MFactoryImpl.setEventPolicy(oldEventPolicy);
         model = null;
     }
-
-    /**
-     * Set up the test.
-     */
+    
     public void testSetUp() {
-        assertEquals(NO_OF_ELEMENTS, model.getSize());
-        assertTrue(model.contains(signals[NO_OF_ELEMENTS / 2]));
+        assertEquals(10, model.getSize());
+        assertTrue(model.contains(signals[5]));
         assertTrue(model.contains(signals[0]));
-        assertTrue(model.contains(signals[NO_OF_ELEMENTS - 1]));
+        assertTrue(model.contains(signals[9]));
     }
-
-    /**
-     * Test setSignal().
-     */
+    
     public void testSetSignal() {
-        Model.getCommonBehaviorHelper().setSignal(elem, signals[0]);
-        Model.getPump().flushModelEvents();
-        // One can only do this by changing target,
-        // so let's simulate that:
-        model.targetSet(new TargetEvent(this,
-                TargetEvent.TARGET_SET,
-                new Object[0],
-                new Object[] {
-                    elem,
-                }));
+        elem.setSignal(signals[0]);
         assertTrue(model.getSelectedItem() == signals[0]);
     }
-
-    /**
-     * Test removing signals.
-     */
-    public void testRemoveSignal() {
-        Model.getUmlFactory().delete(signals[NO_OF_ELEMENTS - 1]);
-        Model.getPump().flushModelEvents();
-        assertEquals(NO_OF_ELEMENTS - 1, model.getSize());
-        assertTrue(!model.contains(signals[NO_OF_ELEMENTS - 1]));
+    
+    public void testSetSignalToNull() {
+        elem.setSignal(null);
+        assertNull(model.getSelectedItem());
     }
+    
+
+    public void testRemoveSignal() {
+        UmlFactory.getFactory().delete(signals[9]);
+        assertEquals(9, model.getSize());
+        assertTrue(!model.contains(signals[9]));
+    } 
 
 }

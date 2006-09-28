@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,6 +21,8 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $Id$
+
 /*
   JavaRE - Code generation and reverse engineering for UML and Java
   Copyright (C) 2000 Marcus Andersson andersson@users.sourceforge.net
@@ -29,7 +30,7 @@
 
 package org.argouml.uml.reveng.java;
 
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
 
 /**
    The context is the current available namespaces via import in the
@@ -40,7 +41,7 @@ import org.argouml.model.Model;
 abstract class Context
 {
     /** The succeding context. May be null. */
-    private Context context;
+    protected Context context;
 
     /**
        Create a new context.
@@ -53,18 +54,18 @@ abstract class Context
     }
 
     /**
-     * Get a classifier from the model. If it is not in the model, try
-     * to find it with the CLASSPATH. If found, in the classpath, the
-     * classifier is created and added to the model. If not found at
-     * all, a datatype is created and added to the model.
-     *
-     * @param name The name of the classifier to find.
-     * @return Found classifier.
-     */
-    public abstract Object get(String name)
+       Get a classifier from the model. If it is not in the model, try
+       to find it with the CLASSPATH. If found, in the classpath, the
+       classifier is created and added to the model. If not found at
+       all, a datatype is created and added to the model.
+
+       @param className The name of the classifier to find.
+       @return Found classifier.
+    */
+    abstract public Object get(String name)
 	throws ClassifierNotFoundException;
 
-    public abstract Object getInterface(String name)
+    abstract public Object getInterface(String name)
 	throws ClassifierNotFoundException;
 
     /**
@@ -75,31 +76,16 @@ abstract class Context
     */
     protected String getJavaName(Object mPackage)
     {
-	Object parent = Model.getFacade().getNamespace(mPackage);
-	if (Model.getFacade().isAModel(parent)) {
-	    return Model.getFacade().getName(mPackage);
+	Object parent = ModelFacade.getNamespace(mPackage);
+	if(ModelFacade.isAModel(parent)) {
+	    return ModelFacade.getName(mPackage);
 	}
-	else if (parent != null) {
-	    return getJavaName(parent) + "."
-	            + Model.getFacade().getName(mPackage);
+	else if(parent != null) {
+	    return getJavaName(parent) + "." + ModelFacade.getName(mPackage);
 	}
 	else {
 	    return "";
 	}
-    }
-
-    /**
-     * @param c The context to set.
-     */
-    protected void setContext(Context c) {
-        this.context = c;
-    }
-
-    /**
-     * @return Returns the context.
-     */
-    protected Context getContext() {
-        return context;
     }
 }
 

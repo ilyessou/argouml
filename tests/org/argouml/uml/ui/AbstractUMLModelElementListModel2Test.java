@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,11 +21,16 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $Id$
 package org.argouml.uml.ui;
 
 import junit.framework.TestCase;
 
-import org.argouml.model.Model;
+import org.argouml.application.security.ArgoSecurityManager;
+import org.argouml.model.uml.UmlFactory;
+
+import ru.novosoft.uml.MBase;
+import ru.novosoft.uml.MFactoryImpl;
 
 /**
  * An abstract class that serves as a basis for testing listmodels. Only works
@@ -35,13 +39,14 @@ import org.argouml.model.Model;
  * @author jaap.branderhorst@xs4all.nl
  */
 public abstract class AbstractUMLModelElementListModel2Test extends TestCase {
-    private Object elem;
-    private UMLModelElementListModel2 model;
+    
+    private int oldEventPolicy;
+    protected MBase elem;
+    protected UMLModelElementListModel2 model;
 
     /**
      * Constructor for AbstractUMLModelElementListModel2Test.
-     *
-     * @param arg0 is the name of the test case.
+     * @param arg0
      */
     public AbstractUMLModelElementListModel2Test(String arg0) {
         super(arg0);
@@ -52,109 +57,74 @@ public abstract class AbstractUMLModelElementListModel2Test extends TestCase {
      */
     protected void setUp() throws Exception {
         super.setUp();
+        ArgoSecurityManager.getInstance().setAllowExit(true);
+        UmlFactory.getFactory().setGuiEnabled(false);
         buildElement();
-        // Tests used to be coded to assume immediate event delivery.
-        // They've been modified to use flush() where needed. - tfm
-        //oldEventPolicy = MFactoryImpl.getEventPolicy();
-        //MFactoryImpl.setEventPolicy(MFactoryImpl.EVENT_POLICY_IMMEDIATE);
+        oldEventPolicy = MFactoryImpl.getEventPolicy();
+        MFactoryImpl.setEventPolicy(MFactoryImpl.EVENT_POLICY_IMMEDIATE);       
         buildModel();
         model.setTarget(elem);
-        Model.getPump().flushModelEvents();
     }
 
     /**
-     * Developers should build the target element in this method and assing
+     * Developers should build the target element in this method and assing 
      * this to the variable elem. The target
-     * element is the ModelElement of which the listmodel to be tested shows
+     * element is the MBase of which the listmodel to be tested shows 
      * an attribute
      */
     protected abstract void buildElement();
-
+    
     /**
      * Developers should construct the listmodel to be tested in this method and
      * assign this to the variable model.
      */
     protected abstract void buildModel();
-
+    
     /**
      * @see junit.framework.TestCase#tearDown()
      */
     protected void tearDown() throws Exception {
         super.tearDown();
-        Model.getUmlFactory().delete(elem);
-        // restore original event policy - not supported by MDR - tfm
-        //MFactoryImpl.setEventPolicy(oldEventPolicy);
+        UmlFactory.getFactory().delete(elem);
+        MFactoryImpl.setEventPolicy(oldEventPolicy);
         model = null;
     }
-
+    
     /**
      * Tests the programmatically adding of multiple elements to the list.
      */
-    public void testAddMultiple() {
-        Object[] elements = fillModel();
-        Model.getPump().flushModelEvents();
+    public void testAddMultiple() {      
+        MBase[] elements = fillModel();
         assertEquals(10, model.getSize());
         assertEquals(model.getElementAt(5), elements[5]);
         assertEquals(model.getElementAt(0), elements[0]);
         assertEquals(model.getElementAt(9), elements[9]);
     }
-
+    
     /**
-     * Developers should set the attribute that the listmodel shows in this
-     * method. They should return the contents of the attribute in the form of
-     * a ModelElement[]. The number of elements inside the attribute should be
+     * Developers should set the attribute that the listmodel shows in this 
+     * method. They should return the contents of the attribute in the form of 
+     * a MBase[]. The number of elements inside the attribute should be 
      * 10.
-     * @return ModelElement[]
+     * @return MBase[]
      */
-    protected abstract Object[] fillModel();
-
+    protected abstract MBase[] fillModel();
+    
     /**
-     * Test the removal of several elements from the list.
+     * Test the removal of several elements from the list
      */
     public void testRemoveMultiple() {
-        Object[] elements = fillModel();
-        Model.getPump().flushModelEvents();
+        MBase[] elements = fillModel();
         removeHalfModel(elements);
-        Model.getPump().flushModelEvents();
         assertEquals(5, model.getSize());
         assertEquals(elements[5], model.getElementAt(0));
     }
-
+    
     /**
-     * Developers should remove half the contents of the attribute in
-     * this method That is: they should remove the upper 5 elements of
-     * the attribute.
-     *
-     * @param elements the element
+     * Developers should remove half the contents of the attribute in this method
+     * That is: they should remove the upper 5 elements of the attribute.
+     * @param elements
      */
-    protected abstract void removeHalfModel(Object[] elements);
-
-    /**
-     * @param theModel The model to set.
-     */
-    protected void setModel(UMLModelElementListModel2 theModel) {
-        model = theModel;
-    }
-
-    /**
-     * @return Returns the model.
-     */
-    protected UMLModelElementListModel2 getModel() {
-        return model;
-    }
-
-    /**
-     * @param theElement The elem to set.
-     */
-    protected void setElem(Object theElement) {
-        elem = theElement;
-    }
-
-    /**
-     * @return Returns the elem.
-     */
-    protected Object getElem() {
-        return elem;
-    }
+    protected abstract void removeHalfModel(MBase[] elements);
 
 }

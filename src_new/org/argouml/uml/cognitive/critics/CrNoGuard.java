@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,65 +21,46 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: CrNoGuard.java
+// Classes: CrNoGuard.java
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.cognitive.critics;
 
-import org.argouml.cognitive.Designer;
-import org.argouml.cognitive.critics.Critic;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
+import java.util.*;
 
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
+import ru.novosoft.uml.behavior.state_machines.*;
 
-/**
- * Critic that fires when there is no guard for a transition
- * that originates in a Choice pseudostate.
- *
- * @author jrobbins
- */
+import org.argouml.cognitive.*;
+import org.argouml.cognitive.critics.*;
+
 public class CrNoGuard extends CrUML {
 
-    /**
-     * The constructor.
-     */
-    public CrNoGuard() {
-        setupHeadAndDesc();
-	addSupportedDecision(UMLDecision.STATE_MACHINES);
-	setKnowledgeTypes(Critic.KT_COMPLETENESS);
-	addTrigger("guard");
-    }
+  public CrNoGuard() {
+    setHeadline("Add MGuard to Transistion");
+    addSupportedDecision(CrUML.decSTATE_MACHINES);
+    setKnowledgeTypes(Critic.KT_COMPLETENESS);
+    addTrigger("guard");
+  }
 
-    /**
-     * @see org.argouml.uml.cognitive.critics.CrUML#predicate2(
-     * java.lang.Object, org.argouml.cognitive.Designer)
-     */
-    public boolean predicate2(Object dm, Designer dsgr) {
-	if (!(Model.getFacade().isATransition(dm))) {
-	    return NO_PROBLEM;
-	}
-        /* dm is a transition */
-	Object sourceVertex = Model.getFacade().getSource(dm);
-	if (!(Model.getFacade().isAPseudostate(sourceVertex))) {
-	    return NO_PROBLEM;
-	}
-        /* the source of the transition is a pseudostate */
-	if (!Model.getFacade().equalsPseudostateKind(
-	        Model.getFacade().getPseudostateKind(sourceVertex),
-	        Model.getPseudostateKind().getChoice())) {
-	    return NO_PROBLEM;
-	}
-        /* the source of the transition is a choice */
-	Object guard = Model.getFacade().getGuard(dm);
-	boolean noGuard =
-	    (guard == null
-            || Model.getFacade().getExpression(guard) == null
-            || Model.getFacade().getBody(
-                    Model.getFacade().getExpression(guard)) == null
-            || ((String) Model.getFacade().getBody(
-                    Model.getFacade().getExpression(guard)))
-                    	.length() == 0);
-	if (noGuard) {
-	    return PROBLEM_FOUND;
-	}
-	return NO_PROBLEM;
-    }
+  public boolean predicate2(Object dm, Designer dsgr) {
+    if (!(dm instanceof MTransition)) return NO_PROBLEM;
+    MTransition tr = (MTransition) dm;
+    MStateVertex sv = tr.getSource();
+    if (!(sv instanceof MPseudostate)) return NO_PROBLEM;
+    MPseudostate ps = (MPseudostate) sv;
+    if (!MPseudostateKind.BRANCH.equals(ps.getKind())) return NO_PROBLEM;
+    MGuard g = tr.getGuard();
+    boolean noGuard = (g == null || g.getExpression() == null ||
+			g.getExpression().getBody() == null ||
+			g.getExpression().getBody() == null ||
+			g.getExpression().getBody().length() == 0);
+    if (noGuard) return PROBLEM_FOUND;
+    return NO_PROBLEM;
+  }
 
 } /* end class CrNoGuard */
+

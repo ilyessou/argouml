@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,12 +21,13 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $header$
 package org.argouml.uml.ui.behavior.common_behavior;
 
 import javax.swing.JMenu;
 import javax.swing.JPopupMenu;
 
-import org.argouml.i18n.Translator;
+import org.argouml.application.api.Argo;
 import org.argouml.uml.ui.ActionRemoveModelElement;
 import org.argouml.uml.ui.UMLMutableLinkedList;
 
@@ -39,60 +39,47 @@ import org.argouml.uml.ui.UMLMutableLinkedList;
  */
 public class PopupMenuNewAction extends JPopupMenu {
 
-
+    
     /**
-     * Constructs a new popupmenu. The given parameter role determines what
-     * the purpose is of the actions that can be created via this popupmenu.
-     * The parameter must comply to the interface Roles
-     * defined on ActionNewAction.
-     * @param role the role
-     * @param list the list
+     * Constructs a new popupmenu. The given parameter role determines what 
+     * the purpose is of the actions that can be created via this popupmenu. 
+     * The parameter must comply to the interface Roles defined on ActionNewAction.
+     * @param role 
      */
     public PopupMenuNewAction(String role, UMLMutableLinkedList list) {
         super();
 
         JMenu newMenu = new JMenu();
-        newMenu.setText(Translator.localize("action.new"));
-
-        newMenu.add(ActionNewCallAction.getInstance());
-        ActionNewCallAction.getInstance().setTarget(list.getTarget());
-        ActionNewCallAction.getInstance().putValue(ActionNewAction.ROLE, role);
-
-        newMenu.add(ActionNewCreateAction.getInstance());
-        ActionNewCreateAction.getInstance().setTarget(list.getTarget());
-        ActionNewCreateAction.getInstance()
-            .putValue(ActionNewAction.ROLE, role);
-
-        newMenu.add(ActionNewDestroyAction.getiNSTANCE());
-        ActionNewDestroyAction.getiNSTANCE().setTarget(list.getTarget());
-        ActionNewDestroyAction.getiNSTANCE()
-            .putValue(ActionNewAction.ROLE, role);
-
-        newMenu.add(ActionNewReturnAction.getInstance());
-        ActionNewReturnAction.getInstance().setTarget(list.getTarget());
-        ActionNewReturnAction.getInstance()
-            .putValue(ActionNewAction.ROLE, role);
-
-        newMenu.add(ActionNewSendAction.getInstance());
-        ActionNewSendAction.getInstance().setTarget(list.getTarget());
-        ActionNewSendAction.getInstance().putValue(ActionNewAction.ROLE, role);
-
-        newMenu.add(ActionNewTerminateAction.getInstance());
-        ActionNewTerminateAction.getInstance().setTarget(list.getTarget());
-        ActionNewTerminateAction.getInstance()
-            .putValue(ActionNewAction.ROLE, role);
-
-        newMenu.add(ActionNewUninterpretedAction.getInstance());
-        ActionNewUninterpretedAction.getInstance().setTarget(list.getTarget());
-        ActionNewUninterpretedAction.getInstance()
-            .putValue(ActionNewAction.ROLE, role);
-
+        newMenu.setText(Argo.localize("CoreMenu", "New"));
+        newMenu.add(ActionNewCallAction.SINGLETON);
+        ActionNewCallAction.SINGLETON.setTarget(list.getTarget());
+        ActionNewCallAction.SINGLETON.putValue(ActionNewAction.ROLE, role);
+        newMenu.add(ActionNewCreateAction.SINGLETON);
+        ActionNewCreateAction.SINGLETON.setTarget(list.getTarget());
+        ActionNewCreateAction.SINGLETON.putValue(ActionNewAction.ROLE, role);
+        newMenu.add(ActionNewDestroyAction.SINGLETON);
+        ActionNewDestroyAction.SINGLETON.setTarget(list.getTarget());
+        ActionNewDestroyAction.SINGLETON.putValue(ActionNewAction.ROLE, role);
+        newMenu.add(ActionNewReturnAction.SINGLETON);
+        ActionNewReturnAction.SINGLETON.setTarget(list.getTarget());
+        ActionNewReturnAction.SINGLETON.putValue(ActionNewAction.ROLE, role);
+        newMenu.add(ActionNewSendAction.SINGLETON);
+        ActionNewSendAction.SINGLETON.setTarget(list.getTarget());
+        ActionNewSendAction.SINGLETON.putValue(ActionNewAction.ROLE, role);
+        newMenu.add(ActionNewTerminateAction.SINGLETON);
+        ActionNewTerminateAction.SINGLETON.setTarget(list.getTarget());
+        ActionNewTerminateAction.SINGLETON.putValue(ActionNewAction.ROLE, role);
+        newMenu.add(ActionNewUninterpretedAction.SINGLETON);
+        ActionNewUninterpretedAction.SINGLETON.setTarget(list.getTarget());
+        ActionNewUninterpretedAction.SINGLETON.putValue(
+            ActionNewAction.ROLE,
+            role);
         add(newMenu);
 
         addSeparator();
 
-        ActionRemoveModelElement.SINGLETON.setObjectToRemove(ActionNewAction
-             .getAction(role, list.getTarget()));
+        ActionRemoveModelElement.SINGLETON.setTarget(
+            list.getSelectedValue());
         add(ActionRemoveModelElement.SINGLETON);
     }
 }

@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,12 +21,19 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $header$
 package org.argouml.uml.ui.behavior.collaborations;
 
 import junit.framework.TestCase;
 
-import org.argouml.model.Model;
+import org.argouml.application.security.ArgoSecurityManager;
+import org.argouml.model.uml.UmlFactory;
+import org.argouml.model.uml.behavioralelements.collaborations.CollaborationsFactory;
 import org.argouml.uml.ui.MockUMLUserInterfaceContainer;
+
+import ru.novosoft.uml.MFactoryImpl;
+import ru.novosoft.uml.behavior.collaborations.MClassifierRole;
+import ru.novosoft.uml.behavior.collaborations.MMessage;
 
 /**
  * @since Oct 30, 2002
@@ -35,62 +41,57 @@ import org.argouml.uml.ui.MockUMLUserInterfaceContainer;
  */
 public class TestUMLMessageReceiverListModel extends TestCase {
 
+    private int oldEventPolicy;
     private UMLMessageReceiverListModel model;
-    private Object elem;
-
+    private MMessage elem;
+    
     /**
      * Constructor for TestUMLMessageReceiverListModel.
-     * @param arg0 is the name of the test case.
+     * @param arg0
      */
     public TestUMLMessageReceiverListModel(String arg0) {
         super(arg0);
     }
-
+    
     /**
      * @see junit.framework.TestCase#setUp()
      */
     protected void setUp() throws Exception {
         super.setUp();
-        elem = Model.getCollaborationsFactory().createMessage();
-        MockUMLUserInterfaceContainer cont =
-            new MockUMLUserInterfaceContainer();
+        ArgoSecurityManager.getInstance().setAllowExit(true);
+        UmlFactory.getFactory().setGuiEnabled(false);
+        elem = CollaborationsFactory.getFactory().createMessage();
+        oldEventPolicy = MFactoryImpl.getEventPolicy();
+        MFactoryImpl.setEventPolicy(MFactoryImpl.EVENT_POLICY_IMMEDIATE);
+        MockUMLUserInterfaceContainer cont = new MockUMLUserInterfaceContainer();
         cont.setTarget(elem);
         model = new UMLMessageReceiverListModel();
+        elem.addMElementListener(model);
         model.setTarget(elem);
-        Model.getPump().flushModelEvents();
     }
-
+    
     /**
      * @see junit.framework.TestCase#tearDown()
      */
     protected void tearDown() throws Exception {
         super.tearDown();
-        Model.getUmlFactory().delete(elem);
+        UmlFactory.getFactory().delete(elem);
+        MFactoryImpl.setEventPolicy(oldEventPolicy);
         model = null;
     }
-
-    /**
-     * Test setReceiver().
-     */
+    
     public void testSetReceiver() {
-        Object role =
-            Model.getCollaborationsFactory().createClassifierRole();
-        Model.getCommonBehaviorHelper().setReceiver(elem, role);
-        Model.getPump().flushModelEvents();
+        MClassifierRole role = CollaborationsFactory.getFactory().createClassifierRole();
+        elem.setReceiver(role);
         assertEquals(1, model.getSize());
         assertEquals(role, model.getElementAt(0));
     }
-
-    /**
-     * Test setReceiver() with null argument.
-     */
+    
     public void testRemoveReceiver() {
-        Object role =
-            Model.getCollaborationsFactory().createClassifierRole();
-        Model.getCommonBehaviorHelper().setReceiver(elem, role);
-        Model.getCommonBehaviorHelper().setReceiver(elem, null);
-        Model.getPump().flushModelEvents();
+        MClassifierRole role = CollaborationsFactory.getFactory().createClassifierRole();
+        elem.setReceiver(role);
+        elem.setReceiver(null);
         assertEquals(0, model.getSize());
         assertTrue(model.isEmpty());
-    }
+    } 
 }

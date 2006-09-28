@@ -295,7 +295,7 @@ rowsep="1"
 ><para
 >Or click on the broom button, move your mouse to the diagram pane, right click and hold. Now moving your mouse side ways (or up and down) will align elements.</para
 ><para
->There also is the menu item arrange where you can align or group elements.</para
+>There also is the menu item arrange where you can align, group or nudge (move a little bit) elements.</para
 ></answer
 ></qandaentry
 ><qandaentry
@@ -356,32 +356,32 @@ rowsep="1"
 ></chapter
 ><chapter
 ><title
->Statechart Diagrams</title
+>State Diagrams</title
 ><qandaset
 ><qandadiv
 ><title
->Statechart Diagrams: Contribute.</title
+>State Diagrams: Contribute.</title
 ><qandadiv
 ><title
->Statechart Diagrams</title
+>State Diagrams</title
 ><qandaentry
 ><question
 ><para
->How do I create a statechart diagram?</para
+>How do I create a state diagram?</para
 ></question
 ><answer
 ><para
->Select a class, then you can create a statechart diagram. The same applies for activity diagrams.</para
+>Select a class, then you can create a state diagram. The same applies for activity diagrams.</para
 ></answer
 ></qandaentry
 ><qandaentry
 ><question
 ><para
->I am trying to use Argo to edit a state machine diagram for a model. But when I edit a composite state, I don&#39;t know how to provide an event for a composite state. Can you help me?</para
+>I am trying to use Argo to edit a state machine diagram for a model. But when I edit a composite state, I don&#39;t know how to provide do and event for a composite state. Can you help me?</para
 ></question
 ><answer
 ><para
->Select a class, then you can create a statechart diagram.</para
+>Select a class, then you can create a state diagram.</para
 ></answer
 ></qandaentry
 ></qandadiv
@@ -405,7 +405,7 @@ rowsep="1"
 ></question
 ><answer
 ><para
->Select a use case or class, then you can create an activity diagram. Same as for a statechart diagram.</para
+>Select a use case or class, then you can create an activity diagram. Same as for a state diagram.</para
 ><para
 >Enabling an activity diagram that is connected to an actor has been requested as a feature. As well swim lanes have been requested.</para
 ></answer
@@ -561,6 +561,16 @@ rowsep="1"
 ><answer
 ><para
 >Probably not possible but if you want to take on the task of writing an XSLT that transposes the ROSE .xmi to Argo .xmi you&#39;d make a lot of friends in a hurry!</para
+></answer
+></qandaentry
+><qandaentry
+><question
+><para
+>When I save in 0.8.1a .xmi files show up in my save directory, are these just as interchangeable as the 0.9.x .xmi files?</para
+></question
+><answer
+><para
+>This depends on the nsuml version you are using (you can find out about this i your startup messages on console). Version 0.4.19 is okay, should be interchangeable.</para
 ></answer
 ></qandaentry
 ><qandaentry

@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,58 +21,46 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $Id$
 package org.argouml.uml.ui.foundation.core;
 
 import java.awt.event.ActionEvent;
 
-import javax.swing.Action;
-
-import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.application.api.Argo;
+import org.argouml.uml.ui.UMLChangeAction;
 import org.argouml.uml.ui.UMLCheckBox2;
-import org.tigris.gef.undo.UndoableAction;
+
+import ru.novosoft.uml.foundation.core.MGeneralizableElement;
 
 /**
- *
- * @author jaap.branderhorst@xs4all.nl
+ * 
+ * @author jaap.branderhorst@xs4all.nl	
  * @since Jan 27, 2003
  */
-public class ActionSetGeneralizableElementRoot extends UndoableAction {
-    /**
-     * The instance.
-     */
-    private static final ActionSetGeneralizableElementRoot SINGLETON =
-        new ActionSetGeneralizableElementRoot();
+public class ActionSetGeneralizableElementRoot extends UMLChangeAction {
+
+    public static final ActionSetGeneralizableElementRoot SINGLETON = new ActionSetGeneralizableElementRoot();
 
     /**
      * Constructor for ActionSetElementOwnershipSpecification.
+     * @param s
      */
     protected ActionSetGeneralizableElementRoot() {
-        super(Translator.localize("Set"), null);
-        // Set the tooltip string:
-        putValue(Action.SHORT_DESCRIPTION, 
-                Translator.localize("Set"));
+        super(Argo.localize("CoreMenu", "Set"), true, NO_ICON);
     }
-
+    
     /**
      * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
      */
     public void actionPerformed(ActionEvent e) {
         super.actionPerformed(e);
         if (e.getSource() instanceof UMLCheckBox2) {
-            UMLCheckBox2 source = (UMLCheckBox2) e.getSource();
+            UMLCheckBox2 source = (UMLCheckBox2)e.getSource();
             Object target = source.getTarget();
-            if (Model.getFacade().isAGeneralizableElement(target)
-                    || Model.getFacade().isAOperation(target)) {
-                Model.getCoreHelper().setRoot(target, source.isSelected());
+            if (target instanceof MGeneralizableElement) {
+                MGeneralizableElement m = (MGeneralizableElement)target;
+                m.setRoot(source.isSelected());                
             }
         }
-    }
-
-    /**
-     * @return Returns the SINGLETON.
-     */
-    public static ActionSetGeneralizableElementRoot getInstance() {
-        return SINGLETON;
     }
 }
