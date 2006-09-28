@@ -31,7 +31,6 @@ import javax.swing.Action;
 import org.argouml.i18n.Translator;
 import org.argouml.application.helpers.ResourceLoaderWrapper;
 import org.argouml.model.Model;
-import org.tigris.gef.base.CreateNodeAction;
 
 /**
  * Command to create nodes with the appropriate modelelement. The modelelement
@@ -52,7 +51,9 @@ import org.tigris.gef.base.CreateNodeAction;
  * @see org.argouml.model.UseCasesFactory
  * @author jaap.branderhorst@xs4all.nl
  */
-public class CmdCreateNode extends CreateNodeAction {
+// TODO: This should be used for GEF 0.12.2
+//public class CmdCreateNode extends CreateNodeAction {
+public class CmdCreateNode extends org.tigris.gef.base.CmdCreateNode {
     
     private static final long serialVersionUID = 4813526025971574818L;
 
@@ -98,14 +99,17 @@ public class CmdCreateNode extends CreateNodeAction {
     /**
      * Constructor for CmdCreateNode.
      *
-     * @param nodeType the type of model element for which to create a FigNode
-     * @param name the i18n key used to generate the tooltip and icon.
+     * @param nodeClass the class for which to create a node, and which
+     *                  to create itself
+     * @param name the tooltip name
      */
-    public CmdCreateNode(Object nodeType, String name) {
-        super(nodeType,
-                name,
-                ResourceLoaderWrapper.lookupIconResource(
-                        ResourceLoaderWrapper.getImageBinding(name)));
+    public CmdCreateNode(Object nodeClass, String name) {
+        // TODO: This should be used for GEF 0.12.2
+//        super((Class) nodeClass,
+//                name,
+//                ResourceLoaderWrapper.lookupIconResource(
+//                        ResourceLoaderWrapper.getImageBinding(name)));
+        super((Class) nodeClass, ResourceLoaderWrapper.getImageBinding(name));
         putToolTip(name);
     }
 
@@ -118,7 +122,6 @@ public class CmdCreateNode extends CreateNodeAction {
      *               to place several nodes rapidly (in succession)
      * @param resource for localizing the name
      * @param name the tooltip name
-     * @deprecated in 0.23.2 use CmdCreateNode(Object, String)
      */
     public CmdCreateNode(Class nodeClass, boolean sticky, String resource,
             String name) {

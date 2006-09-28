@@ -37,14 +37,12 @@ import org.tigris.gef.graph.GraphModel;
  */
 public class ActionAddClassifierRole extends CmdCreateNode {
 
-    private static final long serialVersionUID = 8939546123926523391L;
-
     /**
      * The constructor.
      */
     public ActionAddClassifierRole() {
         super(Model.getMetaTypes().getClassifierRole(),
-                "button.new-classifierrole");
+                false, "button.new-classifierrole");
     }
 
     /**

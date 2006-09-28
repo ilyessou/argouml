@@ -75,14 +75,7 @@ class OldZargoFilePersister extends ZargoFilePersister {
      * @see org.argouml.persistence.AbstractFilePersister#getDesc()
      */
     protected String getDesc() {
-        return Translator.localize("combobox.filefilter.zargo");
-    }
-    
-    /**
-     * @see org.argouml.persistence.AbstractFilePersister#isSaveEnabled()
-     */
-    public boolean isSaveEnabled() {
-        return true;
+        return Translator.localize("combobox.filefilter.oldzargo");
     }
     
     /**

@@ -46,7 +46,7 @@ public class ActionAddClassifierRole extends CmdCreateNode {
      */
     public ActionAddClassifierRole() {
         super(Model.getMetaTypes().getClassifierRole(),
-                "button.new-classifierrole");
+                false, "button.new-classifierrole");
     }
 
     /**
