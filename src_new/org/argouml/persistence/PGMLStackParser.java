@@ -53,6 +53,7 @@ import org.tigris.gef.presentation.Fig;
 import org.tigris.gef.presentation.FigEdge;
 import org.tigris.gef.presentation.FigGroup;
 import org.tigris.gef.presentation.FigNode;
+import org.tigris.gef.util.Predicate;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -334,7 +335,6 @@ class PGMLStackParser
                     edge.setDestPortFig(dpf);
                     edge.setSourceFigNode(sfn);
                     edge.setDestFigNode(dfn);
-                    edge.computeRoute();
                 }
             }
         }
@@ -358,12 +358,7 @@ class PGMLStackParser
         if (figId.indexOf('.') < 0) {
             // If there is no dot then this must be a top level Fig and can be
             // assumed to be a FigNode.
-            Fig f = findFig(figId);
-            if (f instanceof FigNode) {
-                return (FigNode) f;
-            } else {
-                throw new IllegalStateException("FigID " + figId + " is not a node");
-            }
+            return (FigNode) findFig(figId);
         }
         // If the id does not look like a top-level Fig then we can assume that
         // this is an id of a FigEdgePort inside some FigEdge.

@@ -15,17 +15,11 @@ projects="argouml \
     argouml-gen argouml-mdr argoumlinstaller \
     argouml-downloads argouml-stats \
     argouml-ada argouml-classfile argouml-cpp argouml-csharp argouml-delphi \
-    argouml-idl argouml-java argouml-php argouml-python argouml-ruby \
-    argouml-sql \
-    argouml-ar \
+    argouml-idl argouml-java argouml-php argouml-python \
     argouml-ca argouml-de argouml-en-gb argouml-es argouml-fr \
-    argouml-hi \
-    argouml-i18n-zh \
-    argouml-it argouml-ja \
-    argouml-nb argouml-pt argouml-pt-br \
-    argouml-ro \
+    argouml-i18n-zh argouml-nb argouml-pt argouml-pt-br \
     argouml-ru argouml-sv argouml-zh-cn argouml-zh-tw \
-    argoprint argouml-andromda argouml-emf"
+    argoprint argouml-andromda argouml-emf argouml-sql"
 
 lists="dev cvs issues users commits announce"
 

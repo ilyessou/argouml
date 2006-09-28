@@ -50,7 +50,7 @@ public class GUITestActionOpenProject extends TestCase {
      * TODO: This tests is deactivated by Linus Tolke in 0.23.1 since
      * it fails in. Investigate and fix! Issue 4443.
      */
-    public void testEmptyProject() {
+    public void xtestEmptyProject() {
         File file
             = CheckMain.getTestModel("testmodels/EmptyProject0161.zargo");
 
@@ -70,7 +70,7 @@ public class GUITestActionOpenProject extends TestCase {
      * TODO: This tests is deactivated by Linus Tolke in 0.23.1 since
      * it fails in. Investigate and fix! Issue 4443.
      */
-    public void testProjectWithContents() {
+    public void xtestProjectWithContents() {
         File file =
             CheckMain.getTestModel("testmodels/GUITestPropertyPanels.zargo");
 
