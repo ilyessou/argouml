@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,55 +22,84 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $Id$
 package org.argouml.uml.ui;
-
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 
 import javax.swing.JTextArea;
 
-import org.argouml.ui.LookAndFeelMgr;
 import org.argouml.ui.targetmanager.TargetListener;
 import org.argouml.ui.targetmanager.TargettableModelView;
 
+import ru.novosoft.uml.MElementEvent;
+import ru.novosoft.uml.MElementListener;
+
 /**
- * A JTextArea especially made to represent UMLPlainTextDocuments.
- * @author jaap.branderhorst@xs4all.nl
+ * A JTextArea especially made to represent UMLPlainTextDocuments. 
+ * @author jaap.branderhorst@xs4all.nl	
  * @since Dec 28, 2002
  */
-public class UMLTextArea2 extends JTextArea
-    implements PropertyChangeListener, TargettableModelView {
+public class UMLTextArea2 extends JTextArea implements MElementListener, TargettableModelView {
 
-    /**
-     * Serial version generated for rev 1.9
-     */
-    private static final long serialVersionUID = -9172093001792636086L;
-
+    
     /**
      * Constructor for UMLTextArea2.
-     * @param doc the plain text document
+     * @param doc
      */
-    public UMLTextArea2(UMLDocument doc) {
+    public UMLTextArea2(UMLPlainTextDocument doc) {
         super(doc);
-        setFont(LookAndFeelMgr.getInstance().getStandardFont());
         addCaretListener(ActionCopy.getInstance());
-        addCaretListener(ActionCut.getInstance());
+        addCaretListener(ActionCut.getInstance());  
         addCaretListener(ActionPaste.getInstance());
         addFocusListener(ActionPaste.getInstance());
     }
 
     /**
-     * @see java.beans.PropertyChangeListener#propertyChange(java.beans.PropertyChangeEvent)
+     * @see ru.novosoft.uml.MElementListener#propertySet(ru.novosoft.uml.MElementEvent)
      */
-    public void propertyChange(PropertyChangeEvent evt) {
-        ((UMLDocument) getDocument()).propertyChange(evt);
+    public void propertySet(MElementEvent e) {
+        ((UMLPlainTextDocument) getDocument()).propertySet(e);
     }
 
     /**
+     * @see ru.novosoft.uml.MElementListener#roleAdded(ru.novosoft.uml.MElementEvent)
+     */
+    public void roleAdded(MElementEvent e) {
+        ((UMLPlainTextDocument) getDocument()).roleAdded(e);
+    }
+
+    /**
+     * @see ru.novosoft.uml.MElementListener#roleRemoved(ru.novosoft.uml.MElementEvent)
+     */
+    public void roleRemoved(MElementEvent e) {
+        ((UMLPlainTextDocument) getDocument()).roleRemoved(e);
+    }
+
+    /**
+     * @see ru.novosoft.uml.MElementListener#listRoleItemSet(ru.novosoft.uml.MElementEvent)
+     */
+    public void listRoleItemSet(MElementEvent e) {
+        ((UMLPlainTextDocument) getDocument()).listRoleItemSet(e);            
+    }
+
+    /**
+     * @see ru.novosoft.uml.MElementListener#removed(ru.novosoft.uml.MElementEvent)
+     */
+    public void removed(MElementEvent e) {
+        ((UMLPlainTextDocument) getDocument()).removed(e);     
+    }
+
+    /**
+     * @see ru.novosoft.uml.MElementListener#recovered(ru.novosoft.uml.MElementEvent)
+     */
+    public void recovered(MElementEvent e) {
+        ((UMLPlainTextDocument) getDocument()).recovered(e);     
+    }
+
+    /** 
      * @see org.argouml.ui.targetmanager.TargettableModelView#getTargettableModel()
      */
     public TargetListener getTargettableModel() {
-        return ((UMLDocument) getDocument());
+        return ((TargetListener) getDocument());
     }
 
 }

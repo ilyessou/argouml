@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 2003-2006 The Regents of the University of California. All
+// Copyright (c) 2003-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,38 +24,40 @@
 
 package org.argouml.uml.ui;
 
-import java.awt.event.ActionEvent;
-import java.io.File;
-
-import javax.swing.AbstractAction;
-
+import org.argouml.ui.*;
+import org.argouml.i18n.Translator;
+import org.argouml.kernel.*;
 import org.apache.log4j.Logger;
-import org.argouml.ui.ProjectBrowser;
+import java.awt.event.*;
+import java.io.*;
+import javax.swing.JOptionPane;
+import java.text.MessageFormat;
 
 /**
- * Reopens a project with respect of the calling event handler - should be
- * used with menu item.
+ * Reopens a project with respect of the calling event handler - should be 
+ * used with menu item
  *
  * @author  Frank Jelinek
  * @since 10. November 2003 (0.15.2)
  */
-public class ActionReopenProject extends AbstractAction {
+
+public class ActionReopenProject extends UMLAction {
     private static final Logger LOG =
 	Logger.getLogger(ActionReopenProject.class);
 
-    private String filename;
-
+    String _filename;
+    
     ////////////////////////////////////////////////////////////////
     // constructors
 
     /**
      * Constructor.
      *
-     * @param theFilename The name of the file.
+     * @param filename The name of the file.
      */
-    public ActionReopenProject(String theFilename) {
+    public ActionReopenProject(String filename) {
 	super("action.reopen-project");
-	filename = theFilename;
+	_filename = filename;
     }
 
     ////////////////////////////////////////////////////////////////
@@ -67,10 +69,10 @@ public class ActionReopenProject extends AbstractAction {
      * @return The filename.
      */
     public String getFilename() {
-        return filename;
+        return _filename;
     }
-
-    /**
+    
+    /** 
      * Performs the save and reload of a project.
      *
      * @param e e should old the event and the eventsource. Event
@@ -78,12 +80,57 @@ public class ActionReopenProject extends AbstractAction {
      * project
      */
     public void actionPerformed(ActionEvent e) {
-        if (!ProjectBrowser.getInstance().askConfirmationAndSave()) return;
 
-        File toOpen = new File(filename);
+        
+        // actually copy from ActionOpenProject, there should be a better way
+        ProjectBrowser pb = ProjectBrowser.getInstance();
+        Project p = ProjectManager.getManager().getCurrentProject();
+
+        if (p != null && p.needsSave()) {
+            String t =
+                MessageFormat.format(
+                        Translator.localize(
+				"Actions",
+				"optionpane.open-project-save-changes-to"),
+			new Object[] {
+			    p.getName()
+			});
+
+            int response =
+                JOptionPane.showConfirmDialog(
+					      pb,
+					      t,
+					      t,
+					      JOptionPane.YES_NO_CANCEL_OPTION);
+
+            if (response == JOptionPane.CANCEL_OPTION 
+	        || response == JOptionPane.CLOSED_OPTION)
+                return;
+            if (response == JOptionPane.YES_OPTION) {
+                boolean safe = false;
+
+                if (ActionSaveProject.SINGLETON.shouldBeEnabled()) {
+                    safe = ActionSaveProject.SINGLETON.trySave(true);
+                }
+                if (!safe) {
+                    safe = ActionSaveProjectAs.SINGLETON.trySave(false);
+                }
+                if (!safe)
+                    return;
+            }
+        }
+        
         // load of the new project
         // just reuse of the ActionOpen object
-        ProjectBrowser.getInstance().loadProjectWithProgressMonitor(
-                toOpen, true);
+        File toOpen = new File(_filename);;
+        
+        try {
+            ActionOpenProject openProjectHandler =
+		new ActionOpenProject();
+            openProjectHandler.loadProject(toOpen.toURL());
+        }
+        catch ( java.net.MalformedURLException ex) {
+            LOG.error("got an URLException in ActionReopenProject", ex);
+        }
     }
 }

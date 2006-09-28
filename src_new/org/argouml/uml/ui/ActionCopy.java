@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -42,26 +42,27 @@ import org.argouml.i18n.Translator;
 import org.tigris.gef.base.CmdCopy;
 import org.tigris.gef.base.Globals;
 
-/**
- * The Copy Action.
+/** @stereotype singleton
  */
 public class ActionCopy extends AbstractAction implements CaretListener {
 
     ////////////////////////////////////////////////////////////////
     // static variables
 
-    private static ActionCopy instance = new ActionCopy();
+    private static ActionCopy _Instance = new ActionCopy();
 
     private static final String LOCALIZE_KEY = "action.copy";
 
     ////////////////////////////////////////////////////////////////
     // constructors
-    /**
-     * Constructor.
-     */
-    public ActionCopy() {
+
+    private ActionCopy() {
         super(Translator.localize(LOCALIZE_KEY));
-        Icon icon = ResourceLoaderWrapper.lookupIcon(LOCALIZE_KEY);
+        Icon icon =
+            ResourceLoaderWrapper.getResourceLoaderWrapper()
+	        .lookupIconResource(
+				    Translator.getImageBinding(LOCALIZE_KEY),
+				    Translator.localize(LOCALIZE_KEY));
         if (icon != null) {
             putValue(Action.SMALL_ICON, icon);
 	}
@@ -70,27 +71,22 @@ public class ActionCopy extends AbstractAction implements CaretListener {
 		 Translator.localize(LOCALIZE_KEY) + " ");
     }
 
-    /**
-     * @return the singleton
-     */
     public static ActionCopy getInstance() {
-        return instance;
+        return _Instance;
     }
 
-    private JTextComponent textSource;
+    private JTextComponent _textSource;
 
     /**
-     * Copies some text or a fig.
-     *
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
+     * Copies some text or a fig
      */
     public void actionPerformed(ActionEvent ae) {
-        if (textSource != null) {
-            textSource.copy();
-            Globals.clipBoard = null;
+        if (_textSource != null) {
+            _textSource.copy();
+            Globals.clipBoard = null;            
         } else {
             CmdCopy cmd = new CmdCopy();
-            cmd.doIt();
+            cmd.doIt();            
         }
         if (isSystemClipBoardEmpty()
             && (Globals.clipBoard == null
@@ -106,16 +102,18 @@ public class ActionCopy extends AbstractAction implements CaretListener {
      * javax.swing.event.CaretListener#caretUpdate(javax.swing.event.CaretEvent)
      */
     public void caretUpdate(CaretEvent e) {
-        if (e.getMark() != e.getDot()) { // there is a selection
+        if (e.getMark() != e.getDot()) { // there is a selection        
             setEnabled(true);
-            textSource = (JTextComponent) e.getSource();
+            _textSource = (JTextComponent) e.getSource();
         } else {
             setEnabled(false);
-            textSource = null;
+            _textSource = null;
         }
     }
 
     private boolean isSystemClipBoardEmpty() {
+        //      if there is a selection on the clipboard
+        boolean hasContents = false;
         try {
             Object text =
                 Toolkit.getDefaultToolkit().getSystemClipboard()

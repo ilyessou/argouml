@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -29,38 +29,56 @@ import java.awt.Component;
 import javax.swing.Icon;
 import javax.swing.JLabel;
 import javax.swing.JTree;
-import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
+import javax.swing.tree.DefaultMutableTreeNode;
 
 import org.argouml.application.helpers.ResourceLoaderWrapper;
 import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
+import org.argouml.uml.diagram.activity.ui.UMLActivityDiagram;
+import org.argouml.uml.diagram.collaboration.ui.UMLCollaborationDiagram;
+import org.argouml.uml.diagram.deployment.ui.UMLDeploymentDiagram;
+import org.argouml.uml.diagram.sequence.ui.UMLSequenceDiagram;
+import org.argouml.uml.diagram.state.ui.UMLStateDiagram;
+import org.argouml.uml.diagram.static_structure.ui.UMLClassDiagram;
 import org.argouml.uml.diagram.ui.UMLDiagram;
+import org.argouml.uml.diagram.use_case.ui.UMLUseCaseDiagram;
 
 /**
- * UMTreeCellRenderer determines how the entries in the Explorerpane
- * and ToDoList will be represented graphically.<p>
+ * UMTreeCellRenderer determines how the entries in the Navigationpane
+ * and ToDoList will be represented graphically.
  *
- * In particular it makes decisions about the icons to use,
- * in order to display an Explorerpane artifact depending on the kind
- * of object to be displayed.<p>
+ * <p>In particular it makes decisions about the icons
+ *  to use in order to display a Navigationpane artifact depending on the kind
+ *  of object to be displayed.
  *
  * This class must be efficient as it is called many 1000's of times.
  */
 public class UMLTreeCellRenderer extends DefaultTreeCellRenderer {
 
-    // get localised strings once only
-    private static String name = Translator.localize("label.name");
-    private static String typeName = Translator.localize("label.type");
+    private static final String BUNDLE = "UMLMenu";
 
+    // get localised strings once only
+    private static String activity =
+	Translator.localize(BUNDLE, "label.activity-diagram");
+    private static String sequence =
+	Translator.localize(BUNDLE, "label.sequence-diagram");
+    private static String collaboration =
+	Translator.localize(BUNDLE, "label.collaboration-diagram");
+    private static String deployment =
+	Translator.localize(BUNDLE, "label.deployment-diagram");
+    private static String state =
+	Translator.localize(BUNDLE, "label.state-chart-diagram");
+    private static String usecase =
+	Translator.localize(BUNDLE, "label.usecase-diagram");
+    private static String classDiag =
+	Translator.localize(BUNDLE, "label.class-diagram");
+    private static String name = Translator.localize(BUNDLE, "label.name");
+    private static String typeName = Translator.localize(BUNDLE, "label.type");
+    
     ////////////////////////////////////////////////////////////////
     // TreeCellRenderer implementation
 
-    /**
-     * @see javax.swing.tree.TreeCellRenderer#getTreeCellRendererComponent(
-     * javax.swing.JTree, java.lang.Object, boolean, boolean, boolean, int,
-     * boolean)
-     */
     public Component getTreeCellRendererComponent(
         JTree tree,
         Object value,
@@ -68,12 +86,12 @@ public class UMLTreeCellRenderer extends DefaultTreeCellRenderer {
         boolean expanded,
         boolean leaf,
         int row,
-        boolean hasFocusParam) {
-
+        boolean _hasFocus) {
+            
 	if (value instanceof DefaultMutableTreeNode) {
 	    value = ((DefaultMutableTreeNode) value).getUserObject();
 	}
-
+        
         Component r =
             super.getTreeCellRendererComponent(
                 tree,
@@ -82,25 +100,39 @@ public class UMLTreeCellRenderer extends DefaultTreeCellRenderer {
                 expanded,
                 leaf,
                 row,
-                hasFocusParam);
+                _hasFocus);
 
         if (r instanceof JLabel) {
             JLabel lab = (JLabel) r;
+            
+            Icon icon =
+                ResourceLoaderWrapper.getResourceLoaderWrapper().lookupIcon(
+                    value);
 
-            // setting the icon
-            Icon icon = ResourceLoaderWrapper.getInstance().lookupIcon(value);
-            if (icon != null) {
+            if (icon != null)
                 lab.setIcon(icon);
-            }
 
-            // setting the tooltip to type and name
+            // setting the tooltip
             String type = null;
-            if (Model.getFacade().isAModelElement(value)) {
-                type = Model.getFacade().getUMLClassName(value);
+            if (ModelFacade.isAModelElement(value)) {
+                type = ModelFacade.getUMLClassName(value);
             } else if (value instanceof UMLDiagram) {
-                type = ((UMLDiagram) value).getLabelName();
+                if (value instanceof UMLActivityDiagram)
+                    type = activity;
+                else if (value instanceof UMLSequenceDiagram)
+                    type = sequence;
+                else if (value instanceof UMLCollaborationDiagram)
+                    type = collaboration;
+                else if (value instanceof UMLDeploymentDiagram)
+                    type = deployment;
+                else if (value instanceof UMLStateDiagram)
+                    type = state;
+                else if (value instanceof UMLUseCaseDiagram)
+                    type = usecase;
+                else if (value instanceof UMLClassDiagram)
+                    type = classDiag;
             }
-
+            
             if (type != null) {
                 StringBuffer buf = new StringBuffer();
                 buf.append("<html>");
@@ -112,7 +144,8 @@ public class UMLTreeCellRenderer extends DefaultTreeCellRenderer {
                 buf.append(' ');
                 buf.append(type);
                 lab.setToolTipText(buf.toString());
-            } else {
+            }
+            else {
                 lab.setToolTipText(lab.getText());
             }
         }

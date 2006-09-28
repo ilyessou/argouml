@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,12 +24,12 @@
 
 package org.argouml.uml.ui.foundation.core;
 
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
 import org.argouml.uml.ui.UMLModelElementListModel2;
 
 /**
- *
- * @author jaap.branderhorst@xs4all.nl
+ * 
+ * @author jaap.branderhorst@xs4all.nl	
  * @since Jan 26, 2003
  */
 public class UMLGeneralizableElementSpecializationListModel
@@ -46,8 +46,8 @@ public class UMLGeneralizableElementSpecializationListModel
      * @see org.argouml.uml.ui.UMLModelElementListModel2#buildModelList()
      */
     protected void buildModelList() {
-        if (getTarget() != null) {
-            setAllElements(Model.getFacade().getSpecializations(getTarget()));
+        if (ModelFacade.isAGeneralizableElement(getTarget())) {
+            setAllElements(ModelFacade.getSpecializations(getTarget()));
         }
     }
 
@@ -55,9 +55,9 @@ public class UMLGeneralizableElementSpecializationListModel
      * @see org.argouml.uml.ui.UMLModelElementListModel2#isValidElement(Object)
      */
     protected boolean isValidElement(Object/*MBase*/ element) {
-        return Model.getFacade().isAGeneralization(element)
-            && Model.getFacade().getSpecializations(getTarget())
-            	.contains(element);
+        return ModelFacade.isAGeneralizableElement(getTarget())
+		&& ModelFacade.isAGeneralization(element)
+		&& ModelFacade.getSpecializations(getTarget()).contains(element);
     }
 
 }

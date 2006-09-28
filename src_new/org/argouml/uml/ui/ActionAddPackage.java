@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -26,38 +26,42 @@ package org.argouml.uml.ui;
 
 import java.awt.event.ActionEvent;
 
-import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.model.uml.UmlFactory;
+import org.argouml.model.ModelFacade;
 import org.argouml.ui.targetmanager.TargetManager;
-import org.tigris.gef.undo.UndoableAction;
 
-/**
+/** 
  * Action to add a package to the selected model element in the
- * explorer. This is a shortcut that helps build model
+ * nav pane. This is a shortcut that helps build model
  * structures quickly.
  *
  * @author alexb@tigris.org
+ * @stereotype singleton
  */
-public class ActionAddPackage  extends UndoableAction {
-
-    /**
-     * Creates a new instance of ActionAddPackage.
-     */
+public class ActionAddPackage  extends UMLAction {
+    
+    ////////////////////////////////////////////////////////////////
+    // static variables
+    
+    public static ActionAddPackage SINGLETON = new ActionAddPackage();
+    
+    ////////////////////////////////////////////////////////////////
+    // constructors
+    
+    /** Creates a new instance of ActionAddPackage */
     public ActionAddPackage() {
-        super(Translator.localize("action.add-package"));
+        
+        super("Add package", NO_ICON);
     }
-
+    
     /**
-     * Adds a package to the selected object in the nav pane.
-     *
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
+     * adds a package to the selected object in the nav pane.
      */
     public void actionPerformed(ActionEvent e) {
-        super.actionPerformed(e);
         Object namespace =
-            TargetManager.getInstance().getModelTarget();
-        Model.getCoreHelper().addOwnedElement(namespace,
-                Model.getModelManagementFactory().createPackage());
+	    TargetManager.getInstance().getModelTarget();
+        ModelFacade.addOwnedElement(namespace,
+            UmlFactory.getFactory().getModelManagement().createPackage());
     }
-
+    
 }

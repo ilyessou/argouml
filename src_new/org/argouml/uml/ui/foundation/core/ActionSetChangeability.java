@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -26,45 +26,29 @@ package org.argouml.uml.ui.foundation.core;
 
 import java.awt.event.ActionEvent;
 
-import javax.swing.Action;
 import javax.swing.JRadioButton;
 
 import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
+import org.argouml.uml.ui.UMLChangeAction;
 import org.argouml.uml.ui.UMLRadioButtonPanel;
-import org.tigris.gef.undo.UndoableAction;
 
 /**
  * @author jaap.branderhorst@xs4all.nl, alexb
  */
-public class ActionSetChangeability extends UndoableAction {
+public class ActionSetChangeability extends UMLChangeAction {
 
-    private static final ActionSetChangeability SINGLETON =
-        new ActionSetChangeability();
+    public static final ActionSetChangeability SINGLETON = new ActionSetChangeability();
 
-    /**
-     * ADDONLY_COMMAND determines a changeability kind.
-     */
-    public static final String ADDONLY_COMMAND = "addonly";
-
-    /**
-     * CHANGEABLE_COMMAND determines a changeability kind.
-     */
-    public static final String CHANGEABLE_COMMAND = "changeable";
-
-    /**
-     * FROZEN_COMMAND determines a changeability kind.
-     */
-    public static final String FROZEN_COMMAND = "frozen";
+    public final static String ADDONLY_COMMAND = "addonly";
+    public final static String CHANGEABLE_COMMAND = "changeable";
+    public final static String FROZEN_COMMAND = "frozen";
 
     /**
      * Constructor for ActionSetElementOwnershipSpecification.
      */
     protected ActionSetChangeability() {
-        super(Translator.localize("Set"), null);
-        // Set the tooltip string:
-        putValue(Action.SHORT_DESCRIPTION, 
-                Translator.localize("Set"));
+        super(Translator.localize("Set"), true, NO_ICON);
     }
 
     /**
@@ -75,28 +59,20 @@ public class ActionSetChangeability extends UndoableAction {
         if (e.getSource() instanceof JRadioButton) {
             JRadioButton source = (JRadioButton) e.getSource();
             String actionCommand = source.getActionCommand();
-            Object target =
-                ((UMLRadioButtonPanel) source.getParent()).getTarget();
-            if (Model.getFacade().isAAssociationEnd(target)
-		|| Model.getFacade().isAAttribute(target)) {
+            Object target = ((UMLRadioButtonPanel) source.getParent()).getTarget();
+            if (ModelFacade.isAAssociationEnd(target)
+		|| ModelFacade.isAAttribute(target)) {
                 Object m = /*(MAssociationEnd)*/ target;
                 Object/*MChangeableKind*/ kind = null;
                 if (actionCommand.equals(CHANGEABLE_COMMAND)) {
-                    kind = Model.getChangeableKind().getChangeable();
+                    kind = ModelFacade.CHANGEABLE_CHANGEABLEKIND;
                 } else if (actionCommand.equals(ADDONLY_COMMAND)) {
-                    kind = Model.getChangeableKind().getAddOnly();
+                    kind = ModelFacade.ADD_ONLY_CHANGEABLEKIND;
                 } else {
-                    kind = Model.getChangeableKind().getFrozen();
+                    kind = ModelFacade.FROZEN_CHANGEABLEKIND;
                 }
-                Model.getCoreHelper().setChangeability(m, kind);
+                ModelFacade.setChangeability(m, kind);
             }
         }
-    }
-
-    /**
-     * @return Returns the SINGLETON.
-     */
-    public static ActionSetChangeability getInstance() {
-        return SINGLETON;
     }
 }

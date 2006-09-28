@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,11 +24,14 @@
 
 package org.argouml.ui;
 
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.beans.PropertyChangeEvent;
+import java.util.Collection;
 
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -38,56 +41,46 @@ import javax.swing.event.ListSelectionListener;
 import org.apache.log4j.Logger;
 import org.argouml.kernel.Project;
 import org.argouml.kernel.ProjectManager;
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
 import org.argouml.ui.targetmanager.TargetEvent;
 import org.tigris.gef.presentation.Fig;
-import org.tigris.swidgets.LabelledLayout;
 
-/**
- * The Presentation panel - formerly called style panel.
- *
- */
-public class StylePanel
-    extends AbstractArgoJPanel
-    implements TabFigTarget,
+public class StylePanel extends TabSpawnable implements TabFigTarget,
                 ItemListener, DocumentListener, ListSelectionListener,
                 ActionListener {
-    /**
-     * Logger.
-     */
-    private static final Logger LOG = Logger.getLogger(StylePanel.class);
-
-    private Fig panelTarget;
 
     /**
-     * The constructor.
-     *
-     * @param title the panel title
+     * @deprecated by Linus Tolke as of 0.15.4. Use your own logger in your
+     *             class. This will be removed.
      */
+    protected static Logger cat = Logger.getLogger(StylePanel.class);
+
+    protected Fig _target;
+
     public StylePanel(String title) {
 	super(title);
-        setLayout(new LabelledLayout());
-    }
-
-    /**
-     * Add a seperator.
-     */
-    protected final void addSeperator() {
-        add(LabelledLayout.getSeperator());
+	GridBagLayout gb = new GridBagLayout();
+	setLayout(gb);
+	GridBagConstraints c = new GridBagConstraints();
+	c.fill = GridBagConstraints.BOTH;
+	c.weightx = 0.0;
+	c.weighty = 0.0;
+	c.ipadx = 3;
+	c.ipady = 3;
     }
 
     /**
      * This method must be overriden by implementors if they don't want to
      * refresh the whole stylepanel every time a property change events is
      * fired.
-     *
+     * <p>
+     * 
      * @since 8 june 2003, 0.13.6
      * @see org.argouml.ui.TabTarget#refresh()
-     *
-     * @param e the property-change-event
      */
     public void refresh(PropertyChangeEvent e) {
 	refresh();
+
     }
 
     /**
@@ -95,23 +88,22 @@ public class StylePanel
      */
     public void setTarget(Object t) {
 	if (!(t instanceof Fig)) {
-	    if (Model.getFacade().isAModelElement(t)) {
-		Project p =
-                    ProjectManager.getManager()
-                        .getCurrentProject();
-                ArgoDiagram diagram = p.getActiveDiagram();
-                if (diagram != null) {
-                    t = diagram.presentationFor(t);
-                }
-		if (!(t instanceof Fig)) {
+	    if (ModelFacade.isABase(t)) {
+		Project p = ProjectManager.getManager()
+		    .getCurrentProject();
+		Collection col = p.findFigsForMember(t);
+		if (col == null || col.isEmpty()) {
 		    return;
+		} else {
+		    t = col.iterator().next();
+		    if (!(t instanceof Fig)) return;
 		}
 	    } else {
 		return;
 	    }
 
 	}
-	panelTarget = (Fig) t;
+	_target = (Fig) t;
 	refresh();
     }
 
@@ -119,7 +111,7 @@ public class StylePanel
      * @see org.argouml.ui.TabTarget#getTarget()
      */
     public Object getTarget() {
-	return panelTarget;
+	return _target;
     }
 
     /**
@@ -132,15 +124,12 @@ public class StylePanel
 
     /**
      * Style panels ony apply when a Fig is selected.
-     *
-     * @see org.argouml.ui.TabTarget#shouldBeEnabled(java.lang.Object)
      */
     public boolean shouldBeEnabled(Object target) {
-	ArgoDiagram diagram =
-            ProjectManager.getManager()
-                .getCurrentProject().getActiveDiagram();
-	target =
-            (target instanceof Fig) ? target : diagram.getContainingFig(target);
+	ArgoDiagram diagram = ProjectManager.getManager()
+	    .getCurrentProject().getActiveDiagram();
+	target = (target instanceof Fig) ? target : diagram
+	    .getContainingFig(target);
 	return (target instanceof Fig);
     }
 
@@ -148,7 +137,7 @@ public class StylePanel
      * @see javax.swing.event.DocumentListener#insertUpdate(javax.swing.event.DocumentEvent)
      */
     public void insertUpdate(DocumentEvent e) {
-	LOG.debug(getClass().getName() + " insert");
+	cat.debug(getClass().getName() + " insert");
     }
 
     /**
@@ -168,6 +157,7 @@ public class StylePanel
      * @see java.awt.event.ItemListener#itemStateChanged(java.awt.event.ItemEvent)
      */
     public void itemStateChanged(ItemEvent e) {
+	Object src = e.getSource();
     }
 
     /**
@@ -180,7 +170,7 @@ public class StylePanel
      * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
      */
     public void actionPerformed(ActionEvent ae) {
-	// Object src = ae.getSource();
+	Object src = ae.getSource();
 	//if (src == _config) doConfig();
     }
 
@@ -189,7 +179,7 @@ public class StylePanel
      *      TargetEvent)
      */
     public void targetAdded(TargetEvent e) {
-        setTarget(e.getNewTarget());
+	setTarget(e.getNewTarget());
     }
 
     /**
@@ -198,7 +188,6 @@ public class StylePanel
      */
     public void targetRemoved(TargetEvent e) {
 	setTarget(e.getNewTarget());
-
     }
 
     /**
@@ -206,18 +195,6 @@ public class StylePanel
      */
     public void targetSet(TargetEvent e) {
 	setTarget(e.getNewTarget());
-
     }
 
-    /**
-     * @return Returns the _target.
-     */
-    protected Fig getPanelTarget() {
-        return panelTarget;
-    }
-
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = 2183676111107689482L;
 } /* end class StylePanel */

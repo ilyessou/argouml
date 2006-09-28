@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,6 +22,13 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+
+// File: WzMEName.java
+// Classes: WzMEName
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.cognitive.critics;
 
 import javax.swing.JPanel;
@@ -29,114 +36,97 @@ import javax.swing.JPanel;
 import org.apache.log4j.Logger;
 import org.argouml.cognitive.ui.WizStepTextField;
 import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.kernel.Wizard;
+import org.argouml.model.ModelFacade;
+import org.tigris.gef.util.VectorSet;
 
-/**
- * A non-modal wizard to help the user change the name of a
- * MModelElement to a better name.
- *
- * @author jrobbins
- */
-public class WizMEName extends UMLWizard {
-    private static final Logger LOG = Logger.getLogger(WizMEName.class);
+/** A non-modal wizard to help the user change the name of a
+ *  MModelElement to a better name. */
 
-    private String instructions = Translator.localize("critics.WizMEName-ins");
-    private String label = Translator.localize("label.name");
-    private boolean mustEdit = false;
-
-    private WizStepTextField step1 = null;
-
-    private String origSuggest;
-
-    /**
-     * The constructor.
-     *
-     */
+public class WizMEName extends Wizard {
+    protected static Logger cat = Logger.getLogger(WizMEName.class);
+					   
+    protected String _instructions =
+	"Please change the name of the offending model element.";
+    protected String _label = Translator.localize("UMLMenu", "label.name");
+    protected String _suggestion = "suggestion";
+    protected String _origSuggest = "suggestion";
+    protected boolean _mustEdit = false;
+							       
+    protected WizStepTextField _step1 = null;
+								   
     public WizMEName() { }
+								       
+    public int getNumSteps() { return 1; }
+									   
+    public Object getModelElement() {
+	if (_item != null) {
+	    VectorSet offs = _item.getOffenders();
+	    if (offs.size() >= 1) {
+		Object me = /*(MModelElement)*/ offs.elementAt(0);
+		return me;
+	    }
+	}
+	return null;
+    }
+									       
+    public String getSuggestion() {
+	if (_suggestion != null) return _suggestion;
+	Object me = getModelElement();
+	if (me != null) {
+	    String n = ModelFacade.getName(me);
+	    return n;
+	}
+	return "";
+    }
+    public void setSuggestion(String s) { _origSuggest = _suggestion = s; }
 
-    /**
-     * @param s the instructions
-     */
-    public void setInstructions(String s) { instructions = s; }
+    public void setInstructions(String s) { _instructions = s; }
 
-    /**
-     * @param b if true, then the wizard step needs userinput,
-     *          i.e. it must be edited
-     */
-    public void setMustEdit(boolean b) { mustEdit = b; }
+    public void setMustEdit(boolean b) { _mustEdit = b; }
 
-    /**
-     * Create a new panel for the given step.
-     *
-     * @see org.argouml.cognitive.ui.Wizard#makePanel(int)
-     */
+    /** Create a new panel for the given step.  */
     public JPanel makePanel(int newStep) {
 	switch (newStep) {
 	case 1:
-	    if (step1 == null) {
-		step1 = new WizStepTextField(this, instructions,
-					      label, offerSuggestion());
+	    if (_step1 == null) {
+		_step1 = new WizStepTextField(this, _instructions,
+					      _label, getSuggestion());
 	    }
-	    return step1;
+	    return _step1;
 	}
 	return null;
     }
 
-    /**
-     * @see org.argouml.uml.cognitive.critics.UMLWizard#setSuggestion(java.lang.String)
-     */
-    public void setSuggestion(String s) {
-        origSuggest = s;
-        super.setSuggestion(s);
-    }
-
-
-    /**
-     * Return false if the user has not edited the text and they were required
-     * to.
-     *
-     * @see org.argouml.cognitive.ui.Wizard#canGoNext()
-     */
+    /** Return false iff the user has not edited the text and they were
+     *  required to. */
     public boolean canGoNext() {
 	if (!super.canGoNext()) return false;
-	if (step1 != null) {
-	    boolean changed = origSuggest.equals(step1.getText());
-	    if (mustEdit && !changed) return false;
+	if (_step1 != null) {
+	    boolean changed = _origSuggest.equals(_step1.getText());
+	    if (_mustEdit && !changed) return false;
 	}
 	return true;
     }
 
-    /**
-     * Take action at the completion of a step. For example, when the
-     * given step is 0, do nothing; and when the given step is 1, do
-     * the first action.  Argo non-modal wizards should take action as
-     * they do along, as soon as possible, they should not wait until
-     * the final step.
-     *
-     * @see org.argouml.cognitive.ui.Wizard#doAction(int)
-     */
+    /** Take action at the completion of a step. For example, when the
+     *  given step is 0, do nothing; and when the given step is 1, do
+     *  the first action.  Argo non-modal wizards should take action as
+     *  they do along, as soon as possible, they should not wait until
+     *  the final step. */
     public void doAction(int oldStep) {
-	LOG.debug("doAction " + oldStep);
+	cat.debug("doAction " + oldStep);
 	switch (oldStep) {
 	case 1:
-	    String newName = getSuggestion();
-	    if (step1 != null) {
-	        newName = step1.getText();
-	    }
+	    String newName = _suggestion;
+	    if (_step1 != null) newName = _step1.getText();
 	    try {
 		Object me = getModelElement();
-		Model.getCoreHelper().setName(me, newName);
+		ModelFacade.setName(me, newName);
 	    }
 	    catch (Exception pve) {
-		LOG.error("could not set name", pve);
+		cat.error("could not set name", pve);
 	    }
 	}
-    }
-
-    /**
-     * @return Returns the instructions.
-     */
-    protected String getInstructions() {
-        return instructions;
     }
 } /* end class WizMEName */

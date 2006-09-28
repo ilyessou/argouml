@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,75 +22,107 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: UMLStateDiagram.java
+// Classes: UMLStateDiagram
+// Original Author: your email here
+
+// $Id$
+
 package org.argouml.uml.diagram.state.ui;
 
-import java.beans.PropertyChangeEvent;
 import java.beans.PropertyVetoException;
 
 import javax.swing.Action;
 
 import org.apache.log4j.Logger;
-import org.argouml.i18n.Translator;
+
 import org.argouml.kernel.ProjectManager;
-import org.argouml.model.DeleteInstanceEvent;
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
+import org.argouml.model.uml.UmlModelEventPump;
 import org.argouml.ui.CmdCreateNode;
 import org.argouml.ui.CmdSetMode;
-import org.argouml.uml.diagram.UMLMutableGraphSupport;
 import org.argouml.uml.diagram.state.StateDiagramGraphModel;
-import org.argouml.uml.diagram.ui.RadioAction;
 import org.argouml.uml.diagram.ui.UMLDiagram;
+import org.argouml.uml.diagram.ui.ActionAddNote;
+
 import org.tigris.gef.base.LayerPerspective;
 import org.tigris.gef.base.LayerPerspectiveMutable;
 import org.tigris.gef.base.ModeCreatePolyEdge;
 
+import ru.novosoft.uml.MElementEvent;
 
-/**
- * The UML Statechart diagram. <p>
- * 
- * The correct name for this class would be 
- * "UMLStatechartDiagram". See issue 2306.
+
+/** The correct name for this class is "UMLStatechartDiagram". See issue 2306.
+ *
  */
 public class UMLStateDiagram extends UMLDiagram {
-    /**
-     * 
-     */
-    private static final long serialVersionUID = -1541136327444703151L;
-
-    /**
-     * Logger.
-     */
+    /** logger */
     private static final Logger LOG = Logger.getLogger(UMLStateDiagram.class);
 
     /**
      * this diagram needs to be deleted when its statemachine is deleted.
      */
-    private Object theStateMachine;
+    Object theStateMachine;
 
     ////////////////
     // actions for toolbar
 
-    private Action actionStubState;
-    private Action actionState;
-    private Action actionSynchState;
-    private Action actionSubmachineState;
-    private Action actionCompositeState;
-    private Action actionStartPseudoState;
-    private Action actionFinalPseudoState;
-    private Action actionBranchPseudoState;
-    private Action actionForkPseudoState;
-    private Action actionJoinPseudoState;
-    private Action actionShallowHistoryPseudoState;
-    private Action actionDeepHistoryPseudoState;
-    private Action actionTransition;
-    private Action actionJunctionPseudoState;
+    protected static Action _actionState =
+        new CmdCreateNode(ModelFacade.STATE, "State");
 
+    protected static Action _actionCompositeState =
+        new CmdCreateNode(ModelFacade.COMPOSITESTATE, "CompositeState");
+
+    // start state, end state, forks, joins, etc.
+    protected static Action _actionStartPseudoState =
+        new ActionCreatePseudostate(
+            ModelFacade.INITIAL_PSEUDOSTATEKIND,
+            "Initial");
+
+    protected static Action _actionFinalPseudoState =
+        new CmdCreateNode(ModelFacade.FINALSTATE, "FinalState");
+
+    protected static Action _actionBranchPseudoState =
+        new ActionCreatePseudostate(
+            ModelFacade.BRANCH_PSEUDOSTATEKIND,
+            /* TODO: The next line shall be changed into "Choice" for V0.17.1.*/
+            "Branch");
+
+    protected static Action _actionForkPseudoState =
+        new ActionCreatePseudostate(ModelFacade.FORK_PSEUDOSTATEKIND, "Fork");
+
+    protected static Action _actionJoinPseudoState =
+        new ActionCreatePseudostate(ModelFacade.JOIN_PSEUDOSTATEKIND, "Join");
+
+    protected static Action _actionShallowHistoryPseudoState =
+        new ActionCreatePseudostate(
+            ModelFacade.SHALLOWHISTORY_PSEUDOSTATEKIND,
+            "ShallowHistory");
+
+    protected static Action _actionDeepHistoryPseudoState =
+        new ActionCreatePseudostate(
+            ModelFacade.DEEPHISTORY_PSEUDOSTATEKIND,
+            "DeepHistory");
+
+    protected static Action _actionTransition =
+        new CmdSetMode(
+            ModeCreatePolyEdge.class,
+            "edgeClass",
+            ModelFacade.TRANSITION,
+            "Transition");
+
+    protected static Action _actionJunctionPseudoState =
+        new ActionCreatePseudostate(
+            ModelFacade.JUNCTION_PSEUDOSTATEKIND,
+            "Junction"); 
+    
     ////////////////////////////////////////////////////////////////
     // contructors
 
-    /**
-     * This constructor is used to build a dummy statechart diagram so
-     * that a project will load properly.
+    protected static int _StateDiagramSerial = 1;
+    /** 
+     *  this constructor is used to build a dummy statechart diagram so
+     *  that a project will load properly.
      */
     public UMLStateDiagram() {
 
@@ -99,90 +131,42 @@ public class UMLStateDiagram extends UMLDiagram {
         } catch (PropertyVetoException pve) { }
     }
 
-    /**
-     * Constructor.
-     *
-     * @param namespace the NameSpace for the new diagram
-     * @param machine the StateMachine for the new diagram
-     */
-    public UMLStateDiagram(Object namespace, Object machine) {
+    public UMLStateDiagram(Object namespace, Object sm) {
         this();
 
-        if (!Model.getFacade().isAStateMachine(machine)) {
-            throw new IllegalStateException(
-                "No StateMachine given to create a Statechart diagram");
-        }
-        if (namespace == null) {
-            namespace = getNamespaceFromMachine(machine);
-        }
-        if (!Model.getFacade().isANamespace(namespace)) {
+        if (!ModelFacade.isAStateMachine(sm))
             throw new IllegalArgumentException();
-        }
 
-        if (Model.getFacade().getName(namespace) != null) {
-            if (!Model.getFacade().getName(namespace).trim().equals("")) {
-                String name = null;
-                String diagramName = Model.getFacade().getName(namespace);
-                int number =
-                    (Model.getFacade().getBehaviors(namespace)) == null
-                    ? 0
-                            : Model.getFacade().getBehaviors(namespace).size();
-                name = diagramName + " " + (number++);
-                LOG.info("UMLStateDiagram constructor: String name = " + name);
-                try {
-                    setName(name);
-                } catch (PropertyVetoException pve) { }
+        if (sm != null && namespace == null) {
+            Object context = ModelFacade.getContext(sm);
+            if (ModelFacade.isAClassifier(context)) {
+                namespace = context;
+            } else if (ModelFacade.isABehavioralFeature(context)) {
+                namespace = ModelFacade.getOwner(context);
             }
         }
-        setup(namespace, machine);
+        if (namespace != null && ModelFacade.getName(namespace) != null) {
+            String name = null, diag_name = ModelFacade.getName(namespace);
+            int number =
+                (ModelFacade.getBehaviors(namespace)) == null
+                    ? 0
+                    : ModelFacade.getBehaviors(namespace).size();
+            name = diag_name + " " + (number++);
+            LOG.info("UMLStateDiagram constructor: String name = " + name);
+            try {
+                setName(name);
+            } catch (PropertyVetoException pve) { }
+        }
+        if (namespace != null) {
+            setup(namespace, sm);
+        }
     }
 
     /**
-     * From a given StateMachine, find the Namespace. 
-     * Guaranteed to give a non-null result.
-     * 
-     * @param machine the given StateMachine. 
-     *          If not a StateMachine: throws exception
-     * @return the best possible namespace to be deducted
-     */
-    private Object getNamespaceFromMachine(Object machine) {
-        if (!Model.getFacade().isAStateMachine(machine)) {
-            throw new IllegalStateException(
-                "No StateMachine given to create a Statechart diagram");
-        }
-        
-        Object namespace = Model.getFacade().getNamespace(machine);
-        if (namespace != null) return namespace;
-        
-        Object context = Model.getFacade().getContext(machine);
-        if (Model.getFacade().isAClassifier(context)) {
-            namespace = context;
-        } else if (Model.getFacade().isABehavioralFeature(context)) {
-            namespace = Model.getFacade().getNamespace( // or just the owner?
-                    Model.getFacade().getOwner(context));
-        }
-        if (namespace == null) {
-            namespace = 
-                ProjectManager.getManager().getCurrentProject().getRoot();
-        }
-        if (namespace == null || !Model.getFacade().isANamespace(namespace)) {
-            throw new IllegalStateException(
-                    "Can not deduce a Namespace from a StateMachine");
-        }
-        return namespace;
-    }
-
-    /**
-     * The owner of a statechart diagram is the statemachine
+     * The owner of a statechart diagram is the statechart diagram
      * it's showing.
-     * @see org.argouml.uml.diagram.ui.UMLDiagram#getOwner()
      */
     public Object getOwner() {
-        if (!(getGraphModel() instanceof StateDiagramGraphModel)) {
-            throw new IllegalStateException(
-                    "Incorrect graph model of "
-                    + getGraphModel().getClass().getName());
-        }
         StateDiagramGraphModel gm = (StateDiagramGraphModel) getGraphModel();
         return gm.getMachine();
     }
@@ -195,23 +179,31 @@ public class UMLStateDiagram extends UMLDiagram {
      * @see org.tigris.gef.base.Diagram#initialize(Object)
      */
     public void initialize(Object o) {
-        if (Model.getFacade().isAStateMachine(o)) {
-            Object machine = o;
-            Object contextNamespace = getNamespaceFromMachine(machine);
-
-            setup(contextNamespace, machine);
+        if (ModelFacade.isAStateMachine(o)) {
+            Object sm = /*(MStateMachine)*/ o;
+            Object context = ModelFacade.getContext(sm);
+            Object contextNamespace = null;
+            if (ModelFacade.isAClassifier(context)) {
+                contextNamespace = context;
+            } else if (ModelFacade.isABehavioralFeature(context)) {
+                contextNamespace =
+                    ModelFacade.getNamespace(ModelFacade.getOwner(context));
+            }
+            if (contextNamespace != null) {
+                setup(contextNamespace, sm);
+            }
         } else {
             throw new IllegalStateException(
-                "Cannot find namespace "
+                "Cannot find context namespace "
                     + "while initializing "
                     + "statechart diagram");
         }
     }
 
-    /**
+    /** 
      * Method to perform a number of important initializations of a
      * StateDiagram.<p>
-     *
+     * 
      * Each diagram type has a similar <I>UMLxxxDiagram</I> class.<p>
      *
      * Changed <I>lay</I> from <I>LayerPerspective</I> to
@@ -221,74 +213,46 @@ public class UMLStateDiagram extends UMLDiagram {
      * in <I>LayerManager</I>(GEF) to control the adding, changing and
      * deleting layers on the diagram...
      *
-     * @param namespace Class from the UML model...connects the class to
+     * @param namespace MClass from the model in NSUML...connects the class to
      * the Statechart diagram.
-     * @param machine StateMachine from the UML model
+     * @param sm MStateMachine from the model in NSUML...
      * @author psager@tigris.org Jan. 24, 2oo2
      */
-    public void setup(Object namespace, Object machine) {
+    public void setup(Object namespace,
+		      Object /*MStateMachine*/ sm) {
         setNamespace(namespace);
 
-        theStateMachine = machine;
+        // add the diagram as a listener to the statemachine so
+        // that when the statemachine is removed() the diagram is deleted also.
+        UmlModelEventPump.getPump().addModelEventListener(this, sm);
+        theStateMachine = sm;
 
         StateDiagramGraphModel gm = new StateDiagramGraphModel();
-        gm.setHomeModel(namespace);
-        if (theStateMachine != null) {
-            gm.setMachine(theStateMachine);
-        }
+        gm.setNamespace(namespace);
+        if (sm != null)
+            gm.setMachine(sm);
         StateDiagramRenderer rend = new StateDiagramRenderer(); // singleton
 
-        LayerPerspective lay = new LayerPerspectiveMutable(
-                Model.getFacade().getName(namespace), gm);
+        LayerPerspective lay =
+            new LayerPerspectiveMutable(ModelFacade.getName(namespace), gm);
         lay.setGraphNodeRenderer(rend);
         lay.setGraphEdgeRenderer(rend);
         setLayer(lay);
 
-        /* Listen to machine deletion, 
-         * to delete the diagram. */
-        Model.getPump().addModelEventListener(this, theStateMachine, 
-                new String[] {"remove", "namespace"});
     }
 
-    /**
-     * @see org.argouml.uml.diagram.ui.UMLDiagram#propertyChange(java.beans.PropertyChangeEvent)
-     */
-    public void propertyChange(PropertyChangeEvent evt) {
-        if ((evt.getSource() == theStateMachine)
-                && (evt instanceof DeleteInstanceEvent)
-                && "remove".equals(evt.getPropertyName())) {
-            Model.getPump().removeModelEventListener(this, 
-                    theStateMachine, new String[] {"remove", "namespace"});
-            ProjectManager.getManager().getCurrentProject().moveToTrash(this);
-        }
-        if (evt.getSource() == theStateMachine 
-                && "namespace".equals(evt.getPropertyName())) {
-            Object newNamespace = evt.getNewValue();
-            if (newNamespace != null // this in case we are being deleted 
-                    && getNamespace() != newNamespace) {
-                /* The namespace of the statemachine is changed! */
-                setNamespace(newNamespace);
-                ((UMLMutableGraphSupport) getGraphModel())
-                                .setHomeModel(newNamespace);
-            }
-        }
-    }
-
-    /**
-     * @return the StateMachine belonging to this diagram
-     */
     public Object getStateMachine() {
-        return ((StateDiagramGraphModel) getGraphModel()).getMachine();
+        return /*(MStateMachine)*/
+         ((StateDiagramGraphModel) getGraphModel()).getMachine();
     }
 
     /**
-     * @param sm Set the StateMachine for this diagram.
+     * @param sm
      */
     public void setStateMachine(Object sm) {
 
-        if (!Model.getFacade().isAStateMachine(sm)) {
-            throw new IllegalArgumentException("This is not a StateMachine");
-        }
+        if (!ModelFacade.isAStateMachine(sm))
+            throw new IllegalArgumentException();
 
         ((StateDiagramGraphModel) getGraphModel()).setMachine(sm);
     }
@@ -296,37 +260,34 @@ public class UMLStateDiagram extends UMLDiagram {
     /**
      * Get the actions from which to create a toolbar or equivalent
      * graphic triggers.
-     * @see org.argouml.uml.diagram.ui.UMLDiagram#getUmlActions()
      */
     protected Object[] getUmlActions() {
-        Object[] actions =
+        Object actions[] =
         {
-            getActionState(),
-	    getActionCompositeState(),
-	    getActionTransition(),
-	    getActionSynchState(),
-	    getActionSubmachineState(),
-	    getActionStubState(),
+	    _actionState,
+	    _actionCompositeState,
+	    _actionTransition,
 	    null,
-	    getActionStartPseudoState(),
-	    getActionFinalPseudoState(),
-	    getActionJunctionPseudoState(),
-            getActionChoicePseudoState(),
-	    getActionForkPseudoState(),
-	    getActionJoinPseudoState(),
-	    getActionShallowHistoryPseudoState(),
-	    getActionDeepHistoryPseudoState(),
-        };
+	    _actionStartPseudoState,
+	    _actionFinalPseudoState,
+	    /* TODO: The next line shall be uncommented in V0.17.1. */
+	    /*_actionJunctionPseudoState,*/
+	    _actionBranchPseudoState,
+	    _actionForkPseudoState,
+	    _actionJoinPseudoState,
+	    _actionShallowHistoryPseudoState,
+	    _actionDeepHistoryPseudoState,
+	    null,
+	    ActionAddNote.SINGLETON,
+	    null,
+	};
         return actions;
     }
 
-    /**
-     * Creates a name for the diagram.
-     *
-     * @return the new diagram name
-     */
-    protected String getNewDiagramName() {
-        String name = getLabelName() + " " + getNextDiagramSerial();
+    protected static String getNewDiagramName() {
+        String name = null;
+        name = "Statechart Diagram " + _StateDiagramSerial;
+        _StateDiagramSerial++;
         if (!ProjectManager.getManager().getCurrentProject()
                  .isValidDiagramName(name)) {
             name = getNewDiagramName();
@@ -335,212 +296,16 @@ public class UMLStateDiagram extends UMLDiagram {
     }
 
     /**
-     * @see org.argouml.uml.diagram.ui.UMLDiagram#getLabelName()
+     * This diagram listens to NSUML events from its Statemachine;
+     * When the Statemachine is removed, we also want to delete this
+     * diagram too.
      */
-    public String getLabelName() {
-        return Translator.localize("label.state-chart-diagram");
-    }
+    public void removed(MElementEvent e) {
 
-    /**
-     * @return Returns the actionChoicePseudoState.
-     */
-    protected Action getActionChoicePseudoState() {
-        if (actionBranchPseudoState == null) {
-            actionBranchPseudoState = new RadioAction(
-                    new ActionCreatePseudostate(Model.getPseudostateKind()
-                            .getChoice(), "button.new-choice"));
-        }
-        return actionBranchPseudoState;
-    }
-
-    /**
-     * @return Returns the actionCompositeState.
-     */
-    protected Action getActionCompositeState() {
-        if (actionCompositeState == null) {
-            actionCompositeState =
-                new RadioAction(new CmdCreateNode(
-                        Model.getMetaTypes().getCompositeState(),
-                        "button.new-compositestate"));
-        }
-        return actionCompositeState;
-    }
-    /**
-     * @return Returns the actionDeepHistoryPseudoState.
-     */
-    protected Action getActionDeepHistoryPseudoState() {
-        if (actionDeepHistoryPseudoState == null) {
-            actionDeepHistoryPseudoState = new RadioAction(
-                    new ActionCreatePseudostate(
-                        Model.getPseudostateKind().getDeepHistory(),
-                        "button.new-deephistory"));
-        }
-        return actionDeepHistoryPseudoState;
-    }
-    /**
-     * @return Returns the actionFinalPseudoState.
-     */
-    protected Action getActionFinalPseudoState() {
-        if (actionFinalPseudoState == null) {
-            actionFinalPseudoState =
-                new RadioAction(
-                        new CmdCreateNode(
-                                Model.getMetaTypes().getFinalState(),
-                                "button.new-finalstate"));
-        }
-        return actionFinalPseudoState;
-    }
-    /**
-     * @return Returns the actionForkPseudoState.
-     */
-    protected Action getActionForkPseudoState() {
-        if (actionForkPseudoState == null) {
-            actionForkPseudoState = new RadioAction(
-                    new ActionCreatePseudostate(
-                            Model.getPseudostateKind()
-                            .getFork(), "button.new-fork"));
-        }
-        return actionForkPseudoState;
-    }
-    /**
-     * @return Returns the actionJoinPseudoState.
-     */
-    protected Action getActionJoinPseudoState() {
-        if (actionJoinPseudoState == null) {
-            actionJoinPseudoState = new RadioAction(new ActionCreatePseudostate(
-                    Model.getPseudostateKind().getJoin(), "button.new-join"));
-        }
-        return actionJoinPseudoState;
-    }
-    /**
-     * @return Returns the actionJunctionPseudoState.
-     */
-    protected Action getActionJunctionPseudoState() {
-        if (actionJunctionPseudoState == null) {
-            actionJunctionPseudoState = new RadioAction(
-                    new ActionCreatePseudostate(
-                        Model.getPseudostateKind().getJunction(),
-                        "button.new-junction"));
-        }
-        return actionJunctionPseudoState;
-    }
-    /**
-     * @return Returns the actionShallowHistoryPseudoState.
-     */
-    protected Action getActionShallowHistoryPseudoState() {
-        if (actionShallowHistoryPseudoState == null) {
-            actionShallowHistoryPseudoState = new RadioAction(
-                    new ActionCreatePseudostate(
-                        Model.getPseudostateKind().getShallowHistory(),
-                        "button.new-shallowhistory"));
-        }
-        return actionShallowHistoryPseudoState;
-    }
-    /**
-     * @return Returns the actionStartPseudoState.
-     */
-    protected Action getActionStartPseudoState() {
-        if (actionStartPseudoState == null) {
-            actionStartPseudoState = new RadioAction(
-                    new ActionCreatePseudostate(
-                        Model.getPseudostateKind().getInitial(),
-                        "button.new-initial"));
-        }
-        return actionStartPseudoState;
-    }
-    /**
-     * @return Returns the actionState.
-     */
-    protected Action getActionState() {
-        if (actionState == null) {
-            actionState =
-                new RadioAction(
-                        new CmdCreateNode(Model.getMetaTypes().getSimpleState(),
-                                	  "button.new-simplestate"));
-        }
-        return actionState;
-    }
-
-    /**
-     * @return Returns the actionSynchState.
-     */
-    protected Action getActionSynchState() {
-        if (actionSynchState == null) {
-            actionSynchState =
-                new RadioAction(
-                        new CmdCreateNode(
-                                Model.getMetaTypes().getSynchState(),
-                                "button.new-synchstate"));
-        }
-        return actionSynchState;
-    }
-
-    /**
-     * @return Returns the actionSubmachineState.
-     */
-    protected Action getActionSubmachineState() {
-        if (actionSubmachineState == null) {
-            actionSubmachineState =
-                    new RadioAction(
-                            new CmdCreateNode(
-                                    Model.getMetaTypes().getSubmachineState(),
-                                    "button.new-submachinestate"));
-        }
-        return actionSubmachineState;
-    }
-
-    /**
-     * @return Returns the actionSubmachineState.
-     */
-    protected Action getActionStubState() {
-        if (actionStubState == null) {
-            actionStubState =
-                    new RadioAction(
-                            new CmdCreateNode(
-                                    Model.getMetaTypes().getStubState(),
-                                    "button.new-stubstate"));
-        }
-        return actionStubState;
-    }
-
-    /**
-     * @return Returns the actionTransition.
-     */
-    protected Action getActionTransition() {
-        if (actionTransition == null) {
-            actionTransition = new RadioAction(
-                    new CmdSetMode(
-                        ModeCreatePolyEdge.class,
-                        "edgeClass",
-                        Model.getMetaTypes().getTransition(),
-                        "button.new-transition"));
-        }
-        return actionTransition;
-    }
-
-    /**
-     * @see org.argouml.uml.diagram.ui.UMLDiagram#getDependentElement()
-     */
-    public Object getDependentElement() {
-        return getStateMachine(); /* The StateMachine. */
-    }
-
-    /**
-     * @see org.argouml.uml.diagram.ui.UMLDiagram#isRelocationAllowed(java.lang.Object)
-     */
-    public boolean isRelocationAllowed(Object base)  {
-    	return false;
-    	/* TODO: We may return the following when the
-    	 * relocate() has been implemented. */
-//    	Model.getStateMachinesHelper()
-//        	.isAddingStatemachineAllowed(base);
-    }
-
-    /**
-     * @see org.argouml.uml.diagram.ui.UMLDiagram#relocate(java.lang.Object)
-     */
-    public boolean relocate(Object base) {
-        return false;
+        UmlModelEventPump.getPump().removeModelEventListener(
+            this,
+            theStateMachine);
+        super.removed(e);
     }
 
 } /* end class UMLStateDiagram */

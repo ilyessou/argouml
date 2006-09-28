@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,6 +22,7 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $Id$
 
 package org.argouml.ui.explorer.rules;
 
@@ -30,37 +31,34 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.Vector;
 
-import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
 
 /**
- * Go rule to navigate from a state to it's do-activity. Used in the package
+ * Go rule to navigate from a state to it's doactivity. Used in the package
  * perspective.
- *
- * @author jaap.branderhorst@xs4all.nl
+ * 
+ * @author jaap.branderhorst@xs4all.nl	
  * @since Dec 25, 2002
  */
 public class GoStateToDoActivity extends AbstractPerspectiveRule {
 
     /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getChildren(java.lang.Object)
+     * @see org.argouml.ui.AbstractGoRule#getChildren(java.lang.Object)
      */
     public Collection getChildren(Object parent) {
-        if (Model.getFacade().isAState(parent)
-	    && Model.getFacade().getDoActivity(parent) != null) {
+        if (ModelFacade.isAState(parent)
+	    && ModelFacade.getDoActivity(parent) != null)
+	{
             Vector children = new Vector();
-
-            children.add(Model.getFacade().getDoActivity(parent));
+            
+            children.add(ModelFacade.getDoActivity(parent));
             return children;
         }
         return null;
     }
 
-    /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getDependencies(java.lang.Object)
-     */
     public Set getDependencies(Object parent) {
-        if (Model.getFacade().isAState(parent)) {
+        if (ModelFacade.isAState(parent)) {
 	    Set set = new HashSet();
 	    set.add(parent);
 	    return set;
@@ -69,10 +67,10 @@ public class GoStateToDoActivity extends AbstractPerspectiveRule {
     }
 
     /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getRuleName()
+     * @see org.argouml.ui.AbstractGoRule#getRuleName()
      */
     public String getRuleName() {
-        return Translator.localize ("misc.state.do-activity");
+        return "State->Do Activity"; 
     }
 
 }

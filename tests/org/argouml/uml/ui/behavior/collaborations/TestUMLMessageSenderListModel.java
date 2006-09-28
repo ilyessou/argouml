@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -26,18 +26,24 @@ package org.argouml.uml.ui.behavior.collaborations;
 
 import junit.framework.TestCase;
 
-import org.argouml.model.Model;
+import org.argouml.model.uml.UmlFactory;
+import org.argouml.model.uml.behavioralelements.collaborations.CollaborationsFactory;
 import org.argouml.uml.ui.MockUMLUserInterfaceContainer;
+
+import ru.novosoft.uml.MFactoryImpl;
+import ru.novosoft.uml.behavior.collaborations.MClassifierRole;
+import ru.novosoft.uml.behavior.collaborations.MMessage;
 
 /**
  * @since Oct 30, 2002
  * @author jaap.branderhorst@xs4all.nl
  */
 public class TestUMLMessageSenderListModel extends TestCase {
-
+  
+    private int oldEventPolicy;
     private UMLMessageSenderListModel model;
-    private Object elem;
-
+    private MMessage elem;
+    
     /**
      * Constructor for TestUMLMessageSenderListModel.
      * @param arg0 is the name of the test case.
@@ -46,52 +52,45 @@ public class TestUMLMessageSenderListModel extends TestCase {
         super(arg0);
     }
 
-
+    
     /**
      * @see junit.framework.TestCase#setUp()
      */
     protected void setUp() throws Exception {
         super.setUp();
-        elem = Model.getCollaborationsFactory().createMessage();
-        MockUMLUserInterfaceContainer cont =
-            new MockUMLUserInterfaceContainer();
+        elem = CollaborationsFactory.getFactory().createMessage();
+        oldEventPolicy = MFactoryImpl.getEventPolicy();
+        MFactoryImpl.setEventPolicy(MFactoryImpl.EVENT_POLICY_IMMEDIATE);
+        MockUMLUserInterfaceContainer cont = new MockUMLUserInterfaceContainer();
         cont.setTarget(elem);
         model = new UMLMessageSenderListModel();
         model.setTarget(elem);
-        Model.getPump().flushModelEvents();
+        elem.addMElementListener(model);
     }
-
+    
     /**
      * @see junit.framework.TestCase#tearDown()
      */
     protected void tearDown() throws Exception {
         super.tearDown();
-        Model.getUmlFactory().delete(elem);
+        UmlFactory.getFactory().delete(elem);
+        MFactoryImpl.setEventPolicy(oldEventPolicy);
         model = null;
     }
-
-    /**
-     * Test setSender().
-     */
+    
     public void testSetSender() {
-        Object role =
-            Model.getCollaborationsFactory().createClassifierRole();
-        Model.getCollaborationsHelper().setSender(elem, role);
-        Model.getPump().flushModelEvents();
+        MClassifierRole role = CollaborationsFactory.getFactory().createClassifierRole();
+        elem.setSender(role);
         assertEquals(1, model.getSize());
         assertEquals(role, model.getElementAt(0));
     }
-
-    /**
-     * Test setSender() with null argument.
-     */
+    
     public void testRemoveReceiver() {
-        Object role =
-            Model.getCollaborationsFactory().createClassifierRole();
-        Model.getCollaborationsHelper().setSender(elem, role);
-        Model.getCollaborationsHelper().setSender(elem, null);
-        Model.getPump().flushModelEvents();
+        MClassifierRole role = CollaborationsFactory.getFactory().createClassifierRole();
+        elem.setSender(role);
+        elem.setSender(null);
         assertEquals(0, model.getSize());
         assertTrue(model.isEmpty());
-    }
+    } 
+
 }

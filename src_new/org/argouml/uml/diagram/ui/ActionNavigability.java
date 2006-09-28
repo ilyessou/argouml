@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2001 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,13 +24,9 @@
 
 package org.argouml.uml.diagram.ui;
 
-import java.awt.event.ActionEvent;
-
-import javax.swing.Action;
-
-import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
-import org.tigris.gef.undo.UndoableAction;
+import java.awt.event.*;
+import org.argouml.model.ModelFacade;
+import org.argouml.uml.ui.UMLAction;
 
 /**
  * A class to perform the action of changing the unidirectional or
@@ -38,36 +34,14 @@ import org.tigris.gef.undo.UndoableAction;
  *
  * @author  Bob Tarling
  */
-public class ActionNavigability extends UndoableAction {
-    /**
-     * Enumeration constant for <code>BIDIRECTIONAL</code> navigability.
-     */
-    public static final int BIDIRECTIONAL = 0;
+public class ActionNavigability extends UMLAction {
+    final public static int BIDIRECTIONAL = 0;
+    final public static int STARTTOEND = 1;
+    final public static int ENDTOSTART = 2;
 
-    /**
-     * Enumeration constant for <code>STARTTOEND</code> navigability.
-     */
-    public static final int STARTTOEND = 1;
-
-    /**
-     * Enumeration constant for <code>ENDTOSTART</code> navigability.
-     */
-    public static final int ENDTOSTART = 2;
-
-    /**
-     * The actual navigability of this action.
-     */
-    private int nav = BIDIRECTIONAL;
-
-    /**
-     * The association start.
-     */
-    private Object assocStart;
-
-    /**
-     * The association end.
-     */
-    private Object assocEnd;
+    int nav = BIDIRECTIONAL;
+    Object assocStart = null;
+    Object assocEnd = null;
 
     /**
      * The <code>ActionNavigability</code> constructor.
@@ -79,9 +53,8 @@ public class ActionNavigability extends UndoableAction {
      * @param nav the type of navigation required in the association
      * being either <ul> <li>BIDIRECTIONAL <li>STARTTOEND
      * <li>ENDTOSTART </ul>
-     *
-     * @return the constructed class
      */
+
     public static ActionNavigability newActionNavigability(Object assocStart,
 							   Object assocEnd,
 							   int nav) {
@@ -91,95 +64,49 @@ public class ActionNavigability extends UndoableAction {
 				      nav);
     }
 
-    /**
-     * Build a description string from the given association ends,
-     * and the navigability.
-     *
-     * @param assocStart association end 1
-     * @param assocEnd   association end 2
-     * @param nav        the navigability
-     * @return           the string containing a human-readible indication
-     *                   of the navigability
-     */
-    private static String getDescription(Object assocStart,
+    static private String getDescription(Object assocStart,
 					 Object assocEnd,
 					 int nav) {
-        String startName =
-            Model.getFacade().getName(Model.getFacade().getType(assocStart));
-        String endName =
-            Model.getFacade().getName(Model.getFacade().getType(assocEnd));
+        String startName = ModelFacade.getName(ModelFacade.getType(assocStart));
+        String endName = ModelFacade.getName(ModelFacade.getType(assocEnd));
 
-        if (startName == null || startName.length() == 0) {
-            startName = Translator.localize("action.navigation.anon");
-        }
-        if (endName == null || endName.length() == 0) {
-            endName = Translator.localize("action.navigation.anon");
-        }
+        if (startName == null || startName.length() == 0) startName = "anon";
+        if (endName == null || endName.length() == 0) endName = "anon";
 
         if (nav == STARTTOEND) {
-            return Translator.messageFormat(
-                    "action.navigation.from-to",
-                    new Object[] {
-                        startName,
-                        endName,
-                    }
-            );
-        } else if (nav == ENDTOSTART) {
-            return Translator.messageFormat(
-                    "action.navigation.from-to",
-                    new Object[] {
-                        endName,
-                        startName,
-                    }
-            );
-        } else {
-            return Translator.localize("action.navigation.bidirectional");
+            return startName + " to " + endName;
+        }
+        else if (nav == ENDTOSTART) {
+            return endName + " to " + startName;
+        }
+        else {
+            return "Bidirectional";
         }
     }
 
-    /**
-     * The constructor.
-     *
-     * @param label   the description as build in <code>getDescription</code>
-     * @param theAssociationStart association end 1
-     * @param theAssociationEnd   association end 2
-     * @param theNavigability     the navigability: one of
-     *                            BIDIRECTIONAL, STARTTOEND, ENDTOSTART
-     */
     protected ActionNavigability(String label,
-				 Object theAssociationStart,
-				 Object theAssociationEnd,
-				 int theNavigability) {
-        super(label, null);
-        // Set the tooltip string:
-        putValue(Action.SHORT_DESCRIPTION, label);
+				 Object assocStart,
+				 Object assocEnd,
+				 int nav) {
+        super(label, NO_ICON);
 
-        this.nav = theNavigability;
-        this.assocStart = theAssociationStart;
-        this.assocEnd = theAssociationEnd;
+        this.nav = nav;
+        this.assocStart = assocStart;
+        this.assocEnd = assocEnd;
     }
 
     /**
-     * To perform the action of changing navigability.
-     *
-     * @see java.awt.event.ActionListener#actionPerformed(
-     *         java.awt.event.ActionEvent)
+     * To perform the action of changing navigability
      */
     public void actionPerformed(ActionEvent ae) {
-    	super.actionPerformed(ae);
-	Model.getCoreHelper().setNavigable(assocStart,
-	        (nav == BIDIRECTIONAL || nav == ENDTOSTART));
-        Model.getCoreHelper().setNavigable(assocEnd,
-                (nav == BIDIRECTIONAL || nav == STARTTOEND));
+	ModelFacade.setNavigable(assocStart, (nav == BIDIRECTIONAL || nav == ENDTOSTART));
+        ModelFacade.setNavigable(assocEnd,   (nav == BIDIRECTIONAL || nav == STARTTOEND));
     }
 
     /**
-     * The is action is always enabled.
-     *
-     *@return always true (the action is always enabled)
-     * @see org.tigris.gef.undo.UndoableAction#isEnabled()
+     * The is action is always enabled
      */
-    public boolean isEnabled() {
+    public boolean shouldBeEnabled() {
 	return true;
     }
 } /* end class ActionNavigability */

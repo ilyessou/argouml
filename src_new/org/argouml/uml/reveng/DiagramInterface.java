@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -25,16 +25,15 @@
 package org.argouml.uml.reveng;
 
 import java.beans.PropertyVetoException;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Vector;
+import java.util.List;
 
 import org.apache.log4j.Logger;
+
 import org.argouml.kernel.Project;
 import org.argouml.kernel.ProjectManager;
 import org.argouml.kernel.ProjectMember;
 import org.argouml.ui.ArgoDiagram;
-import org.argouml.uml.diagram.DiagramFactory;
 import org.argouml.uml.diagram.ProjectMemberDiagram;
 import org.argouml.uml.diagram.static_structure.ClassDiagramGraphModel;
 import org.argouml.uml.diagram.static_structure.ui.FigClass;
@@ -44,10 +43,11 @@ import org.argouml.uml.diagram.static_structure.ui.UMLClassDiagram;
 import org.tigris.gef.base.Editor;
 import org.tigris.gef.base.LayerPerspective;
 import org.tigris.gef.presentation.Fig;
+import org.argouml.model.ModelFacade;
 
 /**
- * Instances of this class interface the current Class diagram.<p>
- *
+ * Instances of this class interface the current Class diagram.
+ * <p>
  * This class is used by the import mechanism to create packages,
  * interfaces and classes within the diagrams.
  * It is also used to find the correct diagram to work in.
@@ -56,42 +56,44 @@ import org.tigris.gef.presentation.Fig;
  * @since 0.9
  */
 public class DiagramInterface {
-    /**
-     * Logger.
-     */
-    private static final Logger LOG =
-        Logger.getLogger(DiagramInterface.class);
 
-    private Editor currentEditor;
+    /**
+     * @deprecated by Linus Tolke as of 0.15.4. Use your own logger in your
+     * class. This will be removed.
+     */
+    protected static Logger cat =
+        Logger.getLogger(DiagramInterface.class);
+    
+    Editor _currentEditor = null;
 
     /**
      * To know what diagrams we have to layout after the import,
      * we store them in this Vector.
      */
-    private Vector modifiedDiagrams = new Vector();
+    Vector _modifiedDiagrams = new Vector();
 
     /**
      * The current GraphModel of the current classdiagram.
      */
-    private ClassDiagramGraphModel currentGM;
-
+    ClassDiagramGraphModel currentGM;
+    
     /**
      * The current Layer of the current classdiagram.
      */
-    private LayerPerspective currentLayer;
-
+    LayerPerspective currentLayer;
+    
     /**
      * The current diagram for the isInDiagram method.
      */
-    private ArgoDiagram currentDiagram;
-
+    ArgoDiagram currentDiagram;
+    
     /**
      * Creates a new DiagramInterface.
      *
      * @param editor The editor to operate on.
      */
     public DiagramInterface(Editor editor) {
-  	currentEditor = editor;
+  	_currentEditor = editor;
     }
 
     /**
@@ -100,7 +102,7 @@ public class DiagramInterface {
      * @return The current editor.
      */
     Editor getEditor() {
-	return currentEditor;
+	return _currentEditor;
     }
 
     /**
@@ -112,8 +114,8 @@ public class DiagramInterface {
      * @param diagram The diagram to mark as modified.
      */
     void markDiagramAsModified(Object diagram) {
-	if (!modifiedDiagrams.contains(diagram)) {
-	    modifiedDiagrams.add(diagram);
+	if (!_modifiedDiagrams.contains(diagram)) {
+	    _modifiedDiagrams.add(diagram);       
 	}
     }
 
@@ -123,14 +125,14 @@ public class DiagramInterface {
      * @return The list of modified diagrams.
      */
     public Vector getModifiedDiagrams() {
-	return modifiedDiagrams;
+	return _modifiedDiagrams;
     }
 
     /**
      * Reset the list of modified diagrams.
      */
     void resetModifiedDiagrams() {
-	modifiedDiagrams = new Vector();
+	_modifiedDiagrams = new Vector();
     }
 
     /**
@@ -140,14 +142,14 @@ public class DiagramInterface {
      * @param newPackage The package to add.
      */
     public void addPackage(Object newPackage) {
-
+        
         if (!isInDiagram(newPackage)) {
-
-            FigPackage newPackageFig = new FigPackage(currentGM, newPackage);
+            
+            FigPackage newPackageFig = new FigPackage( currentGM, newPackage);
             if (currentGM.canAddNode(newPackage)) {
-
-                currentLayer.add(newPackageFig);
+                
                 currentGM.addNode(newPackage);
+                currentLayer.add(newPackageFig);
                 currentLayer.putInPosition(newPackageFig);
             }
         }
@@ -162,14 +164,13 @@ public class DiagramInterface {
      *         false otherwise.
      */
     public boolean isInDiagram(Object p) {
-
-	if (currentDiagram == null) {
+        
+	if (currentDiagram == null)
             return false;
-        } else {
-            return currentDiagram.getNodes().contains(p);
-        }
+        else
+            return currentDiagram.getNodes(null).contains(p);
     }
-
+    
     /**
      * Check if this diagram already exists in the project.<p>
      *
@@ -177,19 +178,28 @@ public class DiagramInterface {
      * @return true if diagram exists in project.
      */
     public boolean isDiagramInProject(String name) {
-        Project project = ProjectManager.getManager().getCurrentProject();
-	return (findDiagramMemberByUniqueName(project,
-            getDiagramName(name) + ".pgml")) != null;
+	return ((ProjectManager.getManager().getCurrentProject()
+		 .findMemberByName( getDiagramName(name) + ".pgml")) != null);
     }
 
     /**
-     * Create a diagram name from a package name.
+     * Create a diagram name from a package name
      *
      * @param packageName The package name.
      * @return The name for the diagram.
      */
     private String getDiagramName(String packageName) {
 	return packageName.replace('.', '_') + "_classes";
+    }
+
+    /**
+     * Create a diagram name for a package
+     *
+     * @param p The package.
+     * @return The name for the diagram.
+     */
+    private String getDiagramName(Object p) {
+	return getDiagramName(ModelFacade.getName(p));
     }
 
     /**
@@ -202,11 +212,9 @@ public class DiagramInterface {
 
 	// Check if this diagram already exists in the project
 	ProjectMember m;
-	if (isDiagramInProject(name)) {
-            Project project = ProjectManager.getManager().getCurrentProject();
-	    m =
-                findDiagramMemberByUniqueName(project,
-                        getDiagramName(name) + ".pgml");
+	if ( isDiagramInProject(name) ) {
+	    m = ProjectManager.getManager().getCurrentProject()
+		.findMemberByName( getDiagramName(name) + ".pgml");
 
 	    // The diagram already exists in this project. Select it
 	    // as the current target.
@@ -230,102 +238,93 @@ public class DiagramInterface {
     public void addClassDiagram(Object ns, String name) {
 	Project p = ProjectManager.getManager().getCurrentProject();
 	try {
-	    ArgoDiagram d =
-	        DiagramFactory.getInstance().createDiagram(
-                    UMLClassDiagram.class,
-                    ns,
-                    null);
-
-
+	    ArgoDiagram d = new UMLClassDiagram(ns);
 	    d.setName(getDiagramName(name));
             p.addMember(d);
 	    setCurrentDiagram(d);
-	} catch (PropertyVetoException pve) { }
+	}
+	catch (PropertyVetoException pve) { }
     }
 
     /**
      * Add a class to the current diagram.
      *
      * @param newClass The new class to add to the editor.
-     * @param minimise minimise the class fig by hiding compartiments
-     *                 (of attributes and operations)
      */
     public void addClass(Object newClass, boolean minimise) {
-
+        
         // if the class is not in the current diagram, add it:
         if (currentGM.canAddNode(newClass)) {
-
-	    FigClass newClassFig = new FigClass(currentGM, newClass);
-            currentLayer.add(newClassFig);
+            
+	    FigClass newClassFig = new FigClass( currentGM, newClass);
+            currentLayer.add( newClassFig);
             currentGM.addNode(newClass);
             currentLayer.putInPosition(newClassFig);
-
-            newClassFig.setAttributesVisible(!minimise);
-            newClassFig.setOperationsVisible(!minimise);
-
+            
+            newClassFig.setAttributeVisible(!minimise);
+            newClassFig.setOperationVisible(!minimise);
+            
             newClassFig.setSize(newClassFig.getMinimumSize());
-        } else {
-            // the class is in the diagram
-            // so we are on a second pass,
-            // find the fig for this class can update its visible state.
+        }
+        // the class is in the diagram
+        // so we are on a second pass,
+        // find the fig for this class can update its visible state.
+        else {
             FigClass existingFig = null;
             List figs = currentLayer.getContentsNoEdges();
             for (int i = 0; i < figs.size(); i++) {
                 Fig fig = (Fig) figs.get(i);
-                if (newClass == fig.getOwner()) {
+                if (newClass == fig.getOwner())
                     existingFig = (FigClass) fig;
-                }
             }
             existingFig.renderingChanged();
         }
-
+        
         // add edges
         // for a 2-pass r.e. process we might have already added the
         // class but not its edges
-	currentGM.addNodeRelatedEdges(newClass);
+	currentGM.addNodeRelatedEdges( newClass);
     }
 
     /**
      * Add a interface to the current diagram.
      *
      * @param newInterface The interface to add.
-     * @param minimise minimise the class fig by hiding compartiments
-     *                 (of attributes and operations)
      */
     public void addInterface(Object newInterface, boolean minimise) {
-
-
+        
+        
         // if the Interface is not in the current diagram, add it:
         if (currentGM.canAddNode(newInterface)) {
-
+        
             FigInterface     newInterfaceFig =
-		new FigInterface(currentGM, newInterface);
-
-            currentLayer.add(newInterfaceFig);
+		new FigInterface( currentGM, newInterface);
+        
+            currentLayer.add( newInterfaceFig);
             currentGM.addNode(newInterface);
             currentLayer.putInPosition(newInterfaceFig);
-
-            newInterfaceFig.setOperationsVisible(!minimise);
+            
+            newInterfaceFig.setOperationVisible(!minimise);
             newInterfaceFig.setSize(newInterfaceFig.getMinimumSize());
-        } else {
-            // the class is in the diagram
-            // so we are on a second pass,
-            // find the fig for this class can update its visible state.
+        }
+        // the class is in the diagram
+        // so we are on a second pass,
+        // find the fig for this class can update its visible state.
+        else {
             FigInterface existingFig = null;
             List figs = currentLayer.getContentsNoEdges();
             for (int i = 0; i < figs.size(); i++) {
                 Fig fig = (Fig) figs.get(i);
-                if (newInterface == fig.getOwner()) {
+                if (newInterface == fig.getOwner())
                     existingFig = (FigInterface) fig;
-                }
             }
             existingFig.renderingChanged();
         }
-
+        
         // add edges
         // for a 2-pass r.e. process we might have already added the
         // interface but not its edges
-	currentGM.addNodeRelatedEdges(newInterface);
+	currentGM.addNodeRelatedEdges( newInterface);
     }
 
     /**
@@ -335,31 +334,31 @@ public class DiagramInterface {
      * package, which is used to generate the diagram name from.
      */
     public void createOrSelectClassDiagram(Object currentPackage,
-					   String currentPackageName) {
-        Project p = ProjectManager.getManager().getCurrentProject();
-        String diagramName = currentPackageName.replace('.', '_') + "_classes";
-        ArgoDiagram d =
-            DiagramFactory.getInstance().createDiagram(
-                    UMLClassDiagram.class,
-                    currentPackage == null ? p.getRoot() : currentPackage,
-                    null);
-
-	if (findDiagramMemberByUniqueName(p, diagramName + ".pgml") == null) {
+					   String currentPackageName)
+    {
+	Project p = ProjectManager.getManager().getCurrentProject();
+	String diagramName = currentPackageName.replace('.', '_') + "_classes";
+	UMLClassDiagram d =
+	    new UMLClassDiagram(currentPackage == null
+				? p.getRoot()
+				: currentPackage);
+	if (p.findMemberByName(diagramName + ".pgml") == null) {
 	    try {
 		d.setName(diagramName);
 	    } catch (Exception e) {
-		LOG.error("Failed to set diagram name.", e);
+		cat.error("Failed to set diagram name.");
 	    }
 	    p.addMember(d);
 	    setCurrentDiagram(d);
 	} else {
 	    ArgoDiagram ddi =
-	        ((ProjectMemberDiagram) findDiagramMemberByUniqueName(p,
-	                diagramName + ".pgml")).getDiagram();
+		((ProjectMemberDiagram) p.findMemberByName(diagramName
+							   + ".pgml"))
+		.getDiagram();
 	    setCurrentDiagram(ddi);
 	}
     }
-
+	
     /**
      * Creates class diagram under the root.
      * Is used for classes out of packages.
@@ -368,42 +367,21 @@ public class DiagramInterface {
     public void createRootClassDiagram() {
 	createOrSelectClassDiagram(null, "");
     }
-
+        
     /**
      * selects a diagram without affecting the gui.
-     *
-     * @param diagram the diagram
      */
     public void setCurrentDiagram(ArgoDiagram diagram) {
-
+        
         if (diagram == null) {
             throw new RuntimeException("you can't select a null diagram");
         }
-
+        
         currentGM = (ClassDiagramGraphModel) diagram.getGraphModel();
         currentLayer = diagram.getLayer();
         currentDiagram = diagram;
-
+        
         markDiagramAsModified(diagram);
-    }
-
-    /**
-     * @param name the name of the member to be found
-     * @param project the project
-     * @return the member
-     */
-    public ProjectMember findDiagramMemberByUniqueName(Project project,
-            String name) {
-        Iterator iter = project.getMembers().iterator();
-        while (iter.hasNext()) {
-            ProjectMember element = (ProjectMember) iter.next();
-            if (element instanceof ProjectMemberDiagram) {
-                if (name.equals(element.getUniqueDiagramName())) {
-                    return element;
-                }
-            }
-        }
-        return null;
     }
 }
 

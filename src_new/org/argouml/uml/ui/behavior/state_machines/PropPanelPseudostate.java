@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,47 +22,45 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: PropPanelPseudostate.java
+// Classes: PropPanelPseudostate
+// Original Author: your email address here
+// $Id$
+
 package org.argouml.uml.ui.behavior.state_machines;
 
-import javax.swing.Icon;
-
-import org.argouml.application.helpers.ResourceLoaderWrapper;
 import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
-import org.argouml.ui.targetmanager.TargetEvent;
-import org.argouml.ui.targetmanager.TargetManager;
+import org.argouml.model.ModelFacade;
+import org.argouml.uml.ui.UMLComboBoxNavigator;
 import org.argouml.util.ConfigLoader;
+import org.tigris.gef.presentation.Fig;
 
 /**
- * Property Panel for the collection of pseudostates (branch, fork, ...). It
+ * Property Panbel for the collection of pseudostates (branch, fork, ...). It
  * dynamically sets its name to the pseudostate used.
  */
 public class PropPanelPseudostate extends PropPanelStateVertex {
 
-    /**
-     * The serial version.
-     */
-    private static final long serialVersionUID = 5822284822242536007L;
-
-    /**
-     * Construct a new property panel for a PseudoState (branch, fork, etc).
-     */
     public PropPanelPseudostate() {
         super("Pseudostate", null, ConfigLoader.getTabPropsOrientation());
 
-        addField(Translator.localize("label.name"),
+        Class mclass = (Class) ModelFacade.PSEUDOSTATE;
+
+        addField(Translator.localize("UMLMenu", "label.name"),
                 getNameTextField());
-        addField(Translator.localize("label.container"),
-                getContainerScroll());
+        addField(Translator.localize("UMLMenu", "label.stereotype"),
+                new UMLComboBoxNavigator(this, Translator.localize("UMLMenu",
+                        "tooltip.nav-stereo"), getStereotypeBox()));
+        addField(Translator.localize("UMLMenu", "label.container"),
+                containerScroll);
 
-        addSeparator();
+        addSeperator();
 
-        addField(Translator.localize("label.incoming"),
-                getIncomingScroll());
-        addField(Translator.localize("label.outgoing"),
-                getOutgoingScroll());
+        addField(Translator.localize("UMLMenu", "label.incoming"),
+                incomingScroll);
+        addField(Translator.localize("UMLMenu", "label.outgoing"),
+                outgoingScroll);
 
-        TargetManager.getInstance().addTargetListener(this);
     }
 
     /**
@@ -70,83 +68,41 @@ public class PropPanelPseudostate extends PropPanelStateVertex {
      * according to the type of the pseudo state displayed in the property
      * panel. This is required as pseudostates share a common class and are
      * distinguished only by an attribute (pseudostatekind).
+     * 
+     * @param target
+     *            the current target
      */
-    public void refreshTarget() {
-        Object target = TargetManager.getInstance().getModelTarget();
-        if (Model.getFacade().isAPseudostate(target)) {
-            Object kind = Model.getFacade().getPseudostateKind(target);
-            if (Model.getFacade().equalsPseudostateKind(kind,
-                Model.getPseudostateKind().getFork())) {
-                getTitleLabel().setText(
-                    Translator.localize("label.pseudostate.fork"));
-            }
-            if (Model.getFacade().equalsPseudostateKind(kind,
-                Model.getPseudostateKind().getJoin())) {
-                getTitleLabel().setText(
-                    Translator.localize("label.pseudostate.join"));
-            }
-            if (Model.getFacade().equalsPseudostateKind(kind,
-                Model.getPseudostateKind().getChoice())) {
-                getTitleLabel().setText(
-                    Translator.localize("label.pseudostate.choice"));
-            }
-            if (Model.getFacade().equalsPseudostateKind(kind,
-                Model.getPseudostateKind().getDeepHistory())) {
-                getTitleLabel().setText(
-                    Translator.localize("label.pseudostate.deephistory"));
-            }
-            if (Model.getFacade().equalsPseudostateKind(kind,
-                Model.getPseudostateKind().getShallowHistory())) {
-                getTitleLabel().setText(
-                    Translator.localize("label.pseudostate.shallowhistory"));
-            }
-            if (Model.getFacade().equalsPseudostateKind(kind,
-                Model.getPseudostateKind().getInitial())) {
-                getTitleLabel().setText(
-                    Translator.localize("label.pseudostate.initial"));
-            }
-            if (Model.getFacade().equalsPseudostateKind(kind,
-                Model.getPseudostateKind().getJunction())) {
-                getTitleLabel().setText(
-                    Translator.localize("label.pseudostate.junction"));
-            }
-            Icon icon =
-                ResourceLoaderWrapper.getInstance().lookupIcon(target);
-            if (icon != null) {
-                getTitleLabel().setIcon(icon);
-            }
+    public void setTarget(Object target) {
+        super.setTarget(target);
+
+        Object o = ((target instanceof Fig) ? ((Fig) target).getOwner()
+                : target);
+        if (ModelFacade.isAPseudostate(o)) {
+            Object kind = ModelFacade.getPseudostateKind(o);
+            if (ModelFacade.equalsPseudostateKind(kind,
+                    ModelFacade.FORK_PSEUDOSTATEKIND))
+                    getTitleLabel().setText("Fork State");
+            if (ModelFacade.equalsPseudostateKind(kind,
+                    ModelFacade.JOIN_PSEUDOSTATEKIND))
+                    getTitleLabel().setText("Join State");
+            if (ModelFacade.equalsPseudostateKind(kind,
+                    ModelFacade.BRANCH_PSEUDOSTATEKIND))
+                    /* TODO: This shall be changed into "Choice State" 
+                     * for the 0.17.1 release */
+                    getTitleLabel().setText("Branch State");
+            if (ModelFacade.equalsPseudostateKind(kind,
+                    ModelFacade.DEEPHISTORY_PSEUDOSTATEKIND))
+                    getTitleLabel().setText("Deep History State");
+            if (ModelFacade.equalsPseudostateKind(kind,
+                    ModelFacade.SHALLOWHISTORY_PSEUDOSTATEKIND))
+                    getTitleLabel().setText("Shallow History State");
+            if (ModelFacade.equalsPseudostateKind(kind,
+                    ModelFacade.INITIAL_PSEUDOSTATEKIND))
+                    getTitleLabel().setText("Initial State");
+            if (ModelFacade.equalsPseudostateKind(kind,
+                    ModelFacade.JUNCTION_PSEUDOSTATEKIND))
+                    getTitleLabel().setText("Junction State");
         }
 
     }
-
-    /**
-     * @see org.argouml.uml.ui.PropPanel#targetAdded(org.argouml.ui.targetmanager.TargetEvent)
-     */
-    public void targetAdded(TargetEvent e) {
-        if (Model.getFacade().isAPseudostate(e.getNewTarget())) {
-            refreshTarget();
-            super.targetAdded(e);
-        }
-    }
-
-    /**
-     * @see org.argouml.uml.ui.PropPanel#targetRemoved(org.argouml.ui.targetmanager.TargetEvent)
-     */
-    public void targetRemoved(TargetEvent e) {
-        if (Model.getFacade().isAPseudostate(e.getNewTarget())) {
-            refreshTarget();
-            super.targetRemoved(e);
-        }
-    }
-
-    /**
-     * @see org.argouml.uml.ui.PropPanel#targetSet(org.argouml.ui.targetmanager.TargetEvent)
-     */
-    public void targetSet(TargetEvent e) {
-        if (Model.getFacade().isAPseudostate(e.getNewTarget())) {
-            refreshTarget();
-            super.targetSet(e);
-        }
-    }
-
 } /* end class PropPanelPseudostate */

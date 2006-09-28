@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 2003-2006 The Regents of the University of California. All
+// Copyright (c) 2003 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -25,69 +25,40 @@
 package org.argouml.util;
 
 import java.io.File;
-import javax.swing.filechooser.FileFilter;
+import javax.swing.filechooser.*;
 
-/**
- * This class handles file extensions.
- *
- */
 public class SuffixFilter extends FileFilter {
 
     ////////////////////////////////////////////////////////////////
     // instance varaibles
 
-    private final String suffix;
-    private final String desc;
+    public final String _suffix;
+    public final String _desc;
 
     ////////////////////////////////////////////////////////////////
     // constructor
 
-    /**
-     * The constructor.
-     *
-     * @param s the suffix string
-     * @param d the file type description
-     */
     public SuffixFilter(String s, String d) {
-	suffix = s;
-	desc = d;
+	_suffix = s;
+	_desc = d;
     }
 
     ////////////////////////////////////////////////////////////////
     // FileFilter API
 
-    /**
-     * @see javax.swing.filechooser.FileFilter#accept(java.io.File)
-     */
     public boolean accept(File f) {
-	if (f == null) {
-            return false;
-        }
-	if (f.isDirectory()) {
-            return true;
-        }
+	if (f == null) return false;
+	if (f.isDirectory()) return true;
 	String extension = getExtension(f);
-	if (suffix.equalsIgnoreCase(extension)) {
-            return true;
-        }
+	if (_suffix.equalsIgnoreCase(extension)) return true;
 	return false;
     }
 
-    /**
-     * @param f the file to get the extension from
-     * @return the extension string (without the dot)
-     */
     public static String getExtension(File f) {
-	if (f == null) {
-            return null;
-        }
+	if (f == null) return null;
 	return getExtension(f.getName());
     }
 
-    /**
-     * @param filename the name of the file to get the extension from
-     * @return the extension string (without the dot)
-     */
     public static String getExtension(String filename) {
 	int i = filename.lastIndexOf('.');
 	if (i > 0 && i < filename.length() - 1) {
@@ -96,28 +67,8 @@ public class SuffixFilter extends FileFilter {
 	return null;
     }
 
-    /**
-     * @see javax.swing.filechooser.FileFilter#getDescription()
-     */
     public String getDescription() {
-	return desc + " (*." + suffix + ")";
-    }
-
-    /**
-     * @return Returns the _suffix.
-     */
-    public String getSuffix() {
-        return suffix;
-    }
-
-    /**
-     * Adding this function enables easy selection of suffixfilters
-     * e.g. in a combobox.
-     *
-     * @see java.lang.Object#toString()
-     */
-    public String toString() {
-        return getDescription();
+	return _desc + " (*." + _suffix + ")";
     }
 
 } /* end class SuffixFilter */

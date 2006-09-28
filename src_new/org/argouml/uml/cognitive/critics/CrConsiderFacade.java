@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,37 +24,28 @@
 
 package org.argouml.uml.cognitive.critics;
 
+import org.apache.log4j.Logger;
 import org.argouml.cognitive.Designer;
-import org.argouml.uml.cognitive.UMLDecision;
 
 /**
- * A critic to suggest using the facade stereotype. <p>
- *
+ * A critic to suggest using the facade stereotype. 
  * TODO: at the moment only a dummy implementation
 */
 public class CrConsiderFacade extends CrUML {
+    protected static Logger cat =
+	Logger.getLogger(CrConsiderFacade.class);
 
-    /**
-     * The constructor.
-     */
     public CrConsiderFacade() {
-        setupHeadAndDesc();
-	addSupportedDecision(UMLDecision.MODULARITY);
+	setHeadline("Consider using facade stereotype for <ocl>self</ocl>");
+       
+	addSupportedDecision(CrUML.decMODULARITY);
 	addTrigger("ownedElement");
     }
 
-    /**
-     * @see org.argouml.uml.cognitive.critics.CrUML#predicate2(
-     * java.lang.Object, org.argouml.cognitive.Designer)
-     */
     public boolean predicate2(Object dm, Designer dsgr) {
 	/* TODO: Add implementation. */
 	return NO_PROBLEM;
     }
 
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = -5513915374319458662L;
 } /* end class CrEmptyPackage */
 

@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 2002-2006 The Regents of the University of California. All
+// Copyright (c) 2002-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,14 +24,14 @@
 
 package org.argouml.uml.ui.behavior.collaborations;
 
+import org.argouml.model.ModelFacade;
 import java.util.Iterator;
 
-import org.argouml.model.Model;
 import org.argouml.uml.ui.UMLModelElementListModel2;
 
 /**
- * List model for messages on the interaction proppanel.
- *
+ * List model for messages on the interaction proppanel. 
+ * 
  * @author jaap.branderhorst@xs4all.nl
  */
 public class UMLInteractionMessagesListModel extends UMLModelElementListModel2 {
@@ -47,19 +47,20 @@ public class UMLInteractionMessagesListModel extends UMLModelElementListModel2 {
      * @see org.argouml.uml.ui.UMLModelElementListModel2#buildModelList()
      */
     protected void buildModelList() {
-        removeAllElements();
-        Iterator it = Model.getFacade().getMessages(getTarget()).iterator();
-        while (it.hasNext()) {
-            addElement(it.next());
-        }
+	removeAllElements();
+	if (ModelFacade.isAInteraction(getTarget())) {
+	    Iterator it = ModelFacade.getMessages(getTarget()).iterator();
+	    while (it.hasNext()) {
+		addElement(it.next());
+	    }
+	}
     }
 
     /**
      * @see org.argouml.uml.ui.UMLModelElementListModel2#isValidElement(Object)
      */
     protected boolean isValidElement(Object/*MBase*/ elem) {
-        return Model.getFacade().isAMessage(elem)
-            && Model.getFacade().getInteraction(elem) == getTarget();
+	return ModelFacade.isAMessage(elem)
+		&& ModelFacade.getInteraction(elem) == getTarget();
     }
-
 }

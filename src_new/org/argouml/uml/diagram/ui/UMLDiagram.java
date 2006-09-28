@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -25,26 +25,21 @@
 package org.argouml.uml.diagram.ui;
 
 import java.awt.Component;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.beans.PropertyVetoException;
+import java.util.Enumeration;
 
 import javax.swing.Action;
 import javax.swing.ButtonModel;
 import javax.swing.JToolBar;
 
 import org.apache.log4j.Logger;
-import org.argouml.application.api.Configuration;
-import org.argouml.application.api.ConfigurationKey;
 import org.argouml.i18n.Translator;
 import org.argouml.kernel.ProjectManager;
-import org.argouml.model.DeleteInstanceEvent;
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
+import org.argouml.model.uml.UmlModelEventPump;
 import org.argouml.ui.ArgoDiagram;
-import org.argouml.ui.CmdCreateNode;
 import org.argouml.ui.CmdSetMode;
-import org.argouml.ui.explorer.Relocatable;
-import org.argouml.uml.UUIDHelper;
+import org.argouml.ui.targetmanager.TargetManager;
 import org.tigris.gef.base.ModeBroom;
 import org.tigris.gef.base.ModeCreateFigCircle;
 import org.tigris.gef.base.ModeCreateFigInk;
@@ -54,241 +49,162 @@ import org.tigris.gef.base.ModeCreateFigRRect;
 import org.tigris.gef.base.ModeCreateFigRect;
 import org.tigris.gef.base.ModeCreateFigSpline;
 import org.tigris.gef.base.ModeCreateFigText;
-import org.tigris.gef.base.ModeCreatePolyEdge;
 import org.tigris.gef.base.ModeSelect;
+import org.tigris.gef.presentation.Fig;
 import org.tigris.toolbar.ToolBarFactory;
-import org.tigris.toolbar.ToolBarManager;
 import org.tigris.toolbar.toolbutton.ToolButton;
+
+import ru.novosoft.uml.MElementEvent;
+import ru.novosoft.uml.MElementListener;
 
 /**
  * This class provides support for writing a UML diagram for argo using
- * the GEF framework. <p>
- *
- * It adds common buttons, a namespace, capability
+ * the GEF framework.
+ * <p>It adds common buttons, a namespace, capability
  * to delete itself when its namespace is deleted, some help
- * with creating a valid diagram name. <p>
+ * with creating a valid diagram name.
  *
- * There are various methods for returning 'structures' of Actions
- * which are used to build toolbars and dropdown buttons within toolbars.
- * These structures are arrays of Objects.
- * An array element is actually either an Action, null or another array.
- * When building a toolbar an Action is used to create a button and null
- * is used to create a spacer in the toolbar.
- * An element containing an array results in a dropdown toolbar button
- * being created which contains all the items in that array. <p>
- *
- * The "owner" of the UMLDiagram needs to be set to the
- * UML modelelement of which the diagram depends.
- * For a class diagram is that its namespace.
- * For a collaboration diagram is that the Collaboration UML object.
- * For a sequence diagram is that the collaboration.
- * For a deployment diagram is that the namespace.
- * For a statechart diagram is that the statemachine.
- * For a activitydiagram is that the activitygraph.
- * Override the getOwner method to return the owner. <p>
- *
- *The "owner" is shown in the diagram's properties
- *panel as the "home model". <p>
- *
- * TODO: MVW: I am not sure of the following:<p>
- * The "namespace" of the diagram is e.g. used when creating new elements
- * that are shown on the diagram; they will have their namespace set
- * according this. It is NOT necessarily equal to the "owner". <p>
- *
- * MVW: I doubt all following:
- * The "namespace" of the diagram is e.g. used to register a listener
- * to the UML model, to be notified if this element is removed;
- * which will imply that this diagram has to be deleted, too. <p>
- * 
- * Hence the namespace of e.g. a collaboration diagram should be the
- * represented classifier or, in case of a represented operation, the
- * classifier that owns this operation.
- * And the namespace of the statechart diagram should be 
- * the namespace of its statemachine.
  */
 public abstract class UMLDiagram
     extends ArgoDiagram
-    implements PropertyChangeListener, Relocatable {
-    /**
-     * Logger.
-     */
-    private static final Logger LOG = Logger.getLogger(UMLDiagram.class);
+    implements MElementListener {
 
     /**
-     * The serial number for new diagrams.
-     * Used to create an unique number for the name of the diagram.
+     * @deprecated by Linus Tolke as of 0.16. Will be private.
      */
-    private int diagramSerial = 1;
+    protected static Logger cat = Logger.getLogger(UMLDiagram.class);
 
     ////////////////////////////////////////////////////////////////
     // actions for toolbar
 
-    /**
-     * Tool to add a comment node.
-     */
-    private static Action actionComment =
-        new RadioAction(new ActionAddNote());
+    protected static Action _actionSelect =
+        new CmdSetMode(ModeSelect.class, "Select");
 
-    /**
-     * Tool to create an relationship between a comment node and some other node
-     * using a polyedge.<p>
-     */
-    private static Action actionCommentLink =
-        new RadioAction(new ActionSetAddCommentLinkMode());
+    protected static Action _actionBroom =
+        new CmdSetMode(ModeBroom.class, "Broom");
 
-
-    private static Action actionSelect =
-        new CmdSetMode(ModeSelect.class, "button.select");
-
-    private static Action actionBroom =
-        new CmdSetMode(ModeBroom.class, "button.broom");
-
-    private static Action actionRectangle =
+    protected static Action _actionRectangle =
         new RadioAction(new CmdSetMode(ModeCreateFigRect.class, "Rectangle",
-        			       "misc.primitive.rectangle"));
+        Translator.localize("misc.primitive.rectangle")));
 
-    private static Action actionRRectangle =
+    protected static Action _actionRRectangle =
         new RadioAction(new CmdSetMode(ModeCreateFigRRect.class, "RRect",
-        			       "misc.primitive.rounded-rectangle"));
+        Translator.localize("misc.primitive.rounded-rectangle")));
 
-    private static Action actionCircle =
+    protected static Action _actionCircle =
         new RadioAction(new CmdSetMode(ModeCreateFigCircle.class, "Circle",
-        			       "misc.primitive.circle"));
+        Translator.localize("misc.primitive.circle")));
 
-    private static Action actionLine =
+    protected static Action _actionLine =
         new RadioAction(new CmdSetMode(ModeCreateFigLine.class, "Line",
-        			       "misc.primitive.line"));
+        Translator.localize("misc.primitive.line")));
 
-    private static Action actionText =
+    protected static Action _actionText =
         new RadioAction(new CmdSetMode(ModeCreateFigText.class, "Text",
-        			       "misc.primitive.text"));
+        Translator.localize("misc.primitive.text")));
 
-    private static Action actionPoly =
+    protected static Action _actionPoly =
         new RadioAction(new CmdSetMode(ModeCreateFigPoly.class, "Polygon",
-        			       "misc.primitive.polygon"));
+        Translator.localize("misc.primitive.polygon")));
 
-    private static Action actionSpline =
+    protected static Action _actionSpline =
         new RadioAction(new CmdSetMode(ModeCreateFigSpline.class, "Spline",
-        			       "misc.primitive.spline"));
+        Translator.localize("misc.primitive.spline")));
 
-    private static Action actionInk =
+    protected static Action _actionInk =
         new RadioAction(new CmdSetMode(ModeCreateFigInk.class, "Ink",
-        			       "misc.primitive.ink"));
+        Translator.localize("misc.primitive.ink")));
 
     ////////////////////////////////////////////////////////////////
     // instance variables
-    private Object namespace;
+    protected Object _namespace;
+    protected DiagramInfo _diagramName = new DiagramInfo(this);
 
     private JToolBar toolBar;
-
-    private Action selectedAction;
 
     ////////////////////////////////////////////////////////////////
     // constructors
 
-    /**
-     * The constructor.
-     */
     public UMLDiagram() {
         super();
     }
 
-    /**
-     * @param ns the UML namespace of this diagram
-     */
     public UMLDiagram(Object ns) {
         this();
-        if (!Model.getFacade().isANamespace(ns)) {
+
+        if (!ModelFacade.isANamespace(ns))
             throw new IllegalArgumentException();
-        }
+
         setNamespace(ns);
     }
 
-    /**
-     * @param name the name of the diagram
-     * @param ns the UML namespace of this diagram
-     */
-    public UMLDiagram(String name, Object ns) {
+    public UMLDiagram(String diagramName, Object ns) {
         this(ns);
         try {
-            setName(name);
+            setName(diagramName);
         } catch (PropertyVetoException pve) {
-            LOG.fatal("Name not allowed in construction of diagram");
+            cat.fatal("Name not allowed in construction of diagram");
         }
     }
 
-    /**
-     * @see org.tigris.gef.base.Diagram#initialize(java.lang.Object)
-     */
     public void initialize(Object owner) {
         super.initialize(owner);
-        /* The following is the default implementation
-         * for diagrams of which the owner is a namespace.
-         */
-        if (Model.getFacade().isANamespace(owner)) {
+        if (org.argouml.model.ModelFacade.isANamespace(owner))
             setNamespace(owner);
-        }
+        else
+            cat.debug("unknown object in UMLDiagram initialize:" + owner);
     }
 
     ////////////////////////////////////////////////////////////////
     // accessors
 
-    /**
-     * @return the namespace for the diagram
-     */
     public Object getNamespace() {
-        return namespace;
+        return _namespace;
     }
 
     /**
-     * Sets the namespace of the Diagram, and
-     * adds the diagram as a listener of its namespace in the UML model
+     * sets the namespace of the Diagram, and
+     * adds the diagram as a listener of its namspace in the UML model.
      * (so that it can delete itself when the model element is deleted).
-     *
-     * @param ns the namespace for the diagram
      */
     public void setNamespace(Object ns) {
-        if (!Model.getFacade().isANamespace(ns)) {
-            LOG.error("Not a namespace");
-            LOG.error(ns);
+        if (!ModelFacade.isANamespace(ns)) {
+            cat.error("Not a namespace");
+            cat.error(ns);
             throw new IllegalArgumentException("Given object not a namespace");
         }
-        if ((namespace != null) && (namespace != ns)) {
-            Model.getPump().removeModelEventListener(this, namespace);
-        }
-        namespace = ns;
-        // Add the diagram as a listener to the namespace so
-        // that when the namespace is removed the diagram is deleted also.
-        /* Listening only to "remove" events does not work... 
-         * TODO: Check if this works now with new event pump - tfm 
-         */
-        Model.getPump().addModelEventListener(this, namespace, "remove");
+        _namespace = ns;
+        // add the diagram as a listener to the namspace so
+        // that when the namespace is remove()d the diagram is deleted also.
+        UmlModelEventPump.getPump().addModelEventListener(
+            this,
+            _namespace,
+            UmlModelEventPump.REMOVE);
     }
 
-    /**
-     * @see org.tigris.gef.base.Diagram#getClassAndModelID()
-     */
     public String getClassAndModelID() {
         String s = super.getClassAndModelID();
-        if (getOwner() == null) {
+        if (getOwner() == null)
             return s;
-        }
-        String id = UUIDHelper.getUUID(getOwner());
+        String id = ModelFacade.getUUID(getOwner());
         return s + "|" + id;
     }
 
-    /**
-     * The default implementation for diagrams that
-     * have the namespace as their owner.
-     *
-     * @return the namespace
-     */
+    // TODO: should be overwritten by each subclass of UMLDiagram
+
     public Object getOwner() {
         return getNamespace();
     }
 
+    public void setName(String n) throws PropertyVetoException {
+        super.setName(n);
+        _diagramName.updateName();
+    }
+
+    static final long serialVersionUID = -401219134410459387L;
+
     /**
-     * Get the toolbar for the diagram.
+     * Get the toolbar for the diagram
      * @return the diagram toolbar
      */
     public JToolBar getJToolBar() {
@@ -299,7 +215,7 @@ public abstract class UMLDiagram
     }
 
     /**
-     * Create the toolbar based on actions for the specific diagram
+     * Create the toolbar based on actions for the spcific diagram
      * subclass.
      * @see org.tigris.gef.base.Diagram#initToolBar()
      */
@@ -308,8 +224,6 @@ public abstract class UMLDiagram
 	    ToolBarFactory.createToolBar(true /*rollover*/,
 					 getActions(),
 					 false /*floating*/);
-        toolBar.putClientProperty("ToolBar.toolTipSelectTool", 
-                Translator.localize("action.select"));
     }
 
     /**
@@ -317,215 +231,165 @@ public abstract class UMLDiagram
      * @return an array of available actions.
      */
     public Object[] getActions() {
-        Object[] manipulateActions = getManipulateActions();
-        Object[] umlActions = getUmlActions();
-        Object[] commentActions = getCommentActions();
-        Object[] shapeActions = getShapeActions();
+        Object manipulateActions[] = getManipulateActions();
+        Object umlActions[] = getUmlActions();
+        Object shapeActions[] = getShapeActions();
 
-        Object[] actions =
+        Object actions[] =
             new Object[manipulateActions.length
                 + umlActions.length
-                + commentActions.length
                 + shapeActions.length];
 
         int posn = 0;
         System.arraycopy(
-            manipulateActions,           // source
-            0,                           // source position
-            actions,                     // destination
-            posn,                        // destination position
-            manipulateActions.length);   // number of objects to be copied
+            manipulateActions,
+            0,
+            actions,
+            posn,
+            manipulateActions.length);
         posn += manipulateActions.length;
-
         System.arraycopy(umlActions, 0, actions, posn, umlActions.length);
         posn += umlActions.length;
-
-        System.arraycopy(commentActions, 0, actions, posn,
-                commentActions.length);
-        posn += commentActions.length;
-
         System.arraycopy(shapeActions, 0, actions, posn, shapeActions.length);
 
         return actions;
     }
 
     /**
-     * Implement in the ancestor to get a 'structure' of actions for
-     * appending the UML creation tools to the toolbar.
-     * @return the actions structure
+     * Implement on the ancestor to get actions to populate toolbar.
      */
     protected abstract Object[] getUmlActions();
 
-    /**
-     * Get a 'structure' of actions for appending the manipulation
-     * mode tools to the toolbar.
-     * @return the actions structure
-     */
     private Object[] getManipulateActions() {
-        Object[] actions =
+        Object actions[] =
         {
-	    new RadioAction(actionSelect),
-	    new RadioAction(actionBroom),
-	    null,
+	    new RadioAction(_actionSelect),
+	    new RadioAction(_actionBroom),
+	    null
 	};
         return actions;
     }
 
-    /**
-     * Get a 'structure' of actions for appending the comment
-     * tools to the toolbar.
-     * @return the actions structure
-     */
-    private Object[] getCommentActions() {
-        Object[] actions =
-        {
-            null,
-            actionComment,
-            actionCommentLink,
-        };
-        return actions;
-    }
-
-    /**
-     * Get a 'structure' of actions for appending primitive drawing
-     * tools to the toolbar.
-     * @return the actions structure
-     */
     private Object[] getShapeActions() {
-        Object[] actions = {
-	    null,
-            getShapePopupActions(),
+        Object actions[] = {
+	    null, getShapePopupActions(),
 	};
         return actions;
     }
 
-    /**
-     * Get a 'structure' of actions for showing in the shape
-     * primitives popup tool button.
-     * @return the actions structure
-     */
     private Object[] getShapePopupActions() {
-        Object[][] actions = {
-	    {actionRectangle, actionRRectangle },
-	    {actionCircle,    actionLine },
-            {actionText,      actionPoly },
-            {actionSpline,    actionInk },
+        Object actions[][] = {
+	    {
+		_actionRectangle, _actionRRectangle
+	    },
+	    {
+                _actionCircle, _actionLine }, {
+                _actionText, _actionPoly }, {
+                _actionSpline, _actionInk }
         };
 
-        manageDefault(actions, "diagram.shape");
         return actions;
     }
 
     /**
-     * Manages the selection of the default tool 
-     * in a popup tool in the toolbar. <p>
-     * 
-     * I.e. in the diagram toolbar, you can have tools that can be opened,
-     * into a grid of tools. The last used tool is remembered, 
-     * and put at the top when the popup is closed, i.e.
-     * is the only tool that remains visible. This remembering is
-     * persistent, hence stored in the configuration file,
-     * under a certain key (i.e. name).
-     * 
-     * @param actions the array of actions that make up the popup
-     * @param key appendix for the key for the configuration file
-     */
-    protected void manageDefault(Object[] actions, String key) {
-        Action defaultAction = null;
-        ConfigurationKey k =
-            Configuration.makeKey("default", "popupactions", key);
-        String defaultName = Configuration.getString(k);
-        PopupActionsListener listener = new PopupActionsListener(k);
-        for (int i = 0; i < actions.length; ++i) {
-            if (actions[i] instanceof Action) {
-                Action a = (Action) actions[i];
-                if (a.getValue(Action.NAME).equals(defaultName)) {
-                    defaultAction = a;
-                }
-                a.addPropertyChangeListener(listener);
-            } else if (actions[i] instanceof Object[]) {
-                Object[] actionRow = (Object[]) actions[i];
-                for (int j = 0; j < actionRow.length; ++j) {
-                    Action a = (Action) actionRow[j];
-                    if (a.getValue(Action.NAME).equals(defaultName)) {
-                        defaultAction = a;
-                    }
-                    a.addPropertyChangeListener(listener);
-                }
-            }
-        }
-
-        if (defaultAction != null) {
-            defaultAction.putValue("isDefault", Boolean.valueOf(true));
-        }
-    }
-
-    static class PopupActionsListener implements PropertyChangeListener {
-        private boolean blockEvents;
-        private ConfigurationKey key;
-
-        /**
-         * Constructor.
-         *
-         * @param k
-         */
-        public PopupActionsListener(ConfigurationKey k) {
-            key = k;
-        }
-
-        /**
-         * @see java.beans.PropertyChangeListener#propertyChange(
-         *         java.beans.PropertyChangeEvent)
-         */
-        public void propertyChange(PropertyChangeEvent evt) {
-            if (evt.getSource() instanceof Action) {
-                Action a = (Action) evt.getSource();
-                if (!blockEvents && evt.getPropertyName().equals("popped")) {
-                    blockEvents = true;
-                    /* Switch the value back off, so that we will
-                     * get notified again next time.
-                     */
-                    a.putValue("popped", Boolean.valueOf(false));
-                    blockEvents = false;
-                    Configuration.setString(key,
-                            (String) a.getValue(Action.NAME));
-                }
-            }
-        }
-    }
-
-    /**
-     * This diagram listens to events from its namespace ModelElement;
-     * when the modelelement is removed, we also want to delete this
-     * diagram.  <p>
+     * This diagram listens to events from is namespace ModelElement;
+     * When the modelelement is removed, we also want to delete this
+     * diagram too.  <p>
      *
      * There is also a risk that if this diagram was the one shown in
      * the diagram panel, then it will remain after it has been
-     * deleted. So we need to deselect this diagram. 
-     * There are other things to take care of, so all this is delegated to 
-     * {@link org.argouml.kernel.Project#moveToTrash(Object)}.
-     *
-     * @see java.beans.PropertyChangeListener#propertyChange(java.beans.PropertyChangeEvent)
+     * deleted. so we need to deselect this diagram.
      */
-    public void propertyChange(PropertyChangeEvent evt) {
-        if ((evt.getSource() == namespace)
-                && (evt instanceof DeleteInstanceEvent)
-                && "remove".equals(evt.getPropertyName())) {
+    public void removed(MElementEvent e) {
+        Object newTarget =
+            ProjectManager.getManager().getCurrentProject().getDiagrams().get(
+                0);
+        TargetManager.getInstance().setTarget(newTarget);
+        UmlModelEventPump.getPump().removeModelEventListener(
+            this,
+            _namespace,
+            UmlModelEventPump.REMOVE);
+        ProjectManager.getManager().getCurrentProject().moveToTrash(this);
 
-            Model.getPump().removeModelEventListener(this, namespace, "remove");
+    }
 
-            ProjectManager.getManager().getCurrentProject().moveToTrash(this);
+    /**
+     * not used the UMLDiagram is only interested in the removed() event.
+     */
+    public void propertySet(MElementEvent e) {
+    }
+
+    /**
+     * not used the UMLDiagram is only interested in the removed() event.
+     */
+    public void roleAdded(MElementEvent e) {
+    }
+
+    /**
+     * not used the UMLDiagram is only interested in the removed() event.
+     */
+    public void roleRemoved(MElementEvent e) {
+    }
+
+    /**
+     * not used the UMLDiagram is only interested in the removed() event.
+     */
+    public void listRoleItemSet(MElementEvent e) {
+    }
+
+    /**
+     * not used the UMLDiagram is only interested in the removed() event.
+     */
+    public void recovered(MElementEvent e) {
+    }
+
+    /**
+     * Removes the UMLDiagram and all the figs on it as listener to 
+     * UmlModelEventPump. Is called by setTarget in TabDiagram to improve 
+     * performance. 
+     *
+     */
+    public void removeAsTarget() {
+        Enumeration enum = elements();
+        UmlModelEventPump pump = UmlModelEventPump.getPump();
+        while (enum.hasMoreElements()) {
+            Object o = enum.nextElement();
+            if (ModelFacade.isAElementListener(o)) {
+                MElementListener listener = (MElementListener) o;
+                Fig fig = (Fig) o;
+                pump.removeModelEventListener(listener, fig.getOwner());
+            }
+        }
+        pump.removeModelEventListener(this, getNamespace());
+
+    }
+
+    /**
+     * Adds the UMLDiagram and all the figs on it as listener to
+     * UmlModelEventPump.  Together with removeAsModelListener this is
+     * a performance improvement.
+     *
+     */
+    public void setAsTarget() {
+        Enumeration enum = elements();
+        while (enum.hasMoreElements()) {
+            Fig fig = (Fig) enum.nextElement();
+            if (org.argouml.model.ModelFacade.isAElementListener(fig)) {
+                Object owner = fig.getOwner();
+                // pump.addModelEventListener((MElementListener)fig, owner);
+                // this will make sure all the correct event listeners are set. 
+                fig.setOwner(null);
+                fig.setOwner(owner);
+            }
         }
     }
 
     /**
-     * Set the given action as the selected action (ie pressed down on the
-     * diagram toolbar). All other actions become unselected.
-     *
-     * @param theAction the action to become selected
+     * Set all toolbar buttons to unselected other then the toolbar button
+     * with the supplied action.
      */
-    public void setSelectedAction(Action theAction) {
-        selectedAction = theAction;
+    public void deselectOtherTools(Action otherThanAction) {
+        //cat.debug("Looking for action " + otherThanAction);
         int toolCount = toolBar.getComponentCount();
         for (int i = 0; i < toolCount; ++i) {
             Component c = toolBar.getComponent(i);
@@ -535,163 +399,53 @@ public abstract class UMLDiagram
                 if (action instanceof RadioAction) {
                     action = ((RadioAction) action).getAction();
                 }
-                Action otherAction = theAction;
-                if (theAction instanceof RadioAction) {
-                    otherAction = ((RadioAction) theAction).getAction();
+                Action otherAction = otherThanAction;
+                if (otherThanAction instanceof RadioAction) {
+                    otherAction = ((RadioAction) otherThanAction).getAction();
                 }
                 if (!action.equals(otherAction)) {
+                    //cat.debug("Unselecting " + tb);
                     tb.setSelected(false);
                     ButtonModel bm = tb.getModel();
                     bm.setRollover(false);
                     bm.setSelected(false);
                     bm.setArmed(false);
                     bm.setPressed(false);
-                    if (!ToolBarManager.alwaysUseStandardRollover()) {
-                        tb.setBorderPainted(false);
-                    }
+                    tb.setBorderPainted(false);
                 } else {
+                    //cat.debug("Selecting " + tb);
                     tb.setSelected(true);
                     ButtonModel bm = tb.getModel();
                     bm.setRollover(true);
-                    if (!ToolBarManager.alwaysUseStandardRollover()) {
-                        tb.setBorderPainted(true);
-                    }
+                    tb.setBorderPainted(true);
                 }
             }
         }
     }
 
     /**
-     * Get the selected action.
-     * 
-     * @return the selected action
-     */
-    public Action getSelectedAction() {
-        return selectedAction;
-    }
-
-    /**
-     * Unselect all the toolbar buttons.
+     * Set all toolbar buttons to unselected other then the toolbar button
+     * with the supplied action.
      */
     public void deselectAllTools() {
-        setSelectedAction(actionSelect);
-        actionSelect.actionPerformed(null);
+        int toolCount = toolBar.getComponentCount();
+        for (int i = 0; i < toolCount; ++i) {
+            Component c = toolBar.getComponent(i);
+            if (c instanceof ToolButton) {
+                ToolButton tb = (ToolButton) c;
+                Action action = tb.getRealAction();
+                if (action instanceof RadioAction) {
+                    action = ((RadioAction) action).getAction();
+                }
+                tb.setSelected(false);
+                ButtonModel bm = tb.getModel();
+                bm.setRollover(false);
+                bm.setSelected(false);
+                bm.setArmed(false);
+                bm.setPressed(false);
+                tb.setBorderPainted(false);
+            }
+        }
     }
-
-    /**
-     * Factory method to build an Action for creating a node in the
-     * diagram.
-     *
-     * @param modelElement identifies the model element type to make
-     * @param descr the description to give this action.
-     * @return The action to create a new node.
-     */
-    protected Action makeCreateNodeAction(Object modelElement, String descr) {
-        return new RadioAction(new CmdCreateNode(modelElement, descr));
-    }
-
-    /**
-     * Factory method to build an Action for creating an edge in the
-     * diagram.
-     *
-     * @param modelElement identifies the model element type to make
-     * @param descr the description to give this action.
-     * @return The action to create a new node.
-     */
-    protected Action makeCreateEdgeAction(Object modelElement, String descr) {
-        return new RadioAction(
-            new CmdSetMode(ModeCreatePolyEdge.class, "edgeClass",
-                    modelElement, descr));
-    }
-
-    /**
-     * Factory method to build an Action for creating an association edge in
-     * the diagram.
-     *
-     * @param aggregationKind the type of aggregation for this association
-     * @param unidirectional true if this is a one way association.
-     * @param descr the description to give this action.
-     * @return The action to create a new association.
-     */
-    protected Action makeCreateAssociationAction(
-            Object aggregationKind,
-            boolean unidirectional,
-            String descr) {
-
-        return new RadioAction(
-            new ActionSetAddAssociationMode(aggregationKind,
-                unidirectional, descr));
-    }
-
-    /**
-     * Factory method to build an Action for creating an association end edge
-     * in the diagram.
-     *
-     * @param descr the description to give this action.
-     * @return The action to create a new association.
-     */
-    protected Action makeCreateAssociationEndAction(String descr) {
-
-        return new RadioAction(new ActionSetAddAssociationEndMode(descr));
-    }
-
-    /**
-     * Factory method to build an Action for creating an edge in the
-     * diagram.
-     *
-     * @param descr the description to give this action.
-     * @return The action to create a new node.
-     */
-    protected Action makeCreateAssociationClassAction(String descr) {
-        return new RadioAction(new ActionSetAddAssociationClassMode(descr));
-    }
-
-    /**
-     * Reset the diagram serial counter to the initial value.
-     * This should e.g. be done when the menuitem File->New is activated.
-     */
-    public void resetDiagramSerial() {
-        diagramSerial = 1;
-    }
-
-    /**
-     * @return Returns the diagramSerial.
-     */
-    protected int getNextDiagramSerial() {
-        return diagramSerial++;
-    }
-
-    /**
-     * @return a string that can be used as a label for this kind of diagram
-     */
-    public abstract String getLabelName();
-
-    /**
-     * This method shall return any UML modelelements
-     * that should be deleted when the diagram gets deleted,
-     * or null if there are none. The default implementation returns null;
-     * e.g. a statechart diagram should return its statemachine.
-     *
-     * @author mvw@tigris.org
-     *
-     * @return the dependent element - in the general case there aren't, so null
-     */
-    public Object getDependentElement() {
-        return null;
-    }
-
-    /**
-     * @see org.argouml.ui.explorer.Relocatable#isRelocationAllowed(java.lang.Object)
-     */
-    public abstract boolean isRelocationAllowed(Object base);
-
-    /**
-     * @see org.argouml.ui.explorer.Relocatable#relocate(java.lang.Object)
-     */
-    public abstract boolean relocate(Object base);
-
-    /**
-     * The UID.
-     */
-    static final long serialVersionUID = -401219134410459387L;
 } /* end class UMLDiagram */
+

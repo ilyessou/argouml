@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -30,28 +30,25 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.Vector;
 
-import org.argouml.i18n.Translator;
+import org.argouml.model.ModelFacade;
 import org.argouml.kernel.Project;
 import org.argouml.kernel.ProjectManager;
-import org.argouml.model.Model;
 import org.argouml.ui.ArgoDiagram;
 import org.argouml.uml.diagram.collaboration.ui.UMLCollaborationDiagram;
 
 /**
- * Rule for Operation->Collaboration Diagram.
- *
  * @since Oct 7, 2002
  * @author jaap.branderhorst@xs4all.nl
  */
 public class GoOperationToCollaborationDiagram extends AbstractPerspectiveRule {
 
     /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getChildren(java.lang.Object)
+     * @see org.argouml.ui.AbstractGoRule#getChildren(java.lang.Object)
      */
     public Collection getChildren(Object parent) {
-        if (Model.getFacade().isAOperation(parent)) {
+        if (ModelFacade.isAOperation(parent)) {
             Object operation = parent; //MOperation
-            Collection col = Model.getFacade().getCollaborations(operation);
+            Collection col = ModelFacade.getCollaborations(operation);
             Vector ret = new Vector();
             Project p = ProjectManager.getManager().getCurrentProject();
             Vector diagrams = p.getDiagrams();
@@ -63,26 +60,23 @@ public class GoOperationToCollaborationDiagram extends AbstractPerspectiveRule {
 				    .getNamespace())) {
                     ret.add(diagram);
                 }
-
+                
             }
             return ret;
         }
         return null;
     }
 
-    /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getDependencies(java.lang.Object)
-     */
     public Set getDependencies(Object parent) {
         // TODO: What?
 	return null;
     }
 
     /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getRuleName()
+     * @see org.argouml.ui.AbstractGoRule#getRuleName()
      */
     public String getRuleName() {
-        return Translator.localize ("misc.operation.collaboration-diagram");
+        return "Operation->Collaboration Diagram";
     }
 
 }

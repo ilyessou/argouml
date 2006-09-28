@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 2002-2006 The Regents of the University of California. All
+// Copyright (c) 2002-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,7 +24,7 @@
 
 package org.argouml.uml.ui.foundation.core;
 
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
 import org.argouml.uml.ui.UMLModelElementListModel2;
 
 /**
@@ -45,8 +45,8 @@ public class UMLModelElementConstraintListModel
      * @see org.argouml.uml.ui.UMLModelElementListModel2#buildModelList()
      */
     protected void buildModelList() {
-        if (getTarget() != null) {
-            setAllElements(Model.getFacade().getConstraints(getTarget()));
+        if (ModelFacade.isAModelElement(getTarget())) {
+            setAllElements(ModelFacade.getConstraints(getTarget()));
         }
     }
 
@@ -54,8 +54,8 @@ public class UMLModelElementConstraintListModel
      * @see org.argouml.uml.ui.UMLModelElementListModel2#isValidElement(Object)
      */
     protected boolean isValidElement(Object/*MBase*/ o) {
-        return Model.getFacade().isAConstraint(o)
-            && Model.getFacade().getConstraints(getTarget()).contains(o);
+        return ModelFacade.isAModelElement(getTarget())
+		&& ModelFacade.isAConstraint(o)
+		&& ModelFacade.getConstraints(getTarget()).contains(o);     
     }
-
 }

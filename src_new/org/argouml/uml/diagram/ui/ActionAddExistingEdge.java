@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -28,69 +28,58 @@ package org.argouml.uml.diagram.ui;
 import java.awt.event.ActionEvent;
 
 import org.argouml.kernel.ProjectManager;
-import org.argouml.model.Model;
-import org.argouml.ui.ArgoDiagram;
 import org.argouml.ui.targetmanager.TargetManager;
-import org.tigris.gef.base.Editor;
-import org.tigris.gef.base.Globals;
-import org.tigris.gef.base.Layer;
+import org.argouml.ui.ArgoDiagram;
+import org.argouml.uml.ui.UMLAction;
 import org.tigris.gef.graph.MutableGraphModel;
-import org.tigris.gef.undo.UndoableAction;
 
 /**
 * ActionAddExistingEdge enables pasting of an existing edge into a Diagram.
 */
-public class ActionAddExistingEdge extends UndoableAction {
-
-    private static final long serialVersionUID = 736094733140639882L;
+public class ActionAddExistingEdge extends UMLAction {
     
-    private Object edge = null;
+    Object _edge = null;
 
     /**
      * Constructor for ActionAddExistingEdge.
      *
-     * @param name       the name of the action
-     * @param edgeObject    the edge (the UML ModelElement!)
+     * @param tabName
      */
-    public ActionAddExistingEdge(String name, Object edgeObject) {
-        super(name);
-        edge = edgeObject;
+    public ActionAddExistingEdge(String tabName, Object edge) {
+        super(tabName, NO_ICON);
+        _edge = edge;
+        
     }
+
+    
 
     /**
      * @see java.awt.event.ActionListener#actionPerformed(ActionEvent)
      */
     public void actionPerformed(ActionEvent arg0) {
         super.actionPerformed(arg0);
-        // we have an edge (the UML modelelement!)
-        if (edge == null) return;
-        // let's test which situation we have. 3 Possibilities:
+        // we have an edge
+        if (_edge == null) return;
+        // lets test which situation we have. 3 Possibilities:
         // 1. The nodes are allready on the diagram, we can use
-        //    canAddEdge for this.
-        // 2. One of the nodes is already on the diagram. The other
-        //    has to be added.
+        //    canAddEdge for this
+        // 2. One of the nodes is allready on the diagram. The other
+        //    has to be added
         // 3. Both of the nodes are not yet on the diagram.
         // For the time being we will only implement situation 1.
         // TODO: implement situation 2 and 3.
         MutableGraphModel gm = (MutableGraphModel) ProjectManager.getManager().
             getCurrentProject().getActiveDiagram().getGraphModel();
-        if (gm.canAddEdge(edge)) { // situation 1
-            gm.addEdge(edge);
-            if (Model.getFacade().isAAssociationClass(edge)) {
-                Editor editor = Globals.curEditor();
-                Layer lay = editor.getLayerManager().getActiveLayer();
-                FigAssociationClass fig =
-                    (FigAssociationClass) lay.presentationFor(edge);
-                ModeCreateAssociationClass.buildParts(editor, fig, lay);
-            }
+        if (gm.canAddEdge(_edge)) { // situation 1
+            gm.addEdge(_edge);
         }
     }
 
     /**
-     * @see javax.swing.Action#isEnabled()
+     * @see org.argouml.uml.ui.UMLAction#shouldBeEnabled()
      */
-    public boolean isEnabled() {
-        Object target = TargetManager.getInstance().getModelTarget();
+    public boolean shouldBeEnabled() {
+        Object target = TargetManager.getInstance().getTarget();
         ArgoDiagram dia = ProjectManager.getManager().getCurrentProject().
             getActiveDiagram();
         if (dia == null) return false;

@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 2002-2006 The Regents of the University of California. All
+// Copyright (c) 2002-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,20 +24,17 @@
 
 package org.argouml.uml.ui.behavior.collaborations;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.argouml.model.Model;
-import org.argouml.uml.ui.UMLModelElementOrderedListModel2;
+import org.argouml.model.ModelFacade;
+import org.argouml.uml.ui.UMLModelElementListModel2;
 
 /**
- * List model that shows the AssociationEndRoles belonging to some
- * AssociationRole.
+ * List model that shows the AssociationEndRoles belonging to some 
+ * AssociationRole. 
  * @since Oct 4, 2002
  * @author jaap.branderhorst@xs4all.nl
  */
 public class UMLAssociationRoleAssociationEndRoleListModel
-    extends UMLModelElementOrderedListModel2 {
+    extends UMLModelElementListModel2 {
 
     /**
      * Constructor for UMLAssociationRoleAssociationEndRoleListModel.
@@ -50,29 +47,17 @@ public class UMLAssociationRoleAssociationEndRoleListModel
      * @see org.argouml.uml.ui.UMLModelElementListModel2#buildModelList()
      */
     protected void buildModelList() {
-        setAllElements(Model.getFacade().getConnections(getTarget()));
+	if (ModelFacade.isAAssociationRole(getTarget())) {
+	    setAllElements(ModelFacade.getConnections(getTarget()));
+	}
     }
 
     /**
      * @see org.argouml.uml.ui.UMLModelElementListModel2#isValidElement(Object)
      */
     protected boolean isValidElement(Object/*MBase*/ o) {
-        return Model.getFacade().isAAssociationEndRole(o)
-            && Model.getFacade().getConnections(getTarget()).contains(o);
-    }
-
-    /**
-     * @see org.argouml.uml.ui.UMLModelElementOrderedListModel2#moveTo(int, int)
-     */
-    protected void moveDown(int index1) {
-        int index2 = index1 + 1;
-        Object assocrole = getTarget();
-        List c = new ArrayList(Model.getFacade().getConnections(assocrole));
-        Object mem1 = c.get(index1);
-        Object mem2 = c.get(index2);
-        c.set(index1, mem2);
-        c.set(index2, mem1);
-        Model.getCoreHelper().setConnections(assocrole, c);
-        buildModelList();
+	return ModelFacade.isAAssociationRole(getTarget())
+		&& ModelFacade.isAAssociationEndRole(o)
+		&& ModelFacade.getConnections(getTarget()).contains(o);
     }
 }

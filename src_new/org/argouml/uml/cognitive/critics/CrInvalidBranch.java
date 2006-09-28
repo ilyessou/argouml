@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,72 +22,43 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: CrInvalidBranch.java
+// Classes: CrInvalidBranch
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.cognitive.critics;
 
 import java.util.Collection;
-
 import org.argouml.cognitive.Designer;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
+import org.argouml.model.ModelFacade;
 
-/**
- * A critic to detect when a Branch (i.e. Choice or Junction)
- * state has the wrong number of transitions.
- * Implements constraint [5] and [6] on PseudoState in the UML
- * Semantics v1.3, p. 2-140:
- *
- * [5] A junction vertex must have at least one incoming and
- * one outgoing transition.
- * (self.kind = #junction) implies
- *     ((self.incoming->size >= 1) and (self.outgoing->size >= 1))
- *
- * [6] A choice vertex must have at least one incoming and
- * one outgoing transition.
- * (self.kind = #choice) implies
- *     ((self.incoming->size >= 1) and (self.outgoing->size >= 1))
- *
- * @author jrobbins
- */
+
+/** A critic to detect when a Branch state has the wrong number of
+ *  transitions.  Implements constraint [6] on MPseudostate in the UML
+ *  Semantics v1.1, pp. 104. */
+
 public class CrInvalidBranch extends CrUML {
 
-    /**
-     * The constructor.
-     */
     public CrInvalidBranch() {
-        setupHeadAndDesc();
-	addSupportedDecision(UMLDecision.STATE_MACHINES);
+	setHeadline("Change Branch Transitions");
+	addSupportedDecision(CrUML.decSTATE_MACHINES);
 	addTrigger("incoming");
     }
 
-    /**
-     * This is the decision routine for the critic.
-     *
-     * @param dm is the UML entity that is being checked.
-     * @param dsgr is for future development and can be ignored.
-     *
-     * @return boolean problem found
-     */
     public boolean predicate2(Object dm, Designer dsgr) {
-	if (!(Model.getFacade().isAPseudostate(dm))) {
+	if (!(ModelFacade.isAPseudostate(dm))) return NO_PROBLEM;
+	Object k = ModelFacade.getPseudostateKind(dm);
+	if (!ModelFacade.
+	    equalsPseudostateKind(k,
+				  ModelFacade.BRANCH_PSEUDOSTATEKIND))
 	    return NO_PROBLEM;
-	}
-	Object k = Model.getFacade().getPseudostateKind(dm);
-	if ((!Model.getFacade().equalsPseudostateKind(k,
-	        Model.getPseudostateKind().getChoice()))
-            && (!Model.getFacade().equalsPseudostateKind(k,
-                    Model.getPseudostateKind().getJunction()))) {
-	    return NO_PROBLEM;
-	}
-	Collection outgoing = Model.getFacade().getOutgoings(dm);
-	Collection incoming = Model.getFacade().getIncomings(dm);
+	Collection outgoing = ModelFacade.getOutgoings(dm);
+	Collection incoming = ModelFacade.getIncomings(dm);
 	int nOutgoing = outgoing == null ? 0 : outgoing.size();
 	int nIncoming = incoming == null ? 0 : incoming.size();
-	if (nIncoming < 1) {
-	    return PROBLEM_FOUND;
-	}
-	if (nOutgoing < 1) {
-	    return PROBLEM_FOUND;
-	}
+	if (nIncoming > 1) return PROBLEM_FOUND;
+	if (nOutgoing == 1) return PROBLEM_FOUND;
 	return NO_PROBLEM;
     }
 

@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2001 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,25 +24,18 @@
 
 package org.argouml.application.api;
 
-/**
- * An module interface which identifies an ArgoUML plug-in used
- * as a tab in the settings dialog.
+/**  An module interface which identifies an ArgoUML plug-in used 
+ *   as a tab in the settings dialog.
  *
- * @author Thierry Lach
- * @since 0.9.4
- * @deprecated by Linus Tolke (0.21.1 March 2006).
- *         Call registration in the appropriate subsystem from
- *         {@link org.argouml.moduleloader.ModuleInterface#enable()}.
- *         If the needed registration is not available, add it!
+ *   @author Thierry Lach
+ *   @since 0.9.4
  */
 public interface PluggableSettingsTab extends Pluggable {
-    /**
-     * Returns the settings tab panel for the plugin.
+    /** Returns the settings tab panel for the plugin.
      * This is found under the edit button.
-     *
      * @return the setting tab panel.
      */
-    SettingsTabPanel getSettingsTabPanel();
+    public SettingsTabPanel getSettingsTabPanel();
 
 } /* End interface PluggableSettingsTab */
-
+ 

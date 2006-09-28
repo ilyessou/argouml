@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2003 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,38 +24,37 @@
 
 package org.argouml.uml.ui;
 
-import org.apache.log4j.Logger;
-import org.argouml.model.Model;
-import org.argouml.uml.diagram.DiagramFactory;
+import org.argouml.model.ModelFacade;
 import org.argouml.uml.diagram.ui.UMLDiagram;
 import org.argouml.uml.diagram.use_case.ui.UMLUseCaseDiagram;
+import org.apache.log4j.Logger;
 
-/**
- * Action to create a new use case diagram.
+/** Action to create a new use case diagram.
+ *  @stereotype singleton
  */
 public class ActionUseCaseDiagram extends ActionAddDiagram {
 
-    private static final Logger LOG =
+    public static ActionUseCaseDiagram SINGLETON = new ActionUseCaseDiagram();
+
+    private static final Logger LOG = 
         Logger.getLogger(ActionUseCaseDiagram.class);
 
-    public ActionUseCaseDiagram() {
+    private ActionUseCaseDiagram() {
         super("action.usecase-diagram");
     }
 
     /**
      * @see org.argouml.uml.ui.ActionAddDiagram#createDiagram(Object)
      */
-    public UMLDiagram createDiagram(Object namespace) {
-        if (!Model.getFacade().isANamespace(namespace)) {
+    public UMLDiagram createDiagram(Object handle) {
+        if (!ModelFacade.isANamespace(handle)) {
             LOG.error("No namespace as argument");
-            LOG.error(namespace);
+            LOG.error(handle);
             throw new IllegalArgumentException(
-                "The argument " + namespace + "is not a namespace.");
+                "The argument " + handle + "is not a namespace.");
         }
-        return (UMLDiagram)DiagramFactory.getInstance().createDiagram(
-                UMLUseCaseDiagram.class,
-                namespace,
-                null);
+        Object/*MNamespace*/ ns = handle;
+        return new UMLUseCaseDiagram(ns);
     }
 
     /**
@@ -63,8 +62,8 @@ public class ActionUseCaseDiagram extends ActionAddDiagram {
      */
     public boolean isValidNamespace(Object handle) {
         boolean validNamespace = false;
-        if (Model.getFacade().isAPackage(handle)
-            || Model.getFacade().isAClassifier(handle))
+        if (ModelFacade.isAPackage(handle)
+            || ModelFacade.isAClassifier(handle))
             validNamespace = true;
         return validNamespace;
     }

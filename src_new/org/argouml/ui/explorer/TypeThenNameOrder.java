@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2001 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -25,7 +25,6 @@
 package org.argouml.ui.explorer;
 
 import javax.swing.tree.DefaultMutableTreeNode;
-import org.argouml.i18n.Translator;
 
 /**
  * Sorts by user object type,
@@ -40,7 +39,7 @@ import org.argouml.i18n.Translator;
  * @author  alexb
  */
 public class TypeThenNameOrder extends NameOrder {
-
+    
     /** Creates a new instance of TypeThenNameOrder */
     public TypeThenNameOrder() {
     }
@@ -48,10 +47,9 @@ public class TypeThenNameOrder extends NameOrder {
     /**
      * Compares obj1 and obj2 as per the class description.
      * nulls are sorted first.
-     * Returns a negative integer, zero, or a positive integer as the first
-     * argument is less than, equal to, or greater than the second.
      *
-     * @see java.util.Comparator#compare(java.lang.Object, java.lang.Object)
+     * @return a negative integer, zero, or a positive integer as the first
+     *         argument is less than, equal to, or greater than the second.
      */
     public int compare(Object obj1, Object obj2) {
 	if (obj1 instanceof DefaultMutableTreeNode) {
@@ -102,11 +100,8 @@ public class TypeThenNameOrder extends NameOrder {
 
         return typeNameOrder;
     }
-
-    /**
-     * @see java.lang.Object#toString()
-     */
+    
     public String toString() {
-        return Translator.localize("combobox.order-by-type-name");
+        return "Order By Type, Name";
     }
 }

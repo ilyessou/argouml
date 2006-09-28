@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,58 +22,49 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: CrTooManyTransitions.java
+// Classes: CrTooManyTransitions
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.cognitive.critics;
 
 import java.util.Collection;
-
 import org.argouml.cognitive.Designer;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
+import org.argouml.model.ModelFacade;
+/** A critic to detect when a class can never have instances (of
+ *  itself of any subclasses). */
 
-/**
- * A critic to detect when a state has too many ingoing and
- * outgoing transitions.
- */
-public class CrTooManyTransitions extends AbstractCrTooMany {
-    /**
-     * Threshold.
-     */
-    private static final int TRANSITIONS_THRESHOLD = 10;
+public class CrTooManyTransitions extends CrUML {
 
-    /**
-     * The constructor.
-     */
+    ////////////////////////////////////////////////////////////////
+    // constants
+    public static String THRESHOLD = "Threshold";
+
+    ////////////////////////////////////////////////////////////////
+    // constructor
     public CrTooManyTransitions() {
-        setupHeadAndDesc();
-	addSupportedDecision(UMLDecision.STATE_MACHINES);
-	setThreshold(TRANSITIONS_THRESHOLD);
+	setHeadline("Reduce Transitions on <ocl>self</ocl>");
+	addSupportedDecision(CrUML.decSTATE_MACHINES);
+	setArg(THRESHOLD, new Integer(10));
 	addTrigger("incoming");
 	addTrigger("outgoing");
 
     }
 
-    /**
-     * @see org.argouml.uml.cognitive.critics.CrUML#predicate2(
-     *         java.lang.Object, org.argouml.cognitive.Designer)
-     */
+    ////////////////////////////////////////////////////////////////
+    // critiquing API
     public boolean predicate2(Object dm, Designer dsgr) {
-	if (!(Model.getFacade().isAStateVertex(dm))) {
-            return NO_PROBLEM;
-        }
+	if (!(ModelFacade.isAStateVertex(dm))) return NO_PROBLEM;
+	Object sv = /*(MStateVertex)*/ dm;
 
-	Collection in = Model.getFacade().getIncomings(dm);
-	Collection out = Model.getFacade().getOutgoings(dm);
+	int threshold = ((Integer) getArg(THRESHOLD)).intValue();
+	Collection in = ModelFacade.getIncomings(sv);
+	Collection out = ModelFacade.getOutgoings(sv);
 	int inSize = (in == null) ? 0 : in.size();
 	int outSize = (out == null) ? 0 : out.size();
-	if (inSize + outSize <= getThreshold()) {
-            return NO_PROBLEM;
-        }
+	if (inSize + outSize <= threshold) return NO_PROBLEM;
 	return PROBLEM_FOUND;
     }
-
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = -5732942378849267065L;
 
 } /* end class CrTooManyTransitions */

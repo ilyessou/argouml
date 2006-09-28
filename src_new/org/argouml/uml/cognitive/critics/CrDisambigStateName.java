@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,100 +22,63 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+
+// File: CrDisambigStateName.java
+// Classes: CrDisambigStateName
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.cognitive.critics;
 
 import java.util.Collection;
 import java.util.Iterator;
-
 import javax.swing.Icon;
-
 import org.argouml.cognitive.Designer;
 import org.argouml.cognitive.critics.Critic;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
-
-/**
- * The critic for ambiguous names of a state.
- *
- * @author Jason Robbins
- */
+import org.argouml.model.ModelFacade;
 public class CrDisambigStateName extends CrUML {
 
-    /**
-     * The constructor.
-     */
     public CrDisambigStateName() {
-        setupHeadAndDesc();
-	addSupportedDecision(UMLDecision.NAMING);
+	setHeadline("Choose a Unique Name for <ocl>self</ocl>");
+	addSupportedDecision(CrUML.decNAMING);
 	setKnowledgeTypes(Critic.KT_SYNTAX);
 	addTrigger("name");
 	addTrigger("parent");
     }
 
-    /**
-     * @see org.argouml.uml.cognitive.critics.CrUML#predicate2(
-     * java.lang.Object, org.argouml.cognitive.Designer)
-     */
     public boolean predicate2(Object dm, Designer dsgr) {
-	if (!(Model.getFacade().isAState(dm))) {
-            return NO_PROBLEM;
-        }
-	String myName = Model.getFacade().getName(dm);
+	if (!(ModelFacade.isAState(dm))) return NO_PROBLEM;
+	Object state = /*(MState)*/ dm;
+	String myName = ModelFacade.getName(state);
 	// TODO: should define a CompoundCritic
-	if (myName == null || myName.equals("")) {
-            return NO_PROBLEM;
-        }
+	if (myName == null || myName.equals("")) return NO_PROBLEM;
 	String myNameString = myName;
-	if (myNameString.length() == 0) {
-            return NO_PROBLEM;
-        }
-	Collection pkgs = Model.getFacade().getElementImports2(dm);
-	if (pkgs == null) {
-            return NO_PROBLEM;
-        }
+	if (myNameString.length() == 0) return NO_PROBLEM;
+	Collection pkgs = ModelFacade.getElementImports2(state);
+	if (pkgs == null) return NO_PROBLEM;
 	for (Iterator iter = pkgs.iterator(); iter.hasNext();) {
 	    Object imp = /*(MElementImport)*/ iter.next();
-	    Object ns = Model.getFacade().getPackage(imp);
-	    if (ns == null) {
-                return NO_PROBLEM;
-            }
-	    Collection oes = Model.getFacade().getOwnedElements(ns);
-	    if (oes == null) {
-                return NO_PROBLEM;
-            }
-	    Iterator elems = oes.iterator();
-	    while (elems.hasNext()) {
-		Object eo = /*(MElementImport)*/ elems.next();
-		Object me =
-                    /*(MModelElement)*/
-		    Model.getFacade().getModelElement(eo);
-		if (!(Model.getFacade().isAClassifier(me))) {
-                    continue;
-                }
-		if (me == dm) {
-                    continue;
-                }
-		String meName = Model.getFacade().getName(me);
-		if (meName == null || meName.equals("")) {
-                    continue;
-                }
-		if (meName.equals(myNameString)) {
-                    return PROBLEM_FOUND;
-                }
+	    Object ns = ModelFacade.getPackage(imp);
+	    if (ns == null) return NO_PROBLEM;
+	    Collection oes = ModelFacade.getOwnedElements(ns);
+	    if (oes == null) return NO_PROBLEM;
+	    Iterator enum = oes.iterator();
+	    while (enum.hasNext()) {
+		Object eo = /*(MElementImport)*/ enum.next();
+		Object me = /*(MModelElement)*/ ModelFacade.getModelElement(eo);
+		if (!(ModelFacade.isAClassifier(me))) continue;
+		if (me == state) continue;
+		String meName = ModelFacade.getName(me);
+		if (meName == null || meName.equals("")) continue;
+		if (meName.equals(myNameString)) return PROBLEM_FOUND;
 	    }
 	}
 	return NO_PROBLEM;
     }
 
-    /**
-     * @see org.argouml.cognitive.Poster#getClarifier()
-     */
     public Icon getClarifier() {
-	return ClClassName.getTheInstance();
+	return ClClassName.TheInstance;
     }
 
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = 5027208502429769593L;
 } /* end class CrDisambigStateName */

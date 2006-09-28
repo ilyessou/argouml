@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -29,42 +29,27 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
 
-/**
- * Rule for Transition->Source State.
- */
 public class GoTransitionToSource extends AbstractPerspectiveRule {
 
-    /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getRuleName()
-     */
-    public String getRuleName() {
-        return Translator.localize("misc.transition.source-state");
+    public String getRuleName() { return "Transition->Source State"; }
+
+    public Collection getChildren(Object parent) { 
+	if (ModelFacade.isATransition(parent)) {
+	    Collection col = new ArrayList();
+	    col.add(ModelFacade.getSource(parent));
+	    return col;          
+	}
+	return null;
     }
 
-    /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getChildren(java.lang.Object)
-     */
-    public Collection getChildren(Object parent) {
-        if (Model.getFacade().isATransition(parent)) {
-            Collection col = new ArrayList();
-            col.add(Model.getFacade().getSource(parent));
-            return col;
-        }
-        return null;
-    }
-
-    /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getDependencies(java.lang.Object)
-     */
     public Set getDependencies(Object parent) {
-        if (Model.getFacade().isATransition(parent)) {
-            Set set = new HashSet();
-            set.add(parent);
-            return set;
-        }
-        return null;
+        if (ModelFacade.isATransition(parent)) {
+	    Set set = new HashSet();
+	    set.add(parent);
+	    return set;
+	}
+	return null;
     }
 }

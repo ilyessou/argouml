@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,52 +22,31 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $Id$
 package org.argouml.uml.ui.behavior.common_behavior;
 
+import org.argouml.i18n.Translator;
+import org.argouml.model.ModelFacade;
 import java.util.Vector;
 
-import org.argouml.i18n.Translator;
-import org.argouml.kernel.Project;
-import org.argouml.kernel.ProjectManager;
-import org.argouml.model.Model;
+import org.argouml.model.uml.modelmanagement.ModelManagementHelper;
 import org.argouml.uml.ui.AbstractActionAddModelElement;
 
 
-/**
- * This action binds Instances to one or more Classifiers,
- * which declare its structure and behaviour.
- * An Object is defined as an instance of a Class, which explains why
- * the type of Classifier is parameter to one of this action's constructors.
- *
- */
 public class ActionAddInstanceClassifier extends AbstractActionAddModelElement {
 
-    private Object choiceClass = Model.getMetaTypes().getClassifier();
-
     /**
-     * The constructor for ActionAddExtendExtensionPoint.
+     * Constructor for ActionAddExtendExtensionPoint.
      */
-    public ActionAddInstanceClassifier() {
+    protected ActionAddInstanceClassifier() {
         super();
     }
-
-    /**
-     * The constructor for ActionAddExtendExtensionPoint.
-     * For an Object, the <code>choice</code> will be "Class", for any other
-     * Instance, it will be "Classifier".
-     *
-     * @param choice the classifier type we are adding
-     */
-    public ActionAddInstanceClassifier(Object choice) {
-        super();
-        choiceClass = choice;
-    }
-
+    
     /**
      * @see org.argouml.uml.ui.AbstractActionAddModelElement#doIt(java.util.Vector)
      */
     protected void doIt(Vector selected) {
-        Model.getCommonBehaviorHelper().setClassifiers(getTarget(), selected);
+        ModelFacade.setClassifiers(getTarget(), selected);
     }
 
     /**
@@ -76,10 +55,7 @@ public class ActionAddInstanceClassifier extends AbstractActionAddModelElement {
     protected Vector getChoices() {
         Vector ret = new Vector();
         if (getTarget() != null) {
-            Project p = ProjectManager.getManager().getCurrentProject();
-            Object model = p.getRoot();
-            ret.addAll(Model.getModelManagementHelper()
-                    .getAllModelElementsOfKindWithModel(model, choiceClass));
+            ret.addAll(ModelManagementHelper.getHelper().getAllModelElementsOfKind((Class)ModelFacade.CLASSIFIER));
         }
         return ret;
     }
@@ -88,7 +64,7 @@ public class ActionAddInstanceClassifier extends AbstractActionAddModelElement {
      * @see org.argouml.uml.ui.AbstractActionAddModelElement#getDialogTitle()
      */
     protected String getDialogTitle() {
-        return Translator.localize("dialog.title.add-specifications");
+        return Translator.localize("UMLMenu", "dialog.title.add-specifications");
     }
 
     /**
@@ -96,7 +72,7 @@ public class ActionAddInstanceClassifier extends AbstractActionAddModelElement {
      */
     protected Vector getSelected() {
         Vector ret = new Vector();
-        ret.addAll(Model.getFacade().getClassifiers(getTarget()));
+        ret.addAll(ModelFacade.getClassifiers(getTarget()));
         return ret;
     }
 }

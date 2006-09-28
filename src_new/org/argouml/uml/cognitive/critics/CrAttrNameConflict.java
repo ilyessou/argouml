@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2003 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,43 +22,45 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+
+// File: CrAttrNameConflict.java
+// Classes: CrAttrNameConflict
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.cognitive.critics;
 
 import java.util.Iterator;
 import java.util.Vector;
 
 import javax.swing.Icon;
-
 import org.argouml.cognitive.Designer;
 import org.argouml.cognitive.critics.Critic;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
+import org.argouml.model.ModelFacade;
+
 
 // Using Model through Facade
 
-/**
- * Check the:
- * Well-formedness rule [2] for MClassifier.
- * See page 29 of UML 1.1, Semantics. OMG document ad/97-08-04.
- * See page 2-49 in UML V1.3<p>
+
+/** Check the:
+ *  Well-formedness rule [2] for MClassifier. 
+ *  See page 29 of UML 1.1, Semantics. OMG document ad/97-08-04.
+ *  See page 2-49 in UML V1.3
  *
- * In the process of modifying this to use the new Facade object
- * (Jan 2003) this was changed to no longer detect StructuralFeatures
- * with the same name but instead attributes with the same name.
- * This is in fact a more to the letter adherance to the UML
- * well-formedness rule but it is however a change.
+ *  <p>In the process of modifying this to use the new Facade object 
+ *  (Jan 2003) this was changed to no longer detect StructuralFeatures 
+ *  with the same name but instead attributes with the same name.
+ *  This is in fact a more to the letter adherance to the UML 
+ *  well-formedness rule but it is however a change.
  */
 public class CrAttrNameConflict extends CrUML {
 
-    /**
-     * The constructor.
-     *
-     */
     public CrAttrNameConflict() {
-        setupHeadAndDesc();
-	addSupportedDecision(UMLDecision.INHERITANCE);
-	addSupportedDecision(UMLDecision.STORAGE);
-	addSupportedDecision(UMLDecision.NAMING);
+	setHeadline("Revise MAttribute Names to Avoid Conflict");
+	addSupportedDecision(CrUML.decINHERITANCE);
+	addSupportedDecision(CrUML.decSTORAGE);
+	addSupportedDecision(CrUML.decNAMING);
 	setKnowledgeTypes(Critic.KT_SYNTAX);
 	addTrigger("structuralFeature");
 	addTrigger("feature_name");
@@ -73,13 +75,13 @@ public class CrAttrNameConflict extends CrUML {
      * @return true if there are two with the same name.
      */
     public boolean predicate2(Object dm, Designer dsgr) {
-	if (!(Model.getFacade().isAClassifier(dm))) return NO_PROBLEM;
+	if (!(ModelFacade.isAClassifier(dm))) return NO_PROBLEM;
 
 	Vector namesSeen = new Vector();
 
-	Iterator attrs = Model.getFacade().getAttributes(dm).iterator();
-	while (attrs.hasNext()) {
-	    String name = Model.getFacade().getName(attrs.next());
+	Iterator enum = ModelFacade.getAttributes(dm).iterator();
+	while (enum.hasNext()) {
+	    String name = ModelFacade.getName(enum.next());
 	    if (name == null || name.length() == 0) continue;
 
 	    if (namesSeen.contains(name)) return PROBLEM_FOUND;
@@ -88,11 +90,8 @@ public class CrAttrNameConflict extends CrUML {
 	return NO_PROBLEM;
     }
 
-    /**
-     * @see org.argouml.cognitive.Poster#getClarifier()
-     */
     public Icon getClarifier() {
-	return ClAttributeCompartment.getTheInstance();
+	return ClAttributeCompartment.TheInstance;
     }
 
 } /* end class CrAttrNameConflict.java */

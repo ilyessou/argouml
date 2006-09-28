@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,50 +22,22 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: PropPanelChangeEvent
+// Classes: PropPanelChangeEvent
+// Original Author: oliver.heyden@gentleware.de
+
 package org.argouml.uml.ui.behavior.state_machines;
 
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-
-import org.argouml.i18n.Translator;
-import org.argouml.uml.ui.UMLExpressionBodyField;
-import org.argouml.uml.ui.UMLExpressionLanguageField;
-import org.argouml.uml.ui.UMLExpressionModel2;
 import org.argouml.util.ConfigLoader;
 
-/**
- * The properties panel for a ChangeEvent.
- *
- * @author oliver.heyden
- */
 public class PropPanelChangeEvent extends PropPanelEvent {
 
-    /**
-     * The constructor.
-     *
-     */
+    ////////////////////////////////////////////////////////////////
+    // contructors
     public PropPanelChangeEvent() {
-        super("Change event", lookupIcon("ChangeEvent"),
+        super("Change event", _eventIcon, 
               ConfigLoader.getTabPropsOrientation());
     }
+} 
 
-    /**
-     * @see org.argouml.uml.ui.behavior.state_machines.PropPanelEvent#initialize()
-     */
-    public void initialize() {
-        super.initialize();
 
-        UMLExpressionModel2 changeModel = new UMLChangeExpressionModel(
-                this, "changeExpression");
-        JPanel changePanel = createBorderPanel(Translator
-                .localize("label.change"));
-        changePanel.add(new JScrollPane(new UMLExpressionBodyField(
-                changeModel, true)));
-        changePanel.add(new UMLExpressionLanguageField(changeModel,
-                false));
-        add(changePanel);
-        
-        addAction(getDeleteAction());
-    }
-
-}

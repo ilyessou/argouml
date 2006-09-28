@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -26,11 +26,10 @@ package org.argouml.ui;
 
 import javax.swing.Action;
 import javax.swing.Icon;
+import javax.swing.JButton;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
-import javax.swing.JRadioButtonMenuItem;
-import javax.swing.SwingConstants;
 
 import org.argouml.i18n.Translator;
 
@@ -42,36 +41,52 @@ import org.argouml.i18n.Translator;
 public class ArgoJMenu extends JMenu {
 
     /**
-     * Constructs a new ArgoJMenu with the key to localize.
-     *
-     * @param key The key to localize.
+     * Constructs a new ArgoJMenu.
      */
-    public ArgoJMenu(String key) {
-        super();
-        localize(this, key);
-    }
+    public ArgoJMenu() { super(); }
 
+    /**
+     * Constructs a new ArgoJMenu with the supplied string as its text.
+     *
+     * @param     s      the text for the menu label
+     */
+    public ArgoJMenu(String s) { super(s); }
+
+    /**
+     * Constructs a new ArgoJMenu.
+     * Sets this menu's text and mnemonic values using the specified resource
+     * key.
+     * 
+     * @param   bundle      the localization bundle name to use
+     * @param   key         the resource string to find
+     */
+    public ArgoJMenu(String bundle, String key) {
+        super();
+        ArgoJMenu.localize(this, bundle, key);
+    }
+    
     /**
      * Sets a menu item's text and mnemonic values using the specified resource
      * key.
-     *
+     * 
      * @param   menuItem    the menu or menu item to localize
+     * @param   bundle      the localization bundle name to use
      * @param   key         the resource string to find
      */
-    public static final void localize(JMenuItem menuItem, String key) {
-        menuItem.setText(Translator.localize(key));
+    public static final void localize(JMenuItem menuItem, String bundle, String key) {
+        menuItem.setText(Translator.localize(bundle, key));
 
-        String localMnemonic = Translator.localize(key + ".mnemonic");
+        String localMnemonic = Translator.localize(bundle, key + ".mnemonic");
         if (localMnemonic != null && localMnemonic.length() == 1) {
             menuItem.setMnemonic(localMnemonic.charAt(0));
         }
     }
-
+    
     /**
      * Creates a new checkbox menu item attached to the specified
-     * action object and appends it to the end of this menu.
+     * Action object and appends it to the end of this menu.
      *
-     * @param     a     the Action for the checkbox menu item to be added
+     * @param     a      the Action for the checkbox menu item to be added
      * @return          the new checkbox menu item
      */
     public JCheckBoxMenuItem addCheckItem(Action a) {
@@ -84,11 +99,10 @@ public class ArgoJMenu extends JMenu {
 	Boolean selected = (Boolean) a.getValue("SELECTED");
 	JCheckBoxMenuItem mi =
 	    new JCheckBoxMenuItem(name, icon,
-				  (selected == null
-				   || selected.booleanValue()));
+				  (selected == null || selected.booleanValue()));
 	// End of block
-	mi.setHorizontalTextPosition(SwingConstants.RIGHT);
-	mi.setVerticalTextPosition(SwingConstants.CENTER);
+	mi.setHorizontalTextPosition(JButton.RIGHT);
+	mi.setVerticalTextPosition(JButton.CENTER);
 	mi.setEnabled(a.isEnabled());
 	mi.addActionListener(a);
 	add(mi);
@@ -96,35 +110,4 @@ public class ArgoJMenu extends JMenu {
 	return mi;
     }
 
-    /**
-     * Creates a new radiobutton menu item attached to the specified
-     * action object and appends it to the end of this menu.
-     *
-     * @param     a     the Action for the radiobutton menu item to be added
-     * @return          the new radiobutton menu item
-     */
-    public JRadioButtonMenuItem addRadioItem(Action a) {
-        String name = (String) a.getValue(Action.NAME);
-        Icon icon = (Icon) a.getValue(Action.SMALL_ICON);
-        // Set the checkbox on or
-        // off according to the SELECTED value of the action.  If no
-        // SELECTED value is found then this defaults to true.
-        Boolean selected = (Boolean) a.getValue("SELECTED");
-        JRadioButtonMenuItem mi =
-            new JRadioButtonMenuItem(name, icon,
-                                  (selected == null
-                                   || selected.booleanValue()));
-        mi.setHorizontalTextPosition(SwingConstants.RIGHT);
-        mi.setVerticalTextPosition(SwingConstants.CENTER);
-        mi.setEnabled(a.isEnabled());
-        mi.addActionListener(a);
-        add(mi);
-        a.addPropertyChangeListener(createActionChangeListener(mi));
-        return mi;
-    }
-
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = 8318663502924796474L;
 } /* end class ArgoJMenu */

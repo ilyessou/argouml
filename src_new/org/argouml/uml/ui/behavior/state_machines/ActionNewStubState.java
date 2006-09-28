@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,6 +22,7 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $header$
 package org.argouml.uml.ui.behavior.state_machines;
 
 import java.awt.event.ActionEvent;
@@ -29,7 +30,7 @@ import java.awt.event.ActionEvent;
 import javax.swing.Action;
 
 import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.model.uml.behavioralelements.statemachines.StateMachinesFactory;
 import org.argouml.uml.ui.AbstractActionNewModelElement;
 
 /**
@@ -38,31 +39,22 @@ import org.argouml.uml.ui.AbstractActionNewModelElement;
  */
 public class ActionNewStubState extends AbstractActionNewModelElement {
 
-    private static final ActionNewStubState SINGLETON =
-        new ActionNewStubState();
-
+    public static ActionNewStubState SINGLETON = new ActionNewStubState();
+    
     /**
      * Constructor for ActionNewPseudoState.
      */
     protected ActionNewStubState() {
         super();
-        putValue(Action.NAME, Translator.localize(
-                "button.new-stubstate"));
+        putValue(Action.NAME, Translator.localize("UMLMenu", "button.new-stubstate"));
     }
-
+    
     /**
      * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
      */
     public void actionPerformed(ActionEvent e) {
         super.actionPerformed(e);
-        Model.getStateMachinesFactory().buildStubState(getTarget());
-    }
-
-    /**
-     * @return Returns the SINGLETON.
-     */
-    public static ActionNewStubState getInstance() {
-        return SINGLETON;
+        StateMachinesFactory.getFactory().buildStubState(getTarget());
     }
 
 }

@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2003 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,6 +22,10 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: CrConstructorNeeded.java
+// Classes: CrConstructorNeeded
+// Original Author: jrobbins@ics.uci.edu
+
 package org.argouml.uml.cognitive.critics;
 
 import java.util.Collection;
@@ -30,37 +34,37 @@ import java.util.Iterator;
 import org.argouml.cognitive.Designer;
 import org.argouml.cognitive.ToDoItem;
 import org.argouml.cognitive.critics.Critic;
-import org.argouml.cognitive.ui.Wizard;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
+import org.argouml.kernel.Wizard;
+import org.argouml.model.ModelFacade;
 
 /**
- * A critic to detect when a class requires a constructor.<p>
+ * <p> A critic to detect when a class requires a constructor.</p>
  *
- * The critic will trigger whenever a class has instance variables that are
- * uninitialised and there is no constructor. It will not trigger for
- * certain stereotyped classes.<p>
+ * <p>The critic will trigger whenever a class has instance variables that are
+ * uninitialised and there is no constructor. It will not trigger for certain stereotyped classes.</p>
+ * <p>this critic is part of a compound critic</p>
  *
- * This critic is part of a compound critic.<p>
- *
- * See <a href=
- * "http://argouml.tigris.org/documentation/snapshots/manual/argouml.html/
- * #s2.ref.critics_constructor_needed">
- * ArgoUML User Manual: Constructor Needed</a>
+ * @see <a
+ * href="http://argouml.tigris.org/documentation/snapshots/manual/argouml.html/#s2.ref.critics_constructor_needed">ArgoUML
+ * User Manual: Constructor Needed</a>
  */
+
 public class CrConstructorNeeded extends CrUML {
 
     /**
-     * Constructor for the critic.<p>
+     * <p>Constructor for the critic.</p>
      *
-     * Sets up the resource name, which will allow headline and description
+     * <p>Sets up the resource name, which will allow headline and description
      * to found for the current locale. Provides a design issue category
      * (STORAGE) and adds triggers for metaclasses "behaviouralFeature" and
-     * "structuralFeature".
+     * "structuralFeature".</p>
      */
+
     public CrConstructorNeeded() {
-        setupHeadAndDesc();
-        addSupportedDecision(UMLDecision.STORAGE);
+
+        setResource("CrConstructorNeeded");
+
+        addSupportedDecision(CrUML.decSTORAGE);
         addKnowledgeType(Critic.KT_CORRECTNESS);
 
         // These may not actually make any difference at present (the code
@@ -71,11 +75,11 @@ public class CrConstructorNeeded extends CrUML {
     }
 
     /**
-     * The trigger for the critic.<p>
+     * <p>The trigger for the critic.</p>
      *
-     * First see if we have any instance variables that are not
+     * <p>First see if we have any instance variables that are not
      * initialised. If not there is no problem. If there are any uninitialised
-     * instance variables, then look for a constructor.<p>
+     * instance variables, then look for a constructor.</p>
      *
      * @param  dm    the {@link java.lang.Object Object} to be checked against
      *               the critic.
@@ -85,87 +89,79 @@ public class CrConstructorNeeded extends CrUML {
      *               development of ArgoUML.
      *
      * @return       {@link #PROBLEM_FOUND PROBLEM_FOUND} if the critic is
-     *               triggered, otherwise {@link #NO_PROBLEM NO_PROBLEM}.
+     *               triggered, otherwise {@link #NO_PROBLEM NO_PROBLEM}.  
      */
 
     public boolean predicate2(Object dm, Designer dsgr) {
 
         // Only look at classes
-        if (!(Model.getFacade().isAClass(dm))) {
+        if (!(ModelFacade.isAClass(dm))) {
             return NO_PROBLEM;
         }
-
-
+        
+            
 	// We don't consider secondary stuff.
-	if (!(Model.getFacade().isPrimaryObject(dm)))
+	if (!(ModelFacade.isPrimaryObject(dm))) 
 	    return NO_PROBLEM;
 
         // Types don't need a constructor.
-        if (Model.getFacade().isType(dm)) {
+        if (ModelFacade.isType(dm)) {
             return NO_PROBLEM;
         }
-
+        
         // Utilities usually do not require a constructor either
-        if (Model.getFacade().isUtility(dm)) {
+        if (ModelFacade.isUtility(dm)) {
             return NO_PROBLEM;
         }
 
         // Check for uninitialised instance variables and
         // constructor.
-        Collection operations = Model.getFacade().getOperations(dm);
+        Collection operations = ModelFacade.getOperations(dm);
 
         Iterator opers = operations.iterator();
 
         while (opers.hasNext()) {
-            if (Model.getFacade().isConstructor(opers.next())) {
+            if (ModelFacade.isConstructor(opers.next())) {
                 // There is a constructor.
                 return NO_PROBLEM;
             }
         }
 
-        Iterator attrs = Model.getFacade().getAttributes(dm).iterator();
+        Iterator attrs = ModelFacade.getAttributes(dm).iterator();
 
         while (attrs.hasNext()) {
             Object attr = attrs.next();
 
-            if (!Model.getFacade().isInstanceScope(attr))
+            if (!ModelFacade.isInstanceScope(attr))
                 continue;
 
-            if (Model.getFacade().isInitialized(attr))
+            if (ModelFacade.isInitialized(attr))
                 continue;
 
             // We have found one with instance scope that is not initialized.
             return PROBLEM_FOUND;
         }
 
-        // yeah right...we don't have an operation (and thus no
+        // yeah right...we don't have an operation (and thus no 
         return NO_PROBLEM;
     }
 
-
-    /**
-     * @see org.argouml.cognitive.critics.Critic#initWizard(
-     *         org.argouml.cognitive.ui.Wizard)
-     */
+    
     public void initWizard(Wizard w) {
 	if (w instanceof WizAddConstructor) {
-	    ToDoItem item = (ToDoItem) w.getToDoItem();
+	    ToDoItem item = w.getToDoItem();
 	    Object me = /*(MModelElement)*/ item.getOffenders().elementAt(0);
-	    String ins = super.getInstructions();
+	    String ins = "Set the name of the new constructor.";
 	    String sug = null;
 	    if (me != null)
-		sug = Model.getFacade().getName(me);
-	    if ("".equals(sug)) {
-		sug = super.getDefaultSuggestion();
-            }
+		sug = ModelFacade.getName(me);
+	    if ("".equals(sug))
+		sug = "newOperation";
 	    ((WizAddConstructor) w).setInstructions(ins);
 	    ((WizAddConstructor) w).setSuggestion(sug);
 	}
     }
-
-    /**
-     * @see org.argouml.cognitive.critics.Critic#getWizardClass(org.argouml.cognitive.ToDoItem)
-     */
+    
     public Class getWizardClass(ToDoItem item) {
 	return WizAddConstructor.class;
     }

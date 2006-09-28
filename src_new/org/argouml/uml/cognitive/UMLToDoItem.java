@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -35,18 +35,21 @@ import java.util.Enumeration;
 import java.util.Iterator;
 
 import org.argouml.cognitive.Designer;
-import org.argouml.cognitive.Highlightable;
-import org.argouml.cognitive.ListSet;
 import org.argouml.cognitive.Poster;
 import org.argouml.cognitive.ToDoItem;
 import org.argouml.cognitive.critics.Critic;
 import org.argouml.kernel.Project;
 import org.argouml.kernel.ProjectManager;
 import org.argouml.ui.ProjectBrowser;
+import org.argouml.ui.targetmanager.TargetManager;
+
+import org.tigris.gef.base.Globals;
+import org.tigris.gef.presentation.Fig;
+import org.tigris.gef.ui.Highlightable;
+import org.tigris.gef.util.VectorSet;
 
 
-/**
- * UMLToDoItem is the preferred class for newly created ToDoItems within
+/** UMLToDoItem is the preferred class for newly created ToDoItems within
  * ArgoUML. It knows more about possible designmaterial and can for example
  * highlight offenders when they are ModelElements by finding the according Fig
  * in the current diagram for them.
@@ -56,120 +59,81 @@ import org.argouml.ui.ProjectBrowser;
  * @author  mkl
  */
 public class UMLToDoItem extends ToDoItem {
-
-    /**
-     * The constructor.
-     *
-     * @param poster the poster
-     * @param h the headline
-     * @param p the priority
-     * @param d the description
-     * @param m the more-info-url
-     * @param offs the offenders
-     */
+    
     public UMLToDoItem(Poster poster, String h, int p, String d, String m,
-    ListSet offs) {
+    VectorSet offs) {
         super(poster, h, p, d, m, offs);
     }
-
-    /**
-     * The constructor.
-     *
-     * @param poster the poster
-     * @param h the headline
-     * @param p the priority
-     * @param d the description
-     * @param m the more-info-url
-     */
+    
     public UMLToDoItem(Poster poster, String h, int p, String d, String m) {
         super(poster, h, p, d, m);
     }
-
-    /**
-     * The constructor.
-     *
-     * @param c the poster (critic)
-     * @param dm the offenders
-     * @param dsgr the designer
-     */
+    
     public UMLToDoItem(Critic c, Object dm, Designer dsgr) {
         super(c, dm, dsgr);
     }
-
-    /**
-     * The constructor.
-     *
-     * @param c the poster (critic)
-     * @param offs the offenders
-     * @param dsgr the designer
-     */
-    public UMLToDoItem(Critic c, ListSet offs, Designer dsgr) {
+    
+    public UMLToDoItem(Critic c, VectorSet offs, Designer dsgr) {
         super(c, offs, dsgr);
     }
-
-    /**
-     * The constructor.
-     *
-     * @param c the critic that created this todoitem
-     */
+    
     public UMLToDoItem(Critic c) {
         super(c);
     }
-
-    /**
+    
+    /** 
      * Action jumps to the diagram containing all or most of the
      * offenders and calls {@link #deselect()}, {@link #select()}
      * around the call to
-     * {@link ProjectBrowser#jumpToDiagramShowing(java.util.Vector)}.
+     * {@link ProjectManager#jumpToDiagramShowing(VectorSet)}.
      */
     public void action() {
         deselect();
         // this also sets the target as a convenient side effect
-        ProjectBrowser.getInstance()
-            .jumpToDiagramShowing(getOffenders().asVector());
+        ProjectBrowser.getInstance().jumpToDiagramShowing(getOffenders());
+        Project p = ProjectManager.getManager().getCurrentProject();
+        if (p != null) {
+            Object f = TargetManager.getInstance().getFigTarget();
+            if (f instanceof Fig) {
+                Fig fig = (Fig) f;
+                Globals.curEditor().scrollToShow(fig.getX(), fig.getY());
+            }
+        }
         select();
     }
-
-    /**
-     * @see org.argouml.cognitive.ToDoItem#deselect()
-     */
+    
     public void deselect() {
         Enumeration offs = getOffenders().elements();
         Project p = ProjectManager.getManager().getCurrentProject();
-
+        
         while (offs.hasMoreElements()) {
             Object dm =  offs.nextElement();
-            if (dm instanceof Highlightable) {
+            if (dm instanceof Highlightable)
                 ((Highlightable) dm).setHighlight(false);
-	    } else if (p != null) {
+            else if (p != null) {
                 Iterator iterFigs = p.findFigsForMember(dm).iterator();
                 while (iterFigs.hasNext()) {
                     Object f = iterFigs.next();
-                    if (f instanceof Highlightable) {
+                    if (f instanceof Highlightable)
                         ((Highlightable) f).setHighlight(false);
-		    }
                 }
             }
         }
     }
-
-    /**
-     * @see org.argouml.cognitive.ToDoItem#select()
-     */
+    
     public void select() {
         Enumeration offs = getOffenders().elements();
         Project p = ProjectManager.getManager().getCurrentProject();
         while (offs.hasMoreElements()) {
             Object dm = offs.nextElement();
-            if (dm instanceof Highlightable) {
+            if (dm instanceof Highlightable)
                 ((Highlightable) dm).setHighlight(true);
-	    } else if (p != null) {
+            else if (p != null) {
                 Iterator iterFigs = p.findFigsForMember(dm).iterator();
                 while (iterFigs.hasNext()) {
                     Object f = iterFigs.next();
-                    if (f instanceof Highlightable) {
+                    if (f instanceof Highlightable)
                         ((Highlightable) f).setHighlight(true);
-		    }
                 }
             }
         }

@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,115 +22,73 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+
+// File: Poster.java
+// Classes: Poster
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.cognitive;
 
 import java.util.Vector;
 
 import javax.swing.Icon;
 
+import org.tigris.gef.util.VectorSet;
 
-/**
- * Interface that defines methods required on any object that can
- * post a ToDoItem to the Designer's ToDoList. Basically requires that
- * the poster (1) have contact information, (2) be able to snooze
- * and unsnooze itself, and (3) be able to determine if a ToDoItem it
- * posted previously should still be on the Designer's ToDoList. <p>
+/** Interface that defines methods required on any object that can
+ *  post a ToDoItem to the Designer's ToDoList. Basically requires that
+ *  the poster (1) have contact information, (2) be able to snooze
+ *  and unsnooze itself, and (3) be able to determine if a ToDoItem it
+ *  posted previously should still be on the Designer's ToDoList. <p>
  *
- * Currently Critic and Designer implement this interface.
+ *  Currently Critic and Designer implement this interface.
  *
  * @see org.argouml.cognitive.critics.Critic
- * @see Designer
- * @author Jason Robbins
- */
+ * @see Designer */
+
 public interface Poster {
 
     ////////////////////////////////////////////////////////////////
     // accessors
 
-    /**
-     * Reply true if the given item should be kept on the Designer's
-     * ToDoList, false if it is no longer valid.
-     *
-     * @param i the todo item
-     * @param d the designer
-     * @return true if thisitem is still valid
-     */
+    /** Get some contact information on the Poster. */
+    String getExpertEmail();
+
+    /** Update the Poster's contact info. Is this needed? */
+    void setExpertEmail(String addr);
+
+    /** Reply true if the given item should be kept on the Designer's
+     * ToDoList, false if it is no longer valid. */
     boolean stillValid(ToDoItem i, Designer d);
 
-    /**
-     * @param d the decision
-     * @return true if the decision is still supported
-     */
     boolean supports(Decision d);
-
-    /**
-     * @return the list of supported decisions
-     */
     Vector getSupportedDecisions();
-
-    /**
-     * @param g the goal
-     * @return true if the goal is still supported
-     */
     boolean supports(Goal g);
-
-    /**
-     * @return the list of supported goals
-     */
     Vector getSupportedGoals();
-
-    /**
-     * @param knowledgeType the knowledge type
-     * @return true if it is valid
-     */
     boolean containsKnowledgeType(String knowledgeType);
 
-    /**
-     * Customize the description string just before it is displayed.
-     *
-     * @param desc the description
-     * @param offs the offenders
-     * @return the customized/expanded string
-     */
-    String expand(String desc, ListSet offs);
+    /** Customize the description string just before it is displayed. */
+    String expand(String desc, VectorSet offs);
 
-    /**
-     * @return the icon shown on the todo item to show the wizard's progress
-     */
-    Icon getClarifier();
+    public Icon getClarifier();
 
     ////////////////////////////////////////////////////////////////
     // criticism control
 
-    /**
-     * Temporarily disable this Poster.
-     */
+    /** temporarily disable this Poster. */
     void snooze();
 
-    /**
-     * Unsnooze this Poster, it may resume posting without further
-     * delay.
-     */
+    /** Unsnooze this Poster, it may resume posting without further
+     * delay. */
     void unsnooze();
 
     ////////////////////////////////////////////////////////////////
     // issue resolution
 
-    /**
-     * TODO: Not implemented yet. If the given ToDoItem can
-     * be fixed automatically, and the user wants that to happen, then do
-     * it. Obviously, this depends on the specific Critic and
-     * problem. By default this method does nothing.
-     *
-     * @param item the todo item
-     * @param arg the design material (?)
-     */
     void fixIt(ToDoItem item, Object arg);
 
-    /**
-     * @param item the todo item
-     * @return true if it can be fixed
-     */
     boolean canFixIt(ToDoItem item);
 
 } /* end interface Poster */

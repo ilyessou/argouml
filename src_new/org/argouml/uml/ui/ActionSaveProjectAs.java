@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -25,45 +25,99 @@
 package org.argouml.uml.ui;
 
 import java.awt.event.ActionEvent;
+import java.io.File;
+import java.net.URL;
 
-import org.apache.log4j.Logger;
-import org.argouml.application.helpers.ResourceLoaderWrapper;
+import javax.swing.JFileChooser;
+
 import org.argouml.i18n.Translator;
+import org.argouml.kernel.Project;
+import org.argouml.kernel.ProjectManager;
 import org.argouml.ui.ProjectBrowser;
+import org.argouml.util.FileFilters;
+import org.argouml.util.FileConstants;
+import org.argouml.util.osdep.OsUtil;
 
-/**
- * Action to save project under name.
- *
+/** Action to save project under name.
  * @stereotype singleton
  */
 public class ActionSaveProjectAs extends ActionSaveProject {
-    /**
-     * Logger.
-     */
-    private static final Logger LOG =
-        Logger.getLogger(ActionSaveProjectAs.class);
 
-    /**
-     * The constructor.
-     */
-    public ActionSaveProjectAs() {
-        super(Translator.localize("action.save-project-as"),
-                ResourceLoaderWrapper.lookupIcon("action.save-project-as"));
+    ////////////////////////////////////////////////////////////////
+    // static variables
+
+    public static ActionSaveProjectAs SINGLETON = new ActionSaveProjectAs();
+
+    public static final String separator = "/";
+    //System.getProperty("file.separator");
+
+    ////////////////////////////////////////////////////////////////
+    // constructors
+
+    protected ActionSaveProjectAs() {
+        super("action.save-project-as", HAS_ICON);
     }
 
     ////////////////////////////////////////////////////////////////
     // main methods
 
-    /**
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-     */
     public void actionPerformed(ActionEvent e) {
-        LOG.info("Performing saveas action");
-        ProjectBrowser.getInstance().trySave(false, true);
+        trySave(false);
     }
 
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = -1209396991311217989L;
+    public boolean trySave(boolean overwrite) {
+        File f = getNewFile();
+        if (f == null)
+            return false;
+        boolean success = trySave(overwrite, f);
+        if (success) {
+            ProjectBrowser.getInstance().setTitle(
+                ProjectManager.getManager().getCurrentProject().getName());
+        }
+        return success;
+    }
+
+    protected File getNewFile() {
+        ProjectBrowser pb = ProjectBrowser.getInstance();
+        Project p = ProjectManager.getManager().getCurrentProject();
+
+        JFileChooser chooser = null;
+        URL url = p.getURL();
+        if ((url != null) && (url.getFile().length() > 0)) {
+            chooser = OsUtil.getFileChooser(url.getFile());
+        }
+        if (chooser == null) {
+            chooser = OsUtil.getFileChooser();
+        }
+
+        if (url != null) {
+            chooser.setSelectedFile(new File(url.getFile()));
+        }
+
+        String sChooserTitle =
+	    Translator.localize("Actions", "filechooser.save-as-project");
+        chooser.setDialogTitle(sChooserTitle + " " + p.getName());
+        chooser.setFileFilter(FileFilters.CompressedFileFilter);
+
+        int retval = chooser.showSaveDialog(pb);
+        if (retval == JFileChooser.APPROVE_OPTION) {
+            File file = chooser.getSelectedFile();
+            if (file != null) {
+                String name = file.getName();
+                if (!name.endsWith(FileConstants.COMPRESSED_FILE_EXT)) {
+                    file =
+                        new File(
+                            file.getParent(),
+                            name + FileConstants.COMPRESSED_FILE_EXT);
+                }
+            }
+            return file;
+        } else {
+            return null;
+        }
+    }
+
+    public boolean shouldBeEnabled() {
+        return true;
+    }
 } /* end class ActionSaveProjectAs */

@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,10 +24,8 @@
 
 package org.argouml.ocl;
 
-import java.util.Collection;
-import java.util.Iterator;
-
-import org.argouml.model.Model;
+import java.util.*;
+import org.argouml.model.ModelFacade;
 
 /**
  * Helper methods for OCL support.
@@ -42,18 +40,18 @@ public final class OCLUtil {
     /**
      * Get the inner-most enclosing namespace for the model element.
      *
-     * @param me the modelelement
      * @return a namespace
      */
     public static Object getInnerMostEnclosingNamespace (Object me) {
-
-        if (Model.getFacade().isAFeature(me)) {
-            me = Model.getFacade().getOwner(me);
-        }
-
-        if (!Model.getFacade().isANamespace(me)) {
+        
+        if (!ModelFacade.isAModelElement(me)) {
             throw new IllegalArgumentException();
-        }
+	}
+        
+	while ((me != null)
+	       && (!(ModelFacade.isANamespace(me)))) {
+	    me = ModelFacade.getModelElementContainer(me);
+	}
 
 	return me;
     }
@@ -66,39 +64,37 @@ public final class OCLUtil {
      * @return the context string for the model element.
      */
     public static String getContextString (final Object me) {
-	if (me == null || !(Model.getFacade().isAModelElement(me)))
+	if (me == null || !(org.argouml.model.ModelFacade.isAModelElement(me)))
 	    return "";
 	Object mnsContext =
-	    getInnerMostEnclosingNamespace (me);
+	    getInnerMostEnclosingNamespace ( me);
 
-	if (Model.getFacade().isABehavioralFeature(me)) {
+	if (ModelFacade.isABehavioralFeature(me)) {
 	    StringBuffer sbContext = new StringBuffer ("context ");
-	    sbContext.append (Model.getFacade().getName(mnsContext));
+	    sbContext.append (ModelFacade.getName(mnsContext));
 	    sbContext.append ("::");
-	    sbContext.append (Model.getFacade().getName(me));
+	    sbContext.append (ModelFacade.getName(me));
 	    sbContext.append (" (");
 
-	    Collection lParams = Model.getFacade().getParameters(me);
+	    Collection lParams = ModelFacade.getParameters(me);
 	    String sReturnType = null;
 	    boolean fFirstParam = true;
 
 	    for (Iterator i = lParams.iterator(); i.hasNext();) {
 		Object mp = i.next(); //MParameter
 
-		if (Model.getFacade().isReturn(mp)) {
-		    sReturnType = Model.getFacade().getName(
-                                    Model.getFacade().getType(mp));
+		if (ModelFacade.isReturn(mp)) {
+		    sReturnType = ModelFacade.getName(ModelFacade.getType(mp));
                 } else {
 		    if (fFirstParam) {
 			fFirstParam = false;
-		    } else {
+		    }
+		    else {
 			sbContext.append ("; ");
 		    }
 
-		    sbContext.append(
-		            Model.getFacade().getType(mp)).append(": ");
-		    sbContext.append(Model.getFacade().getName(
-		            Model.getFacade().getType(mp)));
+		    sbContext.append(ModelFacade.getType(mp)).append(": ");
+		    sbContext.append(ModelFacade.getName(ModelFacade.getType(mp)));
 		}
 	    }
 
@@ -110,8 +106,9 @@ public final class OCLUtil {
 	    }
 
 	    return sbContext.toString();
-	} else {
-	    return "context " + Model.getFacade().getName(mnsContext);
+	}
+	else {
+	    return "context " + ModelFacade.getName(mnsContext);
 	}
     }
 }

@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,10 +22,11 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $Id$
 package org.argouml.uml.ui.foundation.core;
 
 import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
 import org.argouml.uml.ui.UMLCheckBox2;
 
 /**
@@ -33,14 +34,14 @@ import org.argouml.uml.ui.UMLCheckBox2;
  * @since Jan 29, 2003
  */
 public class UMLStructuralFeatureTargetScopeCheckBox extends UMLCheckBox2 {
-
+    
 
     /**
      * Constructor for UMLStructuralFeatureTargetScopeCheckBox.
      */
     public UMLStructuralFeatureTargetScopeCheckBox() {
-        super(Translator.localize("label.classifier"),
-	      ActionSetStructuralFeatureTargetScope.getInstance(),
+        super(Translator.localize("UMLMenu", "label.classifier"), 
+	      ActionSetStructuralFeatureTargetScope.SINGLETON, 
 	      "targetScope");
     }
 
@@ -48,12 +49,14 @@ public class UMLStructuralFeatureTargetScopeCheckBox extends UMLCheckBox2 {
      * @see org.argouml.uml.ui.UMLCheckBox2#buildModel()
      */
     public void buildModel() {
+	if (!ModelFacade.isAStructuralFeature(getTarget())) {
+	    return;
+	}
+
         // repair action for possible NP after load
-        if (Model.getFacade().getTargetScope(getTarget()) == null) {
-            Model.getCoreHelper().setTargetScope(getTarget(),
-                    Model.getScopeKind().getInstance());
+        if (ModelFacade.getTargetScope(getTarget()) == null) {
+            ModelFacade.setTargetScope(getTarget(), ModelFacade.INSTANCE_SCOPEKIND);
         }
-        setSelected(Model.getFacade().getTargetScope(getTarget()).equals(
-                Model.getScopeKind().getClassifier()));
+        setSelected(ModelFacade.getTargetScope(getTarget()).equals(ModelFacade.CLASSIFIER_SCOPEKIND));
     }
 }

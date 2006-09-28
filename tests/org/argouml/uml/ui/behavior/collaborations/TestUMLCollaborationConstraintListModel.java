@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,8 +24,14 @@
 
 package org.argouml.uml.ui.behavior.collaborations;
 
-import org.argouml.model.Model;
+import org.argouml.model.uml.behavioralelements.collaborations.CollaborationsFactory;
+import org.argouml.model.uml.foundation.core.CoreFactory;
 import org.argouml.uml.ui.AbstractUMLModelElementListModel2Test;
+
+import ru.novosoft.uml.MBase;
+import ru.novosoft.uml.behavior.collaborations.MCollaboration;
+import ru.novosoft.uml.foundation.core.MConstraint;
+import ru.novosoft.uml.foundation.core.MModelElement;
 
 
 /**
@@ -48,38 +54,35 @@ public class TestUMLCollaborationConstraintListModel
      * @see org.argouml.uml.ui.AbstractUMLModelElementListModel2Test#buildElement()
      */
     protected void buildElement() {
-        setElem(Model.getCollaborationsFactory().createCollaboration());
+        elem = CollaborationsFactory.getFactory().createCollaboration();
     }
 
     /**
-     * @see org.argouml.uml.ui.AbstractUMLModelElementListModel2Test#buildModel()
+     * @see org.argouml.uml.ui.AbstractUMLModelElementListModel2Test#buildModel(org.argouml.uml.ui.UMLUserInterfaceContainer)
      */
     protected void buildModel() {
-        setModel(new UMLCollaborationConstrainingElementListModel());
+        model = new UMLCollaborationConstrainingElementListModel();
     }
 
     /**
      * @see org.argouml.uml.ui.AbstractUMLModelElementListModel2Test#fillModel()
      */
-    protected Object[] fillModel() {
-        Object[] constraints = new Object[10];
-        for (int i = 0; i < constraints.length; i++) {
-            constraints[i] = Model.getCoreFactory().createConstraint();
-            Model.getCollaborationsHelper().addConstrainingElement(
-                    getElem(),
-                    constraints[i]);
+    protected MBase[] fillModel() {
+        MConstraint[] constraints = new MConstraint[10];
+        for (int i = 0; i < 10; i++) {
+            constraints[i] = CoreFactory.getFactory().createConstraint();
+            ((MCollaboration) elem).addConstrainingElement(constraints[i]);
         }
         return constraints;
     }
 
     /**
-     * @see org.argouml.uml.ui.AbstractUMLModelElementListModel2Test#removeHalfModel(Object[])
+     * @see org.argouml.uml.ui.AbstractUMLModelElementListModel2Test#removeHalfModel(ru.novosoft.uml.MBase)
      */
-    protected void removeHalfModel(Object[] elements) {
+    protected void removeHalfModel(MBase[] elements) {
         for (int i = 0; i < 5; i++) {
-            Model.getCollaborationsHelper().removeConstrainingElement(
-                    getElem(),
-                    elements[i]);
+            ((MCollaboration) elem).removeConstrainingElement(
+	            (MModelElement) elements[i]);
         }
     }
 

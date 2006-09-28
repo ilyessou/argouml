@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2001 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -26,53 +26,38 @@ package org.argouml.uml.ui;
 
 import java.awt.event.ActionEvent;
 
-import javax.swing.Action;
-
-import org.argouml.i18n.Translator;
 import org.argouml.kernel.ProjectManager;
 import org.argouml.uml.diagram.ui.UMLDiagram;
-import org.tigris.gef.undo.UndoableAction;
 
-/**
- * Action for viewing/editing source path settings of model elements.
+/** Action for viewing/editing source path settings of model elements
  */
-public class ActionGenerationSettings extends UndoableAction {
+public class ActionGenerationSettings extends UMLAction {
+
+    ////////////////////////////////////////////////////////////////
+    // static variables
+
+    public static ActionGenerationSettings SINGLETON =
+	new ActionGenerationSettings();
 
     ////////////////////////////////////////////////////////////////
     // constructors
 
-    /**
-     *  The constructor.
-     */
-    public ActionGenerationSettings() {
-        super(Translator
-                .localize("action.settings-for-project-code-generation"), null);
-		// Set the tooltip string:
-        putValue(Action.SHORT_DESCRIPTION, Translator
-                .localize("action.settings-for-project-code-generation"));
+    protected ActionGenerationSettings() {
+	super("action.settings-for-project-code-generation", NO_ICON);
     }
 
-    // //////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////
     // main methods
 
-    /**
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-     */
     public void actionPerformed(ActionEvent ae) {
-    	super.actionPerformed(ae);
 	SourcePathDialog cgd = new SourcePathDialog();
-	cgd.setVisible(true);
+	cgd.show();
     }
 
-    /**
-     * @return true if the action is enabled and the active diagram is a diagram
-     * @see org.tigris.gef.undo.UndoableAction#isEnabled()
-     */
-    public boolean isEnabled() {
+    public boolean shouldBeEnabled() {
 	org.argouml.ui.ArgoDiagram activeDiagram =
 	    ProjectManager.getManager().getCurrentProject().getActiveDiagram();
-	return super.isEnabled()
-	    && (activeDiagram instanceof UMLDiagram);
+	return super.shouldBeEnabled() &&
+	    (activeDiagram instanceof UMLDiagram);
     }
-
 } /* end class ActionGenerationSettings */

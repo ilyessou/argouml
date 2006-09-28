@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -26,34 +26,29 @@ package org.argouml.uml.ui.foundation.core;
 
 import java.awt.event.ActionEvent;
 
-import javax.swing.Action;
-
 import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
+import org.argouml.uml.ui.UMLChangeAction;
 import org.argouml.uml.ui.UMLCheckBox2;
-import org.tigris.gef.undo.UndoableAction;
 
 
 /**
- *
- * @author jaap.branderhorst@xs4all.nl
+ * 
+ * @author jaap.branderhorst@xs4all.nl	
  * @since Jan 4, 2003
  */
-public class ActionSetAssociationEndOrdering extends UndoableAction {
+public class ActionSetAssociationEndOrdering extends UMLChangeAction {
 
-    private static final ActionSetAssociationEndOrdering SINGLETON =
+    public static final ActionSetAssociationEndOrdering SINGLETON = 
 	new ActionSetAssociationEndOrdering();
 
     /**
      * Constructor for ActionSetElementOwnershipSpecification.
      */
     protected ActionSetAssociationEndOrdering() {
-        super(Translator.localize("Set"), null);
-        // Set the tooltip string:
-        putValue(Action.SHORT_DESCRIPTION, 
-                Translator.localize("Set"));
+        super(Translator.localize("Set"), true, NO_ICON);
     }
-
+    
     /**
      * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
      */
@@ -62,24 +57,15 @@ public class ActionSetAssociationEndOrdering extends UndoableAction {
         if (e.getSource() instanceof UMLCheckBox2) {
             UMLCheckBox2 source = (UMLCheckBox2) e.getSource();
             Object target = source.getTarget();
-            if (Model.getFacade().isAAssociationEnd(target)) {
+            if (org.argouml.model.ModelFacade.isAAssociationEnd(target)) {
                 Object m = /*(MAssociationEnd)*/ target;
                 if (source.isSelected()) {
-                    Model.getCoreHelper().setOrdering(m,
-                            Model.getOrderingKind().getOrdered());
+                    ModelFacade.setOrdering(m, ModelFacade.ORDERED_ORDERINGKIND); 
                 } else {
-                    Model.getCoreHelper().setOrdering(m,
-                            Model.getOrderingKind().getUnordered());
+                    ModelFacade.setOrdering(m, ModelFacade.UNORDERED_ORDERINGKIND); 
                 }
             }
         }
-    }
-
-    /**
-     * @return Returns the sINGLETON.
-     */
-    public static ActionSetAssociationEndOrdering getInstance() {
-        return SINGLETON;
     }
 
 }

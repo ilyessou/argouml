@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 2002-2006 The Regents of the University of California. All
+// Copyright (c) 2002-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,15 +24,14 @@
 
 package org.argouml.uml.ui.behavior.use_cases;
 
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
 import org.argouml.uml.ui.UMLModelElementListModel2;
 
 /**
  * @since Oct 6, 2002
  * @author jaap.branderhorst@xs4all.nl
  */
-public class UMLExtensionPointUseCaseListModel
-    extends UMLModelElementListModel2 {
+public class UMLExtensionPointUseCaseListModel extends UMLModelElementListModel2 {
 
     /**
      * Constructor for UMLExtensionPointUseCaseListModel.
@@ -45,15 +44,19 @@ public class UMLExtensionPointUseCaseListModel
      * @see org.argouml.uml.ui.UMLModelElementListModel2#buildModelList()
      */
     protected void buildModelList() {
-        addElement(Model.getFacade().getUseCase(getTarget()));
+	if (!ModelFacade.isAExtensionPoint(getTarget())) {
+	    return;
+	}
+
+        addElement(ModelFacade.getUseCase(getTarget()));
     }
 
     /**
      * @see org.argouml.uml.ui.UMLModelElementListModel2#isValidElement(Object)
      */
     protected boolean isValidElement(Object/*MBase*/ o) {
-        return Model.getFacade().isAUseCase(o)
-            && Model.getFacade().getUseCase(getTarget()) == o;
+        return ModelFacade.isAExtensionPoint(getTarget())
+		&& ModelFacade.isAUseCase(o)
+		&& ModelFacade.getUseCase(getTarget()) == o;
     }
-
 }

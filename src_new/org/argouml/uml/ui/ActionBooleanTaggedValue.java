@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 2003-2006 The Regents of the University of California. All
+// Copyright (c) 2003-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -26,70 +26,61 @@ package org.argouml.uml.ui;
 
 import java.awt.event.ActionEvent;
 
-import javax.swing.Action;
-
-import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
-import org.tigris.gef.undo.UndoableAction;
+import org.argouml.model.ModelFacade;
+import org.argouml.model.uml.UmlFactory;
 
 /**
  * An action which can be used to create arbritary tagged values which hold
  * boolean data. It is designed (and implicitly) relies on a UMLCheckBox2.
- *
+ * 
  * @see UMLCheckBox2
  * @author mkl
+ *  
  */
-public class ActionBooleanTaggedValue extends UndoableAction {
+public class ActionBooleanTaggedValue extends UMLChangeAction {
 
-    private String tagName;
+    private String _tagName;
 
     /**
      * The constructor takes the name of the tagged value as a string, which
      * will hold boolean data.
-     *
-     * @param theTagName
+     * 
+     * @param tagName
      *            the name of the taggedvalue containing boolean values.
      */
-    public ActionBooleanTaggedValue(String theTagName) {
-        super(Translator.localize("Set"), null);
-        // Set the tooltip string:
-        putValue(Action.SHORT_DESCRIPTION, 
-                Translator.localize("Set"));
-        tagName = theTagName;
+    public ActionBooleanTaggedValue(String tagName) {
+        super("Set", NO_ICON);
+        _tagName = tagName;
     }
 
     /**
      * set the taggedvalue according to the condition of the checkbox. The
      * taggedvalue will be created if not existing.
-     *
+     * 
      * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
      */
     public void actionPerformed(ActionEvent e) {
         super.actionPerformed(e);
-        if (!(e.getSource() instanceof UMLCheckBox2)) {
-            return;
-        }
+        if (!(e.getSource() instanceof UMLCheckBox2)) return;
 
         UMLCheckBox2 source = (UMLCheckBox2) e.getSource();
         Object obj = source.getTarget();
 
-        if (!Model.getFacade().isAModelElement(obj)) {
-            return;
-        }
+        if (!org.argouml.model.ModelFacade.isAModelElement(obj)) return;
 
         boolean newState = source.isSelected();
 
-        Object taggedValue = Model.getFacade().getTaggedValue(obj, tagName);
+        Object taggedValue = ModelFacade.getTaggedValue(obj, _tagName);
         if (taggedValue == null) {
-            taggedValue =
-                Model.getExtensionMechanismsFactory().createTaggedValue();
-            Model.getExtensionMechanismsHelper().setTag(taggedValue, tagName);
-            Model.getCoreHelper().addTaggedValue(obj, taggedValue);
+            taggedValue = UmlFactory.getFactory().getExtensionMechanisms()
+                    .createTaggedValue();
+            ModelFacade.setTag(taggedValue, _tagName);
+            ModelFacade.addTaggedValue(obj, taggedValue);
         }
         if (newState) {
-            Model.getCommonBehaviorHelper().setValue(taggedValue, "true");
+            ModelFacade.setValue(taggedValue, "true");
         } else {
-            Model.getCommonBehaviorHelper().setValue(taggedValue, "false");
+            ModelFacade.setValue(taggedValue, "false");
         }
     }
 }

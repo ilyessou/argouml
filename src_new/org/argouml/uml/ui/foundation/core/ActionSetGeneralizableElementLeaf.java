@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -27,35 +27,27 @@ package org.argouml.uml.ui.foundation.core;
 
 import java.awt.event.ActionEvent;
 
-import javax.swing.Action;
-
 import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
+import org.argouml.uml.ui.UMLChangeAction;
 import org.argouml.uml.ui.UMLCheckBox2;
-import org.tigris.gef.undo.UndoableAction;
 
 /**
- *
- * @author jaap.branderhorst@xs4all.nl
+ * 
+ * @author jaap.branderhorst@xs4all.nl	
  * @since Jan 27, 2003
  */
-public class ActionSetGeneralizableElementLeaf extends UndoableAction {
-    /**
-     * The instance.
-     */
-    private static final ActionSetGeneralizableElementLeaf SINGLETON =
-        new ActionSetGeneralizableElementLeaf();
+public class ActionSetGeneralizableElementLeaf extends UMLChangeAction {
+
+    public static final ActionSetGeneralizableElementLeaf SINGLETON = new ActionSetGeneralizableElementLeaf();
 
     /**
      * Constructor for ActionSetElementOwnershipSpecification.
      */
     protected ActionSetGeneralizableElementLeaf() {
-        super(Translator.localize("Set"), null);
-        // Set the tooltip string:
-        putValue(Action.SHORT_DESCRIPTION, 
-                Translator.localize("Set"));
+        super(Translator.localize("Set"), true, NO_ICON);
     }
-
+    
     /**
      * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
      */
@@ -64,18 +56,11 @@ public class ActionSetGeneralizableElementLeaf extends UndoableAction {
         if (e.getSource() instanceof UMLCheckBox2) {
             UMLCheckBox2 source = (UMLCheckBox2) e.getSource();
             Object target = source.getTarget();
-            if (Model.getFacade().isAGeneralizableElement(target)
-                    || Model.getFacade().isAOperation(target)) {
-                Model.getCoreHelper().setLeaf(target, source.isSelected());
+            if (org.argouml.model.ModelFacade.isAGeneralizableElement(target)) {
+                Object m = /*(MGeneralizableElement)*/ target;
+                ModelFacade.setLeaf(m, source.isSelected());                
             }
         }
-    }
-
-    /**
-     * @return Returns the SINGLETON.
-     */
-    public static ActionSetGeneralizableElementLeaf getInstance() {
-        return SINGLETON;
     }
 
 }

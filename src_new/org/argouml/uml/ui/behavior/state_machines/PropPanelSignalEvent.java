@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,48 +22,22 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: PropPanelSignalEvent
+// Classes: PropPanelSignalEvent
+// Original Author: oliver.heyden@gentleware.de
+
 package org.argouml.uml.ui.behavior.state_machines;
 
-import javax.swing.JList;
-import javax.swing.JScrollPane;
-
-import org.argouml.i18n.Translator;
-import org.argouml.uml.ui.foundation.core.ActionNewParameter;
 import org.argouml.util.ConfigLoader;
 
-/**
- * The properties panel for a SignalEvent.
- *
- *
- * @author oliver.heyden
- */
 public class PropPanelSignalEvent extends PropPanelEvent {
 
-    /**
-     * The constructor.
-     *
-     */
+    ////////////////////////////////////////////////////////////////
+    // contructors
     public PropPanelSignalEvent() {
-        super("Signal event", lookupIcon("SignalEvent"),
+        super("Signal event", _eventIcon, 
               ConfigLoader.getTabPropsOrientation());
     }
-
-    /**
-     * @see org.argouml.uml.ui.behavior.state_machines.PropPanelEvent#initialize()
-     */
-    public void initialize() {
-        super.initialize();
-
-        JList signalList = new UMLSignalEventSignalList(
-                new UMLSignalEventSignalListModel());
-        signalList.setVisibleRowCount(1);
-        addField(Translator.localize("label.signal"),
-                new JScrollPane(signalList));
-
-        addAction(new ActionNewParameter());
-        addAction(getDeleteAction());
-    }
-
-}
+} 
 
 

@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2001 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,71 +24,50 @@
 
 package org.argouml.uml.diagram.ui;
 
-import java.awt.event.ActionEvent;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.Vector;
-
-import javax.swing.Action;
-
-import org.argouml.model.Model;
-import org.tigris.gef.base.Globals;
-import org.tigris.gef.base.Selection;
-import org.tigris.gef.presentation.Fig;
-import org.tigris.gef.undo.UndoableAction;
+import org.argouml.uml.ui.UMLAction;
+import org.tigris.gef.base.*;
+import org.tigris.gef.presentation.*;
+import java.awt.event.*;
+import java.util.*;
+import org.argouml.model.ModelFacade;
 
 
-/**
- * Action to set the Multiplicity.
- *
- */
-public class ActionMultiplicity extends UndoableAction {
-    private String str = "";
-    private Object/*MMultiplicity*/ mult = null;
+public class ActionMultiplicity extends UMLAction {
+    String str = "";
+    Object/*MMultiplicity*/ mult = null;
 
 
     ////////////////////////////////////////////////////////////////
     // static variables
 
     // multiplicity
-    private static UndoableAction srcMultOne = 
-        new ActionMultiplicity("1", "src");
+    public static UMLAction SrcMultOne =
+	new ActionMultiplicity(ModelFacade.M1_1_MULTIPLICITY, "src");
+    public static UMLAction DestMultOne =
+	new ActionMultiplicity(ModelFacade.M1_1_MULTIPLICITY, "dest");
 
-    private static UndoableAction destMultOne = 
-        new ActionMultiplicity("1", "dest");
+    public static UMLAction SrcMultZeroToOne =
+	new ActionMultiplicity(ModelFacade.M0_1_MULTIPLICITY, "src");
+    public static UMLAction DestMultZeroToOne =
+	new ActionMultiplicity(ModelFacade.M0_1_MULTIPLICITY, "dest");
 
-    private static UndoableAction srcMultZeroToOne = 
-        new ActionMultiplicity("0..1", "src");
+    public static UMLAction SrcMultZeroToMany =
+	new ActionMultiplicity(ModelFacade.M0_N_MULTIPLICITY, "src");
+    public static UMLAction DestMultZeroToMany =
+	new ActionMultiplicity(ModelFacade.M0_N_MULTIPLICITY, "dest");
 
-    private static UndoableAction destMultZeroToOne = 
-        new ActionMultiplicity("0..1", "dest");
-
-    private static UndoableAction srcMultZeroToMany = 
-        new ActionMultiplicity("0..*", "src");
-
-    private static UndoableAction destMultZeroToMany = 
-        new ActionMultiplicity("0..*", "dest");
-
-    private static UndoableAction srcMultOneToMany = 
-        new ActionMultiplicity("1..*", "src");
-
-    private static UndoableAction destMultOneToMany = 
-        new ActionMultiplicity("1..*", "dest");
+    public static UMLAction SrcMultOneToMany =
+	new ActionMultiplicity(ModelFacade.M1_N_MULTIPLICITY, "src");
+    public static UMLAction DestMultOneToMany =
+	new ActionMultiplicity(ModelFacade.M1_N_MULTIPLICITY, "dest");
 
 
     ////////////////////////////////////////////////////////////////
     // constructors
 
-    /**
-     * The Constructor.
-     *
-     * @param m the multiplicity
-     * @param s "src" or "dest". Anything else is interpreted as "dest".
-     */
-    protected ActionMultiplicity(String m, String s) {
-        super(m, null);
-        // Set the tooltip string:
-        putValue(Action.SHORT_DESCRIPTION, m);
+    protected ActionMultiplicity(Object/*MMultiplicity*/ m, String s) {
+	//super(m.getLower() + ".." + m.getUpper(), NO_ICON);
+	super(m.toString(), NO_ICON);
 	str = s;
 	mult = m;
     }
@@ -97,107 +76,28 @@ public class ActionMultiplicity extends UndoableAction {
     ////////////////////////////////////////////////////////////////
     // main methods
 
-    /**
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-     */
     public void actionPerformed(ActionEvent ae) {
-        super.actionPerformed(ae);
-    	Vector sels = Globals.curEditor().getSelectionManager().selections();
-	if (sels.size() == 1) {
+	Vector sels = Globals.curEditor().getSelectionManager().selections();
+	if ( sels.size() == 1 ) {
 	    Selection sel = (Selection) sels.firstElement();
 	    Fig f = sel.getContent();
 	    Object owner = ((FigEdgeModelElement) f).getOwner();
-	    Collection ascEnds = Model.getFacade().getConnections(owner);
+	    Collection ascEnds = ModelFacade.getConnections(owner);
             Iterator iter = ascEnds.iterator();
 	    Object ascEnd = null;
 	    if (str.equals("src")) {
 		ascEnd = iter.next();
-            } else {
+            }
+	    else {
                 while (iter.hasNext()) {
                     ascEnd = iter.next();
                 }
             }
-
-            if (!mult.equals(Model.getFacade().toString(
-                    Model.getFacade().getMultiplicity(ascEnd)))) {
-                Model.getCoreHelper().setMultiplicity(
-                        ascEnd,
-                        Model.getDataTypesFactory().createMultiplicity(
-                                (String) mult));
-            }
-
+	    ModelFacade.setMultiplicity(ascEnd, mult);
 	}
     }
 
-    /**
-     * @return true if the action is enabled
-     * @see org.tigris.gef.undo.UndoableAction#isEnabled()
-     */
-    public boolean isEnabled() {
-	return true;
-    }
-
-
-    /**
-     * @return Returns the srcMultOne.
-     */
-    public static UndoableAction getSrcMultOne() {
-        return srcMultOne;
-    }
-
-
-    /**
-     * @return Returns the destMultOne.
-     */
-    public static UndoableAction getDestMultOne() {
-        return destMultOne;
-    }
-
-
-    /**
-     * @return Returns the srcMultZeroToOne.
-     */
-    public static UndoableAction getSrcMultZeroToOne() {
-        return srcMultZeroToOne;
-    }
-
-
-    /**
-     * @return Returns the destMultZeroToOne.
-     */
-    public static UndoableAction getDestMultZeroToOne() {
-        return destMultZeroToOne;
-    }
-
-
-    /**
-     * @return Returns the srcMultZeroToMany.
-     */
-    public static UndoableAction getSrcMultZeroToMany() {
-        return srcMultZeroToMany;
-    }
-
-
-    /**
-     * @return Returns the destMultZeroToMany.
-     */
-    public static UndoableAction getDestMultZeroToMany() {
-        return destMultZeroToMany;
-    }
-
-
-    /**
-     * @return Returns the srcMultOneToMany.
-     */
-    public static UndoableAction getSrcMultOneToMany() {
-        return srcMultOneToMany;
-    }
-
-
-    /**
-     * @return Returns the destMultOneToMany.
-     */
-    public static UndoableAction getDestMultOneToMany() {
-        return destMultOneToMany;
+    public boolean shouldBeEnabled() { 
+	return true; 
     }
 } /* end class ActionSrcMultOneToMany */

@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 2003-2006 The Regents of the University of California. All
+// Copyright (c) 2003 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,21 +24,19 @@
 
 package org.argouml.uml.ui;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.argouml.kernel.ProjectManager;
+import junit.framework.TestCase;
 
 /**
- *
- * @author jaap.branderhorst@xs4all.nl
+ * 
+ * @author jaap.branderhorst@xs4all.nl	
  * @since Jan 9, 2003
  */
-public class TestActionDeploymentDiagram
-    extends AbstractTestActionAddDiagram {
+public class TestActionDeploymentDiagram extends TestCase
+
+{
 
     /**
-     * Constructor.
+     * Constructor for TestActionDeploymentDiagram.
      * @param arg0 test case name.
      */
     public TestActionDeploymentDiagram(String arg0) {
@@ -46,25 +44,7 @@ public class TestActionDeploymentDiagram
     }
 
     /**
-     * @see org.argouml.uml.ui.AbstractTestActionAddDiagram#getAction()
+     * Dummy testcase.
      */
-    protected ActionAddDiagram getAction() {
-        return new ActionDeploymentDiagram();
-    }
-
-    /**
-     * @see org.argouml.uml.ui.AbstractTestActionAddDiagram#getNamespace()
-     */
-    protected Object getNamespace() {
-        return ProjectManager.getManager().getCurrentProject()
-                .getModel();
-    }
-
-    /**
-     * @see AbstractTestActionAddDiagram#getValidNamespaceClasses()
-     */
-    protected List getValidNamespaceClasses() {
-        return new ArrayList();
-    }
-
+    public void testDummy() { }
 }

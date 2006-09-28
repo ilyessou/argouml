@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -25,74 +25,107 @@
 package org.argouml.uml.diagram;
 
 
+import java.io.Writer;
+
+import org.apache.log4j.Logger;
 import org.argouml.kernel.Project;
-import org.argouml.kernel.AbstractProjectMember;
+import org.argouml.kernel.ProjectMember;
 import org.argouml.ui.ArgoDiagram;
+import org.argouml.xml.pgml.PGMLParser;
+import org.tigris.gef.ocl.OCLExpander;
+import org.tigris.gef.ocl.TemplateReader;
 import org.tigris.gef.util.Util;
 
 /**
  * @author Piotr Kaminski
  */
-public class ProjectMemberDiagram extends AbstractProjectMember {
+public class ProjectMemberDiagram extends ProjectMember {
 
-    private static final String MEMBER_TYPE = "pgml";
-    private static final String FILE_EXT = ".pgml";
+    ////////////////////////////////////////////////////////////////
+    // constants
+
+    public static final String MEMBER_TYPE = "pgml";
+    public static final String FILE_EXT = "." + MEMBER_TYPE;
+    public static final String PGML_TEE = "/org/argouml/xml/dtd/PGML.tee";
+
+    ////////////////////////////////////////////////////////////////
+    // static variables
+
+    public static OCLExpander expander = null;
+    private Logger _cat = Logger.getLogger(this.getClass());
 
     ////////////////////////////////////////////////////////////////
     // instance variables
 
-    private ArgoDiagram diagram;
+    private ArgoDiagram _diagram;
 
     ////////////////////////////////////////////////////////////////
     // constructors
 
-    /**
-     * The constructor.
-     *
-     * @param d the diagram
-     * @param p the project
-     */
+    public ProjectMemberDiagram(String name, Project p) {
+        super(name, p);
+    }
+
     public ProjectMemberDiagram(ArgoDiagram d, Project p) {
         super(null, p);
         String s = Util.stripJunk(d.getName());
-        makeUniqueName(s);
+        setName(s);
         setDiagram(d);
     }
 
     ////////////////////////////////////////////////////////////////
     // accessors
 
-    /**
-     * @return the diagram
-     */
     public ArgoDiagram getDiagram() {
-        return diagram;
+        return _diagram;
     }
-    /**
-     * @see org.argouml.kernel.AbstractProjectMember#getType()
-     */
     public String getType() {
         return MEMBER_TYPE;
     }
-    /**
-     * @see org.argouml.kernel.AbstractProjectMember#getZipFileExtension()
-     */
-    public String getZipFileExtension() {
+    public String getFileExtension() {
         return FILE_EXT;
     }
 
-    /**
-     * @param d the diagram
-     */
-    protected void setDiagram(ArgoDiagram d) {
-        diagram = d;
+    public void load() {
+        _cat.debug("Reading " + getURL());
+        PGMLParser.SINGLETON.setOwnerRegistry(getProject().getUUIDRefs());
+        ArgoDiagram d =
+	    (ArgoDiagram) PGMLParser.SINGLETON.readDiagram(getURL());
+        setDiagram(d);
+        getProject().addDiagram(d);
+
     }
-    
+
     /**
-     * @see org.argouml.kernel.ProjectMember#repair()
+     * @deprecated since 0.l5.3 since the function in the
+     * interface is removed.
      */
-    public String repair() {
-        return diagram.repair();
+    public void save(String path, boolean overwrite) {
+        save(path, overwrite, null);
+    }
+
+    /**
+     * @deprecated since 0.l5.3 since the function in the
+     * interface is deprecated since 0.13.6.
+     */
+    public void save(String path, boolean overwrite, Writer writer) {
+        if (expander == null)
+            expander = new OCLExpander(TemplateReader.readFile(PGML_TEE));
+        expander.expand(writer, _diagram, "", "");
+    }
+
+    /**
+     * Write the diagram to the given writer.
+     * @see org.argouml.kernel.ProjectMember#save(java.io.Writer)
+     */
+    public void save(Writer writer) {
+        if (expander == null)
+            expander = new OCLExpander(TemplateReader.readFile(PGML_TEE));
+        expander.expand(writer, _diagram, "", "");
+    }
+
+    protected void setDiagram(ArgoDiagram diagram) {
+        _diagram = diagram;
     }
 
 } /* end class ProjectMemberDiagram */

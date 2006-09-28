@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -25,270 +25,178 @@
 package org.argouml.uml.diagram.state.ui;
 
 import java.awt.Color;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyVetoException;
-import java.util.Collection;
 import java.util.Iterator;
 
-import org.argouml.model.AssociationChangeEvent;
-import org.argouml.model.AttributeChangeEvent;
-import org.argouml.model.Model;
-import org.argouml.notation.NotationProviderFactory2;
-import org.argouml.uml.notation.NotationProvider;
+import org.argouml.application.api.Notation;
+import org.argouml.model.ModelFacade;
+import org.argouml.model.uml.UmlModelEventPump;
 import org.tigris.gef.graph.GraphModel;
-import org.tigris.gef.presentation.FigRRect;
 import org.tigris.gef.presentation.FigText;
+
+import ru.novosoft.uml.MElementEvent;
 
 /**
  * The fig hierarchy should comply as much as possible to the hierarchy of the
  * UML metamodel. Reason for this is to make sure that events from the model are
  * not missed by the figs. The hierarchy of the states was not compliant to
  * this. This resulted in a number of issues (issue 1430 for example). Therefore
- * introduced an abstract FigState and made FigCompositeState and FigSimpleState
+ * introduced a FigState and made FigCompositeState and FigSimpleState
  * subclasses of this state.
- *
+ * 
  * @author jaap.branderhorst@xs4all.nl
  * @since Dec 30, 2002
  */
 public abstract class FigState extends FigStateVertex {
 
-    protected static final int SPACE_TOP = 0;
-    protected static final int SPACE_MIDDLE = 0;
-    protected static final int DIVIDER_Y = 0;
-    protected static final int SPACE_BOTTOM = 6;
-
-    protected static final int MARGIN = 2;
-
-    protected NotationProvider notationProviderBody;
-
-    /**
-     * The text inside the state.
-     */
-    private FigText internal;
+    protected FigText _internal;
 
     /**
      * Constructor for FigState.
      */
     public FigState() {
         super();
-        setBigPort(new FigRRect(getInitialX() + 1, getInitialY() + 1,
-                getInitialWidth() - 2, getInitialHeight() - 2,
-                Color.cyan, Color.cyan));
-        getNameFig().setLineWidth(0);
-        getNameFig().setBounds(getInitialX() + 2, getInitialY() + 2,
-                       getInitialWidth() - 4,
-                       getNameFig().getBounds().height);
-        getNameFig().setFilled(false);
-
-        internal =
-            new FigText(getInitialX() + 2,
-                    getInitialY() + 2 + 21 + 4,
-                    getInitialWidth() - 4,
-                    getInitialHeight() - (getInitialY() + 2 + 21 + 4));
-        internal.setFont(getLabelFont());
-        internal.setTextColor(Color.black);
-        internal.setLineWidth(0);
-        internal.setFilled(false);
-        internal.setExpandOnly(true);
-        internal.setReturnAction(FigText.INSERT);
-        internal.setJustification(FigText.JUSTIFY_LEFT);
+        _internal = new FigText(getInitialX() + 2, getInitialY() + 2 + 21 + 4,
+                getInitialWidth() - 4, getInitialHeight()
+                        - (getInitialY() + 2 + 21 + 4));
+        _internal.setFont(LABEL_FONT);
+        _internal.setTextColor(Color.black);
+        _internal.setLineWidth(0);
+        _internal.setFilled(false);
+        _internal.setExpandOnly(true);
+        _internal.setMultiLine(true);
+        _internal.setJustification(FigText.JUSTIFY_LEFT);
     }
 
     /**
-     * Constructor for FigState, used when an UML elm already exists.
-     *
-     * @param gm ignored
-     * @param node the UML element
+     * Constructor for FigState.
+     * 
+     * @param gm
+     * @param node
      */
     public FigState(GraphModel gm, Object node) {
         this();
         setOwner(node);
     }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#setOwner(java.lang.Object)
-     */
-    public void setOwner(Object newOwner) {
-        super.setOwner(newOwner);
-        renderingChanged();
+    public void setOwner(Object node) {
+        super.setOwner(node);
+        updateInternal();
     }
 
     /**
-     * @see org.argouml.uml.diagram.state.ui.FigStateVertex#initNotationProviders(java.lang.Object)
+     * @see org.argouml.uml.diagram.ui.FigNodeModelElement#modelChanged(ru.novosoft.uml.MElementEvent)
      */
-    protected void initNotationProviders(Object own) {
-        super.initNotationProviders(own);
-        if (Model.getFacade().isAState(own)) {
-            notationProviderBody =
-                NotationProviderFactory2.getInstance().getNotationProvider(
-                        NotationProviderFactory2.TYPE_STATEBODY, own);
-        }
-    }
-
-    /**
-     * @see org.argouml.uml.diagram.ui.FigNodeModelElement#modelChanged(java.beans.PropertyChangeEvent)
-     */
-    protected void modelChanged(PropertyChangeEvent mee) {
+    protected void modelChanged(MElementEvent mee) {
         super.modelChanged(mee);
-        if (mee instanceof AssociationChangeEvent 
-                || mee instanceof AttributeChangeEvent) {
-            renderingChanged();
-            updateListeners(getOwner(), getOwner());
+        if (mee.getSource().equals(getOwner())) {
+            // the events concerning the MState
+            if (mee.getName().equals("classifierInState")
+                    || mee.getName().equals("deferrableEvent")
+                    || mee.getName().equals("internalTransition")
+                    || mee.getName().equals("doActivity")
+                    || mee.getName().equals("entry")
+                    || mee.getName().equals("exit")) {
+                updateInternal();
+                // register this fig as a listener if the event is
+                // about adding modelelements to the state
+                updateListeners(getOwner());
+                damage();
+            }
+            // we don't have to act on incoming and outgoing
+            // transitions since that doesn't change the fig.
+        } else if (ModelFacade.getInternalTransitions(getOwner()).contains(
+                mee.getSource())
+                || // the internal transitions
+                (mee.getSource() == ModelFacade.getEntry(getOwner()))
+                || // the entry
+                (mee.getSource() == ModelFacade.getExit(getOwner()))
+                || // the exit
+                (mee.getSource() == ModelFacade.getDoActivity(getOwner()))
+                || // the doacitivity
+                ModelFacade.getDeferrableEvents(getOwner()).contains(
+                        mee.getSource())) {
+            // the defered events
+            updateInternal();
+            updateListeners(getOwner());
             damage();
         }
+
     }
 
     /**
      * @see org.argouml.uml.diagram.ui.FigNodeModelElement#updateListeners(java.lang.Object)
      */
-    protected void updateListeners(Object oldOwner, Object newOwner) {
-        if (oldOwner != null) {
-            removeAllElementListeners();
-        }
-        /* Now, let's register for events from all modelelements
-         * that change the name or body text: 
-         */
+    protected void updateListeners(Object newOwner) {
+        super.updateListeners(newOwner);
         if (newOwner != null) {
-            /* Many different event types are needed, 
-             * so let's register for them all: */
-            addElementListener(newOwner);
-            // register for internal transitions:
-            Iterator it =
-                Model.getFacade().getInternalTransitions(newOwner).iterator();
+            // register for events from all internal transitions
+            Object state = newOwner;
+            Iterator it = ModelFacade.getInternalTransitions(state).iterator();
             while (it.hasNext()) {
-                addListenersForTransition(it.next());
+                UmlModelEventPump.getPump().addModelEventListener(this,
+                        it.next());
             }
             // register for the doactivity etc.
-            Object doActivity = Model.getFacade().getDoActivity(newOwner);
-            addListenersForAction(doActivity);
-            Object entryAction = Model.getFacade().getEntry(newOwner);
-            addListenersForAction(entryAction);
-            Object exitAction = Model.getFacade().getExit(newOwner);
-            addListenersForAction(exitAction);
-        }
-    }
-
-
-    private void addListenersForAction(Object action) {
-        if (action != null) {
-            addElementListener(action,
-                    new String[] {
-                        "script", "actualArgument",
-                    });
-            Collection args = Model.getFacade().getActualArguments(action);
-            Iterator i = args.iterator();
-            while (i.hasNext()) {
-                Object argument = i.next();
-                addElementListener(argument, "value");
+            if (ModelFacade.getDoActivity(state) != null) {
+                UmlModelEventPump.getPump().addModelEventListener(this,
+                        ModelFacade.getDoActivity(state));
             }
-        }
-    }
-
-    private void addListenersForEvent(Object event) {
-        if (event != null) {
-            addElementListener(event,
-                    new String[] {
-                        "parameter", "name",
-                    });
-            Collection prms = Model.getFacade().getParameters(event);
-            Iterator i = prms.iterator();
-            while (i.hasNext()) {
-                Object parameter = i.next();
-                addElementListener(parameter);
+            if (ModelFacade.getEntry(state) != null) {
+                UmlModelEventPump.getPump().addModelEventListener(this,
+                        ModelFacade.getEntry(state));
             }
+            if (ModelFacade.getExit(state) != null) {
+                UmlModelEventPump.getPump().addModelEventListener(this,
+                        ModelFacade.getExit(state));
+            }
+        } else {
+            // lets remove all registrations since this is called
+            // BEFORE the owner is changed (I hope nobody is going to
+            // change that...) the owner is the oldOwner
+            Object state = getOwner();
+            if (state != null) {
+                Iterator it = ModelFacade.getInternalTransitions(state)
+                        .iterator();
+                while (it.hasNext()) {
+                    UmlModelEventPump.getPump().removeModelEventListener(this,
+                            it.next());
+                }
+                if (ModelFacade.getDoActivity(state) != null) {
+                    UmlModelEventPump.getPump().removeModelEventListener(this,
+                            ModelFacade.getDoActivity(state));
+                }
+                if (ModelFacade.getEntry(state) != null) {
+                    UmlModelEventPump.getPump().removeModelEventListener(this,
+                            ModelFacade.getEntry(state));
+                }
+                if (ModelFacade.getExit(state) != null) {
+                    UmlModelEventPump.getPump().removeModelEventListener(this,
+                            ModelFacade.getExit(state));
+                }
+            }
+
         }
     }
-    
-    private void addListenersForTransition(Object transition) {
-        addElementListener(transition, 
-                new String[] {"guard", "trigger", "effect"});
-
-        Object guard = Model.getFacade().getGuard(transition);
-        if (guard != null) {
-            addElementListener(guard, "expression");
-        }
-
-        Object trigger = Model.getFacade().getTrigger(transition);
-        addListenersForEvent(trigger);
-
-        Object effect = Model.getFacade().getEffect(transition);
-        addListenersForAction(effect);
-    }    
-    
 
     /**
-     * @see org.argouml.uml.diagram.ui.FigNodeModelElement#renderingChanged()
+     * Updates the text inside the state
      */
-    public void renderingChanged() {
+    protected void updateInternal() {
         Object state = getOwner();
-        if (state == null) {
-            return;
-        }
-        if (notationProviderBody != null) {
-            internal.setText(notationProviderBody.toString(getOwner(), null));
-        }
-        super.renderingChanged();
+        if (state == null) return;
+        String newText = Notation.generateStateBody(this, state);
+        _internal.setText(newText);
+
         calcBounds();
         setBounds(getBounds());
     }
 
-    /**
-     * @return the initial X
-     */
     protected abstract int getInitialX();
 
-    /**
-     * @return the initial Y
-     */
     protected abstract int getInitialY();
 
-    /**
-     * @return the initial width
-     */
     protected abstract int getInitialWidth();
 
-    /**
-     * @return the initial height
-     */
     protected abstract int getInitialHeight();
-
-    /**
-     * @param theInternal The internal to set.
-     */
-    protected void setInternal(FigText theInternal) {
-        this.internal = theInternal;
-    }
-
-    /**
-     * @return Returns the internal.
-     */
-    protected FigText getInternal() {
-        return internal;
-    }
-
-    /**
-     * @see org.argouml.uml.diagram.ui.FigNodeModelElement#textEditStarted(org.tigris.gef.presentation.FigText)
-     */
-    protected void textEditStarted(FigText ft) {
-        super.textEditStarted(ft);
-        if (ft == internal) {
-            showHelp(notationProviderBody.getParsingHelp());
-        }
-    }
-
-    /**
-     * @see org.argouml.uml.diagram.ui.FigNodeModelElement#textEdited(org.tigris.gef.presentation.FigText)
-     */
-    public void textEdited(FigText ft) throws PropertyVetoException {
-        super.textEdited(ft);
-        if (ft == getInternal()) {
-            Object st = getOwner();
-            if (st == null) {
-                return;
-            }
-            notationProviderBody.parse(getOwner(), ft.getText());
-            ft.setText(notationProviderBody.toString(getOwner(), null));
-        }
-    }
 
 }

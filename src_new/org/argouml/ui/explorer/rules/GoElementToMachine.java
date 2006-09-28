@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -29,36 +29,23 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
 
-/**
- * Rule for Class->State Machine.
- *
- */
 public class GoElementToMachine extends AbstractPerspectiveRule {
 
-    /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getRuleName()
-     */
     public String getRuleName() {
-	return Translator.localize ("misc.class.state-machine");
+	return Translator.localize ("Tree", "misc.class.state-machine");
     }
 
-    /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getChildren(java.lang.Object)
-     */
-    public Collection getChildren(Object parent) {
-	if (Model.getFacade().isAModelElement(parent)) {
-	    return Model.getFacade().getBehaviors(parent);
+    public Collection getChildren(Object parent) { 
+	if (ModelFacade.isAModelElement(parent)) {
+	    return ModelFacade.getBehaviors(parent);
 	}
 	return null;
     }
-
-    /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getDependencies(java.lang.Object)
-     */
+  
     public Set getDependencies(Object parent) {
-        if (Model.getFacade().isAModelElement(parent)) {
+        if (ModelFacade.isAModelElement(parent)) {
 	    Set set = new HashSet();
 	    set.add(parent);
 	    return set;

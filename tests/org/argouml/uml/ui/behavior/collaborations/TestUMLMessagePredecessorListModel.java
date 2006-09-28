@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,8 +24,11 @@
 
 package org.argouml.uml.ui.behavior.collaborations;
 
-import org.argouml.model.Model;
+import org.argouml.model.uml.behavioralelements.collaborations.CollaborationsFactory;
 import org.argouml.uml.ui.AbstractUMLModelElementListModel2Test;
+
+import ru.novosoft.uml.MBase;
+import ru.novosoft.uml.behavior.collaborations.MMessage;
 
 /**
  * @since Oct 30, 2002
@@ -46,35 +49,34 @@ public class TestUMLMessagePredecessorListModel
      * @see org.argouml.uml.ui.AbstractUMLModelElementListModel2Test#buildElement()
      */
     protected void buildElement() {
-        setElem(Model.getCollaborationsFactory().createMessage());
+        elem = CollaborationsFactory.getFactory().createMessage();
     }
 
     /**
-     * @see org.argouml.uml.ui.AbstractUMLModelElementListModel2Test#buildModel()
+     * @see org.argouml.uml.ui.AbstractUMLModelElementListModel2Test#buildModel(org.argouml.uml.ui.UMLUserInterfaceContainer)
      */
     protected void buildModel() {
-        setModel(new UMLMessagePredecessorListModel());
+        model = new UMLMessagePredecessorListModel();
     }
 
     /**
      * @see org.argouml.uml.ui.AbstractUMLModelElementListModel2Test#fillModel()
      */
-    protected Object[] fillModel() {
-        Object[] pres = new Object[10];
-        for (int i = 0; i < pres.length; i++) {
-            pres[i] = Model.getCollaborationsFactory().createMessage();
-            Model.getCollaborationsHelper().addPredecessor(getElem(), pres[i]);
+    protected MBase[] fillModel() {
+        MMessage[] pres = new MMessage[10];
+        for (int i = 0; i < 10; i++) {
+            pres[i] = CollaborationsFactory.getFactory().createMessage();
+            ((MMessage) elem).addPredecessor(pres[i]);
         }
         return pres;
     }
 
     /**
-     * @see org.argouml.uml.ui.AbstractUMLModelElementListModel2Test#removeHalfModel(Object[])
+     * @see org.argouml.uml.ui.AbstractUMLModelElementListModel2Test#removeHalfModel(ru.novosoft.uml.MBase)
      */
-    protected void removeHalfModel(Object[] elements) {
+    protected void removeHalfModel(MBase[] elements) {
 	for (int i = 0; i < 5; i++) {
-	    Model.getCollaborationsHelper().removePredecessor(getElem(), 
-                            elements[i]);
+            ((MMessage) elem).removePredecessor((MMessage) elements[i]);
         }
     }
 

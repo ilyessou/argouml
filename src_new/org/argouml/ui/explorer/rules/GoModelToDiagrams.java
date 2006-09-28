@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -25,47 +25,32 @@
 package org.argouml.ui.explorer.rules;
 
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Set;
 
-import org.argouml.i18n.Translator;
+import org.argouml.model.ModelFacade;
 import org.argouml.kernel.ProjectManager;
-import org.argouml.model.Model;
 
 /**
- * Rule for Model->Diagram.
+ *
  * @author  alexb
  * @since 0.15.2, Created on 05 October 2003, 19:18
  */
-public class GoModelToDiagrams extends AbstractPerspectiveRule {
+public class GoModelToDiagrams extends AbstractPerspectiveRule{
 
-    /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getRuleName()
-     */
     public String getRuleName() {
-        return Translator.localize ("misc.model.diagram");
+	return "Model->Diagrams";//"misc.model-diagram");
     }
 
-    /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getChildren(java.lang.Object)
-     */
     public Collection getChildren(Object parent) {
-	if (Model.getFacade().isAModel(parent)) {
+	if (ModelFacade.isAModel(parent)) {
 	    return ProjectManager.getManager()
                         .getCurrentProject().getDiagrams();
 	}
 	return null;
     }
-
-    /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getDependencies(java.lang.Object)
-     */
+    
     public Set getDependencies(Object parent) {
-        if (Model.getFacade().isAModel(parent)) {
-            Set set = new HashSet();
-            set.add(parent);
-            return set;
-        }
+	// TODO: What?
 	return null;
     }
 }

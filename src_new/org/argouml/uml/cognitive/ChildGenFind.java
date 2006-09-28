@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,38 +22,37 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: ChildGenFind.java
+// Classes: ChildGenFind
+// Original Author: jrobbins
+// $Id$
+
+
 package org.argouml.uml.cognitive;
 
-import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Vector;
 
 import org.argouml.kernel.Project;
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
+
 import org.tigris.gef.base.Diagram;
 import org.tigris.gef.util.ChildGenerator;
 
-/**
- * Convenience class gives critics access to parts of the project.
- * 
- * It defines a gen() function that returns the "children" of any given part of
- * the UML model. It traverses a Project to Diagrams and Models, then uses
- * getModelElementContents to traverse the Models. <p>
- * 
- * Argo's critic Agency uses this to apply critics where appropriate.
- * 
- * @see org.argouml.cognitive.critics.Agency
+/** This class gives critics access to parts of the UML model of the
+ *  design.  It defines a gen() function that returns the "children"
+ *  of any given part of the UML model.  Basically, it goes from
+ *  Project, to Models, to ModelElements.  Argo's critic Agency uses
+ *  this to apply critics where appropriate.
+ *
+ * @see org.argouml.cognitive.critics.Agency 
  * @stereotype singleton
- * @author jrobbins
  */
-public class ChildGenFind implements ChildGenerator {
-    private static final ChildGenFind SINGLETON = new ChildGenFind();
 
-    /**
-     * Reply a Collection of the children of the given Object
-     *
-     * @see org.tigris.gef.util.ChildGenerator#gen(java.lang.Object)
-     */
+public class ChildGenFind implements ChildGenerator {
+    public static ChildGenFind SINGLETON = new ChildGenFind();
+
+    /** Reply a Collection of the children of the given Object */
     public Enumeration gen(Object o) {
 	if (o instanceof Project) {
 	    Project p = (Project) o;
@@ -61,29 +60,98 @@ public class ChildGenFind implements ChildGenerator {
 	    res.addAll(p.getUserDefinedModels());
 	    res.addAll(p.getDiagrams());
 	    return res.elements();
+	    // return new EnumerationComposite(p.getModels().elements(),
+	    //		      p.getDiagrams().elements());
 	}
-        
-        if (o instanceof Diagram) {
-            Diagram d = (Diagram) o;
 
-            Vector res = new Vector();
-            res.addAll(d.getGraphModel().getNodes());
-            res.addAll(d.getGraphModel().getEdges());
-            return res.elements();
-        }
+	//     if (o instanceof MPackage) {
+	//       Vector ownedElements = ((MPackage)o).getOwnedElements();
+	//       if (ownedElements != null) return ownedElements.elements();
+	//     }
 
-	if (Model.getFacade().isAModelElement(o)) {
-            return Collections.enumeration(Model.getFacade()
-                    .getModelElementContents(o));
-        }
-        
+	//     if (o instanceof MElementImport) {
+	//       MModelElement me = ((MElementImport)o).getModelElement();
+	//       return new EnumerationSingle(me);  //wasteful!
+	//     }
+
+	//     if (o instanceof MModelElement) {
+	//       Vector behavior = ((MModelElement)o).getBehavior();
+	//       if (behavior != null) behavior.elements();
+	//     }
+
+	//     // TODO: associationclasses fit both of the next 2 cases
+
+	if (ModelFacade.isAClassifier(o)) {
+	    Object cls = /*(MClassifier)*/ o;
+	    //      EnumerationComposite res = new EnumerationComposite();
+	    Vector res = new Vector(ModelFacade.getFeatures(cls));
+	    res.addAll(ModelFacade.getBehaviors(cls));
+	    return res.elements();
+	}
+
+	if (ModelFacade.isAAssociation(o)) {
+	    Object asc = /*(MAssociation)*/ o;
+	    return new Vector(ModelFacade.getConnections(asc)).elements();
+	    //      Vector assocEnds = asc.getConnections();
+	    //if (assocEnds != null) return assocEnds.elements();
+	}
+
+
+
+	//     // // needed?
+	//     if (o instanceof MStateMachine) {
+	//       MStateMachine sm = (MStateMachine) o;
+	//       EnumerationComposite res = new EnumerationComposite();
+	//       MState top = sm.getTop();
+	//       if (top != null) res.addSub(new EnumerationSingle(top));
+	//       res.addSub(sm.getTransitions());
+	//       return res;
+	//     }
+
+	//     // needed?
+	//     if (o instanceof MCompositeState) {
+	//       MCompositeState cs = (MCompositeState) o;
+	//       Vector substates = cs.getSubvertices();
+	//       if (substates != null) return substates.elements();
+	//     }
+
+	// tons more cases
+
+	if (o instanceof Diagram) {
+	    Diagram d = (Diagram) o;
+	  
+	    Vector res = new Vector();
+	    res.addAll(d.getGraphModel().getNodes());
+	    res.addAll(d.getGraphModel().getEdges());
+	    return res.elements();
+	    //return new
+	    //EnumerationComposite(d.getGraphModel().getNodes().elements(),
+	    //d.getGraphModel().getEdges().elements());
+	}
+
+	if (ModelFacade.isAState(o)) {
+	    Object s = /*(MState)*/ o;
+	    //Vector interns = s.getInternalTransition();
+	    //if (interns != null) return interns.elements();
+	    return new Vector(ModelFacade.getInternalTransitions(s)).elements();
+	}
+
+	if (ModelFacade.isATransition(o)) {
+	    Object tr = /*(MTransition)*/ o;
+	    Vector res = new Vector();
+	    res.add(ModelFacade.getTrigger(tr));
+	    res.add(ModelFacade.getGuard(tr));
+	    res.add(ModelFacade.getEffect(tr));
+	    /*
+	      Vector parts = new Vector();  // wasteful!!
+	      if (tr.getTrigger() != null) parts.addElement(tr.getTrigger());
+	      if (tr.getGuard() != null) parts.addElement(tr.getGuard());
+	      if (tr.getEffect() != null) parts.addElement(tr.getEffect());
+	      return parts.elements();
+	    */
+	    return res.elements();
+	}
+
 	return new Vector().elements();
-    }
-
-    /**
-     * @return Returns the SINGLETON.
-     */
-    public static ChildGenFind getSingleton() {
-        return SINGLETON;
     }
 } /* end class ChildGenFind */

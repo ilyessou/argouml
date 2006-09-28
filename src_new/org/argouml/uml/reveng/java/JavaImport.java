@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -41,93 +41,86 @@ import java.io.*;
 public class JavaImport extends FileImportSupport {
 
     /** logger */
-    private static final Logger LOG = Logger.getLogger(JavaImport.class);
+    private static Logger cat = Logger.getLogger(JavaImport.class);
 
     /**
      * This method parses 1 Java file.
-     * Throws a Parser exception.
      *
-     * @see org.argouml.application.api.PluggableImport#parseFile(
-     * org.argouml.kernel.Project, java.lang.Object,
-     * org.argouml.uml.reveng.DiagramInterface, org.argouml.uml.reveng.Import)
+     * @exception Exception Parser exception.
      */
     public void parseFile(Project p, Object o, DiagramInterface diagram,
-			  Import theImport)
+			  Import _import)
 	throws Exception {
-	if (o instanceof File) {
+	if (o instanceof File ) {
 	    File f = (File) o;
 	    // Create a scanner that reads from the input stream passed to us
-	    String encoding = theImport.getInputSourceEncoding();
+	    String encoding = _import.getInputSourceEncoding();
 	    FileInputStream in = new FileInputStream(f);
 	    JavaLexer lexer =
 		new JavaLexer(
 		    new BufferedReader(new InputStreamReader(in, encoding)));
 	    // We use a special Argo token, that stores the preceding
 	    // whitespaces.
-	    lexer.setTokenObjectClass("org.argouml.uml.reveng.java.ArgoToken");
+	    lexer.setTokenObjectClass( "org.argouml.uml.reveng.java.ArgoToken");
 
 	    // Create a parser that reads from the scanner
-	    JavaRecognizer parser = new JavaRecognizer(lexer);
+	    JavaRecognizer parser = new JavaRecognizer( lexer);
 
 	    // Create a modeller for the parser
 	    Modeller modeller = new Modeller(p.getModel(),
-					     diagram, theImport,
-					     getAttribute().isSelected(),
-					     getDatatype().isSelected(),
+					     diagram, _import,
+					     attribute.isSelected(),
+					     datatype.isSelected(),
 					     f.getName());
 
 	    // Print the name of the current file, so we can associate
 	    // exceptions to the file.
-	    LOG.info("Parsing " + f.getAbsolutePath());
+	    cat.info("Parsing " + f.getAbsolutePath());
 
-            modeller.setAttribute("level", theImport.getAttribute("level"));
-
+            modeller.setAttribute("level", _import.getAttribute("level"));
+            
             try {
 		// start parsing at the compilationUnit rule
 		parser.compilationUnit(modeller, lexer);
             } catch (Exception e) {
-                LOG.error(e.getClass().getName()
+                cat.error(e.getClass().getName()
 			  + " Exception in file: "
 			  + f.getCanonicalPath() + " "
-			  + f.getName(), e);
+			  + f.getName());
                 throw e;
             }
 	    in.close();
 	}
     }
 
-    /**
+    /** 
      * Provides an array of suffix filters for the module.
      * @return SuffixFilter[] files with these suffixes will be processed.
      */
     public SuffixFilter[] getSuffixFilters() {
-	SuffixFilter[] result = {FileFilters.JAVA_FILE_FILTER};
+	SuffixFilter[] result = {FileFilters.JavaFilter};
 	return result;
     }
-
-    /**
-     * Display name of the module.
-     *
-     * @see org.argouml.application.api.ArgoModule#getModuleName()
-     */
+	
+    /** Display name of the module. */
     public String getModuleName() {
 	return "Java";
     }
 
-    /**
-     * Textual description of the module.
-     *
-     * @see org.argouml.application.api.ArgoModule#getModuleDescription()
-     */
+    /** Textual description of the module. */
     public String getModuleDescription() {
 	return "Java import from files";
     }
 
-    /**
-     * @see org.argouml.application.api.ArgoModule#getModuleKey()
-     */
     public String getModuleKey() {
 	return "module.import.java-files";
     }
 
 }
+
+
+
+
+
+
+

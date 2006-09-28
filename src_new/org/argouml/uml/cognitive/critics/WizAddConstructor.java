@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 2004-2006 The Regents of the University of California. All
+// Copyright (c) 2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -26,120 +26,128 @@ package org.argouml.uml.cognitive.critics;
 
 import java.util.Collection;
 import java.util.Iterator;
-
+import org.tigris.gef.util.VectorSet;
 import javax.swing.JPanel;
 
-import org.apache.log4j.Logger;
 import org.argouml.cognitive.ui.WizStepTextField;
 import org.argouml.i18n.Translator;
-import org.argouml.kernel.Project;
-import org.argouml.kernel.ProjectManager;
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
+import org.argouml.model.uml.UmlFactory;
+import org.argouml.model.uml.foundation.extensionmechanisms.ExtensionMechanismsHelper;
+import org.argouml.model.uml.modelmanagement.ModelManagementHelper;
 import org.argouml.ui.targetmanager.TargetManager;
-import org.argouml.uml.Profile;
-import org.argouml.uml.ProfileException;
+import org.argouml.uml.ProfileJava;
+import org.argouml.kernel.Wizard;
 
 /**
- * A wizard to add a constructor to a classifier.
+ * A wizard to add a constructor to a classifier
  *
  * @author  d00mst (copied from WizAddOperation by mkl)
  * @since February 7, 2004, 12:35 AM
  */
-public class WizAddConstructor extends UMLWizard {
+public class WizAddConstructor extends Wizard {
+    
+    protected WizStepTextField _step1 = null;
+    protected String _label = Translator.localize("UMLMenu", "label.name");
+    protected String _instructions =
+	"Please change the name of the offending model element.";
+    protected String _suggestion = "suggestion";
+    protected String _origSuggest = "suggestion";
+    protected boolean _mustEdit = false;
+    
     /**
-     * Logger.
-     */
-    private static final Logger LOG =
-        Logger.getLogger(WizAddConstructor.class);
-
-    private WizStepTextField step1;
-    private String label = Translator.localize("label.name");
-    private String instructions = 
-        Translator.localize("critics.WizAddConstructor-ins");
-
-    /**
-     * Creates a new instance of WizAddConstructor.
+     * Creates a new instance of WizAddConstructor
      */
     public WizAddConstructor() {
         super();
     }
-
-    /**
-     * @see org.argouml.cognitive.ui.Wizard#doAction(int)
-     */
+    
     public void doAction(int oldStep) {
 	Object oper;
 	Collection savedTargets;
 
 	switch (oldStep) {
 	case 1:
-	    String newName = getSuggestion();
-	    if (step1 != null) {
-	        newName = step1.getText();
-	    }
+	    String newName = _suggestion;
+	    if (_step1 != null)
+		newName = _step1.getText();
 	    Object me = getModelElement();
 	    savedTargets = TargetManager.getInstance().getTargets();
-	    Object model =
-	        ProjectManager.getManager().getCurrentProject()
-	        	.getModel();
-	    Object voidType =
-	        ProjectManager.getManager().getCurrentProject()
-	        	.findType("void");
 	    oper =
-	        Model.getCoreFactory().buildOperation(me, model,
-	                voidType, newName);
-	    Model.getCoreHelper()
-	        .addStereotype(oper, getCreateStereotype(oper));
+		UmlFactory.getFactory().getCore().buildOperation(me, newName);
+	    ModelFacade.setStereotype(oper, getCreateStereotype(oper));
 	    TargetManager.getInstance().setTargets(savedTargets);
 	}
     }
 
     /**
-     * Finds the create stereotype for an object. It is assumed to be
+     * Finds the <<create>> stereotype for an object. It is assumed to be
      * available from the java profile.
      *
      * @param obj is the object the stereotype should be applicable to.
      * @return a suitable stereotype, or null.
      */
     private Object getCreateStereotype(Object obj) {
-        Iterator iter = null;
-        try {
-            Project project = ProjectManager.getManager().getCurrentProject();
-            Profile profile = project.getProfile();
-            Object profileModel = profile.getProfileModel();
-            iter = Model.getFacade().getOwnedElements(profileModel).iterator();
-        } catch (ProfileException e) {
-            // TODO: How are we going to handle exceptions here?
-            // I suspect the profile should be part of the project
-            // and not a singleton.
-            LOG.error("Failed to get profile", e);
-        }
-        while (iter.hasNext()) {
-            Object stereo = iter.next();
-            if (!Model.getFacade().isAStereotype(stereo)
-        	|| !"create".equals(Model.getFacade().getName(stereo))) {
-                continue;
-            }
+	Iterator iter =
+		ModelFacade.getOwnedElements(ProfileJava.getInstance()
+			.getProfileModel())
+		.iterator();
 
-            if (Model.getExtensionMechanismsHelper()
-        	    .isValidStereoType(obj, stereo)) {
-        	return Model.getModelManagementHelper()
-        	    .getCorrespondingElement(stereo,
-        				     Model.getFacade().getModel(obj));
+	while (iter.hasNext()) {
+	    Object stereo = iter.next();
+	    if (!ModelFacade.isAStereotype(stereo)
+		|| !"create".equals(ModelFacade.getName(stereo)))
+		continue;
+
+	    if (ExtensionMechanismsHelper.getHelper()
+		    .isValidStereoType(obj, stereo)) {
+		return ModelManagementHelper.getHelper()
+		    .getCorrespondingElement(stereo,
+					     ModelFacade.getModel(obj));
+	    }
+	}
+
+	return null;
+    }
+
+    public int getNumSteps() {
+        return 1;
+    }
+    
+    public Object getModelElement() {
+        if (getToDoItem() != null) {
+            VectorSet offs = _item.getOffenders();
+            if (offs.size() >= 1) {
+                Object me = /*(MModelElement)*/ offs.elementAt(0);
+                return me;
             }
         }
-
         return null;
     }
-
-    /**
-     * @param s set a new instruction string
-     */
-    public void setInstructions(String s) {
-	instructions = s;
+    
+    public String getSuggestion() {
+        if (_suggestion != null) return _suggestion;
+        Object me = getModelElement();
+        if (me != null) {
+            String n = ModelFacade.getName(me);
+            return n;
+        }
+        return "";
     }
 
-
+    public void setSuggestion(String s) {
+	_suggestion = s;
+	_origSuggest = s;
+    }
+    
+    public void setInstructions(String s) {
+	_instructions = s;
+    }
+    
+    public void setMustEdit(boolean b) {
+	_mustEdit = b;
+    }
+    
     /**
      * Create a new panel for the given step.
      *
@@ -149,19 +157,13 @@ public class WizAddConstructor extends UMLWizard {
     public JPanel makePanel(int newStep) {
         switch (newStep) {
 	case 1:
-	    if (step1 == null) {
-		step1 =
-		    new WizStepTextField(this, instructions,
-		            		 label, offerSuggestion());
+	    if (_step1 == null) {
+		_step1 = new WizStepTextField(this, _instructions,
+					      _label, getSuggestion());
 	    }
-	    return step1;
+	    return _step1;
         }
         return null;
     }
-
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = -4661562206721689576L;
 }
 

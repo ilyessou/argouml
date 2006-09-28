@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -26,53 +26,43 @@ package org.argouml.uml.ui;
 
 import java.awt.event.ActionEvent;
 
-import javax.swing.Action;
-
-import org.argouml.i18n.Translator;
 import org.argouml.kernel.Project;
 import org.argouml.kernel.ProjectManager;
-import org.argouml.model.Model;
-import org.tigris.gef.undo.UndoableAction;
-
-/**
- * Add a new package at the top level, i.e. a model.<p>
- *
- * TODO: ArgoUML currently only supports one model.
+import org.argouml.model.ModelFacade;
+import org.argouml.model.uml.UmlFactory;
+/** @stereotype singleton
  */
-public class ActionAddTopLevelPackage extends UndoableAction {
+public class ActionAddTopLevelPackage extends UMLChangeAction {
+
+    ////////////////////////////////////////////////////////////////
+    // static variables
+    
+    public static ActionAddTopLevelPackage SINGLETON =
+	new ActionAddTopLevelPackage(); 
+
 
     ////////////////////////////////////////////////////////////////
     // constructors
 
-    /**
-     *  The constructor.
-     */
     public ActionAddTopLevelPackage() {
-        super(Translator.localize("action.add-top-level-package"), null);
-        // Set the tooltip string:
-        putValue(Action.SHORT_DESCRIPTION, 
-                Translator.localize("action.add-top-level-package"));
+	super("action.add-top-level-package", NO_ICON);
     }
 
 
     ////////////////////////////////////////////////////////////////
     // main methods
 
-    /**
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-     */
     public void actionPerformed(ActionEvent ae) {
-    	super.actionPerformed(ae);
-	Project p = ProjectManager.getManager().getCurrentProject();
+	Project p = ProjectManager.getManager().getCurrentProject();	
         int numPacks = p.getUserDefinedModels().size();
         String nameStr = "package_" + (numPacks + 1);
         Object/*MModel*/ model =
-	    Model.getModelManagementFactory().createModel();
-        Model.getCoreHelper().setName(model, nameStr);
+	    UmlFactory.getFactory().getModelManagement().createModel();
+        ModelFacade.setName(model, nameStr);
         p.addMember(model);
         super.actionPerformed(ae);
-        new ActionClassDiagram().actionPerformed(ae);
-
-
+        ActionClassDiagram.SINGLETON.actionPerformed(ae);
+	
+	
     }
 } /* end class ActionAddTopLevelPackage */

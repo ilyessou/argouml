@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,10 +24,7 @@
 
 package org.argouml.uml.ui;
 
-import java.awt.Font;
 import java.awt.GridLayout;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Map;
@@ -39,12 +36,15 @@ import javax.swing.ButtonModel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.border.TitledBorder;
+import org.argouml.model.ModelFacade;
 
-import org.argouml.model.Model;
-import org.argouml.ui.LookAndFeelMgr;
+import org.argouml.model.uml.UmlModelEventPump;
 import org.argouml.ui.targetmanager.TargetEvent;
 import org.argouml.ui.targetmanager.TargetListener;
 import org.tigris.gef.presentation.Fig;
+
+import ru.novosoft.uml.MElementEvent;
+import ru.novosoft.uml.MElementListener;
 
 /**
  * A panel that shows a group of radiobuttons. An action can be added
@@ -52,41 +52,39 @@ import org.tigris.gef.presentation.Fig;
  * pressed. Via the name of the button (settext), the action can find
  * out which button is pressed.
  *
- * @author jaap.branderhorst@xs4all.nl
+ * @author jaap.branderhorst@xs4all.nl	
  * @since Jan 4, 2003
  */
 public abstract class UMLRadioButtonPanel
     extends JPanel
-    implements TargetListener, PropertyChangeListener {
-
-    private static Font stdFont = LookAndFeelMgr.getInstance().getStandardFont();
+    implements TargetListener, MElementListener {
 
     /**
      * The target object of which some attribute is shown via this panel.
      */
-    private Object panelTarget;
+    private Object _target;
 
     /**
      * The name of the MEvent that is fired when the target object has changed
      * the attribute that is shown here.
      */
-    private String propertySetName;
+    private String _propertySetName;
 
     /**
      * The group of buttons
      */
-    private ButtonGroup buttonGroup = new ButtonGroup();
+    private ButtonGroup _buttonGroup = new ButtonGroup();
 
     /**
-     * Constructs a new UMLRadioButtonPanel.
+     * Constructs a new UMLRadioButtonPanel. 
      * @param isDoubleBuffered @see JPanel
      * @param title The title of the titledborder around the buttons. If the
      * title is null, there is no border shown.
      * @param labeltextsActioncommands A map of keys containing the texts for
      * the buttons and values containing the actioncommand that permits the
      * setAction to logically recognize the button.
-     * @param thePropertySetName the name of the MEvent that is fired when the
-     * property that it shows changes value.
+     * @param propertySetName the name of the MEvent that is fired when the
+     * property that is showns changes value.
      * @param setAction the action that should be registred with the buttons and
      * that's executed when one of the buttons is pressed.
      * @param horizontal when true the buttons should be layed out horizontaly.
@@ -95,28 +93,25 @@ public abstract class UMLRadioButtonPanel
 			       boolean isDoubleBuffered,
 			       String title,
 			       Map labeltextsActioncommands,
-			       String thePropertySetName,
+			       String propertySetName,
 			       Action setAction,
 			       boolean horizontal) {
         super(isDoubleBuffered);
         setLayout(horizontal ? new GridLayout() : new GridLayout(0, 1));
         setDoubleBuffered(true);
-        if (title != null) {
-            TitledBorder border = new TitledBorder(title);
-            border.setTitleFont(stdFont);
-            setBorder(border);
-        }
+        if (title != null)
+            setBorder(new TitledBorder(title));
         setButtons(labeltextsActioncommands, setAction);
-        setPropertySetName(thePropertySetName);
+        setPropertySetName(propertySetName);
     }
 
     /**
-     * Constructs a new UMLRadioButtonPanel.
+     * Constructs a new UMLRadioButtonPanel. 
      * @param title The title of the titledborder around the buttons.
      * @param labeltextsActioncommands A map of keys containing the texts for
      * the buttons and values containing the actioncommand that permits the
      * setAction to logically recognize the button.
-     * @param thePropertySetName the name of the MEvent that is fired when the
+     * @param propertySetName the name of the MEvent that is fired when the
      * property that is showns changes value.
      * @param setAction the action that should be registred with the buttons and
      * that's executed when one of the buttons is pressed
@@ -124,31 +119,27 @@ public abstract class UMLRadioButtonPanel
      */
     public UMLRadioButtonPanel(String title,
 			       Map labeltextsActioncommands,
-			       String thePropertySetName,
+			       String propertySetName,
 			       Action setAction,
 			       boolean horizontal) {
-        this(true, title, labeltextsActioncommands,
-	     thePropertySetName, setAction, horizontal);
+        this(true, title, labeltextsActioncommands, 
+	     propertySetName, setAction, horizontal);
     }
 
     /**
      * Initially constructs the buttons.
-     *
-     * @param labeltextsActioncommands A map of keys containing the
-     * texts for the buttons and values containing the actioncommand
-     * that permits the setAction to logically recognize the button.
-     * @param setAction the action that should be registred with the
-     * buttons and that's executed when one of the buttons is pressed
-     * 
-     * TODO: This forces the buttons to be ordered in key map order,
-     * an order which is arbitrary for a HashMap.  This should be
-     * changed to allow the UI designer to specify the order. - tfm
+     * @param labeltextsActioncommands A map of keys containing the texts for
+     * the buttons and values containing the actioncommand that permits the
+     * setAction to logically recognize the button.
+     * @param setAction the action that should be registred with the buttons and
+     * that's executed when one of the buttons is pressed
+     * @param horizontal when true the buttons should be layed out horizontaly.
      */
     private void setButtons(Map labeltextsActioncommands, Action setAction) {
-        Enumeration en = buttonGroup.getElements();
+        Enumeration en = _buttonGroup.getElements();
         while (en.hasMoreElements()) {
             AbstractButton button = (AbstractButton) en.nextElement();
-            buttonGroup.remove(button);
+            _buttonGroup.remove(button);
         }
         removeAll();
         Iterator it = labeltextsActioncommands.keySet().iterator();
@@ -159,20 +150,48 @@ public abstract class UMLRadioButtonPanel
 	    String actionCommand =
 		(String) labeltextsActioncommands.get(keyAndLabel);
             button.setActionCommand(actionCommand);
-            button.setFont(LookAndFeelMgr.getInstance().getStandardFont());
-            buttonGroup.add(button);
+
+            _buttonGroup.add(button);
             add(button);
         }
     }
 
+    /**
+     * @see ru.novosoft.uml.MElementListener#listRoleItemSet(ru.novosoft.uml.MElementEvent)
+     */
+    public void listRoleItemSet(MElementEvent e) {
+    }
 
     /**
-     * @see java.beans.PropertyChangeListener#propertyChange(java.beans.PropertyChangeEvent)
+     * @see ru.novosoft.uml.MElementListener#propertySet(ru.novosoft.uml.MElementEvent)
      */
-    public void propertyChange(PropertyChangeEvent e) {
-        if (e.getPropertyName().equals(propertySetName)) {
+    public void propertySet(MElementEvent e) {
+        if (e.getName().equals(_propertySetName))
             buildModel();
-        }
+    }
+
+    /**
+     * @see ru.novosoft.uml.MElementListener#recovered(ru.novosoft.uml.MElementEvent)
+     */
+    public void recovered(MElementEvent e) {
+    }
+
+    /**
+     * @see ru.novosoft.uml.MElementListener#removed(ru.novosoft.uml.MElementEvent)
+     */
+    public void removed(MElementEvent e) {
+    }
+
+    /**
+     * @see ru.novosoft.uml.MElementListener#roleAdded(ru.novosoft.uml.MElementEvent)
+     */
+    public void roleAdded(MElementEvent e) {
+    }
+
+    /**
+     * @see ru.novosoft.uml.MElementListener#roleRemoved(ru.novosoft.uml.MElementEvent)
+     */
+    public void roleRemoved(MElementEvent e) {
     }
 
     /**
@@ -180,7 +199,7 @@ public abstract class UMLRadioButtonPanel
      * @return Object
      */
     public Object getTarget() {
-        return panelTarget;
+        return _target;
     }
 
     /**
@@ -189,16 +208,17 @@ public abstract class UMLRadioButtonPanel
      */
     public void setTarget(Object target) {
         target = target instanceof Fig ? ((Fig) target).getOwner() : target;
-        if (Model.getFacade().isAModelElement(panelTarget)) {
-            Model.getPump().removeModelEventListener(this, panelTarget,
-                    propertySetName);
+        UmlModelEventPump eventPump = UmlModelEventPump.getPump();
+        if (ModelFacade.isABase(_target)) {
+            eventPump.removeModelEventListener(this, _target, _propertySetName);
         }
-        panelTarget = target;
-        if (Model.getFacade().isAModelElement(panelTarget)) {
-            Model.getPump().addModelEventListener(this, panelTarget,
-                    propertySetName);
+        _target = target;
+        if (ModelFacade.isABase(_target)) {
+            // UmlModelEventPump.getPump().removeModelEventListener(this,
+            // (MBase)_target, _propertySetName);
+            eventPump.addModelEventListener(this, _target, _propertySetName);
         }
-        if (panelTarget != null) {
+        if (_target != null) {
             buildModel();
         }
     }
@@ -208,15 +228,15 @@ public abstract class UMLRadioButtonPanel
      * @return String
      */
     public String getPropertySetName() {
-        return propertySetName;
+        return _propertySetName;
     }
 
     /**
      * Sets the propertySetName.
-     * @param name The propertySetName to set
+     * @param propertySetName The propertySetName to set
      */
-    public void setPropertySetName(String name) {
-        propertySetName = name;
+    public void setPropertySetName(String propertySetName) {
+        _propertySetName = propertySetName;
     }
 
     /**
@@ -232,7 +252,7 @@ public abstract class UMLRadioButtonPanel
      * selected.
      */
     public void setSelected(String actionCommand) {
-        Enumeration en = buttonGroup.getElements();
+        Enumeration en = _buttonGroup.getElements();
         ButtonModel model = null;
         while (en.hasMoreElements()) {
             model = ((AbstractButton) en.nextElement()).getModel();
@@ -247,21 +267,21 @@ public abstract class UMLRadioButtonPanel
      * @see org.argouml.ui.targetmanager.TargetListener#targetAdded(org.argouml.ui.targetmanager.TargetEvent)
      */
     public void targetAdded(TargetEvent e) {
-        setTarget(e.getNewTarget());
+	setTarget(e.getNewTarget());
     }
 
     /**
      * @see org.argouml.ui.targetmanager.TargetListener#targetRemoved(org.argouml.ui.targetmanager.TargetEvent)
      */
     public void targetRemoved(TargetEvent e) {
-        setTarget(e.getNewTarget());
+	setTarget(e.getNewTarget());
     }
 
     /**
      * @see org.argouml.ui.targetmanager.TargetListener#targetSet(org.argouml.ui.targetmanager.TargetEvent)
      */
     public void targetSet(TargetEvent e) {
-        setTarget(e.getNewTarget());
+	setTarget(e.getNewTarget());
     }
 
 }

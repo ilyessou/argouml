@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -27,8 +27,9 @@ package org.argouml.uml.diagram.ui;
 import java.awt.Color;
 
 import org.apache.log4j.Logger;
-import org.argouml.uml.notation.NotationProvider;
+import org.argouml.ui.targetmanager.TargetManager;
 import org.tigris.gef.presentation.Fig;
+import org.tigris.gef.presentation.FigText;
 
 /**
  * A FigText class extension for FigClass/FigInterface/FigUseCase
@@ -39,11 +40,13 @@ import org.tigris.gef.presentation.Fig;
  *
  * @author thn
  */
-public class CompartmentFigText extends FigSingleLineText {
+public class CompartmentFigText extends FigText
+{
     /**
-     * Logger.
+     * @deprecated by Linus Tolke as of 0.15.4. Use your own logger in your
+     * class. This will be removed.
      */
-    private static final Logger LOG =
+    protected static Logger cat =
 	Logger.getLogger(CompartmentFigText.class);
 
     ///////////////////////////////////////////////////////////////////////////
@@ -55,17 +58,26 @@ public class CompartmentFigText extends FigSingleLineText {
     /**
      * The bounding figure of the compartment containing this fig text.<p>
      */
-    private Fig           refFig;
+    protected Fig           _refFig;
 
-    /**
-     * The notation provider for the text shown in this compartment.
-     */
-    private NotationProvider notationProvider;
-    
+
     /**
      * Record whether we are currently highlighted.<p>
      */
-    private boolean       isHighlighted;
+    protected boolean       _isHighlighted;
+
+
+    /**
+     * The model element with which we are associated.<p>
+     */
+    protected Object _modelElement;
+
+
+    ///////////////////////////////////////////////////////////////////////////
+    //
+    // constructors
+    //
+    ///////////////////////////////////////////////////////////////////////////
 
     /**
      * Build a new compartment figText of the given dimensions, within
@@ -78,110 +90,81 @@ public class CompartmentFigText extends FigSingleLineText {
      * <em>Warning</em>. Won't work properly if <code>aFig</code> is
      * null. A warning is printed.<p>
      *
-     * @param x      X coordinate of the top left of the FigText.
+     * @param x     X coordinate of the top left of the FigText.
      *
-     * @param y      Y coordinate of the top left of the FigText.
+     * @param y     Y coordinate of the top left of the FigText.
      *
-     * @param w      Width of the FigText.
+     * @param w     Width of the FigText.
      *
-     * @param h      Height of the FigText.
+     * @param h     Height of the FigText.
      *
      * @param aFig  The figure describing the whole compartment
-     * 
-     * @param np    The notationProvider. 
-     *                      See NotationProviderFactory2.
      */
-    public CompartmentFigText(int x, int y, int w, int h, Fig aFig, 
-            NotationProvider np) {
+    public CompartmentFigText(int x, int y, int w, int h, Fig aFig) {
         super(x, y, w, h, true);
-
-        if (np == null) {
-            LOG.warn("Need a NotationProvider for CompartmentFigText.");
-        }
-        notationProvider = np;
 
         // Set the enclosing compartment fig. Warn if its null (which will
         // break).
-        refFig = aFig;
 
-        if (refFig == null) {
-            LOG.warn(this.getClass().toString()
+        _refFig = aFig;
+
+        if (_refFig == null) {
+            cat.warn(this.getClass().toString()
 		     + ": Cannot create with null compartment fig");
         }
     }
 
-    /**
-     * Build a new compartment figText of the given dimensions, within
-     * the compartment described by <code>aFig</code>.<p>
-     *
-     * Invoke the parent constructor, then set the reference to the
-     * associated compartment figure. The associated FigText is marked
-     * as expand only.<p>
-     *
-     * <em>Warning</em>. Won't work properly if <code>aFig</code> is
-     * null. A warning is printed.<p>
-     *
-     * @param x      X coordinate of the top left of the FigText.
-     *
-     * @param y      Y coordinate of the top left of the FigText.
-     *
-     * @param w      Width of the FigText.
-     *
-     * @param h      Height of the FigText.
-     *
-     * @param aFig  The figure describing the whole compartment
-     * 
-     * @param property The property this Fig should listen for
-     */
-    public CompartmentFigText(int x, int y, int w, int h, Fig aFig, 
-            String property) {
-        this(x, y, w, h, aFig, new String[] {property});
-    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    //
+    // Accessors
+    //
+    ///////////////////////////////////////////////////////////////////////////
+
+
+    // The following method overrides are necessary for proper graphical
+    // behavior
 
     /**
-     * Build a new compartment figText of the given dimensions, within
-     * the compartment described by <code>aFig</code>.<p>
+     * Override for correct graphical behaviour.<p>
      *
-     * Invoke the parent constructor, then set the reference to the
-     * associated compartment figure. The associated FigText is marked
-     * as expand only.<p>
-     *
-     * <em>Warning</em>. Won't work properly if <code>aFig</code> is
-     * null. A warning is printed.<p>
-     *
-     * @param x      X coordinate of the top left of the FigText.
-     *
-     * @param y      Y coordinate of the top left of the FigText.
-     *
-     * @param w      Width of the FigText.
-     *
-     * @param h      Height of the FigText.
-     *
-     * @param aFig  The figure describing the whole compartment
-     * 
-     * @param properties The properties this Fig should listen for
+     * @param w  Desired line width. Overridden and set to zero anyway.
      */
-    public CompartmentFigText(int x, int y, int w, int h, Fig aFig, 
-            String[] properties) {
-        super(x, y, w, h, true, properties);
-        
-        if (aFig == null) {
-            throw new IllegalArgumentException("A refFig must be provided");
-        }
-
-        // Set the enclosing compartment fig. Warn if its null (which will
-        // break).
-        refFig = aFig;
+    public void setLineWidth(int w) {
+        super.setLineWidth(0);
     }
 
+
+    /**
+     * Override for correct graphical behaviour.<p>
+     *
+     * @return  Current line width&mdash;always 1.
+     */
+    public int getLineWidth() {
+        return 1;
+    }
+
+    
     /**
      * Override for correct graphical behaviour.<p>
      *
      * @return  Current fill status&mdash;always <code>true</code>.
      */
     public boolean getFilled() {
-        return false;
+        return true;
     }
+
+
+    /**
+     * Override for correct graphical behaviour.<p>
+     *
+     * @return  Current fill colour&mdash;always the fill colour of the
+     *          associated compartment fig.
+     */
+    public Color getFillColor() {
+        return _refFig.getFillColor();
+    }
+
 
     /**
      * Override for correct graphical behaviour.<p>
@@ -190,8 +173,9 @@ public class CompartmentFigText extends FigSingleLineText {
      *          associated compartment fig.
      */
     public Color getLineColor() {
-        return refFig.getLineColor();
+        return _refFig.getLineColor();
     }
+
 
     /**
      * Mark whether this item is to be highlighted.<p>
@@ -204,11 +188,11 @@ public class CompartmentFigText extends FigSingleLineText {
      *              <code>false</code> otherwise.
      */
     public void setHighlighted(boolean flag) {
-        isHighlighted = flag;
-        if (isHighlighted) {
-            super.setLineWidth(1);
-        } else {
-            super.setLineWidth(0);
+        _isHighlighted = flag;
+        super.setLineWidth(_isHighlighted ? 1 : 0);
+
+        if (flag && (_modelElement != null)) {
+            TargetManager.getInstance().setTarget(_modelElement);
         }
     }
 
@@ -220,25 +204,8 @@ public class CompartmentFigText extends FigSingleLineText {
      *          <code>false</code> otherwise.
      */
     public boolean isHighlighted() {
-        return isHighlighted;
+        return _isHighlighted;
     }
 
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = 3830572062785308980L;
 
-    /**
-     * @return Returns the notationProvider for the text in this compartment.
-     */
-    public NotationProvider getNotationProvider() {
-        return notationProvider;
-    }
-
-    /**
-     * @param np The notationProvider to set.
-     */
-    void setNotationProvider(NotationProvider np) {
-        this.notationProvider = np;
-    }
 } /* End of class CompartmentFigText */

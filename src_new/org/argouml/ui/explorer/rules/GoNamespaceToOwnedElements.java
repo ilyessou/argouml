@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -30,64 +30,37 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
 
-/**
- * Rule for Namespace->Owned Element, 
- * excluding StateMachine, Comment and 
- * Collaborations that have a Represented Classifier or Operation.
- */
 public class GoNamespaceToOwnedElements extends AbstractPerspectiveRule {
 
-    /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getRuleName()
-     */
     public String getRuleName() {
-        return Translator.localize ("misc.namespace.owned-element");
+        return "Namespace->Owned Elements";
     }
 
-    /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getChildren(
-     *         java.lang.Object)
-     */
     public Collection getChildren(Object parent) {
-
-        if (!Model.getFacade().isANamespace(parent)) {
+        
+        if (!ModelFacade.isANamespace(parent))
             return null;
-        }
-        Collection ownedElements = Model.getFacade().getOwnedElements(parent);
+        Collection ownedElements = ModelFacade.getOwnedElements(parent);
         Iterator it = ownedElements.iterator();
         Collection ret = new ArrayList();
         while (it.hasNext()) {
 	    Object o = it.next();
-	    if (Model.getFacade().isACollaboration(o)) {
-                if ((Model.getFacade().getRepresentedClassifier(o) != null)
-                        || (Model.getFacade().getRepresentedOperation(o)
-                                != null)) {
-                    continue;
-                }
-	    }
-	    if (Model.getFacade().isAStateMachine(o)
-		 && Model.getFacade().getContext(o) != parent) {
+	    if (ModelFacade.isACollaboration(o)) {
 		continue;
 	    }
-            if (Model.getFacade().isAComment(o)) {
-                if (Model.getFacade().getAnnotatedElements(o).size() != 0) {
-                    continue;
-                }
-            }
+	    if (ModelFacade.isAStateMachine(o)
+		    && ModelFacade.getContext(o) != parent) {
+		continue;
+	    }
 	    ret.add(o);
         }
         return ret;
     }
 
-    /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getDependencies(
-     *         java.lang.Object)
-     */
     public Set getDependencies(Object parent) {
-        if (Model.getFacade().isANamespace(parent)) {
+        if (ModelFacade.isANamespace(parent)) {
 	    Set set = new HashSet();
 	    set.add(parent);
 	    return set;

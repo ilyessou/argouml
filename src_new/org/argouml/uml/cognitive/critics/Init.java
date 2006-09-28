@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,301 +22,295 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: Init.java
+// Classes: Init
+// Original Author: jrobbins@ics.uci.edu
+
 package org.argouml.uml.cognitive.critics;
 
 import org.argouml.cognitive.critics.Agency;
 import org.argouml.cognitive.critics.CompoundCritic;
+import org.argouml.cognitive.critics.CrNodesOverlap;
+import org.argouml.cognitive.critics.CrZeroLengthEdge;
 import org.argouml.cognitive.critics.Critic;
 import org.argouml.language.java.cognitive.critics.CrMultipleInheritance;
 import org.argouml.language.java.cognitive.critics.CrMultipleRealization;
-import org.argouml.model.Model;
 import org.argouml.pattern.cognitive.critics.CrConsiderSingleton;
 import org.argouml.pattern.cognitive.critics.CrSingletonViolatedMissingStaticAttr;
 import org.argouml.pattern.cognitive.critics.CrSingletonViolatedOnlyPrivateConstructors;
 import org.argouml.uml.diagram.deployment.ui.UMLDeploymentDiagram;
+// import org.argouml.uml.diagram.sequence.ui.UMLSequenceDiagram;
+// import org.argouml.uml.diagram.state.ui.UMLStateDiagram;
 import org.argouml.uml.diagram.static_structure.ui.UMLClassDiagram;
 import org.argouml.uml.diagram.ui.FigEdgeModelElement;
+// import org.argouml.uml.diagram.ui.FigNodeModelElement;
 import org.argouml.uml.diagram.ui.UMLDiagram;
+// import org.argouml.uml.diagram.use_case.ui.UMLUseCaseDiagram;
+import org.argouml.model.ModelFacade;
 
-/**
- * Registers critics for use in ArgoUML.  This class is called at
- * system startup time. If you add a new critic, you need to add a
- * line here.
+/** Registers critics for use in Argo/UML.  This class is called at
+ *  system startup time. If you add a new critic, you need to add a
+ *  line here.
  *
- * @author jrobbins
- * @see org.argouml.cognitive.critics.Agency
- */
+ * @see org.argouml.cognitive.critics.Agency */
 public class Init {
 
     // UML specific
-    private static Critic crAssocNameConflict =new CrAssocNameConflict();
-    
-    private static Critic crAttrNameConflict = new CrAttrNameConflict();
-
-    private static Critic crOperNameConflict = new CrOperNameConflict();
-
-    private static Critic crCircularAssocClass = new CrCircularAssocClass();
-
-    private static Critic crCircularInheritance = new CrCircularInheritance();
-
-    private static Critic crCircularComposition = new CrCircularComposition();
-
-    private static Critic crCrossNamespaceAssoc = new CrCrossNamespaceAssoc();
-
-    private static Critic crDupParamName = new CrDupParamName();
-
-    private static Critic crDupRoleNames = new CrDupRoleNames();
-
-    private static Critic crFinalSubclassed = new CrFinalSubclassed();
-
-    private static Critic crIllegalGeneralization =
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crAssocNameConflict = new CrAssocNameConflict();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crAttrNameConflict = new CrAttrNameConflict();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crOperNameConflict = new CrOperNameConflict();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crCircularAssocClass = new CrCircularAssocClass();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crCircularInheritance = new CrCircularInheritance();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crCircularComposition = new CrCircularComposition();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crCrossNamespaceAssoc = new CrCrossNamespaceAssoc();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crDupParamName = new CrDupParamName();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crDupRoleNames = new CrDupRoleNames();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crFinalSubclassed = new CrFinalSubclassed();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crIllegalGeneralization =
 	new CrIllegalGeneralization();
-
-    private static Critic crAlreadyRealizes = new CrAlreadyRealizes();
-
-    private static Critic crInterfaceAllPublic = new CrInterfaceAllPublic();
-
-    private static Critic crInterfaceOperOnly = new CrInterfaceOperOnly();
-
-    private static Critic crMultipleAgg = new CrMultipleAgg();
-
-    private static Critic crNWayAgg = new CrNWayAgg();
-
-    private static Critic crNavFromInterface = new CrNavFromInterface();
-
-    private static Critic crUnnavigableAssoc = new CrUnnavigableAssoc();
-
-    private static Critic crNameConflictAC = new CrNameConflictAC();
-
-    private static Critic crMissingClassName = new CrMissingClassName();
-
-    private static Critic crMissingAttrName = new CrMissingAttrName();
-
-    private static Critic crMissingOperName = new CrMissingOperName();
-
-    private static Critic crMissingStateName = new CrMissingStateName();
-
-    private static Critic crNoInstanceVariables = new CrNoInstanceVariables();
-
-    private static Critic crNoAssociations = new CrNoAssociations();
-
-    private static Critic crNonAggDataType = new CrNonAggDataType();
-
-    private static Critic crOppEndConflict = new CrOppEndConflict();
-
-    private static Critic crUselessAbstract = new CrUselessAbstract();
-
-    private static Critic crUselessInterface = new CrUselessInterface();
-
-    private static Critic crDisambigClassName = new CrDisambigClassName();
-
-    private static Critic crDisambigStateName = new CrDisambigStateName();
-
-    private static Critic crConflictingComposites =
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crAlreadyRealizes = new CrAlreadyRealizes();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crInterfaceAllPublic = new CrInterfaceAllPublic();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crInterfaceOperOnly = new CrInterfaceOperOnly();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crMultipleAgg = new CrMultipleAgg();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crNWayAgg = new CrNWayAgg();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crNavFromInterface = new CrNavFromInterface();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crUnnavigableAssoc = new CrUnnavigableAssoc();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crNameConflictAC = new CrNameConflictAC();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crMissingClassName = new CrMissingClassName();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crMissingAttrName = new CrMissingAttrName();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crMissingOperName = new CrMissingOperName();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crMissingStateName = new CrMissingStateName();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crNoInstanceVariables = new CrNoInstanceVariables();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crNoAssociations = new CrNoAssociations();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crNonAggDataType = new CrNonAggDataType();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crOppEndConflict = new CrOppEndConflict();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crUselessAbstract = new CrUselessAbstract();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crUselessInterface = new CrUselessInterface();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crDisambigClassName = new CrDisambigClassName();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crDisambigStateName = new CrDisambigStateName();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crConflictingComposites =
 	new CrConflictingComposites();
 
-    private static Critic crTooManyAssoc = new CrTooManyAssoc();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crTooManyAssoc = new CrTooManyAssoc();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crTooManyAttr = new CrTooManyAttr();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crTooManyOper = new CrTooManyOper();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crTooManyStates = new CrTooManyStates();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crTooManyTransitions = new CrTooManyTransitions();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crTooManyClasses = new CrTooManyClasses();
 
-    private static Critic crTooManyAttr = new CrTooManyAttr();
-
-    private static Critic crTooManyOper = new CrTooManyOper();
-
-    private static Critic crTooManyStates = new CrTooManyStates();
-
-    private static Critic crTooManyTransitions = new CrTooManyTransitions();
-
-    private static Critic crTooManyClasses = new CrTooManyClasses();
-
-    private static Critic crNoTransitions = new CrNoTransitions();
-
-    private static Critic crNoIncomingTransitions =
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crNoTransitions = new CrNoTransitions();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crNoIncomingTransitions =
 	new CrNoIncomingTransitions();
-
-    private static Critic crNoOutgoingTransitions =
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crNoOutgoingTransitions =
 	new CrNoOutgoingTransitions();
-
-    private static Critic crMultipleInitialStates =
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crMultipleInitialStates =
 	new CrMultipleInitialStates();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crNoInitialState = new CrNoInitialState();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crNoTriggerOrGuard = new CrNoTriggerOrGuard();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crNoGuard = new CrNoGuard();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crInvalidFork = new CrInvalidFork();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crInvalidJoin = new CrInvalidJoin();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crInvalidBranch = new CrInvalidBranch();
 
-    private static Critic crNoInitialState = new CrNoInitialState();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crEmptyPackage = new CrEmptyPackage();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crNoOperations = new CrNoOperations();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crConstructorNeeded = new CrConstructorNeeded();
 
-    private static Critic crNoTriggerOrGuard = new CrNoTriggerOrGuard();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crNameConfusion = new CrNameConfusion();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crMergeClasses = new CrMergeClasses();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crSubclassReference = new CrSubclassReference();
 
-    private static Critic crNoGuard = new CrNoGuard();
-
-    private static Critic crInvalidFork = new CrInvalidFork();
-
-    private static Critic crInvalidJoin = new CrInvalidJoin();
-
-    private static Critic crInvalidBranch = new CrInvalidBranch();
-
-    private static Critic crEmptyPackage = new CrEmptyPackage();
-
-    private static Critic crNoOperations = new CrNoOperations();
-
-    private static Critic crConstructorNeeded = new CrConstructorNeeded();
-
-    private static Critic crNameConfusion = new CrNameConfusion();
-
-    private static Critic crMergeClasses = new CrMergeClasses();
-
-    private static Critic crSubclassReference = new CrSubclassReference();
-
-    private static Critic crComponentWithoutNode = new CrComponentWithoutNode();
-
-    private static Critic crCompInstanceWithoutNode =
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crComponentWithoutNode = new CrComponentWithoutNode();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crCompInstanceWithoutNode =
 	new CrCompInstanceWithoutNode();
-
-    private static Critic crClassWithoutComponent =
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crClassWithoutComponent =
 	new CrClassWithoutComponent();
-
-    private static Critic crInterfaceWithoutComponent =
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crInterfaceWithoutComponent =
 	new CrInterfaceWithoutComponent();
-
-    private static Critic crObjectWithoutComponent =
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crObjectWithoutComponent =
 	new CrObjectWithoutComponent();
-
-    private static Critic crNodeInsideElement = new CrNodeInsideElement();
-
-    private static Critic crNodeInstanceInsideElement =
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crNodeInsideElement = new CrNodeInsideElement();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crNodeInstanceInsideElement =
 	new CrNodeInstanceInsideElement();
-
-    private static Critic crWrongLinkEnds = new CrWrongLinkEnds();
-
-    private static Critic crInstanceWithoutClassifier =
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crWrongLinkEnds = new CrWrongLinkEnds();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crInstanceWithoutClassifier =
 	new CrInstanceWithoutClassifier();
 
-    private static Critic crInvalidHistory =
-        new CrInvalidHistory();
-
-    private static Critic crInvalidSynch =
-        new CrInvalidSynch();
-
-    private static Critic crInvalidJoinTriggerOrGuard =
-        new CrInvalidJoinTriggerOrGuard();
-
-    private static Critic crInvalidForkTriggerOrGuard =
-        new CrInvalidForkTriggerOrGuard();
-
-    private static Critic crInvalidPseudoStateTrigger =
-        new CrInvalidPseudoStateTrigger();
-
-    private static Critic crMultipleDeepHistoryStates =
-        new CrMultipleDeepHistoryStates();
-
-    private static Critic crMultipleShallowHistoryStates =
-        new CrMultipleShallowHistoryStates();
-
-    private static Critic crInvalidInitial =
-        new CrInvalidInitial();
-
-    private static Critic crForkOutgoingTransition =
-        new CrForkOutgoingTransition();
-
-    private static Critic crJoinIncomingTransition =
-        new CrJoinIncomingTransition();
-
-    // private static Critic crCallWithoutReturn = new CrCallWithoutReturn();
-    // private static Critic crReturnWithoutCall = new CrReturnWithoutCall();
-    // private static Critic crSeqInstanceWithoutClassifier =
+    // public static Critic crCallWithoutReturn = new CrCallWithoutReturn();
+    // public static Critic crReturnWithoutCall = new CrReturnWithoutCall(); 
+    // public static Critic crSeqInstanceWithoutClassifier =
 	// new CrSeqInstanceWithoutClassifier();
-    // private static Critic crStimulusWithWrongPosition =
+    // public static Critic crStimulusWithWrongPosition =
 	// new CrStimulusWithWrongPosition();
 
     // from UML 1.1 Semantics spec
 
     // common coding conventions
-    private static Critic crUnconventionalOperName = 
-        new CrUnconventionalOperName();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic
+	crUnconventionalOperName = new CrUnconventionalOperName();
 
-    private static Critic crUnconventionalAttrName = 
-        new CrUnconventionalAttrName();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic
+	crUnconventionalAttrName = new CrUnconventionalAttrName(); 
 
-    private static Critic crUnconventionalClassName = 
-        new CrUnconventionalClassName();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic
+	crUnconventionalClassName = new CrUnconventionalClassName(); 
 
-    private static Critic crUnconventionalPackName = 
-        new CrUnconventionalPackName();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic
+	crUnconventionalPackName = new CrUnconventionalPackName(); 
 
     // Java specific
-    private static Critic crClassMustBeAbstract = new CrClassMustBeAbstract();
-
-    private static Critic crReservedName = new CrReservedName();
-
-    private static Critic crMultiInherit = new CrMultipleInheritance();
-
-    private static Critic crMultiRealization = new CrMultipleRealization();
-
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crClassMustBeAbstract = new CrClassMustBeAbstract();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crReservedName = new CrReservedName();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crMultiInherit = new CrMultipleInheritance();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crMultiRealization = new CrMultipleRealization();
     // code generation
-    private static Critic crIllegalName = new CrIllegalName();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crIllegalName = new CrIllegalName();
 
     // Pattern specific
-    private static Critic crConsiderSingleton = new CrConsiderSingleton();
-
-    private static Critic crSingletonViolatedMSA =
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crConsiderSingleton = new CrConsiderSingleton();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crSingletonViolatedMSA =
 	new CrSingletonViolatedMissingStaticAttr();
-
-    private static Critic crSingletonViolatedOPC =
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crSingletonViolatedOPC =
 	new CrSingletonViolatedOnlyPrivateConstructors();
 
     // Presentation critics
-    private static Critic crNodesOverlap = new CrNodesOverlap();
-
-    private static Critic crZeroLengthEdge = new CrZeroLengthEdge();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crNodesOverlap = new CrNodesOverlap();
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static Critic crZeroLengthEdge = new CrZeroLengthEdge();
 
 
     // Compound critics
-    private static CompoundCritic clsNaming =
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static CompoundCritic clsNaming =
 	new CompoundCritic(crMissingClassName, crDisambigClassName);
-
-    private static CompoundCritic noTrans1 =
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static CompoundCritic noTrans1 =
 	new CompoundCritic(crNoTransitions, crNoIncomingTransitions);
-
-    private static CompoundCritic noTrans2 =
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static CompoundCritic noTrans2 =
 	new CompoundCritic(crNoTransitions, crNoOutgoingTransitions);
-
     // only classes with name need a constructor
-    private static CompoundCritic crCompoundConstructorNeeded =
+    /** @deprecated as of 0.15.3 to be made private. */
+    public static CompoundCritic crCompoundConstructorNeeded =
         new CompoundCritic(crMissingClassName, crConstructorNeeded);
 
-    /**
-     * static initializer, register all appropriate critics.
-     */
+    /** static initializer, register all appropriate critics */
     public static void init() {
-        Object modelCls = Model.getMetaTypes().getModel();
-        Object packageCls = Model.getMetaTypes().getPackage();
-        Object classCls = Model.getMetaTypes().getUMLClass();
-        Object classifierCls = Model.getMetaTypes().getClassifier();
-        Object interfaceCls = Model.getMetaTypes().getInterface();
-        Object attrCls = Model.getMetaTypes().getAttribute();
-        Object paramCls = Model.getMetaTypes().getParameter();
-        Object operCls = Model.getMetaTypes().getOperation();
-        Object assocCls = Model.getMetaTypes().getAssociation();
-        Object assocEndCls = Model.getMetaTypes().getAssociationEnd();
-        Object assocClassCls = Model.getMetaTypes().getAssociationClass();
-        Object namespaceCls = Model.getMetaTypes().getNamespace();
-        Object genElementCls = Model.getMetaTypes().getGeneralizableElement();
-        Object genCls = Model.getMetaTypes().getGeneralization();
-        Object datatypeCls = Model.getMetaTypes().getDataType();
-        Object useCaseCls = Model.getMetaTypes().getUseCase();
-        Object actorCls = Model.getMetaTypes().getActor();
-        Object stateVertexCls = Model.getMetaTypes().getStateVertex();
-        Object stateCls = Model.getMetaTypes().getState();
-        Object compositieStateCls = Model.getMetaTypes().getCompositeState();
-        Object synchStateCls = Model.getMetaTypes().getSynchState();
 
-	// Class stateDiagramCls   = UMLStateDiagram.class;
-	// Class useCaseDiagramCls = UMLUseCaseDiagram.class;
+	java.lang.Class modelCls = (Class) ModelFacade.MODEL;
+	java.lang.Class packageCls = (Class) ModelFacade.PACKAGE;
+	java.lang.Class modelElementCls = (Class) ModelFacade.MODELELEMENT;
+	java.lang.Class classCls = (Class) ModelFacade.CLASS;
+	java.lang.Class classifierCls = (Class) ModelFacade.CLASSIFIER;
+	java.lang.Class interfaceCls = (Class) ModelFacade.INTERFACE;
+	java.lang.Class attrCls = (Class) ModelFacade.ATTRIBUTE;
+	java.lang.Class paramCls = (Class) ModelFacade.PARAMETER;
+	java.lang.Class operCls = (Class) ModelFacade.OPERATION;
+	java.lang.Class assocCls = (Class) ModelFacade.ASSOCIATION;
+	java.lang.Class assocEndCls = (Class) ModelFacade.ASSOCIATION_END;
+	java.lang.Class assocClassCls = (Class) ModelFacade.ASSOCIATION_CLASS;
+	java.lang.Class namespaceCls = (Class) ModelFacade.NAMESPACE;
+	java.lang.Class genElementCls =
+	    (Class) ModelFacade.GENERALAIZABLE_ELEMENT;
+	java.lang.Class genCls = (Class) ModelFacade.GENERALIZATION;
+	java.lang.Class datatypeCls = (Class) ModelFacade.DATATYPE;
+
+	java.lang.Class useCaseCls = (Class) ModelFacade.USE_CASE;
+	java.lang.Class actorCls = (Class) ModelFacade.ACTOR;
+
+	java.lang.Class stateVertexCls = (Class) ModelFacade.STATEVERTEX;
+	java.lang.Class stateCls = (Class) ModelFacade.STATE;
+	java.lang.Class compositieStateCls = (Class) ModelFacade.COMPOSITESTATE;
+        
+	// java.lang.Class stateDiagramCls   = UMLStateDiagram.class;
+	// java.lang.Class useCaseDiagramCls = UMLUseCaseDiagram.class;
 
 	// TODO: Agency should allow registration by interface
 	// useful for MAssociation.
-        Agency.register(crAssocNameConflict, namespaceCls);
+
+	Agency.register(crAssocNameConflict, namespaceCls);
 	Agency.register(crAttrNameConflict, classifierCls);
 	Agency.register(crOperNameConflict, classifierCls);
 	Agency.register(crCircularAssocClass, assocClassCls);
 	Agency.register(crCircularInheritance, genElementCls);
 	Agency.register(crCircularComposition, classCls);
-	Agency.register(crClassMustBeAbstract, classCls);
+	Agency.register(crClassMustBeAbstract, classCls); 
 	Agency.register(crCrossNamespaceAssoc, assocCls);
 	Agency.register(crDupParamName, operCls);
 	Agency.register(crDupRoleNames, assocCls);
@@ -331,6 +325,7 @@ public class Init {
 	Agency.register(crNWayAgg, assocCls);
 	Agency.register(crNavFromInterface, assocCls);
 	Agency.register(crNameConflictAC, assocClassCls);
+
 	Agency.register(clsNaming, classCls);
 	Agency.register(clsNaming, actorCls);
 	Agency.register(clsNaming, useCaseCls);
@@ -341,6 +336,7 @@ public class Init {
 	Agency.register(crMissingAttrName, attrCls);
 	Agency.register(crMissingOperName, operCls);
 	Agency.register(crMissingStateName, stateVertexCls);
+
 	Agency.register(crNoInstanceVariables, classCls);
 	Agency.register(crNoAssociations, classCls);
 	Agency.register(crNoAssociations, actorCls);
@@ -376,10 +372,12 @@ public class Init {
 	Agency.register(crTooManyOper, classCls);
 	Agency.register(crTooManyTransitions, stateVertexCls);
 	Agency.register(crTooManyStates, compositieStateCls);
-	Class classDiagramCls   = UMLClassDiagram.class;
+
+	java.lang.Class classDiagramCls   = UMLClassDiagram.class;
 	Agency.register(crTooManyClasses, classDiagramCls);
-	Object pseudostateCls = Model.getMetaTypes().getPseudostate();
-	Object transitionCls = Model.getMetaTypes().getTransition();
+
+	java.lang.Class pseudostateCls = (Class) ModelFacade.PSEUDOSTATE;
+	java.lang.Class transitionCls = (Class) ModelFacade.TRANSITION;
 	Agency.register(noTrans1, stateVertexCls);
 	Agency.register(noTrans2, stateVertexCls);
 	Agency.register(crMultipleInitialStates, pseudostateCls);
@@ -389,14 +387,17 @@ public class Init {
 	Agency.register(crInvalidFork, pseudostateCls);
 	Agency.register(crInvalidBranch, pseudostateCls);
 	Agency.register(crNoGuard, transitionCls);
+
 	Agency.register(crUnconventionalOperName, operCls);
 	Agency.register(crUnconventionalAttrName, attrCls);
 	Agency.register(crUnconventionalClassName, classCls);
 	Agency.register(crUnconventionalPackName, packageCls);
+
 	Agency.register(crConsiderSingleton, classCls);
 	Agency.register(crSingletonViolatedMSA, classCls);
 	Agency.register(crSingletonViolatedOPC, classCls);
-	Class deploymentDiagramCls = UMLDeploymentDiagram.class;
+
+	java.lang.Class deploymentDiagramCls = UMLDeploymentDiagram.class;
 	Agency.register(crNodeInsideElement, deploymentDiagramCls);
 	Agency.register(crNodeInstanceInsideElement, deploymentDiagramCls);
 	Agency.register(crComponentWithoutNode, deploymentDiagramCls);
@@ -407,36 +408,28 @@ public class Init {
 	Agency.register(crWrongLinkEnds, deploymentDiagramCls);
 	Agency.register(crInstanceWithoutClassifier, deploymentDiagramCls);
 
-	Agency.register(crMultipleDeepHistoryStates, pseudostateCls);
-	Agency.register(crMultipleShallowHistoryStates, pseudostateCls);
-	Agency.register(crInvalidHistory, pseudostateCls);
-	Agency.register(crInvalidSynch, synchStateCls);
-	Agency.register(crInvalidJoinTriggerOrGuard, transitionCls);
-	Agency.register(crInvalidForkTriggerOrGuard, transitionCls);
-	Agency.register(crInvalidPseudoStateTrigger, transitionCls);
-	Agency.register(crInvalidInitial, pseudostateCls);
-	Agency.register(crForkOutgoingTransition, transitionCls);
-	Agency.register(crJoinIncomingTransition, transitionCls);
-
-	// Class sequenceDiagramCls = UMLSequenceDiagram.class;
+	// java.lang.Class sequenceDiagramCls = UMLSequenceDiagram.class;
 	// Agency.register(crCallWithoutReturn, sequenceDiagramCls);
 	// Agency.register(crReturnWithoutCall, sequenceDiagramCls);
 	// Agency.register(crLinkWithoutStimulus, sequenceDiagramCls);
 	// Agency.register(crSeqInstanceWithoutClassifier, sequenceDiagramCls);
 	// Agency.register(crStimulusWithWrongPosition, sequenceDiagramCls);
 
-	// Class nodeCls           = FigNodeModelElement.class;
-	Class edgeCls           = FigEdgeModelElement.class;
+	// java.lang.Class nodeCls           = FigNodeModelElement.class;
+	java.lang.Class edgeCls           = FigEdgeModelElement.class;
 
-	Class diagramCls        = UMLDiagram.class;
+	java.lang.Class diagramCls        = UMLDiagram.class;
 	Agency.register(crNodesOverlap, diagramCls);
 	Agency.register(crZeroLengthEdge, edgeCls);
+      
 	Agency.register(crOppEndConflict, assocEndCls);
 	Agency.register(new CrMultiComposite(), assocEndCls);
 	Agency.register(new CrNameConflict(), namespaceCls);
 	Agency.register(crAlreadyRealizes, classCls);
 	Agency.register(new CrUtilityViolated(), classifierCls);
+      
 	Agency.register(new CrOppEndVsAttr(), classifierCls);
-    }
 
+    }
+      
 } /* end class Init */

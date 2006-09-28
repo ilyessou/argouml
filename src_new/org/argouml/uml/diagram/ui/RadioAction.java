@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 2003-2006 The Regents of the University of California. All
+// Copyright (c) 2003-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,6 +22,8 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: RadioAction.java
+// Classes: RadioAction
 // Created on 20 July 2003, 02:12
 
 package org.argouml.uml.diagram.ui;
@@ -30,54 +32,34 @@ import javax.swing.Action;
 import javax.swing.Icon;
 import org.argouml.kernel.ProjectManager;
 
+import org.argouml.uml.diagram.ui.UMLDiagram;
 import org.tigris.gef.base.Editor;
 import org.tigris.gef.base.Globals;
 import org.tigris.toolbar.toolbutton.AbstractButtonAction;
 
 /**
  * A wrapper around a standard action to indicate that any buttons created
- * from this actions should act like radio buttons, i.e. that when the
- * toolbar buttons are double-clicked, they remain active, and every click
- * on the diagram will place a new modelelement.
+ * from this actions should act like radio buttons.
  *
  * @author Bob Tarling
  */
 public class RadioAction extends AbstractButtonAction {
 
-    private Action realAction;
+    Action realAction;
 
-    /**
-     * @param action the action
-     */
     public RadioAction(Action action) {
-        super((String) action.getValue(Action.NAME),
-		(Icon) action.getValue(Action.SMALL_ICON));
-        putValue(Action.SHORT_DESCRIPTION,
-                action.getValue(Action.SHORT_DESCRIPTION));
+        super((String)action.getValue(Action.NAME),
+		(Icon)action.getValue(Action.SMALL_ICON));
+        putValue(Action.SHORT_DESCRIPTION, action.getValue(Action.SHORT_DESCRIPTION));
         realAction = action;
     }
 
-    /**
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-     */
     public void actionPerformed(java.awt.event.ActionEvent actionEvent) {
-        UMLDiagram diagram = (UMLDiagram)
-            ProjectManager.getManager().getCurrentProject().getActiveDiagram();
-        if (Globals.getSticky() && diagram.getSelectedAction() == this) {
-            // If the user selects an Action that is already selected in sticky mode
-            // (double clicked) then we turn off sticky mode and make sure no
-            // action is selected.
-            Globals.setSticky(false);
-            diagram.deselectAllTools();
-            Editor ce = Globals.curEditor();
-            if (ce != null) {
-                ce.finishMode();
-            }
-            return;
-        }
         super.actionPerformed(actionEvent);
         realAction.actionPerformed(actionEvent);
-        diagram.setSelectedAction(this);
+        // TODO Change this to ArgoDiagram
+        UMLDiagram diagram = (UMLDiagram)ProjectManager.getManager().getCurrentProject().getActiveDiagram();
+        diagram.deselectOtherTools(this);
         Globals.setSticky(isDoubleClick());
         if (!isDoubleClick()) {
             Editor ce = Globals.curEditor();
@@ -87,9 +69,6 @@ public class RadioAction extends AbstractButtonAction {
         }
     }
 
-    /**
-     * @return the action
-     */
     public Action getAction() {
         return realAction;
     }

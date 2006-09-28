@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -28,13 +28,12 @@ import java.beans.PropertyChangeEvent;
 import java.beans.VetoableChangeListener;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Vector;
 
 import org.apache.log4j.Logger;
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
+import org.argouml.model.uml.foundation.core.CoreHelper;
 import org.argouml.uml.diagram.UMLMutableGraphSupport;
-import org.argouml.uml.diagram.static_structure.ui.CommentEdge;
 
 /**
  * This class defines a bridge between the UML meta-model
@@ -44,19 +43,72 @@ import org.argouml.uml.diagram.static_structure.ui.CommentEdge;
  * This class handles only UML Use Case Diagrams.<p>
  */
 public class UseCaseDiagramGraphModel
-        extends UMLMutableGraphSupport
-        implements VetoableChangeListener {
+    extends UMLMutableGraphSupport
+    implements VetoableChangeListener
+{
     /**
-     * Logger.
+     * @deprecated by Linus Tolke as of 0.15.4. Use your own logger in your
+     * class. This will be removed.
      */
-    private static final Logger LOG =
-        Logger.getLogger(UseCaseDiagramGraphModel.class);
+    protected static Logger cat =
+	Logger.getLogger(UseCaseDiagramGraphModel.class);
+
+    ///////////////////////////////////////////////////////////////////////////
+    //
+    // instance variables
+    //
+    ///////////////////////////////////////////////////////////////////////////
+
+    
+
+    /**
+     * The "home" UML model of this diagram, not all ModelElements in
+     * this graph are in the home model, but if they are added and
+     * don't already have a model, they are placed in the "home
+     * model".  Also, elements from other models will have their
+     * FigNodes add a line to say what their model is.<p>
+     */
+    protected Object _model;
+
+
+    ///////////////////////////////////////////////////////////////////////////
+    //
+    // Accessors
+    //
+    ///////////////////////////////////////////////////////////////////////////
+
+    /**
+     * Accessor to get the namespace.<p>
+     *
+     * @return  The namespace associated with this graph model.
+     */
+    public Object getNamespace() {
+        return _model;
+    }
+
+
+    /**
+     * Accessor to set the namespace.<p>
+     *
+     * Clears the current listener if we have a namespace at present.
+     * Sets a new listener if we set a new namespace (i.e. m is
+     * non-null).<p>
+     *
+     * @param namespace  The namespace to use for this graph model
+     */
+    public void setNamespace(Object namespace) {
+        if (!ModelFacade.isANamespace(namespace))
+            throw new IllegalArgumentException();
+	_model = namespace;
+    }
+
 
     ///////////////////////////////////////////////////////////////////////////
     //
     // Methods that implement the GraphModel itself
     //
     ///////////////////////////////////////////////////////////////////////////
+
 
     /**
      * Return all ports on a node or edge supplied as argument.<p>
@@ -69,12 +121,13 @@ public class UseCaseDiagramGraphModel
      *
      * @return            A vector of the ports found.
      */
-    public List getPorts(Object nodeOrEdge) {
+    public Vector getPorts(Object nodeOrEdge) {
         Vector res = new Vector();  //wasteful!
 
-        if (Model.getFacade().isAActor(nodeOrEdge)) {
+        if (ModelFacade.isAActor(nodeOrEdge)) {
             res.addElement(nodeOrEdge);
-        } else if (Model.getFacade().isAUseCase(nodeOrEdge)) {
+        }
+        else if (ModelFacade.isAUseCase(nodeOrEdge)) {
             res.addElement(nodeOrEdge);
         }
 
@@ -82,8 +135,7 @@ public class UseCaseDiagramGraphModel
     }
 
 
-    /**
-     * Return the node or edge that owns the given port.<p>
+    /* Return the node or edge that owns the given port.<p>
      *
      * In our implementation the only objects with ports, use
      * themselves as the port, so are there own owner.<p>
@@ -108,14 +160,14 @@ public class UseCaseDiagramGraphModel
      *
      * @return      A vector of objects which are the incoming edges.
      */
-    public List getInEdges(Object port) {
+    public Vector getInEdges(Object port) {
         Vector res = new Vector(); //wasteful!
 
         // The actor case
 
-        if (Model.getFacade().isAActor(port)) {
+        if (ModelFacade.isAActor(port)) {
             Object act  = /*(MActor)*/ port;
-            Vector ends = new Vector(Model.getFacade().getAssociationEnds(act));
+            Vector ends = new Vector(ModelFacade.getAssociationEnds(act));
 
             // If there are no ends, return the empty vector
 
@@ -129,13 +181,15 @@ public class UseCaseDiagramGraphModel
 
             while (endEnum.hasMoreElements()) {
                 Object ae = /*(MAssociationEnd)*/ endEnum.nextElement();
-                res.addElement(Model.getFacade().getAssociation(ae));
+                res.addElement(ModelFacade.getAssociation(ae));
             }
-        } else if (Model.getFacade().isAUseCase(port)) {
-            // The use case
+        }
 
+        // The use case
+
+        else if (ModelFacade.isAUseCase(port)) {
             Object use  = /*(MUseCase)*/ port;
-            Vector ends = new Vector(Model.getFacade().getAssociationEnds(use));
+            Vector   ends = new Vector(ModelFacade.getAssociationEnds(use));
 
             // If there are no ends, return the empty vector
 
@@ -149,7 +203,7 @@ public class UseCaseDiagramGraphModel
 
             while (endEnum.hasMoreElements()) {
                 Object ae = /*(MAssociationEnd)*/ endEnum.nextElement();
-                res.addElement(Model.getFacade().getAssociation(ae));
+                res.addElement(ModelFacade.getAssociation(ae));
             }
         }
 
@@ -171,9 +225,72 @@ public class UseCaseDiagramGraphModel
      * @return      A vector of objects which are the outgoing edges. Currently
      *              return the empty vector.
      */
-    public List getOutEdges(Object port) {
+    public Vector getOutEdges(Object port) {
         return new Vector();
     }
+
+
+    /**
+     * Return the source end of an edge.<p>
+     *
+     * <em>Needs more work</em>.  In the current implementation we
+     * only know how to handle associations, returning the first of
+     * its connections&mdash;which, if set, will be a use case or an
+     * actor.<p>
+     *
+     * @param edge  The edge for which we want the source port.
+     *
+     * @return      The source port for the edge, or <code>null</code> if the
+     *              edge given is not an association or has no source defined.
+     */
+    public Object getSourcePort(Object edge) {
+        
+        if (ModelFacade.isARelationship(edge)) {
+            return CoreHelper.getHelper().getSource(/*(MRelationship)*/ edge);
+	}
+
+        // Don't know what to do otherwise
+
+        cat.debug(this.getClass().toString() + ": getSourcePort("
+		  + edge.toString() + ") - can't handle");
+
+        return null;
+    }
+
+
+    /**
+     * Return the destination end of an edge.<p>
+     *
+     * <em>Needs more work</em>.  In the current implementation we
+     * only know how to handle associations, returning the second of
+     * its connections&mdash;which, if set, will be a use case or an
+     * actor.<p>
+     *
+     * @param edge  The edge for which we want the destination port.
+     *
+     * @return      The destination port for the edge, or <code>null</code> if
+     *              the edge given is not an association or has no destination
+     *              defined.
+     */
+    public Object getDestPort(Object edge) {
+
+        // Know what to do for an association
+
+        if (ModelFacade.isAAssociation(edge)) {
+            Object assoc = /*(MAssociation)*/ edge;
+            Vector       conns = new Vector(ModelFacade.getConnections(assoc));
+
+            return conns.elementAt(1);
+        }
+
+        // Don't know what to do otherwise
+
+        cat.debug(this.getClass().toString() + ": getDestPort("
+		  + edge.toString() + ") - can't handle");
+
+        return null;
+    }
+
 
     ///////////////////////////////////////////////////////////////////////////
     //
@@ -198,20 +315,10 @@ public class UseCaseDiagramGraphModel
      *              this graph, <code>false</code> otherwise.
      */
     public boolean canAddNode(Object node) {
-        if (Model.getFacade().isAAssociation(node)
-                && !Model.getFacade().isANaryAssociation(node)) {
-            // A binary association is not a node so reject.
-            return false;
-        }
-        if (super.canAddNode(node)) {
-            return true;
-        }
-        if (containsNode(node)) {
+        if (_nodes.contains(node)) {
 	    return false;
 	}
-        return Model.getFacade().isAActor(node)
-            || Model.getFacade().isAUseCase(node)
-            || Model.getFacade().isAPackage(node);
+        return ModelFacade.isAActor(node) || ModelFacade.isAUseCase(node);
     }
 
 
@@ -232,23 +339,25 @@ public class UseCaseDiagramGraphModel
      *              this graph, <code>false</code> otherwise.
      */
     public boolean canAddEdge(Object edge)  {
-        if (edge == null) {
-            return false;
-        }
-        if (containsEdge(edge)) {
+
+        // Give up if we are already on the graph
+        if (edge == null) return false;
+        if (_edges.contains(edge)) {
             return false;
         }
 
         // Get the two ends of any valid edge
-        Object sourceModelElement = null;
-        Object destModelElement = null;
-        if (Model.getFacade().isAAssociation(edge)) {
+
+        Object end0 = null;
+        Object end1 = null;
+
+        if (ModelFacade.isAAssociation(edge)) {
 
             // Only allow binary associations
 
-            Collection conns = Model.getFacade().getConnections(edge);
+            Collection conns = ModelFacade.getConnections(edge);
             Iterator iter = conns.iterator();
-
+            
             if (conns.size() < 2) {
                 return false;
             }
@@ -262,26 +371,34 @@ public class UseCaseDiagramGraphModel
                 return false;
             }
 
-            sourceModelElement = Model.getFacade().getType(associationEnd0);
-            destModelElement = Model.getFacade().getType(associationEnd1);
-        } else if (Model.getFacade().isAGeneralization(edge)) {
-            sourceModelElement = Model.getFacade().getChild(edge);
-            destModelElement = Model.getFacade().getParent(edge);
-        } else if (Model.getFacade().isAExtend(edge)) {
-            sourceModelElement = Model.getFacade().getBase(edge);
-            destModelElement = Model.getFacade().getExtension(edge);
-        } else if (Model.getFacade().isAInclude(edge)) {
+            end0 = ModelFacade.getType(associationEnd0);
+            end1 = ModelFacade.getType(associationEnd1);
+        }
+        else if (ModelFacade.isAGeneralization(edge)) {
+            end0 = ModelFacade.getChild(edge);
+            end1 = ModelFacade.getParent(edge);
+        }
+        else if (ModelFacade.isAExtend(edge)) {
+            end0 = ModelFacade.getBase(edge);
+            end1 = ModelFacade.getExtension(edge);
+        }
+        else if (ModelFacade.isAInclude(edge)) {
 
-            sourceModelElement = Model.getFacade().getBase(edge);
-            destModelElement = Model.getFacade().getAddition(edge);
-        } else if (Model.getFacade().isADependency(edge)) {
+            // There is a bug in NSUML which gets the addition and base
+            // relationships back to front for include relationships. Solve
+            // by reversing their accessors in the code
+
+            end0 = ModelFacade.getAddition(edge);
+            end1 = ModelFacade.getBase(edge);
+        }
+        else if (ModelFacade.isADependency(edge)) {
 
             // A dependency potentially has many clients and suppliers. We only
             // consider the first of each (not clear that we should really
             // accept the case where there is more than one of either)
 
-            Collection clients   = Model.getFacade().getClients(edge);
-            Collection suppliers = Model.getFacade().getSuppliers(edge);
+            Collection clients   = ModelFacade.getClients(edge);
+            Collection suppliers = ModelFacade.getSuppliers(edge);
 
             // Give up if either clients or suppliers is undefined
 
@@ -289,41 +406,28 @@ public class UseCaseDiagramGraphModel
                 return false;
             }
 
-            sourceModelElement = (clients.toArray())[0];
-            destModelElement = (suppliers.toArray())[0];
-        } else if (edge instanceof CommentEdge) {
-            sourceModelElement = ((CommentEdge) edge).getSource();
-            destModelElement = ((CommentEdge) edge).getDestination();
-        } else {
-            return false;
+            end0 = (clients.toArray())[0];
+            end1 = (suppliers.toArray())[0];
         }
 
         // Both ends must be defined and nodes that are on the graph already.
-        if (sourceModelElement == null || destModelElement == null) {
-            LOG.error("Edge rejected. Its ends are not attached to anything");
+
+        if ((end0 == null)
+	    || (end1 == null)
+	    || (!(_nodes.contains(end0)))
+	    || (!(_nodes.contains(end1)))) {
+
             return false;
+
         }
 
-        if (!containsNode(sourceModelElement)
-                && !containsEdge(sourceModelElement)) {
-            LOG.error("Edge rejected. Its source end is attached to "
-                    + sourceModelElement
-                    + " but this is not in the graph model");
-            return false;
-        }
-        if (!containsNode(destModelElement)
-                && !containsEdge(destModelElement)) {
-            LOG.error("Edge rejected. Its destination end is attached to "
-                    + destModelElement
-                    + " but this is not in the graph model");
-            return false;
-        }
+        // AOK
 
         return true;
     }
 
-
-    /**
+    
+    /** 
      * Add the given node to the graph, if valid.<p>
      *
      * We add the node if it is not already on the graph, and
@@ -334,7 +438,7 @@ public class UseCaseDiagramGraphModel
      * elements of the model namespace, we are implicitly making it
      * public visibility (it could be private to this namespace).<p>
      *
-     * <em>Note</em>.  This method is inconsistent with
+     * <em>Note</em>.  This method is inconsistent with 
      * {@link #canAddNode}, which will allow a node to be added to the
      * graph if it is already there.<p>
      *
@@ -342,23 +446,39 @@ public class UseCaseDiagramGraphModel
      */
     public void addNode(Object node) {
 
-        LOG.debug("adding usecase node!!");
+        cat.debug("adding usecase node!!");
 
         // Give up if we are already on the graph. This is a bit inconistent
         // with canAddNode above.
 
-        if (!canAddNode(node)) {
-            return;
-        }
+        if (!canAddNode(node)) return;
 
         // Add the node, check that it is an actor or use case and add it to
         // the model namespace.
 
-        getNodes().add(node);
+        _nodes.addElement(node);
+        /*
+         * 2002-07-14
+         * Jaap Branderhorst
+         * Issue 324
+         * Next line of code didn't check if the node allready was
+         * owned by some namespace. So when a node was added that was allready
+         * owned by a namespace, the node was moved to the namespace the 
+         * usecase diagram belongs to.
+         * OLD CODE
 
-        if (Model.getFacade().isAModelElement(node)
-                && Model.getFacade().getNamespace(node) == null) {
-            Model.getCoreHelper().addOwnedElement(getHomeModel(), node);
+	 if ((node instanceof MActor) ||
+	 (node instanceof MUseCase)) {
+         
+         * NEW CODE:
+         */
+	if (((ModelFacade.isAActor(node))
+	     || (ModelFacade.isAUseCase(node)))
+	    && (ModelFacade.getNamespace(node) == null)) {
+	    // end NEW CODE
+            cat.debug("setting namespace " + _model
+		      + " to element " + node);
+            ModelFacade.addOwnedElement(_model, /*(MModelElement)*/ node);
         }
 
         // Tell GEF its changed
@@ -367,7 +487,7 @@ public class UseCaseDiagramGraphModel
     }
 
 
-    /**
+    /** 
      * Add the given edge to the graph, if valid.<p>
      *
      * We add the edge if it is not already on the graph, and
@@ -382,33 +502,14 @@ public class UseCaseDiagramGraphModel
      * @param edge  The edge to be added to the graph.
      */
     public void addEdge(Object edge) {
-        if (edge == null) {
-            throw new IllegalArgumentException("Cannot add a null edge");
-        }
-
-        if (getDestPort(edge) == null || getSourcePort(edge) == null) {
-            throw new IllegalArgumentException(
-                    "The source and dest port should be provided on an edge");
-        }
-
-        if (LOG.isInfoEnabled()) {
-            LOG.info("Adding an edge of type "
-                   + edge.getClass().getName()
-                   + " to use case diagram.");
-        }
-
-        if (!canAddEdge(edge)) {
-            LOG.info("Attempt to add edge rejected");
-            return;
-        }
+        cat.debug("adding class edge!!!!!!");
+        if (!canAddEdge(edge)) return;
 
         // Add the element and place it in the namespace of the model
-        getEdges().add(edge);
+        _edges.addElement(edge);
 
-        // TODO: assumes public
-        if (Model.getFacade().isAModelElement(edge)
-                && Model.getFacade().getNamespace(edge) == null) {
-            Model.getCoreHelper().addOwnedElement(getHomeModel(), edge);
+        if (ModelFacade.getNamespace(edge) == null) {
+            ModelFacade.addOwnedElement(_model, /*(MModelElement)*/ edge);
         }
 
         // Tell GEF
@@ -430,21 +531,20 @@ public class UseCaseDiagramGraphModel
      * @param node  The node whose edges are to be added.
      */
     public void addNodeRelatedEdges(Object node) {
-        super.addNodeRelatedEdges(node);
 
         // Extend and include relationships for use cases. Collect all the
         // relationships of which the use case is either end and iterate to see
         // if they can be added.
 
-        if (Model.getFacade().isAUseCase(node)) {
+        if (ModelFacade.isAUseCase(node)) {
             Vector ends = new Vector();
 
             // Collect all the includes at either end.
 
-            ends.addAll(Model.getFacade().getIncludes(node));
-            ends.addAll(Model.getFacade().getIncludes2(node));
-            ends.addAll(Model.getFacade().getExtends(node));
-            ends.addAll(Model.getFacade().getExtends2(node));
+            ends.addAll(ModelFacade.getIncludes(node));
+            ends.addAll(ModelFacade.getIncludes2(node));
+            ends.addAll(ModelFacade.getExtends(node));
+            ends.addAll(ModelFacade.getExtends2(node));
 
             Iterator iter = ends.iterator();
 
@@ -460,15 +560,15 @@ public class UseCaseDiagramGraphModel
         // Associations for classifiers. Iterate over all the association ends
         // to find the associations.
 
-        if (Model.getFacade().isAClassifier(node)) {
-            Collection ends = Model.getFacade().getAssociationEnds(node);
+        if (ModelFacade.isAClassifier(node)) {
+            Collection ends = ModelFacade.getAssociationEnds(node);
             Iterator   iter = ends.iterator();
 
             while (iter.hasNext()) {
                 Object ae = /*(MAssociationEnd)*/ iter.next();
 
-                if (canAddEdge(Model.getFacade().getAssociation(ae))) {
-                    addEdge(Model.getFacade().getAssociation(ae));
+                if (canAddEdge(ModelFacade.getAssociation(ae))) {
+                    addEdge(ModelFacade.getAssociation(ae));
                 }
             }
         }
@@ -476,11 +576,11 @@ public class UseCaseDiagramGraphModel
         // Generalizations and specializations for generalizable
         // elements. Iterate over each set in turn
 
-        if (Model.getFacade().isAGeneralizableElement(node)) {
+        if (ModelFacade.isAGeneralizableElement(node)) {
 
             // The generalizations
 
-            Collection gn = Model.getFacade().getGeneralizations(node);
+            Collection gn = ModelFacade.getGeneralizations(node);
 
             Iterator iter = gn.iterator();
 
@@ -494,7 +594,7 @@ public class UseCaseDiagramGraphModel
 
             // The specializations
 
-            Collection sp = Model.getFacade().getSpecializations(node);
+            Collection sp = ModelFacade.getSpecializations(node);
 
             iter = sp.iterator();
 
@@ -510,11 +610,11 @@ public class UseCaseDiagramGraphModel
         // Dependencies for model elements. Iterate over client and suppliers
         // together.
 
-        if (Model.getFacade().isAModelElement(node)) {
+        if ( ModelFacade.isAModelElement(node) ) {
             Vector specs =
-                new Vector(Model.getFacade().getClientDependencies(node));
+                new Vector(ModelFacade.getClientDependencies(node));
 
-            specs.addAll(Model.getFacade().getSupplierDependencies(node));
+            specs.addAll(ModelFacade.getSupplierDependencies(node));
 
             Iterator iter = specs.iterator();
 
@@ -529,7 +629,7 @@ public class UseCaseDiagramGraphModel
     }
 
 
-
+ 
     /**
      * Determine if the two given ports can be connected by a kind of
      * edge to be determined by the ports.<p>
@@ -553,8 +653,7 @@ public class UseCaseDiagramGraphModel
         // Suggest that actors may not connect (see JavaDoc comment about
         // this).
 
-        if (Model.getFacade().isAActor(fromP)
-                && Model.getFacade().isAActor(toP)) {
+        if (ModelFacade.isAActor(fromP) && ModelFacade.isAActor(toP)) {
             return false;
         }
 
@@ -594,39 +693,42 @@ public class UseCaseDiagramGraphModel
             Vector oldOwned = (Vector) pce.getOldValue();
 
             Object eo = /*(MElementImport)*/ pce.getNewValue();
-            Object  me = Model.getFacade().getModelElement(eo);
+            Object  me = ModelFacade.getModelElement(eo);
 
             // If the element import is in the old owned, it means it must have
             // been removed. Make sure the associated model element is removed.
 
             if (oldOwned.contains(eo)) {
 
-                LOG.debug("model removed " + me);
+                cat.debug("model removed " + me);
 
                 // Remove a node
 
-                if ((Model.getFacade().isAActor(me))
-		    || (Model.getFacade().isAUseCase(me))) {
+                if ((ModelFacade.isAActor(me))
+		    || (ModelFacade.isAUseCase(me))) {
 
                     removeNode(me);
-                } else if ((Model.getFacade().isAAssociation(me))
-			 || (Model.getFacade().isAGeneralization(me))
-			 || (Model.getFacade().isAExtend(me))
-			 || (Model.getFacade().isAInclude(me))
-			 || (Model.getFacade().isADependency(me))) {
-                    // Remove an edge
+                }
+
+                // Remove an edge
+
+                else if ((ModelFacade.isAAssociation(me))
+			 || (ModelFacade.isAGeneralization(me))
+			 || (ModelFacade.isAExtend(me))
+			 || (ModelFacade.isAInclude(me))
+			 || (ModelFacade.isADependency(me))) {
+
                     removeEdge(me);
                 }
-            } else {
-                // Something was added - nothing for us to worry about
-                LOG.debug("model added " + me);
+            }
+
+            // Something was added - nothing for us to worry about
+            else {
+                cat.debug("model added " + me);
             }
         }
     }
 
-    /**
-     * The UID.
-     */
     static final long serialVersionUID = -8516841965639203796L;
 
 } /* end class UseCaseDiagramGraphModel */

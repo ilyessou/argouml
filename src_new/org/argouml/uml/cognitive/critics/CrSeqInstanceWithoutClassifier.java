@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,68 +22,54 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: CrSeqInstanceWithoutClassifier.java
+// Classes: CrSeqInstanceWithoutClassifier
+// Original Author: 5eichler@informatik.uni-hamburg.de
+
 package org.argouml.uml.cognitive.critics;
 
 import java.util.Collection;
 import java.util.Iterator;
-
 import org.argouml.cognitive.Designer;
-import org.argouml.cognitive.ListSet;
 import org.argouml.cognitive.ToDoItem;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
 import org.argouml.uml.cognitive.UMLToDoItem;
+import org.argouml.model.ModelFacade;
 import org.argouml.uml.diagram.sequence.ui.UMLSequenceDiagram;
 import org.argouml.uml.diagram.ui.FigNodeModelElement;
+import org.tigris.gef.util.VectorSet;
 
 /**
  * A critic to detect when an object in a deployment-diagram
- * is not inside a component or a component-instance.
- *
- * @author 5eichler
- */
+ * is not inside a component or a component-instance
+ **/
+
 public class CrSeqInstanceWithoutClassifier extends CrUML {
 
-    /**
-     * The constructor.
-     */
     public CrSeqInstanceWithoutClassifier() {
-        setupHeadAndDesc();
-	addSupportedDecision(UMLDecision.PATTERNS);
+	setHeadline("Set classifier");
+	addSupportedDecision(CrUML.decPATTERNS);
     }
 
-    /**
-     * @see org.argouml.uml.cognitive.critics.CrUML#predicate2(
-     * java.lang.Object, org.argouml.cognitive.Designer)
-     */
     public boolean predicate2(Object dm, Designer dsgr) {
 	if (!(dm instanceof UMLSequenceDiagram)) return NO_PROBLEM;
 	UMLSequenceDiagram sd = (UMLSequenceDiagram) dm;
-	ListSet offs = computeOffenders(sd);
+	VectorSet offs = computeOffenders(sd);
 	if (offs == null) return NO_PROBLEM;
 	return PROBLEM_FOUND;
     }
 
-    /**
-     * @see org.argouml.cognitive.critics.Critic#toDoItem(
-     * java.lang.Object, org.argouml.cognitive.Designer)
-     */
     public ToDoItem toDoItem(Object dm, Designer dsgr) {
 	UMLSequenceDiagram sd = (UMLSequenceDiagram) dm;
-	ListSet offs = computeOffenders(sd);
+	VectorSet offs = computeOffenders(sd);
 	return new UMLToDoItem(this, offs, dsgr);
     }
 
-    /**
-     * @see org.argouml.cognitive.Poster#stillValid(
-     * org.argouml.cognitive.ToDoItem, org.argouml.cognitive.Designer)
-     */
     public boolean stillValid(ToDoItem i, Designer dsgr) {
 	if (!isActive()) return false;
-	ListSet offs = i.getOffenders();
+	VectorSet offs = i.getOffenders();
 	UMLSequenceDiagram sd = (UMLSequenceDiagram) offs.firstElement();
 	//if (!predicate(dm, dsgr)) return false;
-	ListSet newOffs = computeOffenders(sd);
+	VectorSet newOffs = computeOffenders(sd);
 	boolean res = offs.equals(newOffs);
 	return res;
     }
@@ -93,32 +79,29 @@ public class CrSeqInstanceWithoutClassifier extends CrUML {
      * the returned vector-set is not null. Then in the vector-set
      * are the UMLSequenceDiagram and all FigObjects, FigComponentInstances
      * and FigMNodeInstances with no classifier.
-     *
-     * @param sd the diagram to check
-     * @return the set of offenders
-     */
-    public ListSet computeOffenders(UMLSequenceDiagram sd) {
-	Collection figs = sd.getLayer().getContents();
+     **/
+    public VectorSet computeOffenders(UMLSequenceDiagram sd) { 
+	Collection figs = sd.getLayer().getContents(null);
         Iterator figIter = figs.iterator();
-	ListSet offs = null;
+	VectorSet offs = null;
 	while (figIter.hasNext()) {
 	    Object obj = figIter.next();
 	    if (!(obj instanceof FigNodeModelElement)) continue;
 	    FigNodeModelElement fn = (FigNodeModelElement) obj;
-	    if (fn != null && (Model.getFacade().isAInstance(fn.getOwner()))) {
+	    if (fn != null && (ModelFacade.isAInstance(fn.getOwner()))) {
 		Object minst = /*(MInstance)*/ fn.getOwner();
 		if (minst != null) {
-		    Collection col = Model.getFacade().getClassifiers(minst);
-		    if (col.size() > 0) continue;
-		}
+		    Collection col = ModelFacade.getClassifiers(minst);
+		    if (col.size() > 0) continue;     
+		}       
 		if (offs == null) {
-		    offs = new ListSet();
+		    offs = new VectorSet();
 		    offs.addElement(sd);
 		}
 		offs.addElement(fn);
 	    }
 	}
 	return offs;
-    }
-
+    } 
+ 
 } /* end class CrSeqInstanceWithoutClassifier.java */

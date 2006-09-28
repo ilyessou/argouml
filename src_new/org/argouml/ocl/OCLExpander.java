@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -23,28 +23,19 @@
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 package org.argouml.ocl;
+import java.util.*;
 
-import java.util.Map;
-
-/**
- * The only difference between Argo's expander
- * and GEF's is which evaluator they use
- */
 public class OCLExpander extends org.tigris.gef.ocl.OCLExpander {
 
-    /**
-     * The constructor.
-     *
-     * @param templates the templates
-     */
     public OCLExpander(Map templates) {
-        super(templates);
+	super(templates);
     }
 
-    /**
-     * Create the specialist OCLEvaluator for ArgoUML
-     */
-    protected void createEvaluator() {
-        evaluator = new OCLEvaluator();
+    //
+    //   the only difference between Argo's expander
+    //       and GEF's is which evaluator they use
+    protected List evaluate(Map bindings, String expr) {
+        return org.argouml.ocl.OCLEvaluator.SINGLETON.eval(bindings, expr);
     }
+
 } /* end class OCLExpander */

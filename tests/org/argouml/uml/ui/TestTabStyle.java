@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 2003-2006 The Regents of the University of California. All
+// Copyright (c) 2003-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -48,22 +48,14 @@ import org.argouml.uml.diagram.use_case.ui.StylePanelFigUseCase;
 
 /**
  * @author mkl
- *
+ *  
  */
 public class TestTabStyle extends TestCase {
 
-    /**
-     * The constructor.
-     *
-     * @param arg the name
-     */
     public TestTabStyle(String arg) {
         super(arg);
     }
 
-    /**
-     * Test findPanelFor().
-     */
     public void testFindPanelFor() {
 
         TabStyle tabStyle = new TabStyle();

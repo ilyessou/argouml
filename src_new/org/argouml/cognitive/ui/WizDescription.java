@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -34,134 +34,114 @@ import org.apache.log4j.Logger;
 import org.argouml.cognitive.Decision;
 import org.argouml.cognitive.Goal;
 import org.argouml.cognitive.ToDoItem;
-import org.argouml.cognitive.Translator;
 import org.argouml.cognitive.critics.Critic;
-import org.argouml.model.Model;
+import org.argouml.i18n.Translator;
 
 
-/**
- * This class represents the first step of the wizard.
- * It contains the description of the
- * wizard in case the selected target is a todo item.
- * An appropriate message is shown in case nothing is selected, or
- * in case the user selected one of the branches (folders) in the
- * tree in the todo panel.
- */
+
 public class WizDescription extends WizStep {
-    /**
-     * Logger.
-     */
-    private static final Logger LOG = Logger.getLogger(WizDescription.class);
+    /** logger */
+    private static Logger cat = Logger.getLogger(WizDescription.class);
 
     ////////////////////////////////////////////////////////////////
     // instance variables
 
-    private JTextArea description = new JTextArea();
+    JTextArea _description = new JTextArea();
 
 
-    /**
-     * The constructor.
-     *
-     */
     public WizDescription() {
 	super();
-	LOG.info("making WizDescription");
+	cat.info("making WizDescription");
 
-	description.setLineWrap(true);
-	description.setWrapStyleWord(true);
+	_description.setLineWrap(true);
+	_description.setWrapStyleWord(true);
 
-	getMainPanel().setLayout(new BorderLayout());
-	getMainPanel().add(new JScrollPane(description), BorderLayout.CENTER);
+	_mainPanel.setLayout(new BorderLayout());
+	_mainPanel.add(new JScrollPane(_description), BorderLayout.CENTER);
     }
 
-    /**
-     * @see org.argouml.cognitive.ui.WizStep#setTarget(java.lang.Object)
-     */
     public void setTarget(Object item) {
 	String message = "";
 	super.setTarget(item);
 	Object target = item;
 	if (target == null) {
-	    description.setEditable(false);
-	    description.setText(
+	    _description.setEditable(false);
+	    _description.setText(
                 Translator.localize("message.item.no-item-selected"));
-	} else if (target instanceof ToDoItem) {
+	}
+	else if (target instanceof ToDoItem) {
 	    ToDoItem tdi = (ToDoItem) target;
-	    description.setEditable(false);
-	    description.setEnabled(true);
-	    description.setText(tdi.getDescription());
-	    description.setCaretPosition(0);
-	} else if (target instanceof PriorityNode) {
-	    message =
-                MessageFormat.format(
-                        Translator.localize("message.item.branch-priority"),
-                        new Object [] {
-                            target.toString(),
-                        });
-	    description.setEditable(false);
-	    description.setText(message);
+	    _description.setEditable(false);
+	    _description.setEnabled(true);
+	    _description.setText(tdi.getDescription());
+	    _description.setCaretPosition(0);
+	}
+	else if (target instanceof PriorityNode) {
+	    message = MessageFormat. 
+                format(Translator.localize("message.item.branch-priority"),
+                       new Object [] {
+			   target.toString() 
+		       });
+	    _description.setEditable(false);
+	    _description.setText(message);
 
 	    return;
-	} else if (target instanceof Critic) {
-	    message =
-                MessageFormat.format(
-                        Translator.localize("message.item.branch-critic"),
-                        new Object [] {
-                            target.toString(),
-                        });
-	    description.setEditable(false);
-	    description.setText(message);
+	}
+	else if (target instanceof Critic) {
+	    message = MessageFormat. 
+                format(Translator.localize("message.item.branch-critic"),
+                       new Object [] {
+			   target.toString() 
+		       });
+	    _description.setEditable(false);
+	    _description.setText(message);
 
 	    return;
-	} else if (Model.getFacade().isAModelElement(target)) {
-	    message =
-                MessageFormat.format(
-                        Translator.localize("message.item.branch-model"),
-                        new Object [] {
-                            Model.getFacade().toString(target),
-                        });
-	    description.setEditable(false);
-	    description.setText(message);
+	}
+	else if (org.argouml.model.ModelFacade.isAModelElement(target)) {
+	    message = MessageFormat. 
+                format(Translator.localize("message.item.branch-model"),
+                       new Object [] {
+			   target.toString() 
+		       });
+	    _description.setEditable(false);
+	    _description.setText(message);
 
 	    return;
-	} else if (target instanceof Decision) {
-	    message =
-                MessageFormat.format(
-                        Translator.localize("message.item.branch-decision"),
-                        new Object [] {
-                            Model.getFacade().toString(target),
-                        });
-	    description.setText(message);
+	}
+	else if (target instanceof Decision) {
+	    message = MessageFormat. 
+                format(Translator.localize("message.item.branch-decision"),
+                       new Object [] {
+			   target.toString() 
+		       });
+	    _description.setText(message);
 
 	    return;
-	} else if (target instanceof Goal) {
-	    message =
-                MessageFormat.format(
-                        Translator.localize("message.item.branch-goal"),
-                        new Object [] {
-                            Model.getFacade().toString(target),
-                        });
-	    description.setText(message);
+	}
+	else if (target instanceof Goal) {
+	    message = MessageFormat. 
+                format(Translator.localize("message.item.branch-goal"),
+                       new Object [] {
+			   target.toString() 
+		       });
+	    _description.setText(message);
 
 	    return;
-	} else if (target instanceof KnowledgeTypeNode) {
-	    message =
-                MessageFormat.format(
-                        Translator.localize("message.item.branch-knowledge"),
-                        new Object [] {
-                            Model.getFacade().toString(target),
-                        });
-	    description.setText(message);
+	}
+	else if (target instanceof KnowledgeTypeNode) {
+	    message = MessageFormat. 
+                format(Translator.localize("message.item.branch-knowledge"),
+                       new Object [] {
+			   target.toString() 
+		       });
+	    _description.setText(message);
 
 	    return;
-	} else {
-	    description.setText("");
+	}
+	else {
+	    _description.setText("");
 	    return;
 	}
     }
-
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = 2545592446694112088L;
 } /* end class WizDescription */

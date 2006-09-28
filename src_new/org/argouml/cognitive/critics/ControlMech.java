@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,31 +22,33 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+
+// File: ControlMech.java
+// Classes: ControlMech EnabledCM NotHushedCM CompositeCM
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
+// TO DO: Do all these classes need to be in their own files? public?
+
 package org.argouml.cognitive.critics;
 
+import java.io.Serializable;
 import org.argouml.cognitive.Designer;
 
-/**
- * A ControlMech determines when a Critic should be active.  New
- * ControlMech's can be added to add value to existing Critic's.  Each
- * ControlMech implements a isRelevant() predicate that determines if a
- * given critic is relevant to a given Designer at the current
- * time.
- *
- * @author Jason Robbins
- */
-// TODO: Do all these classes need to be in their own files? public?
+/** A ControlMech determines when a Critic should be active.  New
+ *  ControlMech's can be added to add value to existing Critic's.  Each
+ *  ControlMech implements a isRelevant() predicate that determines if a
+ *  given critic is relevant to a given Designer at the current
+ *  time. */
 
-public interface ControlMech  {
+public abstract class ControlMech implements Serializable {
 
-
-    /**
-     * @param c the critic
-     * @param d the designer
-     * @return true f the critic is relevant for the given designer
-     */
-    boolean isRelevant(Critic c, Designer d);
-} // end interface ControlMech
+    public ControlMech() { }
+    public boolean isRelevant(Critic c, Designer d) {
+	return true;
+    }
+} // end class ControlMech
 
 
 

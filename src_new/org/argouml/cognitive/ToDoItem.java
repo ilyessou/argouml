@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,476 +22,270 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+
+// File: ToDoItem.java
+// Classes: ToDoItem
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.cognitive;
 
 import java.io.Serializable;
 import java.util.Enumeration;
 import javax.swing.Icon;
 import org.argouml.cognitive.critics.Critic;
-import org.argouml.cognitive.ui.Wizard;
-import org.argouml.cognitive.ui.WizardItem;
-import org.argouml.model.Model;
-import org.argouml.util.CollectionUtil;
-import org.tigris.gef.base.Diagram;
-import org.tigris.gef.presentation.Fig;
+import org.argouml.kernel.Wizard;
+import org.tigris.gef.ui.Highlightable;
 
-/**
- * This class defines the feedback items that can be placed on the
- * Designer's ToDoList.  The main point of a ToDoItem is to inform
- * the Designer of some problem or open design issue.  Additional
- * information in the ToDoItem helps put the designer in a mental
- * context suitable for resolving the issue: ToDoItem's are well tied
- * into the design and design process so that the Designer can see
- * which design material's are the subject of this ToDoItem, and which
- * Critic raised it.  The more info URL helps
- * provide background knowledge of the domain. In the future
- * ToDoItems will include ties back to the design rationale log.
- * Also the run-time system needs to know who posted each ToDoItem so
- * that it can automatically remove it if it is no longer valid.
- */
-public class ToDoItem implements Serializable, WizardItem {
+import org.tigris.gef.util.VectorSet;
+
+
+/** This class defines the feedback items that can be placed on the
+ *  Designer's ToDoList.  The main point of a ToDoItem is to inform
+ *  the Designer of some problem or open design issue.  Additional
+ *  information in the ToDoItem helps put the designer in a mental
+ *  context suitable for resolving the issue: ToDoItem's are well tied
+ *  into the design and design process so that the Designer can see
+ *  which design material's are the subject of this ToDoItem, and which
+ *  Critic raised it.  The expert email address helps connect the
+ *  designer with the organizational context.  The more info URL helps
+ *  provide background knowledge of the domain. In the future
+ *  ToDoItems will include ties back to the design rationale log.
+ *  Also the run-time system needs to know who posted each ToDoItem so
+ *  that it can automatically remove it if it is no longer valid. */
+public class ToDoItem implements Serializable {
 
     ////////////////////////////////////////////////////////////////
     // constants
-
-    /**
-     * The interruptive priority todoitem of 4 levels.
-     */
-    public static final int INTERRUPTIVE_PRIORITY = 9;
-
-    /**
-     * The high priority todoitem of 4 levels.
-     */
     public static final int HIGH_PRIORITY = 1;
-
-    /**
-     * The medium priority todoitem of 4 levels.
-     */
     public static final int MED_PRIORITY = 2;
-
-    /**
-     * The lowest priority todoitem of 4 levels.
-     */
     public static final int LOW_PRIORITY = 3;
 
     ////////////////////////////////////////////////////////////////
     // instance variables
 
-    /**
-     * Who posted this item (e.g., a Critic, or the designer)?
-     */
-    private Poster thePoster;
+    /** Who posted this item (e.g., a Critic, or the designer)? */
+    private Poster _poster;
 
-    /**
-     * One line description of issue.
+    /** One line description of issue.
      */
-    private String theHeadline;
+    private String _headline;
 
-    /**
-     * How important is this issue? Enough to interrupt the designer?
-     */
-    private int thePriority;
+    /** How important is this issue? Enough to interrupt the designer? */
+    private int _priority;
 
-    /**
-     * One paragraph description of the issue.
-     */
-    private String theDescription;
+    /** One paragraph description of the issue. */
+    private String _description;
 
-    /**
-     * URL for background (textbook?) knowledge about the domain.
-     */
-    private String theMoreInfoURL;
+    /** URL for background (textbook?) knowledge about the domain. */
+    private String _moreInfoURL;
 
-    /**
-     * Which part of the design this issue affects.<p>
-     *
-     * Each member is either a model element, a {@link Fig}, or
-     * a {@link Diagram}.<p>
+    /** Which part of the design this issue affects
      *
      * This is set by the constructor and cannot change.
      */
-    private ListSet theOffenders;
+    private VectorSet _offenders;
 
-    private Wizard theWizard;
+    private Icon _clarifier = null;
+
+    private Wizard _wizard = null;
 
     ////////////////////////////////////////////////////////////////
     // constructors
-    /**
-     * The constructor.
-     *
-     * @param poster the poster
-     * @param h the headline
-     * @param p the priority
-     * @param d the description
-     * @param m the more info url
-     * @param offs the offenders
-     */
-    public ToDoItem(Poster poster, String h, int p, String d, String m,
-		    ListSet offs) {
-        checkOffs(offs);
-
-        thePoster = poster;
-        theHeadline = h;
-        theOffenders = offs;
-        thePriority = p;
-        theDescription = d;
-        theMoreInfoURL = m;
+    public ToDoItem(Poster poster, String h, int p, String d, String m, 
+		    VectorSet offs) 
+    {
+	_poster = poster;
+	_headline = h;
+	_offenders = offs;
+	_priority = p;
+	_description = d;
+	_moreInfoURL = m;
     }
 
-    /**
-     * The constructor.
-     *
-     * @param poster the poster
-     * @param h the headline
-     * @param p the priority
-     * @param d the description
-     * @param m the more info url
-     */
     public ToDoItem(Poster poster, String h, int p, String d, String m) {
-	thePoster = poster;
-	theHeadline = h;
-	theOffenders = new ListSet();
-	thePriority = p;
-	theDescription = d;
-	theMoreInfoURL = m;
+	_poster = poster;
+	_headline = h;
+	_offenders = new VectorSet();
+	_priority = p;
+	_description = d;
+	_moreInfoURL = m;
     }
 
-    /**
-     * The constructor.
-     *
-     * @param c the poster (critic)
-     * @param dm A single offender.
-     * @param dsgr the designer
-     */
     public ToDoItem(Critic c, Object dm, Designer dsgr) {
-        if (!Model.getFacade().isAModelElement(dm)
-                && !(dm instanceof Fig)
-                && !(dm instanceof Diagram)) {
-            //TODO: The cognitive system should not be aware of any other
-            // system. Find a better way to do this.
-            throw new IllegalArgumentException(
-                    "The offender must be a model element, "
-                    + "a Fig or a Diagram");
-        }
-
-        thePoster = c;
-        theHeadline = c.getHeadline(dm, dsgr);
-        theOffenders = new ListSet(dm);
-        thePriority = c.getPriority(theOffenders, dsgr);
-        theDescription = c.getDescription(theOffenders, dsgr);
-        theMoreInfoURL = c.getMoreInfoURL(theOffenders, dsgr);
-        theWizard = c.makeWizard(this);
+	_poster = c;
+	_headline = c.getHeadline(dm, dsgr);
+	_offenders = new VectorSet(dm);
+	_priority = c.getPriority(_offenders, dsgr);
+	_description = c.getDescription(_offenders, dsgr);
+	_moreInfoURL = c.getMoreInfoURL(_offenders, dsgr);
+	_wizard = c.makeWizard(this);
     }
 
-    /**
-     * The constructor.
-     *
-     * @param c the poster (critic)
-     * @param offs the offenders
-     * @param dsgr the designer
-     */
-    public ToDoItem(Critic c, ListSet offs, Designer dsgr) {
-        checkOffs(offs);
-
-        thePoster = c;
-        theHeadline = c.getHeadline(offs, dsgr);
-        theOffenders = offs;
-        thePriority = c.getPriority(theOffenders, dsgr);
-        theDescription = c.getDescription(theOffenders, dsgr);
-        theMoreInfoURL = c.getMoreInfoURL(theOffenders, dsgr);
-        theWizard = c.makeWizard(this);
+    public ToDoItem(Critic c, VectorSet offs, Designer dsgr) {
+	_poster = c;
+	_headline = c.getHeadline(offs, dsgr);
+	_offenders = offs;
+	_priority = c.getPriority(_offenders, dsgr);
+	_description = c.getDescription(_offenders, dsgr);
+	_moreInfoURL = c.getMoreInfoURL(_offenders, dsgr);
+	_wizard = c.makeWizard(this);
     }
 
-    /**
-     * The constructor.
-     *
-     * @param c the poster (critic)
-     */
+
+
     public ToDoItem(Critic c) {
-	thePoster = c;
-	theHeadline = c.getHeadline();
-	theOffenders = new ListSet();
-	thePriority = c.getPriority(null, null);
-	theDescription = c.getDescription(null, null);
-	theMoreInfoURL = c.getMoreInfoURL(null, null);
-	theWizard = c.makeWizard(this);
+	_poster = c;
+	_headline = c.getHeadline();
+	_offenders = new VectorSet();
+	_priority = c.getPriority(null, null);
+	_description = c.getDescription(null, null);
+	_moreInfoURL = c.getMoreInfoURL(null, null);
+	_wizard = c.makeWizard(this);
     }
 
-
-    /**
-     * Check the offenders.<p>
-     *
-     * This is called from the constructors where the offenders are given.
-     *
-     * TODO: Why do we only care about checking the first 2 offenders above?
-     * @param offs The offenders.
-     */
-    private void checkOffs(ListSet offs) {
-        if (offs == null) {
-            throw new IllegalArgumentException(
-                    "A ListSet of offenders must be supplied.");
-        }
-        Object offender = CollectionUtil.getFirstItemOrNull(offs);
-        if (offender != null
-                && !Model.getFacade().isAModelElement(offender)
-                && !(offender instanceof Fig)
-                && !(offender instanceof Diagram)) {
-            //TODO: The cognitive system should not be aware of any other
-            // system. Find a better way to do this.
-            throw new IllegalArgumentException(
-                    "The first offender must be a model element, "
-                    + "a Fig or a Diagram");
-        }
-
-        if (offs.size() >= 2) {
-            offender = offs.elementAt(1);
-            if (!Model.getFacade().isAModelElement(offender)
-                    && !(offender instanceof Fig)
-                    && !(offender instanceof Diagram)) {
-                //TODO: The cognitive system should not be aware of any other
-                // system. Find a better way to do this.
-                throw new IllegalArgumentException(
-                        "The second offender must be a model element, "
-                        + "a Fig or a Diagram");
-            }
-        }
-    }
 
     // Cached expansions
-    private String cachedExpandedHeadline;
-    private String cachedExpandedDescription;
+    private String _cachedExpandedHeadline = null;
+    private String _cachedExpandedDescription = null;
 
     ////////////////////////////////////////////////////////////////
     // accessors
 
-    /**
-     * @return the headline
-     */
     public String getHeadline() {
-	if (cachedExpandedHeadline == null) {
-	    cachedExpandedHeadline =
-	        thePoster.expand(theHeadline, theOffenders);
+	if (_cachedExpandedHeadline == null) {
+	    _cachedExpandedHeadline = _poster.expand(_headline, _offenders);
 	}
-	return cachedExpandedHeadline;
+	return _cachedExpandedHeadline;
     }
 
-    /**
-     * @param h the headline
-     */
-    public void setHeadline(String h) {
-	theHeadline = h;
-	cachedExpandedHeadline = null;
+    public void setHeadline(String h) { 
+	_headline = h; 
+	_cachedExpandedHeadline = null;
     }
 
-    /**
-     * @return the description
-     */
     public String getDescription() {
-	if (cachedExpandedDescription == null) {
-	    cachedExpandedDescription =
-		thePoster.expand(theDescription, theOffenders);
+	if (_cachedExpandedDescription == null) {
+	    _cachedExpandedDescription = 
+		_poster.expand(_description, _offenders);
 	}
-	return cachedExpandedDescription;
+	return _cachedExpandedDescription;
     }
-
-    /**
-     * @param d the description
-     */
+  
     public void setDescription(String d) {
-	theDescription = d;
-	cachedExpandedDescription = null;
+	_description = d;
+	_cachedExpandedDescription = null;
     }
 
-    /**
-     * @return the more-info-url
-     */
-    public String getMoreInfoURL() { return theMoreInfoURL; }
+    public String getMoreInfoURL() { return _moreInfoURL; }
+  
+    public void setMoreInfoURL(String m) { _moreInfoURL = m; }
 
-    /**
-     * @param m the more-info-url
-     */
-    public void setMoreInfoURL(String m) { theMoreInfoURL = m; }
+    public int getPriority() { return _priority; }
 
-    /**
-     * @return the priority
-     */
-    public int getPriority() { return thePriority; }
+    public void setPriority(int p) { _priority = p; }
 
-    /**
-     * @param p the priority
-     */
-    public void setPriority(int p) { thePriority = p; }
-
-    /**
-     * @return the wizard progress. An integer between 0 and 100,
-     *         shows percent done.
-     */
     public int getProgress() {
-	if (theWizard != null) {
-	    return theWizard.getProgress();
-	}
+	if (_wizard != null) return _wizard.getProgress();
 	return 0;
     }
 
-    /**
-     * Reply a Set of design material's that are the subject of this ToDoItem.
-     *
-     * @return the offenders
-     */
-    public ListSet getOffenders() {
-        assert theOffenders != null;
-        // TODO: The cognitive system should not be aware of any other
-        // system. Find a better way to do this. We should not use
-        // assert on public methods.
-        assert theOffenders.size() <= 0
-        	|| Model.getFacade().isAModelElement(theOffenders.elementAt(0))
-        	|| theOffenders.elementAt(0) instanceof Fig
-        	|| theOffenders.elementAt(0) instanceof Diagram;
-        return theOffenders;
+    //   public void setProgress(int p) { 
+    //     if (_wizard != null) return _wizard.setProgress(p);
+    //   }
+  
+    /** Reply a Set of design material's that are the subject of this
+     * ToDoItem. */
+    public VectorSet getOffenders() { return _offenders; }
+    
+    /** Set the designmatial that is subject of this ToDoItem */
+    public void setOffenders(VectorSet offenders) {
+        _offenders = offenders;
     }
 
-    /**
-     * Set the design material that is subject of this ToDoItem.
-     *
-     * @param offenders the offenders
-     */
-    public void setOffenders(ListSet offenders) {
-        theOffenders = offenders;
-    }
+    /** Reply the Critic or Designer that posted this ToDoItem. */
+    public Poster getPoster() { return _poster; }
 
-    /**
-     * Reply the Critic or Designer that posted this ToDoItem.
-     *
-     * @return the poster
-     */
-    public Poster getPoster() { return thePoster; }
+    /** Find the email address of the poster. */
+    public String getExpertEmail() { return _poster.getExpertEmail(); }
 
-    /**
-     * Return a clarifier object that can graphical highlight this
-     * error in a design diagram. Return a clarifier for this todoitem,
-     * if not found by the poster, or null.
+    /** Return a clarifier object that can graphical highlight this
+     *  error in a design diagram. Return a clarifier for this todoitem, if not found
+     *  by the poster, or null.
      *
      * @return an Icon or null if none found.
      */
     public Icon getClarifier() {
-	return thePoster.getClarifier();
+	if (_clarifier != null) return _clarifier;
+	Icon posterClarifier = _poster.getClarifier();
+	if (posterClarifier != null) return posterClarifier;
+	return null;
     }
 
-    /**
-     * @return the wizard
-     */
-    public Wizard getWizard() { return theWizard; }
+    public Wizard getWizard() { return _wizard; }
 
-    /**
-     * @param type the knowledgetype
-     * @return true if the poster contains the given knowledgetype
-     */
     public boolean containsKnowledgeType(String type) {
 	return getPoster().containsKnowledgeType(type);
     }
 
-    /**
-     * @param d the decision
-     * @return true if the decision is supported by the poster
-     */
     public boolean supports(Decision d) {
 	return getPoster().supports(d);
     }
 
-    /**
-     * @param g the given goal
-     * @return true if the poster supports the given goal
-     */
     public boolean supports(Goal g) {
 	return getPoster().supports(g);
     }
-
-    /**
-     * @see java.lang.Object#hashCode()
-     */
-    public int hashCode() {
-        int code = 0;
-
-        code += getHeadline().hashCode();
-        if (getPoster() != null) {
-            code += getPoster().hashCode();
-        }
-        // The VectorSet.hashCode() doesn't exist so this will not work.
-        // if (getOffenders() != null) {
-        //     code += getOffenders().hashCode();
-        // }
-        return code;
-    }
-
+  
     /**
      * Is this item a copy?
-     *
-     * @see java.lang.Object#equals(java.lang.Object)
      */
     public boolean equals(Object o) {
-	if (!(o instanceof ToDoItem)) {
-	    return false;
-	}
+	if (!(o instanceof ToDoItem)) return false;
 	ToDoItem i = (ToDoItem) o;
-	if (!getHeadline().equals(i.getHeadline())) {
-	    return false;
-	}
-	if (!(getPoster() == (i.getPoster()))) {
-	    return false;
-	}
+	if (!getHeadline().equals(i.getHeadline())) return false;
+	if (!(getPoster() == (i.getPoster()))) return false;
 
 	// For some reason VectorSet.equals() allocates a lot of memory, well
 	// some memory at least. Lets try to avoid that when not needed by
 	// invoking this test only when the two previous tests are not decisive.
-	if (!getOffenders().equals(i.getOffenders())) {
-	    return false;
-	}
+	if (!getOffenders().equals(i.getOffenders())) return false;
 	return true;
     }
 
     ////////////////////////////////////////////////////////////////
     // user interface
 
-    /**
-     * When a ToDoItem is selected in the UiToDoList window, highlight
-     * the "offending" design material's.
-     */
+    /** When a ToDoItem is selected in the UiToDoList window, highlight
+     *  the "offending" design material's. */
     public void select() {
 	Enumeration offs = getOffenders().elements();
 	while (offs.hasMoreElements()) {
 	    Object dm = offs.nextElement();
-	    if (dm instanceof Highlightable) {
-	        ((Highlightable) dm).setHighlight(true);
-	    }
+	    if (dm instanceof Highlightable)
+		((Highlightable) dm).setHighlight(true);
 	}
     }
 
-    /**
-     * When a ToDoItem is deselected in the UiToDoList window,
-     * unhighlight the "offending" design material's.
-     */
+    /** When a ToDoItem is deselected in the UiToDoList window,
+     *  unhighlight the "offending" design material's. */
     public void deselect() {
 	Enumeration offs = getOffenders().elements();
 	while (offs.hasMoreElements()) {
 	    Object dm =  offs.nextElement();
-	    if (dm instanceof Highlightable) {
-	        ((Highlightable) dm).setHighlight(false);
-	    }
+	    if (dm instanceof Highlightable)
+		((Highlightable) dm).setHighlight(false);
 	}
     }
 
-    /**
-     * The user has double-clicked or otherwise indicated that they
-     * want to do something active with this item. By default, just
-     * re-select it, subclasses may choose to do more (e.g., navigate to
-     * the offending item if it is not visible).
-     */
+    /** The user has double-clicked or otherwise indicated that they
+     *  want to do something active with this item. By default, just
+     *  re-select it, subclasses may choose to do more (e.g., navigate to
+     *  the offending item if it is not visible). */
     public void action() { deselect(); select(); }
 
-    /**
-     * Notify the user interface that this ToDoItem has
-     * changed. Currently, this is used to update the progress bar.
-     */
+    /** Notify the user interface that this ToDoItem has
+     *  changed. Currently, this is used to update the progress bar. */
     public void changed() {
 	ToDoList list = Designer.theDesigner().getToDoList();
 	list.fireToDoItemChanged(this);
@@ -501,63 +295,38 @@ public class ToDoItem implements Serializable, WizardItem {
     ////////////////////////////////////////////////////////////////
     // issue resolutions
 
-    /**
-     * Some problems can be automatically fixed, ask the Critic to do
-     * it if it can. <p>
-     */
-    public void fixIt() { thePoster.fixIt(this, null); }
+    /** Some problems can be automatically fixed, ask the Critic to do
+     *  it if it can. <p> */
+    public void fixIt() { _poster.fixIt(this, null); }
 
-    /**
-     * Some problems can be automatically fixed, ask the Critic to do
-     * it if it can.
-     *
-     * @return true if the critic can automatically fix the problem
-     */
-    public boolean canFixIt() { return thePoster.canFixIt(this); }
+    /** Some problems can be automatically fixed, ask the Critic to do
+     *  it if it can. <p> */
+    public boolean canFixIt() { return _poster.canFixIt(this); }
 
-    /**
-     * TODO: this is not done yet. Eventually this will also
-     * feed the rational log.
-     */
+    /** TODO: this is not done yet. Eventually this will also
+     *  feed the rational log. */
     //   public void resolve(Object reason) {
     //     ToDoList list = Designer.theDesigner().getToDoList();
     //     list.resolve(this, reason);
     //   }
 
-    /**
-     * Reply true iff this ToDoItem should be kept on the Designer's
-     * ToDoList. This should return false if the poster has been
-     * deactivated, or if it can be determined that the problem that
-     * raised this issue is no longer present.
-     *
-     * @param d the given designer
-     * @return true if the todoitem is still valid
-     */
+    /** Reply true iff this ToDoItem should be kept on the Designer's
+     *  ToDoList. This should return false if the poster has been
+     *  deactivated, or if it can be determined that the problem that
+     *  raised this issue is no longer present. */
     public boolean stillValid(Designer d) {
-	if (thePoster == null) {
+	if (_poster == null) return true;
+	if (_wizard != null && _wizard.isStarted() && !_wizard.isFinished())
 	    return true;
-	}
-	if (theWizard != null && theWizard.isStarted()
-	        && !theWizard.isFinished()) {
-	    return true;
-	}
-	return thePoster.stillValid(this, d);
+	return _poster.stillValid(this, d);
     }
 
-    /**
-     * Reply a string for debugging.
-     *
-     * @see java.lang.Object#toString()
-     */
+    /** Reply a string for debugging. */
     public String toString() {
-	return this.getClass().getName()
+	return this.getClass().getName() 
 	    + "(" + getHeadline() + ") on " + getOffenders().toString();
     }
 
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = 3058660098451455153L;
 } /* end class ToDoItem */
 
 

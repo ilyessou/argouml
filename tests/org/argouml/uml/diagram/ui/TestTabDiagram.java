@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,6 +22,9 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+// $Id$
+
 package org.argouml.uml.diagram.ui;
 
 import java.util.Date;
@@ -30,11 +33,13 @@ import junit.framework.TestCase;
 
 import org.argouml.kernel.Project;
 import org.argouml.kernel.ProjectManager;
-import org.argouml.model.Model;
-import org.argouml.ui.targetmanager.TargetManager;
+import org.argouml.model.uml.UmlFactory;
+import org.argouml.ui.ProjectBrowser;
 import org.argouml.uml.diagram.static_structure.ui.FigClass;
 import org.argouml.uml.diagram.static_structure.ui.UMLClassDiagram;
 import org.tigris.gef.graph.presentation.JGraph;
+
+import ru.novosoft.uml.MFactoryImpl;
 
 /**
  * @author jaap.branderhorst@xs4all.nl
@@ -46,7 +51,7 @@ public class TestTabDiagram extends TestCase {
 
     private static final boolean PERFORMANCE_TEST = false;
 
-    private UMLDiagram diagram;
+    private UMLDiagram _diagram;
 
     /**
      * Constructor for TestTabDiagram.
@@ -62,7 +67,7 @@ public class TestTabDiagram extends TestCase {
      */
     protected void setUp() throws Exception {
         super.setUp();
-        diagram = new UMLClassDiagram();
+        _diagram = new UMLClassDiagram();
     }
 
     /**
@@ -70,13 +75,10 @@ public class TestTabDiagram extends TestCase {
      */
     protected void tearDown() throws Exception {
         super.tearDown();
-        diagram = null;
+        _diagram = null;
 
     }
 
-    /**
-     * Test diagram tab construction.
-     */
     public void testConstruction() {
         try {
             TabDiagram tabDiagram = new TabDiagram();
@@ -86,17 +88,17 @@ public class TestTabDiagram extends TestCase {
     }
 
     /**
-     * Tests the setTarget method when a diagram is the target.
+     * Tests the setTarget method when a diagram is the target.  
      */
     public void testSetTargetWithDiagram() {
         try {
             TabDiagram tabDiagram = new TabDiagram();
-            tabDiagram.setTarget(diagram);
+            tabDiagram.setTarget(_diagram);
             assertEquals(
                 tabDiagram.getJGraph().getGraphModel(),
-                diagram.getGraphModel());
-            assertEquals(tabDiagram.getTarget(), diagram);
-            assertTrue(tabDiagram.shouldBeEnabled(diagram));
+                _diagram.getGraphModel());
+            assertEquals(tabDiagram.getTarget(), _diagram);
+            assertTrue(tabDiagram.shouldBeEnabled(_diagram));
         } catch (Exception noHead) {
         }
     }
@@ -131,19 +133,18 @@ public class TestTabDiagram extends TestCase {
                 UMLDiagram[] diagrams = new UMLDiagram[NUMBER_OF_DIAGRAMS];
                 Project project =
                     ProjectManager.getManager().getCurrentProject();
-                Object clazz = Model.getCoreFactory().buildClass();
+                Object clazz = UmlFactory.getFactory().getCore().buildClass();
                 for (int i = 0; i < NUMBER_OF_DIAGRAMS; i++) {
                     diagrams[i] = new UMLClassDiagram(project.getRoot());
                     diagrams[i].add(
                         new FigClass(diagrams[i].getGraphModel(), clazz));
-                    TargetManager.getInstance().setTarget(diagrams[i]);
+                    ProjectBrowser.getInstance().setTarget(diagrams[i]);
                 }
-
+                MFactoryImpl.setEventPolicy(
+                    MFactoryImpl.EVENT_POLICY_IMMEDIATE);
                 // real test
                 long currentTime = (new Date()).getTime();
-                Object model = project.getModel();
-                Object voidType = project.findType("void");
-                Model.getCoreFactory().buildOperation(clazz, model, voidType);
+                UmlFactory.getFactory().getCore().buildOperation(clazz);
                 System.out.println(
                     "Time needed for adding operation: "
                         + ((new Date()).getTime() - currentTime));

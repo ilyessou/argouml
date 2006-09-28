@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -30,32 +30,19 @@ import java.util.Set;
 import org.argouml.i18n.Translator;
 import org.argouml.kernel.Project;
 
-/**
- * Rule for Project->Model.
- *
- */
 public class GoProjectToModel extends AbstractPerspectiveRule {
 
-    /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getRuleName()
-     */
     public String getRuleName() {
-	return Translator.localize ("misc.project.model");
+	return Translator.localize ("Tree", "misc.project.package");
     }
-
-    /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getChildren(java.lang.Object)
-     */
-    public Collection getChildren(Object parent) {
+ 
+    public Collection getChildren(Object parent) { 
 	if (parent instanceof Project) {
 	    return ((Project) parent).getUserDefinedModels();
 	}
 	return null;
     }
 
-    /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getDependencies(java.lang.Object)
-     */
     public Set getDependencies(Object parent) {
         // TODO: What?
 	return null;

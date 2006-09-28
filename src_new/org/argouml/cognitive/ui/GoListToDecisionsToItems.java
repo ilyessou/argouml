@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -27,6 +27,7 @@ package org.argouml.cognitive.ui;
 import java.util.Enumeration;
 import java.util.Vector;
 import javax.swing.event.TreeModelListener;
+import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 import org.argouml.cognitive.Decision;
 import org.argouml.cognitive.Designer;
@@ -34,19 +35,16 @@ import org.argouml.cognitive.ToDoItem;
 import org.argouml.cognitive.ToDoList;
 
 
-/**
- * Rule for sorting the ToDo list: Decision -> Item.
- *
- */
-public class GoListToDecisionsToItems extends AbstractGoList {
-
+public class GoListToDecisionsToItems implements TreeModel {
+  
     ////////////////////////////////////////////////////////////////
     // TreeModel implementation
+  
+    public Object getRoot() {
+	throw new UnsupportedOperationException();
+    } 
+    public void setRoot(Object r) { }
 
-
-    /**
-     * @see javax.swing.tree.TreeModel#getChild(java.lang.Object, int)
-     */
     public Object getChild(Object parent, int index) {
 	if (parent instanceof ToDoList) {
 	    return getDecisions().elementAt(index);
@@ -54,7 +52,7 @@ public class GoListToDecisionsToItems extends AbstractGoList {
 	if (parent instanceof Decision) {
 	    Decision dec = (Decision) parent;
 	    Enumeration itemEnum =
-		Designer.theDesigner().getToDoList().elements();
+		Designer.TheDesigner.getToDoList().elements();
 	    while (itemEnum.hasMoreElements()) {
 		ToDoItem item = (ToDoItem) itemEnum.nextElement();
 		if (item.getPoster().supports(dec)) {
@@ -67,7 +65,7 @@ public class GoListToDecisionsToItems extends AbstractGoList {
 	throw new IndexOutOfBoundsException("getChild shouldn't get here "
 					    + "GoListToDecisionsToItems");
     }
-
+  
     private int getChildCountCond(Object parent, boolean stopafterone) {
 	if (parent instanceof ToDoList) {
 	    return getDecisions().size();
@@ -75,7 +73,7 @@ public class GoListToDecisionsToItems extends AbstractGoList {
 	if (parent instanceof Decision) {
 	    Decision dec = (Decision) parent;
 	    Enumeration itemEnum =
-		Designer.theDesigner().getToDoList().elements();
+		Designer.TheDesigner.getToDoList().elements();
 	    int count = 0;
 	    while (itemEnum.hasMoreElements()) {
 		ToDoItem item = (ToDoItem) itemEnum.nextElement();
@@ -86,27 +84,15 @@ public class GoListToDecisionsToItems extends AbstractGoList {
 	}
 	return 0;
     }
-
-    /**
-     * @see javax.swing.tree.TreeModel#getChildCount(java.lang.Object)
-     */
+  
     public int getChildCount(Object parent) {
         return getChildCountCond(parent, false);
     }
-
-    /**
-     * @param parent the object to check its offspring
-     * @return the nr of children
-     */
     private boolean hasChildren(Object parent) {
         return getChildCountCond(parent, true) > 0;
     }
-
-
-    /**
-     * @see javax.swing.tree.TreeModel#getIndexOfChild(java.lang.Object,
-     * java.lang.Object)
-     */
+      
+  
     public int getIndexOfChild(Object parent, Object child) {
 	if (parent instanceof ToDoList) {
 	    return getDecisions().indexOf(child);
@@ -117,7 +103,7 @@ public class GoListToDecisionsToItems extends AbstractGoList {
 	    Vector candidates = new Vector();
 	    Decision dec = (Decision) parent;
 	    Enumeration itemEnum =
-		Designer.theDesigner().getToDoList().elements();
+		Designer.TheDesigner.getToDoList().elements();
 	    while (itemEnum.hasMoreElements()) {
 		ToDoItem item = (ToDoItem) itemEnum.nextElement();
 		if (item.getPoster().supports(dec)) candidates.addElement(item);
@@ -127,42 +113,24 @@ public class GoListToDecisionsToItems extends AbstractGoList {
 	return -1;
     }
 
-    /**
-     * @see javax.swing.tree.TreeModel#isLeaf(java.lang.Object)
-     */
     public boolean isLeaf(Object node) {
 	if (node instanceof ToDoList) return false;
 	if (node instanceof Decision && hasChildren(node)) return false;
 	return true;
     }
 
-    /**
-     * @see javax.swing.tree.TreeModel#valueForPathChanged(
-     * javax.swing.tree.TreePath, java.lang.Object)
-     */
     public void valueForPathChanged(TreePath path, Object newValue) { }
-
-    /**
-     * @see javax.swing.tree.TreeModel#addTreeModelListener(javax.swing.event.TreeModelListener)
-     */
     public void addTreeModelListener(TreeModelListener l) { }
-
-    /**
-     * @see javax.swing.tree.TreeModel#removeTreeModelListener(javax.swing.event.TreeModelListener)
-     */
     public void removeTreeModelListener(TreeModelListener l) { }
 
     ////////////////////////////////////////////////////////////////
     // utility methods
 
-    /**
-     * @return the decisions
-     */
     public Vector getDecisions() {
-	return Designer.theDesigner().getDecisionModel().getDecisions();
+	return Designer.TheDesigner.getDecisionModel().getDecisions();
     }
+  
 
 
-
-
+  
 } /* end class GoListToDecisionsToItems */

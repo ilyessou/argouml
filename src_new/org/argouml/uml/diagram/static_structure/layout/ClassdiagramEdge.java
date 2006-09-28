@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2001 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -33,88 +33,44 @@ import org.tigris.gef.presentation.*;
  *  @since 0.11.1
  */
 public abstract class ClassdiagramEdge implements LayoutedEdge {
-
+    
     /** the layout is oriented on a grid. These are our grid spaces.
      */
-    private static int vGap;
-    private static int hGap;
-
-
-    private FigEdge currentEdge = null;
+    static int _vGap;
+    static int _hGap;
+    
+    
+    FigEdge currentEdge = null;
     /** the underlying fig of the edge we want to layout */
-    private FigPoly underlyingFig = null;
-
+    FigPoly underlyingFig = null;
+    
     /** each fig has a source and a destination port
      */
-    private Fig destFigNode;
-    private Fig sourceFigNode;
-
-
-    /** Constructor.
+    Fig destFigNode;
+    Fig sourceFigNode;
+    
+   
+    /** Constructor. 
      * @param edge the Edge to layout
      */
     public ClassdiagramEdge(FigEdge edge) {
         currentEdge = edge;
         underlyingFig = new FigPoly();
         underlyingFig.setLineColor(edge.getFig().getLineColor());
-
+       
         destFigNode = edge.getDestFigNode();
         sourceFigNode = edge.getSourceFigNode();
     }
-
-    /**
-     * Abstract method to layout the edge.
-     *
-     * @see org.argouml.uml.diagram.layout.LayoutedEdge#layout()
+    
+    /** abstract method to layout the edge
      */
-    public abstract void layout();
-
-    /**
-     * @param h the horizontal gap
-     */
-    public static void setHGap(int h) { hGap = h; }
-
-    /**
-     * @param v the vertical gap
-     */
-    public static void setVGap(int v) { vGap = v; }
-
-    /**
-     * @return the horizontal gap
-     */
-    public static int getHGap() { return hGap; }
-
-    /**
-     * @return the vertical gap
-     */
-    public static int getVGap() { return vGap; }
-
-    /**
-     * @return Returns the destFigNode.
-     */
-    Fig getDestFigNode() {
-        return destFigNode;
-    }
-
-    /**
-     * @return Returns the sourceFigNode.
-     */
-    Fig getSourceFigNode() {
-        return sourceFigNode;
-    }
-
-    /**
-     * @return Returns the currentEdge.
-     */
-    protected FigEdge getCurrentEdge() {
-        return currentEdge;
-    }
-
-    /**
-     * @return Returns the underlyingFig.
-     */
-    protected FigPoly getUnderlyingFig() {
-        return underlyingFig;
-    }
+    public abstract void layout();  
+ 
+    public static void setHGap(int hGap) { _hGap = hGap; }
+    public static void setVGap(int vGap) { _vGap = vGap; }
+    
+    public static int getHGap() { return _hGap; }
+    public static int getVGap() { return _vGap; }
+    
 }
-
+      

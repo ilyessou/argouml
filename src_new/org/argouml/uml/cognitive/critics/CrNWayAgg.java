@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,49 +22,57 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+
+// File: CrNWayAgg.java
+// Classes: CrNWayAgg
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
+// 12 Mar 2002: Jeremy Bennett (mail@jeremybennett.com). Code corrected as part
+// of fix to issue 619.
+
+
 package org.argouml.uml.cognitive.critics;
 
 import java.util.Collection;
 import java.util.Iterator;
-
 import org.argouml.cognitive.Designer;
 import org.argouml.cognitive.critics.Critic;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
-
+import org.argouml.model.ModelFacade;
 /**
- * A critic to check that no end of a 3-way (or more) association is an
- * aggregation.<p>
+ * <p> A critic to check that no end of a 3-way (or more) association is an
+ *   aggregation.</p>
  *
- * This is the third well-formedness rule for associations in the UML 1.3
- * standard (see section 2.5.3 of the standard).<p>
+ * <p>This is the third well-formedness rule for associations in the UML 1.3
+ *   standard (see section 2.5.3 of the standard).</p>
  *
- * <em>Note</em>. This only applies to 3-way or more
+ * <p><em>Note</em>. This only applies to 3-way or more
  * associations. There is a separate critic (see {@link
  * org.argouml.uml.cognitive.critics.CrMultipleAgg}) which deals with
- * 2-way assocations. <p>
+ * 2-way assocations.</p>
  *
- * See <a href=
- * "http://argouml.tigris.org/documentation/snapshots/manual/argouml.html/
- * #s2.ref.critics_multiple_agg">
- * ArgoUML User Manual: Two Aggregate ends (roles) in binary
- * Association</a>
- *
- * @author jrobbins
- */
+ * @see <a
+ * href="http://argouml.tigris.org/documentation/snapshots/manual/argouml.html/#s2.ref.critics_multiple_agg">ArgoUML
+ * User Manual: Two Aggregate ends (roles) in binary
+ * Association</a> */
+
 public class CrNWayAgg extends CrUML {
 
     /**
-     * Constructor for the critic. <p>
+     * <p>Constructor for the critic.</p>
      *
-     * Sets up the resource name, which will allow headline and description
+     * <p>Sets up the resource name, which will allow headline and description
      * to found for the current locale. Provides a design issue category
      * (CONTAINMENT), a knowledge type (SEMANTICS) and add triggers for
-     * "connection" and "end_aggregation".
+     * "connection" and "end_aggregation".</p>
      */
+
     public CrNWayAgg() {
-        setupHeadAndDesc();
-        addSupportedDecision(UMLDecision.CONTAINMENT);
+
+        setResource("CrNWayAgg");
+
+        addSupportedDecision(CrUML.decCONTAINMENT);
         setKnowledgeTypes(Critic.KT_SEMANTICS);
 
         // These may not actually make any difference at present (the code
@@ -76,24 +84,24 @@ public class CrNWayAgg extends CrUML {
 
 
     /**
-     * The trigger for the critic.<p>
+     * <p>The trigger for the critic.</p>
      *
-     * Check that the number of ends more than two, otherwise this should be
-     * handled by the critic for 2-way assocations (see {@link
-     * org.argouml.uml.cognitive.critics.CrMultipleAgg}).<p>
+     * <p>Check that the number of ends more than two, otherwise this should be
+     *   handled by the critic for 2-way assocations (see {@link
+     *   org.argouml.uml.cognitive.critics.CrMultipleAgg}).</p>
      *
-     * We do not handle association roles, which are a subclass of
-     * association. An association role should be fine, if its parent is OK,
-     * since it must be more tightly constrained than its parent.<p>
+     * <p>We do not handle association roles, which are a subclass of
+     *   association. An association role should be fine, if its parent is OK,
+     *   since it must be more tightly constrained than its parent.</p>
      *
-     * <em>Note</em>. ArgoUML does not currently have a constructor to check
-     * that an association role is more tightly constrained than its
-     * parent.<p>
+     * <p><em>Note</em>. ArgoUML does not currently have a constructor to check
+     *   that an association role is more tightly constrained than its
+     *   parent.</p>
      *
-     * Then loop through the ends, looking for aggregate ends. Note that we
-     * look for aggregation explicitly, rather than just absence of "no
-     * aggregation", so we don't trigger if the aggregation is just
-     * undefined.
+     * <p>Then loop through the ends, looking for aggregate ends. Note that we
+     *   look for aggregation explicitly, rather than just absence of "no
+     *   aggregation", so we don't trigger if the aggregation is just
+     *   undefined.</p>
      *
      * @param  dm    the {@link java.lang.Object Object} to be checked against
      *               the critic.
@@ -103,14 +111,14 @@ public class CrNWayAgg extends CrUML {
      *               development of ArgoUML.
      *
      * @return       {@link #PROBLEM_FOUND PROBLEM_FOUND} if the critic is
-     *               triggered, otherwise {@link #NO_PROBLEM NO_PROBLEM}.
+     *               triggered, otherwise {@link #NO_PROBLEM NO_PROBLEM}.  
      */
-
+    
     public boolean predicate2(Object dm, Designer dsgr) {
 
         // Only work for associatins
 
-        if (!(Model.getFacade().isAAssociation(dm))) {
+        if (!(ModelFacade.isAAssociation(dm))) {
             return NO_PROBLEM;
         }
 
@@ -119,11 +127,11 @@ public class CrNWayAgg extends CrUML {
 
         Object asc = /*(MAssociation)*/ dm;
 
-        if (Model.getFacade().isAAssociationRole(asc)) {
+        if (ModelFacade.isAAssociationRole(asc)) {
             return NO_PROBLEM;
         }
 
-        Collection conns = Model.getFacade().getConnections(asc);
+        Collection conns = ModelFacade.getConnections(asc);
 
         if ((conns == null) || (conns.size() <= 2)) {
             return NO_PROBLEM;
@@ -131,11 +139,11 @@ public class CrNWayAgg extends CrUML {
 
         // Loop through the associations, looking for one with aggregation
 
-        Iterator assocEnds = conns.iterator();
-        while (assocEnds.hasNext()) {
-            Object ae = /*(MAssociationEnd)*/ assocEnds.next();
-            if (Model.getFacade().isAggregate(ae)
-                    || Model.getFacade().isComposite(ae)) {
+        Iterator enum = conns.iterator();
+
+        while (enum.hasNext()) {
+            Object  ae = /*(MAssociationEnd)*/ enum.next();
+            if (ModelFacade.isAggregate(ae) || ModelFacade.isComposite(ae)) {
                 return PROBLEM_FOUND;
             }
         }
@@ -145,8 +153,4 @@ public class CrNWayAgg extends CrUML {
         return NO_PROBLEM;
     }
 
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = 5318978944855930303L;
 } /* end class CrNWayAgg.java */

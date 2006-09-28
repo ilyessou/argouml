@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,17 +24,15 @@
 
 package org.argouml.uml.ui.foundation.core;
 
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
 import org.argouml.uml.ui.UMLModelElementListModel2;
 
 /**
- * A model for all elements owned by a namespace.
- *
- * @author jaap.branderhorst@xs4all.nl
+ * 
+ * @author jaap.branderhorst@xs4all.nl	
  * @since Jan 2, 2003
  */
-public class UMLNamespaceOwnedElementListModel
-    extends UMLModelElementListModel2 {
+public class UMLNamespaceOwnedElementListModel extends UMLModelElementListModel2 {
 
     /**
      * Constructor for UMLNamespaceOwnedElementListModel.
@@ -47,8 +45,8 @@ public class UMLNamespaceOwnedElementListModel
      * @see org.argouml.uml.ui.UMLModelElementListModel2#buildModelList()
      */
     protected void buildModelList() {
-        if (getTarget() != null) {
-            setAllElements(Model.getFacade().getOwnedElements(getTarget()));
+        if (ModelFacade.isANamespace(getTarget())) {
+            setAllElements(ModelFacade.getOwnedElements(getTarget()));
         }
     }
 
@@ -56,8 +54,8 @@ public class UMLNamespaceOwnedElementListModel
      * @see org.argouml.uml.ui.UMLModelElementListModel2#isValidElement(Object)
      */
     protected boolean isValidElement(Object/*MBase*/ element) {
-        return Model.getFacade().getOwnedElements(getTarget())
-        	.contains(element);
+        return ModelFacade.isANamespace(getTarget())
+		&& ModelFacade.getOwnedElements(getTarget()).contains(element);
     }
 
 }

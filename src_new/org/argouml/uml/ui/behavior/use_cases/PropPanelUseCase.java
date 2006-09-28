@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,95 +22,143 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
-package org.argouml.uml.ui.behavior.use_cases;
+// File: PropPanelUseCase.java
+// Classes: PropPanelUseCase
+// Original Author: your email address here
+// $Id$
 
+// 21 Mar 2002: Jeremy Bennett (mail@jeremybennett.com). Changed to use the
+// labels "Generalizes:" for inheritance (needs Specializes some time).
+
+// 21 Mar 2002: Jeremy Bennett (mail@jeremybennett.com). Specializes field
+// added. Factoring to use PropPanelModifiers and tidying up of layout.
+
+// 4 Apr 2002: Jeremy Bennett (mail@jeremybennett.com). Tool tip changed to
+// "Add use case".
+
+package org.argouml.uml.ui.behavior.use_cases;
 
 import javax.swing.JList;
 import javax.swing.JScrollPane;
 
 import org.argouml.i18n.Translator;
+import org.argouml.model.ModelFacade;
+import org.argouml.model.uml.behavioralelements.usecases.UseCasesFactory;
+
 import org.argouml.ui.targetmanager.TargetManager;
-import org.argouml.uml.ui.ActionNavigateNamespace;
+import org.argouml.uml.ui.PropPanelButton;
+import org.argouml.uml.ui.UMLComboBoxNavigator;
 import org.argouml.uml.ui.UMLLinkedList;
 import org.argouml.uml.ui.UMLMutableLinkedList;
 import org.argouml.uml.ui.foundation.core.PropPanelClassifier;
-import org.argouml.uml.ui.foundation.extension_mechanisms.ActionNewStereotype;
 import org.argouml.util.ConfigLoader;
 
 /**
- * Builds the property panel for a use case.<p>
+ * <p>Builds the property panel for a use case.</p>
  *
- * This is a type of Classifier, and like other Classifiers can have
- * attributes and operations (some processes use these to define
- * requirements).<p>
- * <em>Note</em>. ArgoUML does not currently support separate
- * compartments on the display for this.<p>
+ * <p>This is a type of Classifier, and like other Classifiers can have
+ *   attributes and operations (some processes use these to define
+ *   requirements). <em>Note</em>. ArgoUML does not currently support separate
+ *   compartments on the display for this.</p>
  */
+
 public class PropPanelUseCase extends PropPanelClassifier {
 
     /**
-     * Construct a property panel for a UseCase.
+     * <p>Constructor. Builds up the various fields required.</p>
      */
     public PropPanelUseCase() {
-        super("UseCase",
-            lookupIcon("UseCase"),
-            ConfigLoader.getTabPropsOrientation());
+        // Invoke the Classifier constructor, but passing in our name and
+        // representation and requesting 3 columns
+        super("UseCase", ConfigLoader.getTabPropsOrientation());
 
-        addField(Translator.localize("label.name"),
-                getNameTextField());
-    	addField(Translator.localize("label.namespace"),
-                getNamespaceSelector());
+        addField(Translator.localize("UMLMenu", "label.name"), getNameTextField());
+    	addField(Translator.localize("UMLMenu", "label.stereotype"), new UMLComboBoxNavigator(this, Translator.localize("UMLMenu", "tooltip.nav-stereo"), getStereotypeBox()));
+    	addField(Translator.localize("UMLMenu", "label.namespace"), getNamespaceComboBox());
 
-        add(getModifiersPanel());
+	
+	// Modifiers
+        _modifiersPanel.remove(0);
+        addField(Translator.localize("UMLMenu", "label.modifiers"), _modifiersPanel);
+        
 
-	addSeparator();
+	JList extensionPoints = new UMLMutableLinkedList(new UMLUseCaseExtensionPointListModel(), null, ActionNewUseCaseExtensionPoint.SINGLETON);
+	addField(Translator.localize("UMLMenu", "label.extension-points"),
+		 new JScrollPane(extensionPoints));
 
-	addField(Translator.localize("label.generalizations"),
-            getGeneralizationScroll());
-	addField(Translator.localize("label.specializations"),
-            getSpecializationScroll());
+	addSeperator();
+
+	addField(Translator.localize("UMLMenu", "label.generalizations"), getGeneralizationScroll());
+	addField(Translator.localize("UMLMenu", "label.specializations"), getSpecializationScroll());
 
 	JList extendsList = new UMLLinkedList(new UMLUseCaseExtendListModel());
-	addField(Translator.localize("label.extends"),
+	addField(Translator.localize("UMLMenu", "label.extends"),
 		 new JScrollPane(extendsList));
 
-	JList includesList =
-            new UMLLinkedList(
-                    new UMLUseCaseIncludeListModel());
-	addField(Translator.localize("label.includes"),
+	JList includesList = new UMLLinkedList(new UMLUseCaseIncludeListModel());
+	addField(Translator.localize("UMLMenu", "label.includes"),
 		 new JScrollPane(includesList));
 
-	addSeparator();
+	addSeperator();
 
-        addField(Translator.localize("label.attributes"),
-                getAttributeScroll());
+        addField(Translator.localize("UMLMenu", "label.association-ends"), 
+            getAssociationEndScroll());
 
-        addField(Translator.localize("label.association-ends"),
-                getAssociationEndScroll());
+        
 
-        addField(Translator.localize("label.operations"),
-                getOperationScroll());
+        new PropPanelButton(this, buttonPanel, _navUpIcon,
+                Translator.localize("UMLMenu", "button.go-up"), "navigateNamespace",
+                            null);
+        new PropPanelButton(this, buttonPanel, _useCaseIcon,
+                Translator.localize("UMLMenu", "button.new-usecase"), "newUseCase",
+                            null);
+        new PropPanelButton(this, buttonPanel, _extensionPointIcon,
+                            localize("New Extension Point"),
+                            "newExtensionPoint",
+                            null);
+        new PropPanelButton(this, buttonPanel, _deleteIcon,
+                            localize("Delete"), "removeElement",
+                            null);
 
-	JList extensionPoints =
-	    new UMLMutableLinkedList(
-	            new UMLUseCaseExtensionPointListModel(), null,
-	            ActionNewUseCaseExtensionPoint.SINGLETON);
-        addField(Translator.localize("label.extension-points"),
-            new JScrollPane(extensionPoints));
-
-
-        addAction(new ActionNavigateNamespace());
-        addAction(new ActionNewUseCase());
-        addAction(new ActionNewExtensionPoint());
-        addAction(TargetManager.getInstance().getAddAttributeAction());
-        addAction(TargetManager.getInstance().getAddOperationAction());
-        addAction(getActionNewReception());
-        addAction(new ActionNewStereotype());
-        addAction(getDeleteAction());
     }
 
+
     /**
-     * The UID.
+     * <p>Invoked by the "Add use case" toolbar button to create a new use case
+     *   property panel in the same namespace as the current use case.</p>
+     *
+     * <p>This code uses getFactory and adds the use case explicitly to the
+     *   namespace. Extended to actually navigate to the new use case.</p>
      */
-    private static final long serialVersionUID = 8352300400553000518L;
+
+    public void newUseCase() {
+        Object target = getTarget();
+
+        if (ModelFacade.isAUseCase(target)) {
+            Object ns = ModelFacade.getNamespace(target);
+
+            if (ns != null) {
+                Object useCase = UseCasesFactory.getFactory().createUseCase();
+                ModelFacade.addOwnedElement(ns, useCase);
+                TargetManager.getInstance().setTarget(useCase);
+            }
+        }
+    }
+
+
+    /**
+     * <p>Invoked by the "New Extension Point" toolbar button to create a new
+     *   extension point for this use case in the same namespace as the current
+     *   use case.</p>
+     *
+     * <p>This code uses getFactory and adds the extension point explicitly to
+     *   the, making its associated use case the current use case.</p>
+     */
+    public void newExtensionPoint() {
+        Object target = getTarget();
+
+        if (ModelFacade.isAUseCase(target)) {
+            TargetManager.getInstance().setTarget(UseCasesFactory.getFactory().buildExtensionPoint(target));
+        }
+    }
 } /* end class PropPanelUseCase */

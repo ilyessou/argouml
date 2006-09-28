@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -27,24 +27,27 @@ package org.argouml.uml.ui.behavior.collaborations;
 
 import java.awt.event.ActionEvent;
 
-import org.argouml.model.Model;
+import org.argouml.i18n.Translator;
+import org.argouml.model.uml.behavioralelements.collaborations.CollaborationsHelper;
+import org.argouml.uml.ui.UMLChangeAction;
 import org.argouml.uml.ui.UMLComboBox2;
-import org.tigris.gef.undo.UndoableAction;
 
 /**
- * The action to set the base of an associationrole.
- * 
  * @since Oct 4, 2002
  * @author jaap.branderhorst@xs4all.nl
+ * @stereotype singleton
  */
-public class ActionSetAssociationRoleBase extends UndoableAction {
+public class ActionSetAssociationRoleBase extends UMLChangeAction {
 
+    public static final ActionSetAssociationRoleBase SINGLETON =
+	new ActionSetAssociationRoleBase();
+    
     /**
      * Constructor for ActionSetAssociationRoleBase.
      */
-    public ActionSetAssociationRoleBase() {
-        super();
-    }
+    protected ActionSetAssociationRoleBase() {
+        super(Translator.localize("Set"), true, NO_ICON);
+    }   
 
     /**
      * @see
@@ -52,18 +55,12 @@ public class ActionSetAssociationRoleBase extends UndoableAction {
      */
     public void actionPerformed(ActionEvent e) {
         super.actionPerformed(e);
+        Object selected = null;
         if (e.getSource() instanceof UMLComboBox2) {
             UMLComboBox2 source = (UMLComboBox2) e.getSource();
-            Object assoc = source.getSelectedItem();
-            Object ar = source.getTarget();
-            if (Model.getFacade().getBase(ar) == assoc) {
-                return; // base is already set to this assoc...
-                /* This check is needed, otherwise the setbase()
-                 *  below gives an exception.*/
-            }
-            if (Model.getFacade().isAAssociation(assoc)
-                    && Model.getFacade().isAAssociationRole(ar)) {
-                Model.getCollaborationsHelper().setBase(ar, assoc);
+            selected = source.getSelectedItem();
+            if (org.argouml.model.ModelFacade.isAAssociation(selected) && org.argouml.model.ModelFacade.isAAssociationRole(source.getTarget())) {
+                CollaborationsHelper.getHelper().setBase(source.getTarget(), selected);
             }
         }
     }

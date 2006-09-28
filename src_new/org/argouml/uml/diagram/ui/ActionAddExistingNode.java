@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2003 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -27,11 +27,17 @@ package org.argouml.uml.diagram.ui;
 
 import java.awt.event.ActionEvent;
 
+import org.argouml.i18n.Translator;
 import org.argouml.kernel.ProjectManager;
 import org.argouml.ui.ArgoDiagram;
 import org.argouml.ui.targetmanager.TargetManager;
+import org.argouml.uml.ui.UMLAction;
+import org.tigris.gef.base.Editor;
+import org.tigris.gef.base.Globals;
+import org.tigris.gef.base.ModePlace;
+import org.tigris.gef.graph.GraphFactory;
+import org.tigris.gef.graph.GraphModel;
 import org.tigris.gef.graph.MutableGraphModel;
-import org.tigris.gef.undo.UndoableAction;
 
 /**
 * ActionAddExistingNode enables pasting of an existing node into a Diagram.
@@ -39,28 +45,29 @@ import org.tigris.gef.undo.UndoableAction;
 * @author Eugenio Alvarez
 * Data Access Technologies.
 */
-public class ActionAddExistingNode extends UndoableAction {
+public class ActionAddExistingNode extends UMLAction 
+    implements GraphFactory
+{
 
-    /**
-     * The UML object to be added to the diagram.
-     */
-    private Object object;
+    ////////////////////////////////////////////////////////////////
+    // instance variables
+    protected String _tabName;
+    protected Object _object;
 
-    /**
-     * The Constructor.
-     *
-     * @param name the localized name of the action
-     * @param o the node UML object to be added
-     */
-    public ActionAddExistingNode(String name, Object o) {
-        super(name);
-        object = o;
+    ////////////////////////////////////////////////////////////////
+    // constructor
+    public ActionAddExistingNode(String tabName) {
+        super(tabName, NO_ICON);
+        _tabName = tabName;
     }
 
-    /**
-     * @see javax.swing.Action#isEnabled()
-     */
-    public boolean isEnabled() {
+    public ActionAddExistingNode(String tabName, Object o) {
+        super(tabName, NO_ICON);
+        _tabName = tabName;
+        _object = o;
+    }
+
+    public boolean shouldBeEnabled() {	
         Object target = TargetManager.getInstance().getTarget();
         ArgoDiagram dia = ProjectManager.getManager().
             getCurrentProject().getActiveDiagram();
@@ -69,12 +76,36 @@ public class ActionAddExistingNode extends UndoableAction {
         return gm.canAddNode(target);
     }
 
-    /**
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-     */
     public void actionPerformed(ActionEvent ae) {
-        super.actionPerformed(ae);
-        AddExistingNodeCommand cmd = new AddExistingNodeCommand(object);
-        cmd.execute();
+        Editor ce = Globals.curEditor();
+        GraphModel gm = ce.getGraphModel();
+        if (!(gm instanceof MutableGraphModel)) return;
+
+        String instructions = null;
+        if (_object != null) {
+            instructions =
+		Translator.localize ("Tree", "misc.message.click-on-diagram-to-add") + _object.toString();
+            Globals.showStatus(instructions);
+        }
+        ModePlace placeMode = new ModePlace(this, instructions);
+        placeMode.setAddRelatedEdges(true);
+	
+        //
+        //   This only occurs when an diagram is entered
+        //
+        //
+
+        Globals.mode(placeMode, false );
     }
+
+    ////////////////////////////////////////////////////////////////
+    // GraphFactory implementation
+
+    public GraphModel makeGraphModel() { return null; }
+    public Object makeEdge() { return null; }
+
+    public Object makeNode() {
+        return _object;
+    }
+
 } /* end class ActionAddExistingNode */

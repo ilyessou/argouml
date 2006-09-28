@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,34 +24,15 @@
 
 package org.argouml.uml.ui.foundation.core;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-
-import org.argouml.model.Model;
-import org.argouml.uml.ui.UMLModelElementOrderedListModel2;
+import org.argouml.model.ModelFacade;
+import org.argouml.uml.ui.UMLModelElementListModel2;
 
 /**
- * The list model for the connections of the association. <p>
  * 
- * The specialty of this list model, is that it need to be aware 
- * of name changes in the ends connected to the association. 
- * Most other listmodels only listen to 
- * model changes in one UML element, but in this case, we also have to listen to
- * changes in some related elements. <p>
- * 
- * Why is this case different: because it is possible to modify the 
- * associationend names on the diagram, without changing the target - i.e.
- * the target remains the association throughout this modification.
- *
- * @author jaap.branderhorst@xs4all.nl
+ * @author jaap.branderhorst@xs4all.nl	
  * @since Jan 4, 2003
  */
-public class UMLAssociationConnectionListModel
-    extends UMLModelElementOrderedListModel2 {
-
-    private Collection others;
+public class UMLAssociationConnectionListModel extends UMLModelElementListModel2 {
 
     /**
      * Constructor for UMLModelElementClientDependencyListModel.
@@ -61,62 +42,20 @@ public class UMLAssociationConnectionListModel
     }
 
      /**
-     * @see org.argouml.uml.ui.UMLModelElementListModel2#addOtherModelEventListeners(java.lang.Object)
-     */
-    protected void addOtherModelEventListeners(Object newTarget) {
-        super.addOtherModelEventListeners(newTarget);
-        /* Make a copy of the modelelements: */
-        others = new ArrayList(Model.getFacade().getConnections(newTarget));
-        Iterator i = others.iterator();
-        while (i.hasNext()) {
-            Object end = i.next();
-            Model.getPump().addModelEventListener(this, end, "name");
-        }
-    }
-
-    /**
-     * @see org.argouml.uml.ui.UMLModelElementListModel2#removeOtherModelEventListeners(java.lang.Object)
-     */
-    protected void removeOtherModelEventListeners(Object oldTarget) {
-        super.removeOtherModelEventListeners(oldTarget);
-        Iterator i = others.iterator();
-        while (i.hasNext()) {
-            Object end = i.next();
-            Model.getPump().removeModelEventListener(this, end, "name");
-        }
-        others.clear();
-    }
-
-    /**
      * @see org.argouml.uml.ui.UMLModelElementListModel2#buildModelList()
      */
     protected void buildModelList() {
-        if (getTarget() != null) {
-            setAllElements(Model.getFacade().getConnections(getTarget()));
-        }
+	if (ModelFacade.isAAssociation(getTarget())) {
+	    setAllElements(ModelFacade.getConnections(getTarget()));
+	}
     }
 
     /**
      * @see org.argouml.uml.ui.UMLModelElementListModel2#isValidElement(Object)
      */
-    protected boolean isValidElement(Object/*MBase*/ o) {
-        return Model.getFacade().isAAssociationEnd(o)
-            && Model.getFacade().getConnections(getTarget()).contains(o);
-    }
-
-
-    /**
-     * @see org.argouml.uml.ui.UMLModelElementOrderedListModel2#moveTo(int, int)
-     */
-    protected void moveDown(int index1) {
-        int index2 = index1 + 1;
-        Object assoc = getTarget();
-        List c = new ArrayList(Model.getFacade().getConnections(assoc));
-        Object mem1 = c.get(index1);
-        Object mem2 = c.get(index2);
-        c.set(index1, mem2);
-        c.set(index2, mem1);
-        Model.getCoreHelper().setConnections(assoc, c);
-        buildModelList();
+    protected boolean isValidElement(Object/*MBase*/ o) {  
+        return ModelFacade.isAAssociation(getTarget())
+		&& ModelFacade.isAAssociationEnd(o)
+		&& ModelFacade.getConnections(getTarget()).contains(o);
     }
 }

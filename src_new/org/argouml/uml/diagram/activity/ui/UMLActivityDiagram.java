@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,249 +22,230 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: UMLActivityDiagram.java
+// Classes: UMLActivityDiagram
+
 package org.argouml.uml.diagram.activity.ui;
 
-import java.beans.PropertyChangeEvent;
 import java.beans.PropertyVetoException;
 
 import javax.swing.Action;
 
-import org.argouml.i18n.Translator;
+import org.apache.log4j.Logger;
+
 import org.argouml.kernel.ProjectManager;
-import org.argouml.model.DeleteInstanceEvent;
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
 import org.argouml.ui.CmdCreateNode;
 import org.argouml.ui.CmdSetMode;
-import org.argouml.uml.diagram.UMLMutableGraphSupport;
-import org.argouml.uml.diagram.activity.ActivityDiagramGraphModel;
 import org.argouml.uml.diagram.state.StateDiagramGraphModel;
 import org.argouml.uml.diagram.state.ui.ActionCreatePseudostate;
-import org.argouml.uml.diagram.ui.RadioAction;
+import org.argouml.uml.diagram.state.ui.StateDiagramRenderer;
 import org.argouml.uml.diagram.ui.UMLDiagram;
+import org.argouml.uml.diagram.ui.ActionAddNote;
+
 import org.tigris.gef.base.LayerPerspective;
 import org.tigris.gef.base.LayerPerspectiveMutable;
 import org.tigris.gef.base.ModeCreatePolyEdge;
-import org.tigris.gef.graph.GraphModel;
 
 /**
- * The Activity diagram.<p>
+ * Enabling an activity diagram connected to an actor has been
+ * requested as a feature.<p>
  *
- * TODO: Finish the work on swimlanes, subactivity states.
+ * As well enabling swim lanes in the activity diagram is considered
+ * valuable as well.<p>
  */
 public class UMLActivityDiagram extends UMLDiagram {
-    
     /**
-     * this diagram needs to be deleted when its statemachine is deleted.
+     * @deprecated by Linus Tolke as of 0.15.4. Use your own logger in your
+     * class. This will be removed.
      */
-    private Object theActivityGraph;
+    protected static Logger cat = Logger.getLogger(UMLActivityDiagram.class);
 
-    private Action actionState;
-    private Action actionStartPseudoState;
-    private Action actionFinalPseudoState;
-    private Action actionJunctionPseudoState;
-    private Action actionForkPseudoState;
-    private Action actionJoinPseudoState;
-    private Action actionTransition;
-    private Action actionObjectFlowState;
-    private Action actionNewSwimlane;
-    private Action actionCallState;
-    private Action actionSubactivityState;
+    ////////////////
+    // actions for toolbar
 
-    /**
-     * Constructor.
-     */
+    protected static Action _actionState =
+        new CmdCreateNode(ModelFacade.ACTION_STATE, "ActionState");
+
+    protected static Action _actionStartPseudoState;
+    protected static Action _actionFinalPseudoState;
+    protected static Action _actionJunctionPseudoState;
+    protected static Action _actionBranchPseudoState;
+    protected static Action _actionForkPseudoState;
+    protected static Action _actionJoinPseudoState;
+
+    protected static Action _actionTransition =
+        new CmdSetMode(
+            ModeCreatePolyEdge.class,
+            "edgeClass",
+            ModelFacade.TRANSITION,
+            "Transition");
+
+    ////////////////////////////////////////////////////////////////
+    // contructors
+
+    protected static int _ActivityDiagramSerial = 1;
+
     public UMLActivityDiagram() {
+
         try {
             setName(getNewDiagramName());
         } catch (PropertyVetoException pve) { }
+
+	// start state, end state, forks, joins, etc.
+	_actionStartPseudoState =
+	    new ActionCreatePseudostate(ModelFacade.INITIAL_PSEUDOSTATEKIND, 
+					"Initial");
+
+	_actionFinalPseudoState =
+            new CmdCreateNode(ModelFacade.FINALSTATE, "FinalState");
+
+	/* TODO: Uncomment this for V0.17.1, and remove the Branch part below.*/
+/*	_actionJunctionPseudoState =
+	    new ActionCreatePseudostate(ModelFacade.JUNCTION_PSEUDOSTATEKIND,
+					"Junction");
+*/
+	_actionBranchPseudoState =
+	    new ActionCreatePseudostate(ModelFacade.BRANCH_PSEUDOSTATEKIND,
+	                                "Junction");
+
+	_actionForkPseudoState =
+	    new ActionCreatePseudostate(ModelFacade.FORK_PSEUDOSTATEKIND, 
+					"Fork");
+
+	_actionJoinPseudoState =
+	    new ActionCreatePseudostate(ModelFacade.JOIN_PSEUDOSTATEKIND,
+					"Join");
+
     }
 
-    /**
-     * Constructor.
-     *
-     * @param namespace the namespace for the diagram
-     * @param agraph the ActivityGraph for the diagram
-     */
+    public UMLActivityDiagram(Object m) {
+        this();
+        setNamespace(m);
+        Object context = ModelFacade.getContext(getStateMachine());
+        String name = null;
+        if (context != null
+            && ModelFacade.getName(context) != null
+            && ModelFacade.getName(context).length() > 0) {
+            name = ModelFacade.getName(context);
+            try {
+                setName(name);
+            } catch (PropertyVetoException pve) { }
+        }
+    }
+
     public UMLActivityDiagram(Object namespace, Object agraph) {
 
         this();
 
-        if (!Model.getFacade().isANamespace(namespace)
-            || !Model.getFacade().isAActivityGraph(agraph)) {
+        if (!ModelFacade.isANamespace(namespace)
+            || !ModelFacade.isAActivityGraph(agraph))
             throw new IllegalArgumentException();
-        }
 
-        if (Model.getFacade().getName(namespace) != null) {
-            if (!Model.getFacade().getName(namespace).trim().equals("")) {
-                String name =
-                    Model.getFacade().getName(namespace)
+        if (namespace != null && ModelFacade.getName(namespace) != null) {
+            String name =
+                ModelFacade.getName(namespace)
                     + " activity "
-                    + (Model.getFacade().getBehaviors(namespace).size());
-                try {
-                    setName(name);
-                } catch (PropertyVetoException pve) { }
-            }
+                    + (ModelFacade.getBehaviors(namespace).size());
+            try {
+                setName(name);
+            } catch (PropertyVetoException pve) { }
         }
-        setup(namespace, agraph);
+        if (namespace != null)
+            setup(namespace, agraph);
+        else
+            throw new NullPointerException("Namespace may not be null");
     }
 
-    /**
-     * @see org.tigris.gef.base.Diagram#initialize(java.lang.Object)
-     */
     public void initialize(Object o) {
-        if (!(Model.getFacade().isAActivityGraph(o))) {
+        if (!(org.argouml.model.ModelFacade.isAActivityGraph(o)))
             return;
-        }
-        Object context = Model.getFacade().getContext(o);
-        if (context != null) {
-            if (Model.getFacade().isABehavioralFeature(context)) {
-                setup(Model.getFacade().getNamespace(
-                                Model.getFacade().getOwner(context)), o);
-            } else {
-                setup(context, o);
-            }
-        } else {
-            Object namespace = Model.getFacade().getNamespace(o);
-            if (namespace != null) {
-                setup(namespace, o);
-            } else {
-                throw new IllegalStateException("Cannot find context "
-                        + "nor namespace while initializing activity diagram");
-            }
-        }
+        Object context = ModelFacade.getContext(o);
+        if (context != null
+            && org.argouml.model.ModelFacade.isANamespace(context))
+            setup(context, o);
+        else
+            cat.debug("ActivityGraph without context not yet possible :-(");
     }
 
     /**
      * Method to perform a number of important initializations of an
-     * <em>Activity Diagram</em>.<p>
+     * <I>Activity Diagram</I>.<p>
+     * 
+     * Each diagram type has a similar <I>UMLxxxDiagram</I> class.<p>
      *
-     * Each diagram type has a similar <em>UMLxxxDiagram</em> class.<p>
-     *
-     * Changed <em>lay</em> from <em>LayerPerspective</em> to
-     * <em>LayerPerspectiveMutable</em>.  This class is a child of
-     * <em>LayerPerspective</em> and was implemented to correct some
-     * difficulties in changing the model. <em>lay</em> is used mainly
-     * in <em>LayerManager</em>(GEF) to control the adding, changing and
+     * Changed <I>lay</I> from <I>LayerPerspective</I> to
+     * <I>LayerPerspectiveMutable</I>.  This class is a child of
+     * <I>LayerPerspective</I> and was implemented to correct some
+     * difficulties in changing the model. <I>lay</I> is used mainly
+     * in <I>LayerManager</I>(GEF) to control the adding, changing and
      * deleting layers on the diagram...  psager@tigris.org Jan. 24,
      * 2002
 
-     * @param namespace  Namespace from the model
+     * @param m  Namespace from the model
      * @param agraph ActivityGraph from the model
      */
-    public void setup(Object namespace, Object agraph) {
-        if (!Model.getFacade().isANamespace(namespace)
-            || !Model.getFacade().isAActivityGraph(agraph)) {
+    public void setup(Object m, Object agraph) {
+
+        if (!ModelFacade.isANamespace(m)
+            || !ModelFacade.isAActivityGraph(agraph))
             throw new IllegalArgumentException();
+
+        super.setNamespace(m);
+        StateDiagramGraphModel gm = new StateDiagramGraphModel();
+        gm.setNamespace(m);
+        if (agraph != null) {
+            gm.setMachine(agraph);
         }
-
-        setNamespace(namespace);
-
-        theActivityGraph = agraph;
-        
-        ActivityDiagramGraphModel gm = new ActivityDiagramGraphModel();
-        gm.setHomeModel(namespace);
-        if (theActivityGraph != null) {
-            gm.setMachine(theActivityGraph);
-        }
-        ActivityDiagramRenderer rend = new ActivityDiagramRenderer();
-
-        LayerPerspective lay = new LayerPerspectiveMutable(
-                Model.getFacade().getName(namespace), gm);
+        LayerPerspective lay =
+            new LayerPerspectiveMutable(ModelFacade.getName(m), gm);
+        StateDiagramRenderer rend = new StateDiagramRenderer(); // singleton
         lay.setGraphNodeRenderer(rend);
         lay.setGraphEdgeRenderer(rend);
+
         setLayer(lay);
 
-        /* Listen to activitygraph deletion, 
-         * delete this diagram. */
-        Model.getPump().addModelEventListener(this, theActivityGraph, 
-                new String[] {"remove", "namespace"});
     }
 
-    /**
-     * @see org.argouml.uml.diagram.ui.UMLDiagram#propertyChange(java.beans.PropertyChangeEvent)
-     */
-    public void propertyChange(PropertyChangeEvent evt) {
-        if ((evt.getSource() == theActivityGraph)
-                && (evt instanceof DeleteInstanceEvent)
-                && "remove".equals(evt.getPropertyName())) {
-            Model.getPump().removeModelEventListener(this, 
-                    theActivityGraph, new String[] {"remove", "namespace"});
-            ProjectManager.getManager().getCurrentProject().moveToTrash(this);
-        }
-        if (evt.getSource() == getStateMachine()) {
-            Object newNamespace = 
-                Model.getFacade().getNamespace(getStateMachine());
-            if (getNamespace() != newNamespace) {
-                /* The namespace of the activitygraph is changed! */
-                setNamespace(newNamespace);
-                ((UMLMutableGraphSupport) getGraphModel())
-                                .setHomeModel(newNamespace);
-            }
-        }
-    }
-
-    /**
-     * @see org.argouml.uml.diagram.ui.UMLDiagram#getOwner()
-     */
     public Object getOwner() {
-        if (!(getGraphModel() instanceof ActivityDiagramGraphModel)) {
-            throw new IllegalStateException(
-                    "Incorrect graph model of "
-                    + getGraphModel().getClass().getName());
-        }
-        ActivityDiagramGraphModel gm =
-            (ActivityDiagramGraphModel) getGraphModel();
-        return gm.getMachine();
+        StateDiagramGraphModel gm = (StateDiagramGraphModel) getGraphModel();
+        Object sm = gm.getMachine();
+        if (sm != null)
+            return sm;
+        return gm.getNamespace();
     }
 
-    /**
-     * @return the statemachine
-     */
     public Object getStateMachine() {
-        GraphModel gm = getGraphModel();
-        if (gm instanceof StateDiagramGraphModel) {
-            Object machine = ((StateDiagramGraphModel) gm).getMachine();
-            if (!Model.getUmlFactory().isRemoved(machine)) {
-                return machine;
-            }
-        }
-        return null;
+        return ((StateDiagramGraphModel) getGraphModel()).getMachine();
     }
 
-    /**
-     * @param sm set the statemachine for this diagram
-     */
     public void setStateMachine(Object sm) {
 
-        if (!Model.getFacade().isAStateMachine(sm)) {
+        if (!ModelFacade.isAStateMachine(sm))
             throw new IllegalArgumentException();
-        }
 
-        ((ActivityDiagramGraphModel) getGraphModel()).setMachine(sm);
+        ((StateDiagramGraphModel) getGraphModel()).setMachine(sm);
     }
 
     /**
      * Get the actions from which to create a toolbar or equivalent
      * graphic triggers.
-     *
-     * @see org.argouml.uml.diagram.ui.UMLDiagram#getUmlActions()
      */
     protected Object[] getUmlActions() {
-        Object[] actions =
+        Object actions[] =
         {
-            getActionState(),
-            getActionTransition(),
+	    _actionState,
+	    _actionTransition,
 	    null,
-	    getActionStartPseudoState(),
-	    getActionFinalPseudoState(),
-	    getActionJunctionPseudoState(),
-	    getActionForkPseudoState(),
-	    getActionJoinPseudoState(),
-//	    getActionNewSwimlane(), // uncomment this ...
+	    _actionStartPseudoState,
+	    _actionFinalPseudoState,
+	    /* TODO: Replace the Branch with Junction. */
+	    /*_actionJunctionPseudoState,*/
+	    _actionBranchPseudoState,
+	    _actionForkPseudoState,
+	    _actionJoinPseudoState,
 	    null,
-	    getActionCallState(),
-            getActionObjectFlowState(),
-            /*getActionSubactivityState()*/
+	    ActionAddNote.SINGLETON,
 	};
         return actions;
     }
@@ -274,194 +255,14 @@ public class UMLActivityDiagram extends UMLDiagram {
      *
      * @return String
      */
-    protected String getNewDiagramName() {
-        String name = getLabelName() + " " + getNextDiagramSerial();
+    protected static String getNewDiagramName() {
+        String name = null;
+        name = "Activity Diagram " + _ActivityDiagramSerial;
+        _ActivityDiagramSerial++;
         if (!ProjectManager.getManager().getCurrentProject()
                  .isValidDiagramName(name)) {
             name = getNewDiagramName();
         }
         return name;
     }
-
-    /**
-     * @see org.argouml.uml.diagram.ui.UMLDiagram#getLabelName()
-     */
-    public String getLabelName() {
-        return Translator.localize("label.activity-diagram");
-    }
-
-    /**
-     * @return Returns the actionCallState.
-     */
-    protected Action getActionCallState() {
-        if (actionCallState == null) {
-            actionCallState =
-                new RadioAction(
-                        new CmdCreateNode(
-                                Model.getMetaTypes().getCallState(),
-                                "button.new-callstate"));
-        }
-        return actionCallState;
-    }
-    /**
-     * @return Returns the actionFinalPseudoState.
-     */
-    protected Action getActionFinalPseudoState() {
-        if (actionFinalPseudoState == null) {
-            actionFinalPseudoState =
-                new RadioAction(
-                        new CmdCreateNode(
-                                Model.getMetaTypes().getFinalState(),
-                        	"button.new-finalstate"));
-        }
-        return actionFinalPseudoState;
-    }
-    /**
-     * @return Returns the actionForkPseudoState.
-     */
-    protected Action getActionForkPseudoState() {
-        if (actionForkPseudoState == null) {
-            actionForkPseudoState =
-                new RadioAction(
-                        new ActionCreatePseudostate(
-                                Model.getPseudostateKind().getFork(),
-                        	"button.new-fork"));
-        }
-        return actionForkPseudoState;
-    }
-    /**
-     * @return Returns the actionJoinPseudoState.
-     */
-    protected Action getActionJoinPseudoState() {
-        if (actionJoinPseudoState == null) {
-            actionJoinPseudoState =
-                new RadioAction(
-                        new ActionCreatePseudostate(
-                                Model.getPseudostateKind().getJoin(),
-                        	"button.new-join"));
-        }
-        return actionJoinPseudoState;
-    }
-    /**
-     * @return Returns the actionJunctionPseudoState.
-     */
-    protected Action getActionJunctionPseudoState() {
-        if (actionJunctionPseudoState == null) {
-            actionJunctionPseudoState =
-                new RadioAction(
-                        new ActionCreatePseudostate(
-                                Model.getPseudostateKind().getJunction(),
-                                "button.new-junction"));
-        }
-        return actionJunctionPseudoState;
-    }
-    /**
-     * @return Returns the actionNewSwimlane.
-     */
-    protected Action getActionNewSwimlane() {
-        if (actionNewSwimlane == null) {
-            actionNewSwimlane =
-                new CmdCreateNode(Model.getMetaTypes().getPartition(),
-                        	  "button.new-partition");
-        }
-        return actionNewSwimlane;
-    }
-    /**
-     * @return Returns the actionObjectFlowState.
-     */
-    protected Action getActionObjectFlowState() {
-        if (actionObjectFlowState == null) {
-            actionObjectFlowState =
-                new RadioAction(
-                        new CmdCreateNode(
-                                Model.getMetaTypes().getObjectFlowState(),
-                                "button.new-objectflowstate"));
-        }
-        return actionObjectFlowState;
-    }
-    /**
-     * @return Returns the actionStartPseudoState.
-     */
-    protected Action getActionStartPseudoState() {
-        if (actionStartPseudoState == null) {
-            actionStartPseudoState =
-                new RadioAction(
-                        new ActionCreatePseudostate(
-                                Model.getPseudostateKind().getInitial(),
-                                "button.new-initial"));
-        }
-        return actionStartPseudoState;
-    }
-    /**
-     * @return Returns the actionState.
-     */
-    protected Action getActionState() {
-        if (actionState == null) {
-            actionState =
-                new RadioAction(
-                        new CmdCreateNode(
-                                Model.getMetaTypes().getActionState(),
-                        	"button.new-actionstate"));
-        }
-        return actionState;
-    }
-    /**
-     * @return Returns the actionSubactivityState.
-     */
-    protected Action getActionSubactivityState() {
-        if (actionSubactivityState == null) {
-            actionSubactivityState =
-                new RadioAction(
-                        new CmdCreateNode(
-                                Model.getMetaTypes().getSubactivityState(),
-                        "button.new-subactivitystate"));
-        }
-        return actionSubactivityState;
-    }
-    /**
-     * @return Returns the actionTransition.
-     */
-    protected Action getActionTransition() {
-        if (actionTransition == null) {
-            actionTransition =
-                new RadioAction(
-                        new CmdSetMode(
-                                ModeCreatePolyEdge.class,
-                                "edgeClass",
-                                Model.getMetaTypes().getTransition(),
-                        "button.new-transition"));
-        }
-        return actionTransition;
-    }
-
-    /**
-     * @see org.argouml.uml.diagram.ui.UMLDiagram#getDependentElement()
-     */
-    public Object getDependentElement() {
-        return getStateMachine(); /* The ActivityGraph. */
-    }
-
-    /**
-     * @see org.argouml.uml.diagram.ui.UMLDiagram#isRelocationAllowed(java.lang.Object)
-     */
-    public boolean isRelocationAllowed(Object base) {
-        return false;
-        /* TODO: We may return the following when the
-         * relocate() has been implemented.
-         */
-//      Model.getActivityGraphsHelper()
-//      .isAddingActivityGraphAllowed(base);
-    }
-
-    /**
-     * @see org.argouml.uml.diagram.ui.UMLDiagram#relocate(java.lang.Object)
-     */
-    public boolean relocate(Object base) {
-        return false;
-    }
-
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = 6223128918989919230L;
 } /* end class UMLActivityDiagram */

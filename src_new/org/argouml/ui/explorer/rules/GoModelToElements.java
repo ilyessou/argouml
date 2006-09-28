@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -29,36 +29,23 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
 
-/**
- * Rule for Namespace->Owned Element.
- *
- */
-public class GoModelToElements extends AbstractPerspectiveRule {
+public class GoModelToElements extends AbstractPerspectiveRule{
 
-    /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getRuleName()
-     */
     public String getRuleName() {
-	return Translator.localize ("misc.model.elements");
+	return Translator.localize ("Tree", "misc.namespace.owned-element");
     }
 
-    /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getChildren(java.lang.Object)
-     */
-    public Collection getChildren(Object parent) {
-	if (Model.getFacade().isANamespace(parent)) {
-	    return Model.getFacade().getOwnedElements(parent);
+    public Collection getChildren(Object parent) { 
+	if (ModelFacade.isANamespace(parent)) {
+	    return ModelFacade.getOwnedElements(parent);
 	}
 	return null;
     }
 
-    /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getDependencies(java.lang.Object)
-     */
     public Set getDependencies(Object parent) {
-        if (Model.getFacade().isANamespace(parent)) {
+        if (ModelFacade.isANamespace(parent)) {
 	    Set set = new HashSet();
 	    set.add(parent);
 	    return set;

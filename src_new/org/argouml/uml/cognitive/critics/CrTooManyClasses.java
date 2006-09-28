@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,55 +22,46 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: CrTooManyClasses.java
+// Classes: CrTooManyClasses
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.cognitive.critics;
 
+import java.util.Vector;
 import org.argouml.cognitive.Designer;
-import org.argouml.uml.cognitive.UMLDecision;
 import org.argouml.uml.diagram.static_structure.ui.UMLClassDiagram;
 
-/**
- * A critic to detect when a classdiagram has too many classes. <p>
- *
- * TODO: currently it checks for nodes (classes, interfaces, comments).
- * This critic should be rewritten to work with namespaces.
- */
-public class CrTooManyClasses extends AbstractCrTooMany {
+/** A critic to detect when a class can never have instances (of
+ *  itself of any subclasses). */
 
-    /**
-     * The initial threshold.
-     */
-    private static final int CLASS_THRESHOLD = 20;
+public class CrTooManyClasses extends CrUML {
 
-    /**
-     * The constructor.
-      */
+    ////////////////////////////////////////////////////////////////
+    // constants
+    public static String THRESHOLD = "Threshold";
+
+    ////////////////////////////////////////////////////////////////
+    // constructor
     public CrTooManyClasses() {
 	// TODO: <ocl>self.name</ocl> is not expanded for diagram objects
-        setupHeadAndDesc();
-	addSupportedDecision(UMLDecision.CLASS_SELECTION);
-	setThreshold(CLASS_THRESHOLD);
+	setHeadline("Reduce Classes in diagram <ocl>self</ocl>");
+	addSupportedDecision(CrUML.decCLASS_SELECTION);
+	setArg(THRESHOLD, new Integer(20));
     }
 
-    /**
-     * @see org.argouml.uml.cognitive.critics.CrUML#predicate2(
-     * java.lang.Object, org.argouml.cognitive.Designer)
-     */
+    ////////////////////////////////////////////////////////////////
+    // critiquing API
     public boolean predicate2(Object dm, Designer dsgr) {
-	if (!(dm instanceof UMLClassDiagram)) {
-            return NO_PROBLEM;
-        }
+	if (!(dm instanceof UMLClassDiagram)) return NO_PROBLEM;
 	UMLClassDiagram d = (UMLClassDiagram) dm;
 
-	if (d.getGraphModel().getNodes().size() <= getThreshold()) {
-            return NO_PROBLEM;
-        }
+	int threshold = ((Integer) getArg(THRESHOLD)).intValue();
+	Vector nodes = d.getGraphModel().getNodes();
+	if (nodes.size() <= threshold) return NO_PROBLEM;
 	return PROBLEM_FOUND;
     }
-
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = -3270186791825482658L;
 
 } /* end class CrTooManyClasses */
 

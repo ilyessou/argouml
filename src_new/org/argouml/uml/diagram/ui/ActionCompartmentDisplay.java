@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2001 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,34 +22,38 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: ActionCompartmentDisplay.java
+// Classes: ActionCompartmentDisplay
+// Original Author: your email address here
+// $Id$
+
+// 8 Apr 2002: Jeremy Bennett (mail@jeremybennett.com). Extended to support
+// compartments for extension points on use cases.
+
+
 package org.argouml.uml.diagram.ui;
 
-import java.awt.event.ActionEvent;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.Vector;
-
-import org.argouml.i18n.Translator;
-import org.argouml.uml.diagram.use_case.ui.FigUseCase;
-import org.tigris.gef.base.Editor;
-import org.tigris.gef.base.Globals;
-import org.tigris.gef.base.Selection;
-import org.tigris.gef.presentation.Fig;
-import org.tigris.gef.undo.UndoableAction;
+import org.argouml.uml.diagram.static_structure.ui.*;
+import org.argouml.uml.diagram.use_case.ui.*;
+import org.argouml.uml.ui.UMLAction;
+import org.tigris.gef.base.*;
+import org.tigris.gef.presentation.*;
+import java.awt.event.*;
+import java.util.*;
 
 
 /**
- * A class to implement the actions involved in hiding and showing
- * compartments on interfaces, classes and use cases.<p>
+ * <p>A class to implement the actions involved in hiding and showing
+ *   compartments on interfaces, classes and use cases.</p>
  *
- * This implementation may easily be extended for other
- * compartments of other figs.<p>
+ * <p>This implementation extended to handle compartments for extension points
+ *   on use cases.</p>
  *
- * The class declares a number of static instances, each with an
- * actionPerformed method that performs the required action.
+ * <p>The class declares a number of static instances, each with an
+ *   actionPerformed method that performs the required action.</p>
  */
-public class ActionCompartmentDisplay extends UndoableAction {
+
+public class ActionCompartmentDisplay extends UMLAction {
 
 
     ///////////////////////////////////////////////////////////////////////////
@@ -59,22 +63,18 @@ public class ActionCompartmentDisplay extends UndoableAction {
     ///////////////////////////////////////////////////////////////////////////
 
     /**
-     * A flag to indicate whether the action should show or hide the
-     * relevant compartment.
+     * <p>A flag to indicate whether the action should show or hide the
+     *   relevant compartment.</p>
      */
-    private boolean display = false;
+
+    protected boolean _display = false;
+
 
     /**
-     * Compartment type(s) field.
-     * Bitfield of flags with a bit for each compartment type
+     * <p>A string indicating the action desired.</p>
      */
-    private int cType;
 
-    private static final int COMPARTMENT_ATTRIBUTE = 1;
-    private static final int COMPARTMENT_OPERATION = 2;
-    private static final int COMPARTMENT_EXTENSIONPOINT = 4;
-    private static final int COMPARTMENT_ENUMLITERAL = 8;
-
+    protected String _compartment = "";
 
 
     ///////////////////////////////////////////////////////////////////////////
@@ -84,86 +84,73 @@ public class ActionCompartmentDisplay extends UndoableAction {
     ///////////////////////////////////////////////////////////////////////////
 
     /**
-     * Static instance to show the attribute compartment of a class.
+     * <p>Static instance to show the attribute compartment of a class.</p>
      */
-    private static final UndoableAction SHOW_ATTR_COMPARTMENT =
+
+    public static UMLAction ShowAttrCompartment =
+        new ActionCompartmentDisplay(true, "action.show-attribute-compartment");
+
+
+    /**
+     * <p>Static instance to hide the attribute compartment of a class.</p>
+     */
+
+    public static UMLAction HideAttrCompartment =
+        new ActionCompartmentDisplay(false, "action.hide-attribute-compartment");
+
+
+    /**
+     * <p>Static instance to show the operation compartment of a class.</p>
+     */
+
+    public static UMLAction ShowOperCompartment =
+        new ActionCompartmentDisplay(true, "action.show-operation-compartment");
+
+
+    /**
+     * <p>Static instance to hide the operation compartment of a class.</p>
+     */
+
+    public static UMLAction HideOperCompartment =
+        new ActionCompartmentDisplay(false, 
+				     "action.hide-operation-compartment");
+
+
+    /**
+     * <p>Static instance to show the extension point compartment of a use
+     *   case.</p>
+     */
+
+    public static UMLAction ShowExtPointCompartment =
         new ActionCompartmentDisplay(true,
-                "action.show-attribute-compartment", COMPARTMENT_ATTRIBUTE);
+                                     "action.show-extension-point-compartment");
+
 
     /**
-     * Static instance to hide the attribute compartment of a class.
+     * <p>Static instance to hide the extension point compartment of a use
+     *   case.</p>
      */
-    private static final UndoableAction HIDE_ATTR_COMPARTMENT =
+
+    public static UMLAction HideExtPointCompartment =
         new ActionCompartmentDisplay(false,
-                "action.hide-attribute-compartment", COMPARTMENT_ATTRIBUTE);
+                                     "action.hide-extension-point-compartment");
+
 
     /**
-     * Static instance to show the operation compartment of a class.
+     * <p>Static instance to show both compartments of a class.</p>
      */
-    private static final UndoableAction SHOW_OPER_COMPARTMENT =
-        new ActionCompartmentDisplay(true,
-                "action.show-operation-compartment", COMPARTMENT_OPERATION);
+
+    public static UMLAction ShowAllCompartments =
+        new ActionCompartmentDisplay(true, "action.show-all-compartments");
+
 
     /**
-     * Static instance to hide the operation compartment of a class.
+     * <p>Static instance to hide both compartments of a class.</p>
      */
-    private static final UndoableAction HIDE_OPER_COMPARTMENT =
-        new ActionCompartmentDisplay(false,
-		"action.hide-operation-compartment", COMPARTMENT_OPERATION);
 
-    /**
-     * Static instance to show the extension point compartment of a use
-     * case.
-     */
-    private static final UndoableAction SHOW_EXTPOINT_COMPARTMENT =
-        new ActionCompartmentDisplay(true,
-                "action.show-extension-point-compartment", 
-                COMPARTMENT_EXTENSIONPOINT);
+    public static UMLAction HideAllCompartments =
+        new ActionCompartmentDisplay(false, "action.hide-all-compartments");
 
-    /**
-     * Static instance to hide the extension point compartment of a use
-     * case.
-     */
-    private static final UndoableAction HIDE_EXTPOINT_COMPARTMENT =
-        new ActionCompartmentDisplay(false,
-                "action.hide-extension-point-compartment", 
-                COMPARTMENT_EXTENSIONPOINT);
-
-    /**
-     * Static instance to show both compartments of a class or enumeration.
-     */
-    private static final UndoableAction SHOW_ALL_COMPARTMENTS =
-        new ActionCompartmentDisplay(true, "action.show-all-compartments", 
-                COMPARTMENT_ATTRIBUTE 
-                | COMPARTMENT_OPERATION 
-                | COMPARTMENT_ENUMLITERAL);
-
-    /**
-     * Static instance to hide both compartments of a class or enumeration.
-     */
-    private static final UndoableAction HIDE_ALL_COMPARTMENTS =
-        new ActionCompartmentDisplay(false, "action.hide-all-compartments", 
-                COMPARTMENT_ATTRIBUTE 
-                | COMPARTMENT_OPERATION
-                | COMPARTMENT_ENUMLITERAL);
-
-    /**
-     * Static instance to show the enumeration literals compartment of an
-     * enumeration.
-     */
-    private static final UndoableAction SHOW_ENUMLITERAL_COMPARTMENT =
-        new ActionCompartmentDisplay(true,
-                "action.show-enumeration-literal-compartment", 
-                COMPARTMENT_ENUMLITERAL);
-
-    /**
-     * Static instance to hide the enumeration literals compartment of an
-     * enumeration.
-     */
-    private static final UndoableAction HIDE_ENUMLITERAL_COMPARTMENT =
-        new ActionCompartmentDisplay(false,
-                "action.hide-enumeration-literal-compartment", 
-                COMPARTMENT_ENUMLITERAL);
 
     ///////////////////////////////////////////////////////////////////////////
     //
@@ -172,19 +159,25 @@ public class ActionCompartmentDisplay extends UndoableAction {
     ///////////////////////////////////////////////////////////////////////////
 
     /**
-     * Constructor for a new instance. Can only be called by this class or
-     * its children, since used to create static instances only.
+     * <p>Constructor for a new instance. Can only be called by this class or
+     * its children, since used to create static instances only.</p>
      *
-     * @param d    <code>true</code> if the compartment is to be shown,
-     *             <code>false</code> if it is to be hidden
+     * @param d  <code>true</code> if the compartment is to be shown,
+     *           <code>false</code> if it is to be hidden.
      *
-     * @param c    the text to be displayed for this action
-     * @param type the type of compartment. See definition at {@link #cType}
+     * @param c  The text to be displayed for this action.
      */
-    protected ActionCompartmentDisplay(boolean d, String c, int type) {
-	super(Translator.localize(c));
-	display = d;
-        cType = type;
+
+    protected ActionCompartmentDisplay(boolean d, String c) {
+
+        // Invoke the parent constructor
+
+	super(c, NO_ICON);
+
+        // Save copies of the parameters
+
+	_display = d;
+	_compartment = c;
     }
 
 
@@ -195,159 +188,74 @@ public class ActionCompartmentDisplay extends UndoableAction {
     ///////////////////////////////////////////////////////////////////////////
 
     /**
-     * Return the compartment show and/or hide actions
-     * needed for the selected Figs.
-     * Only returns the actions for the menu-items that make sense
-     * for the current selection.
+     * <p>Action method invoked when an event triggers this action.</p>
+     *
+     * <p>The {@link #_compartment} instance variable defines the action to
+     *   take, and the {@link #_display} instance variable whether it should
+     *   set visibility or note.</p>
+     *
+     * <p><em>Note</em>. The {@link #_display} instance variable is really
+     *   redundant. Its value is implied by the operation.</p>
+     *
+     * @param ae  The event that triggered us.
      */
-    public static Collection getActions() {
-        Collection actions = new ArrayList();
-        Editor ce = Globals.curEditor();
-        Vector figs = ce.getSelectionManager().getFigs();
-        Iterator i = figs.iterator();
-        
-        int present = 0;
-        int visible = 0;
-        
-        boolean operPresent = false;
-        boolean operVisible = false;
-        
-        boolean attrPresent = false;
-        boolean attrVisible = false;
-        
-        boolean epPresent = false;
-        boolean epVisible = false;
-        
-        boolean enumPresent = false;
-        boolean enumVisible = false;
 
-        while (i.hasNext()) {
-            Fig f = (Fig) i.next();
-            
-            if (f instanceof AttributesCompartmentContainer) {
-                present++;
-                attrPresent = true;
-                attrVisible = 
-                    ((AttributesCompartmentContainer) f).isAttributesVisible();
-                if (attrVisible) {
-                    visible++;
-                }
-            }
-            if (f instanceof OperationsCompartmentContainer) {
-                present++;
-                operPresent = true;
-                operVisible =
-                    ((OperationsCompartmentContainer) f).isOperationsVisible();
-                if (operVisible) {
-                    visible++;
-                }
-            }
-            if (f instanceof ExtensionsCompartmentContainer) {
-                present++;
-                epPresent = true;
-                epVisible =
-                    ((ExtensionsCompartmentContainer) f).isExtensionPointVisible();
-                if (epVisible) {
-                    visible++;
-                }
-            }
-            if (f instanceof EnumLiteralsCompartmentContainer) {
-                present++;
-                enumPresent = true;
-                enumVisible =
-                    ((EnumLiteralsCompartmentContainer) f).isEnumLiteralsVisible();
-                if (enumVisible) {
-                    visible++;
-                }
-            }
-        }
+    public void actionPerformed(ActionEvent ae) {
 
-        // Set up hide all / show all
-        if (present > 1) {
-            if (visible > 0) {
-                actions.add(HIDE_ALL_COMPARTMENTS);
-            }
-            if (present - visible > 0) {
-                actions.add(SHOW_ALL_COMPARTMENTS);
-            }
-        }
+        // Only do anything if we have a single item selected (surely this
+        // should work for multiple selections as well?).
 
-        if (attrPresent) {
-            if (attrVisible) {
-                actions.add(HIDE_ATTR_COMPARTMENT);                
-            } else {
-                actions.add(SHOW_ATTR_COMPARTMENT);               
-            }
-        }
+	Vector sels = Globals.curEditor().getSelectionManager().selections();
 
-        if (enumPresent) {
-            if (enumVisible) {
-                actions.add(HIDE_ENUMLITERAL_COMPARTMENT);
-            } else {
-                actions.add(SHOW_ENUMLITERAL_COMPARTMENT);
-            }
-        }
-        
-        if (operPresent) {
-            if (operVisible) {
-                actions.add(HIDE_OPER_COMPARTMENT);                
-            } else {
-                actions.add(SHOW_OPER_COMPARTMENT);               
-            }
-        }
+	if ( sels.size() == 1 ) {
+	    Selection sel = (Selection) sels.firstElement();
+	    Fig       f   = sel.getContent();
 
+            // Perform the action
 
-        if (epPresent) {
-            if (epVisible) {
-                actions.add(HIDE_EXTPOINT_COMPARTMENT);
-            } else {
-                actions.add(SHOW_EXTPOINT_COMPARTMENT);               
+	    if (_compartment.equals("action.show-attribute-compartment")) {
+		((FigClass) f).setAttributeVisible(_display);
             }
-        }
-
-        return actions;
+	    else if (_compartment.equals("action.hide-attribute-compartment")) {
+		((FigClass) f).setAttributeVisible(_display);
+            }
+	    else if (_compartment.equals("action.show-operation-compartment")
+		     || _compartment.equals("action.hide-operation-compartment")) {
+		if (f instanceof FigClass)
+			((FigClass) f).setOperationVisible(_display);
+		if (f instanceof FigInterface)
+			((FigInterface) f).setOperationVisible(_display);
+            }
+	    else if (_compartment.equals("action.show-extension-point-compartment")) {
+		((FigUseCase) f).setExtensionPointVisible(_display);
+            }
+	    else if (_compartment.equals("action.hide-extension-point-compartment")) {
+		((FigUseCase) f).setExtensionPointVisible(_display);
+            }
+	    else if (_compartment.equals("action.show-all-compartments")) {
+		((FigClass) f).setAttributeVisible(_display);
+		((FigClass) f).setOperationVisible(_display);
+	    }
+	    else {
+		((FigClass) f).setAttributeVisible(_display);
+		((FigClass) f).setOperationVisible(_display);
+	    }
+	}
     }
 
 
     /**
-     * Action method invoked when an event triggers this action.<p>
+     * <p>Indicate whether this action should be enabled.</p>
      *
-     * The {@link #cType} instance variable defines the action to
-     * take, and the {@link #display} instance variable whether it should
-     * set visibility or not.<p>
+     * <p>Always returns <code>true</code> in this implementation.</p>
      *
-     * @param ae  The event that triggered us.
+     * @return  <code>true</code> if the action should be enabled,
+     *          <code>false</code> otherwise. Always returns <code>true</code>
+     *          in this implementation.
      */
-    public void actionPerformed(ActionEvent ae) {
-	Iterator i =
-            Globals.curEditor().getSelectionManager().selections().iterator();
-	while (i.hasNext()) {
-	    Selection sel = (Selection) i.next();
-	    Fig       f   = sel.getContent();
 
-            // Perform the action
-            if ((cType & COMPARTMENT_ATTRIBUTE) != 0) {
-		if (f instanceof AttributesCompartmentContainer)
-		    ((AttributesCompartmentContainer) f)
-                        .setAttributesVisible(display);
-            }
-            if ((cType & COMPARTMENT_OPERATION) != 0) {
-		if (f instanceof OperationsCompartmentContainer)
-		    ((OperationsCompartmentContainer) f)
-                        .setOperationsVisible(display);
-            }
-
-            if ((cType & COMPARTMENT_EXTENSIONPOINT) != 0) {
-                if (f instanceof FigUseCase) {
-                    ((FigUseCase) f).setExtensionPointVisible(display);
-                }
-            }
-            if ((cType & COMPARTMENT_ENUMLITERAL) != 0) {
-                if (f instanceof EnumLiteralsCompartmentContainer) {
-                    ((EnumLiteralsCompartmentContainer) f).setEnumLiteralsVisible(display);
-                }
-            }
-	}
+    public boolean shouldBeEnabled() {
+	return true;
     }
 
 } /* end class ActionCompartmentDisplay */

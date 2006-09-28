@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,96 +24,242 @@
 
 package org.argouml.uml.ui.foundation.core;
 
-import javax.swing.JList;
 import javax.swing.JScrollPane;
-import javax.swing.JTextField;
 
+import org.apache.log4j.Logger;
 import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
+
 import org.argouml.ui.targetmanager.TargetManager;
-import org.argouml.uml.ui.ActionNavigateContainerElement;
+import org.argouml.uml.ui.PropPanelButton;
 import org.argouml.uml.ui.UMLComboBox2;
-import org.argouml.uml.ui.UMLLinkedList;
-import org.argouml.uml.ui.UMLTextField2;
-import org.argouml.uml.ui.foundation.extension_mechanisms.ActionNewStereotype;
+import org.argouml.uml.ui.UMLComboBoxNavigator;
+import org.argouml.uml.ui.UMLList;
+import org.argouml.uml.ui.UMLModelElementListModel;
+import org.argouml.uml.ui.UMLReflectionListModel;
+import org.argouml.uml.ui.UMLTextField;
+import org.argouml.uml.ui.UMLTextProperty;
 import org.argouml.util.ConfigLoader;
 
 /**
- * The properties panel for a Generalization.
+ * TODO: this property panel needs refactoring to remove dependency on
+ *       old gui components.
  */
 public class PropPanelGeneralization extends PropPanelModelElement {
+    protected static Logger cat =
+        Logger.getLogger(PropPanelGeneralization.class);
 
-    /**
-     * The serial version.
-     */
-    private static final long serialVersionUID = 2577361208291292256L;
+    private PropPanelButton _newButton;
 
-    private JTextField discriminatorTextField;
-
-    private static UMLDiscriminatorNameDocument discriminatorDocument =
-        new UMLDiscriminatorNameDocument();
-
-    /**
-     * Construct a property panel for Generalization elements.
-     */
     public PropPanelGeneralization() {
-        super("Generalization",
-            lookupIcon("Generalization"),
-            ConfigLoader.getTabPropsOrientation());
+        super("Generalization", ConfigLoader.getTabPropsOrientation());
+        Class mclass = (Class)ModelFacade.GENERALIZATION;
 
-        addField(Translator.localize("label.name"),
-                getNameTextField());
-        addField(Translator.localize("label.discriminator"),
-                getDiscriminatorTextField());
-        addField(Translator.localize("label.namespace"),
-                getNamespaceSelector());
+        Class[] namesToWatch = {(Class)ModelFacade.STEREOTYPE, (Class)ModelFacade.NAMESPACE, (Class)ModelFacade.CLASSIFIER };
+        setNameEventListening(namesToWatch);
 
-        addSeparator();
+        addField(Translator.localize("UMLMenu", "label.name"), getNameTextField());
+        addField(Translator.localize("UMLMenu", "label.stereotype"), new UMLComboBoxNavigator(this, Translator.localize("UMLMenu", "tooltip.nav-stereo"), getStereotypeBox()));
+        addField("Discriminator:", new UMLTextField(this, new UMLTextProperty(mclass, "discriminator", "getDiscriminator", "setDiscriminator")));
+        addField(Translator.localize("UMLMenu", "label.namespace"), getNamespaceComboBox());
 
-        UMLGeneralizationParentListModel parentListModel =
-            new UMLGeneralizationParentListModel();
-        JList parentList = new UMLLinkedList(parentListModel);
-        parentList.setVisibleRowCount(1);
-        addField(Translator.localize("label.parent"), 
-                new JScrollPane(parentList));
+        addSeperator();
 
-        UMLGeneralizationChildListModel childListModel =
-            new UMLGeneralizationChildListModel();
-        JList childList = new UMLLinkedList(childListModel);
-        childList.setVisibleRowCount(1);
-        addField(Translator.localize("label.child"),
-                new JScrollPane(childList));
+        UMLModelElementListModel parentModel = new UMLReflectionListModel(this, "parent", true, "getParentElement", null, null, null);
+        parentModel.setUpperBound(1);
+        UMLList umlParentList = new UMLList(parentModel, true);
+        umlParentList.setVisibleRowCount(1);
+        addLinkField("Parent:", new JScrollPane(umlParentList, JScrollPane.VERTICAL_SCROLLBAR_NEVER, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER));
 
-        addField(Translator.localize("label.powertype"),
-                new UMLComboBox2(new UMLGeneralizationPowertypeComboBoxModel(),
-                        ActionSetGeneralizationPowertype.getInstance()));
+        UMLModelElementListModel childModel = new UMLReflectionListModel(this, "child", true, "getChild", null, null, null);
+        childModel.setUpperBound(1);
+        UMLList umlChildList = new UMLList(childModel, true);
+        umlChildList.setVisibleRowCount(1);
+        addLinkField("Child:", new JScrollPane(umlChildList, JScrollPane.VERTICAL_SCROLLBAR_NEVER, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER));
 
-        addAction(new ActionNavigateContainerElement());
-        addAction(new ActionNewStereotype());
-        addAction(getDeleteAction());
+        addField("Powertype:", new UMLComboBox2(new UMLGeneralizationPowertypeComboBoxModel(), ActionSetGeneralizationPowertype.SINGLETON));
+
+        new PropPanelButton(this, buttonPanel, _navUpIcon, Translator.localize("UMLMenu", "button.go-up"), "navigateUp", null);
+        new PropPanelButton(this, buttonPanel, _deleteIcon, localize("Delete generalization"), "removeElement", null);
     }
 
-    /**
-     * @see org.argouml.uml.ui.foundation.core.PropPanelModelElement#navigateUp()
-     */
+
+    private void updateButton() {
+        Object target = getTarget();
+        if (ModelFacade.isAGeneralization(target)) {
+            Object gen = /*(MGeneralization)*/ target;
+            Object parent = ModelFacade.getParent(gen);
+            Object child = ModelFacade.getChild(gen);
+            //
+            //   if one and only one of child and parent are set
+            //
+            if (parent != null ^ child != null) {
+                if (parent == null) parent = child;
+
+                if (ModelFacade.isAClass(parent)) {
+                    _newButton.setIcon(_classIcon);
+                    _newButton.setToolTipText("Add new class");
+                }
+                else {
+                    if (ModelFacade.isAInterface(parent)) {
+                        _newButton.setIcon(_interfaceIcon);
+                        _newButton.setToolTipText("Add new interface");
+                    }
+                    else {
+                        if (ModelFacade.isAPackage(parent)) {
+                            _newButton.setIcon(_packageIcon);
+                            _newButton.setToolTipText("Add new package");
+                        }
+                    }
+                }
+                _newButton.setEnabled(true);
+            }
+            else {
+                _newButton.setEnabled(false);
+            }
+        }
+    }
+
+
+    public Object getParentElement() {
+        Object parent = null;
+        Object target = getTarget();
+        if (ModelFacade.isAGeneralization(target)) {
+            parent = ModelFacade.getParent(target);
+        }
+        return parent;
+    }
+
+    public void setParentElement(Object/*MGeneralizableElement*/ parent) {
+        Object target = getTarget();
+        if (ModelFacade.isAGeneralization(target)) {
+            Object generalization = target;
+            Object child = ModelFacade.getChild(generalization);
+            Object oldParent = ModelFacade.getParent(generalization);
+            //
+            //   can't do immediate circular generalization
+            //
+            if (parent != child && parent != oldParent) {
+                ModelFacade.setParent(generalization, parent);
+            } else {
+                //
+                //   force a refresh of the panel
+		//                refresh();
+            }
+        }
+    }
+
+    public Object getChild() {
+        Object child = null;
+        Object target = getTarget();
+        if (ModelFacade.isAGeneralization(target)) {
+            child = ModelFacade.getChild(target);
+        }
+        return child;
+    }
+
+    public void setChild(Object/*MGeneralizableElement*/ child) {
+        Object target = getTarget();
+        if (ModelFacade.isAGeneralization(target)) {
+            Object gen = /*(MGeneralization)*/ target;
+            Object parent = ModelFacade.getParent(gen);
+            Object oldChild = ModelFacade.getChild(gen);
+            if (child != parent && child != oldChild) {
+                ModelFacade.setChild(gen, child);
+            }
+            else {
+		//                refresh();
+            }
+        }
+    }
+
+
+
+    public Object getPowertype() {
+        Object ptype = null;
+        Object target = getTarget();
+        if (ModelFacade.isAGeneralization(target)) {
+            ptype = ModelFacade.getPowertype(target);
+        }
+        return ptype;
+    }
+
+    public void setPowertype(Object/*MClassifier*/ ptype) {
+        Object target = getTarget();
+        if (ModelFacade.isAGeneralization(target)) {
+            Object gen = /*(MGeneralization)*/ target;
+            Object oldPtype = ModelFacade.getPowertype(gen);
+            if (ptype != oldPtype) {
+                ModelFacade.setPowertype(gen, ptype);
+            }
+        }
+    }
+
+
+    public void newModelElement() {
+        Object target = getTarget();
+        if (ModelFacade.isAGeneralization(target)) {
+            Object gen = /*(MGeneralization)*/ target;
+            Object parent = ModelFacade.getParent(gen);
+            Object child = ModelFacade.getChild(gen);
+            if (parent != null ^ child != null) {
+                Object known = parent;
+                if (known == null) known = child;
+                Object ns = ModelFacade.getNamespace(known);
+                if (ns != null) {
+                    try {
+                        Object newElement = /*(MGeneralizableElement)*/
+			    known.getClass().getConstructor(new Class[] {}).newInstance(new Object[] {});
+                        ModelFacade.addOwnedElement(ns, newElement);
+                        if (parent == null) {
+                            ModelFacade.setParent(gen, newElement);
+                        }
+                        else {
+                            ModelFacade.setChild(gen, newElement);
+                        }
+                        _newButton.setEnabled(false);
+                        TargetManager.getInstance().setTarget(newElement);
+                    }
+                    catch (Exception e) {
+                        cat.error(e.toString() + " in PropPanelGeneralization.newElement", e);
+                    }
+                }
+            }
+        }
+    }
+
     public void navigateUp() {
         Object target = getTarget();
-        if (Model.getFacade().isAModelElement(target)) {
-            Object namespace = Model.getFacade().getNamespace(target);
+        if (ModelFacade.isAModelElement(target)) {
+            Object namespace = ModelFacade.getNamespace(target);
             if (namespace != null) {
                 TargetManager.getInstance().setTarget(namespace);
             }
         }
     }
 
-    /**
-     * @return the discriminator textfield
-     */
-    protected JTextField getDiscriminatorTextField() {
-        if (discriminatorTextField == null) {
-            discriminatorTextField = new UMLTextField2(discriminatorDocument);
+    private boolean isAcceptible(Object/*MGeneralizableElement*/ fixed,
+				 Object/*MModelElement*/ candidate) {
+        boolean isCompatible = true;
+        Class[] keys = {
+	    (Class)ModelFacade.CLASS, 
+	    (Class)ModelFacade.DATATYPE,
+	    (Class)ModelFacade.INTERFACE, 
+	    (Class)ModelFacade.ACTOR, 
+	    (Class)ModelFacade.SIGNAL 
+	};
+        int i;
+        for (i = 0; i < keys.length; i++) {
+            if (keys[i].isInstance(fixed)) {
+                isCompatible = keys[i].isInstance(candidate);
+                break;
+            }
         }
-        return discriminatorTextField;
+        return isCompatible;
+    }
+
+    public boolean isAcceptiblePowertype(Object/*MModelElement*/ element) {
+        return ModelFacade.isAClassifier(element);
     }
 
 } /* end class PropPanelGeneralization */

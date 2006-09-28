@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,48 +22,42 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $Id$
 package org.argouml.ui.explorer.rules;
 
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
 
 /**
  * Go rule for the package perspective to show the comments belonging to some
- * modelelement. <p>
- * ModelElement->Comment
- *
- * @author jaap.branderhorst@xs4all.nl
+ * modelelement.
+ * @author jaap.branderhorst@xs4all.nl	
  * @since Jan 21, 2003
  */
 public class GoModelElementToComment extends AbstractPerspectiveRule {
 
-
     /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getChildren(java.lang.Object)
+     * @see org.argouml.ui.AbstractGoRule#getChildren(java.lang.Object)
      */
     public Collection getChildren(Object parent) {
-        if (Model.getFacade().isAModelElement(parent)) {
-            return Model.getFacade().getComments(parent);
+        if (ModelFacade.isAModelElement(parent)) {
+            return ModelFacade.getComments(parent);
         }
         return null;
     }
 
     /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getRuleName()
+     * @see org.argouml.ui.AbstractGoRule#getRuleName()
      */
     public String getRuleName() {
-        return Translator.localize ("misc.model-element.comment");
+        return "ModelElement->Comment";
     }
 
-    /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getDependencies(java.lang.Object)
-     */
     public Set getDependencies(Object parent) {
-        if (Model.getFacade().isAModelElement(parent)) {
+        if (ModelFacade.isAModelElement(parent)) {
 	    Set set = new HashSet();
 	    set.add(parent);
 	    return set;

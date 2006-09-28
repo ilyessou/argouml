@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,10 +22,15 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $header$
 package org.argouml.uml.ui.behavior.use_cases;
 
-import org.argouml.model.Model;
+import org.argouml.model.uml.behavioralelements.usecases.UseCasesFactory;
 import org.argouml.uml.ui.AbstractUMLModelElementListModel2Test;
+
+import ru.novosoft.uml.MBase;
+import ru.novosoft.uml.behavior.use_cases.MInclude;
+import ru.novosoft.uml.behavior.use_cases.MUseCase;
 
 /**
  * @since Oct 30, 2002
@@ -46,34 +51,34 @@ public class TestUMLUseCaseIncludeListModel
      * @see org.argouml.uml.ui.AbstractUMLModelElementListModel2Test#buildElement()
      */
     protected void buildElement() {
-        setElem(Model.getUseCasesFactory().createUseCase());
+        elem = UseCasesFactory.getFactory().createUseCase();
     }
 
     /**
-     * @see org.argouml.uml.ui.AbstractUMLModelElementListModel2Test#buildModel()
+     * @see org.argouml.uml.ui.AbstractUMLModelElementListModel2Test#buildModel(org.argouml.uml.ui.UMLUserInterfaceContainer)
      */
     protected void buildModel() {
-        setModel(new UMLUseCaseIncludeListModel());
+        model = new UMLUseCaseIncludeListModel();
     }
 
     /**
      * @see org.argouml.uml.ui.AbstractUMLModelElementListModel2Test#fillModel()
      */
-    protected Object[] fillModel() {
-        Object[] ext = new Object[10];
+    protected MBase[] fillModel() {
+        MInclude[] ext = new MInclude[10];
         for (int i = 0; i < 10; i++) {
-            ext[i] = Model.getUseCasesFactory().createInclude();
-            Model.getUseCasesHelper().addInclude(getElem(), ext[i]);
+            ext[i] = UseCasesFactory.getFactory().createInclude();
+            ((MUseCase) elem).addInclude(ext[i]);
         }
         return ext;
     }
 
     /**
-     * @see org.argouml.uml.ui.AbstractUMLModelElementListModel2Test#removeHalfModel(Object[])
+     * @see org.argouml.uml.ui.AbstractUMLModelElementListModel2Test#removeHalfModel(ru.novosoft.uml.MBase)
      */
-    protected void removeHalfModel(Object[] elements) {
+    protected void removeHalfModel(MBase[] elements) {
         for (int i = 0; i < 5; i++) {
-            Model.getUseCasesHelper().removeInclude(getElem(), elements[i]);
+            ((MUseCase) elem).removeInclude((MInclude) elements[i]);
         }
     }
 }

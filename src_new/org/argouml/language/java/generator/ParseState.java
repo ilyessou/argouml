@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -31,31 +31,23 @@
 package org.argouml.language.java.generator;
 
 import java.util.Vector;
-
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
 /**
    This class handles information during the replacement of code
    pieces. One parse state for each classifier handled.
 */
-public class ParseState {
-    /**
-     * The current namespace.
-     */
+public class ParseState
+{
+    /** The current namespace. */
     private Object namespace;
 
-    /**
-     * The inner classes not found yet.
-     */
+    /** The inner classes not found yet */
     private Vector newInnerClasses;
 
-    /**
-     * The features not found yet.
-     */
+    /** The features not found yet */
     private Vector newFeatures;
 
-    /**
-     * The current classifier.
-     */
+    /** The current classifier */
     private Object mClassifier;
 
     /**
@@ -64,13 +56,11 @@ public class ParseState {
      * @param handle is the namespace the classifier belongs to.
      */
     public ParseState(Object handle) {
-        if (Model.getFacade().isAClassifier(handle)) {
+        if (ModelFacade.isAClassifier(handle)) {
             this.mClassifier = handle;
             namespace = handle;
-            newFeatures =
-                new Vector(Model.getFacade().getFeatures(mClassifier));
-            newInnerClasses =
-                new Vector(Model.getFacade().getOwnedElements(mClassifier));
+            newFeatures = new Vector(ModelFacade.getFeatures(mClassifier));
+            newInnerClasses = new Vector(ModelFacade.getOwnedElements(mClassifier));
         } else {
             this.mClassifier = null;
             namespace = handle;
@@ -85,12 +75,13 @@ public class ParseState {
        @param name The name of the classifier.
        @return The new classifier.
      */
-    public Object newClassifier(String name) {
-	Object mc = Model.getFacade().lookupIn(namespace, name);
-	if (mc != null) {
-	    newInnerClasses.remove(mc);
+    public Object newClassifier(String name)
+    {
+	Object mClassifier = ModelFacade.lookupIn(namespace, name);
+	if (mClassifier != null) {
+	    newInnerClasses.remove(mClassifier);
 	}
-	return mc;
+	return mClassifier;
     }
 
     /**
@@ -104,52 +95,44 @@ public class ParseState {
     }
 
     /**
-     * Get the current classifier.
-     *
-     * @return the current classifier
+       Get the current classifier.
      */
     public Object getClassifier() {
 	return mClassifier;
     }
 
     /**
-     * Get all features not in the source.
-     *
-     * @return all features not in the source
+       Get all features not in the source.
      */
-    public Vector getNewFeatures() {
+    public Vector getNewFeatures()
+    {
 	return new Vector(newFeatures);
     }
 
     /**
-     * Get all inner classes not in the source.
-     *
-     * @return all inner classes not in the source
+       Get all inner classes not in the source.
      */
-    public Vector getNewInnerClasses() {
+    public Vector getNewInnerClasses()
+    {
 	return new Vector(newInnerClasses);
     }
 
     /**
-     * Get the current namespace.
-     *
-     * @return the current namespace
+       Get the current namespace.
      */
     public Object getNamespace() {
 	return namespace;
     }
 
     /**
-     * Get the association ends.
-     *
-     * @return the association ends
+       Get the association ends.
      */
-    public Vector getAssociationEnds() {
+    public Vector getAssociationEnds()
+    {
         Vector result = new Vector();
-        if (mClassifier == null) {
+        if (mClassifier == null)
             return result;
-        }
-        result.addAll(Model.getFacade().getAssociationEnds(mClassifier));
+        result.addAll(ModelFacade.getAssociationEnds(mClassifier));
         return result;
     }
 }

@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 2003-2006 The Regents of the University of California. All
+// Copyright (c) 2003-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -25,47 +25,42 @@
 package org.argouml.uml.util.namespace;
 
 import java.util.Iterator;
-import java.util.Stack;
-
-import org.apache.log4j.Logger;
 
 /**
  * A StringNamespace is a string based namespace (StringNamespaceElement)
  * object. It faciliates creation of these objects via a number of helper
  * methods.
- *
+ * 
  * @author mkl
+ *  
  */
 public class StringNamespace implements Namespace, Cloneable {
 
-    private static final Logger LOG = Logger.getLogger(StringNamespace.class);
-    
-    private Stack ns = new Stack();
+    private java.util.Stack ns = new java.util.Stack();
 
     private String token = JAVA_NS_TOKEN;
 
     /**
-     * Constructor.
-     *
-     * The empty namespace with java token by default.
+     * empty namespace with java token by default.
+     *  
      */
     public StringNamespace() {
     }
 
     /**
-     * empty namespace with given default token.
-     *
-     * @param theToken
+     * empty namespace with given default token
+     * 
+     * @param token
      *            the scope seperator to use
      */
-    public StringNamespace(String theToken) {
+    public StringNamespace(String token) {
         this();
-        this.token = theToken;
+        this.token = token;
     }
 
     /**
      * construct a namespace from an array of strings with default scope token.
-     *
+     * 
      * @param elements
      *            an array of strings which represent the namespace.
      */
@@ -75,30 +70,29 @@ public class StringNamespace implements Namespace, Cloneable {
 
     /**
      * construct a namespace from strings with given scope token.
-     *
+     * 
      * @param elements
      *            an array of strings which represent the namespace.
-     * @param theToken
+     * @param token
      *            scope token to use
      */
-    public StringNamespace(String[] elements, String theToken) {
-        this(theToken);
+    public StringNamespace(String[] elements, String token) {
+        this(token);
         for (int i = 0; i < elements.length; i++) {
             pushNamespaceElement(new StringNamespaceElement(elements[i]));
         }
     }
 
     /**
-     * Construct a namespace from NamespaceElements with given scope token.
-     *
+     * construct a namespace from NamespaceElements with given scope token
+     * 
      * @param elements
      *            array of NamespaceElements
-     * @param theToken
+     * @param token
      *            scope token
      */
-    public StringNamespace(NamespaceElement[] elements, String theToken) {
-        this(theToken);
-
+    public StringNamespace(NamespaceElement[] elements, String token) {
+        this(token);
         for (int i = 0; i < elements.length; i++) {
             pushNamespaceElement(new StringNamespaceElement(elements[i]
                     .toString()));
@@ -106,8 +100,8 @@ public class StringNamespace implements Namespace, Cloneable {
     }
 
     /**
-     * Construct a namespace from NamespaceElements with default scope token.
-     *
+     * construct a namespace from NamespaceElements with default scope token
+     * 
      * @param elements
      *            array of NamespaceElements
      */
@@ -116,7 +110,7 @@ public class StringNamespace implements Namespace, Cloneable {
     }
 
     /**
-     * @see Namespace#pushNamespaceElement(NamespaceElement)
+     * @see org.argouml.uml.util.namespace.Namespace#addNamespaceElement(org.argouml.model.util.namespace.NamespaceElement)
      */
     public void pushNamespaceElement(NamespaceElement element) {
         ns.push(element);
@@ -130,10 +124,7 @@ public class StringNamespace implements Namespace, Cloneable {
     }
 
     /**
-     * Store the next namespace element.
-     *
      * @see org.argouml.uml.util.namespace.Namespace#popNamespaceElement()
-     * @param element The element to store.
      */
     public void pushNamespaceElement(String element) {
         ns.push(new StringNamespaceElement(element));
@@ -154,7 +145,7 @@ public class StringNamespace implements Namespace, Cloneable {
         try {
             result = (StringNamespace) this.clone();
         } catch (CloneNotSupportedException e) {
-            LOG.debug(e);
+            e.printStackTrace();
             return null;
         }
         result.popNamespaceElement();
@@ -162,8 +153,7 @@ public class StringNamespace implements Namespace, Cloneable {
     }
 
     /**
-     * @see org.argouml.uml.util.namespace.Namespace#getCommonNamespace(
-     *         org.argouml.uml.util.namespace.Namespace)
+     * @see org.argouml.uml.util.namespace.Namespace#getCommonNamespace(org.argouml.model.util.namespace.Namespace)
      */
     public Namespace getCommonNamespace(Namespace namespace) {
         Iterator i = iterator();
@@ -173,11 +163,10 @@ public class StringNamespace implements Namespace, Cloneable {
         for (; i.hasNext() && j.hasNext();) {
             NamespaceElement elem1 = (NamespaceElement) i.next();
             NamespaceElement elem2 = (NamespaceElement) j.next();
-            if (elem1.toString().equals(elem2.toString())) {
-                result.pushNamespaceElement(elem1);
-            }
+            if (elem1.toString().equals(elem2.toString()))
+                    result.pushNamespaceElement(elem1);
         }
-
+        ;
         return result;
     }
 
@@ -198,13 +187,13 @@ public class StringNamespace implements Namespace, Cloneable {
     /**
      * @see org.argouml.uml.util.namespace.Namespace#setDefaultScopeToken(java.lang.String)
      */
-    public void setDefaultScopeToken(String theToken) {
-        this.token = theToken;
+    public void setDefaultScopeToken(String token) {
+        this.token = token;
     }
 
     /**
      * parse a fully qualified namespace to create a Namespace object.
-     *
+     * 
      * @param fqn
      *            string representation of namespace
      * @param token
@@ -221,15 +210,13 @@ public class StringNamespace implements Namespace, Cloneable {
             myFqn = myFqn.substring(i + token.length());
             i = myFqn.indexOf(token);
         }
-        if (myFqn.length() > 0) {
-            sns.pushNamespaceElement(myFqn);
-        }
-        return sns;
+        if (myFqn.length() > 0) sns.pushNamespaceElement(myFqn);
+        return (Namespace) sns;
     }
 
     /**
      * parse the name of a (java) class.
-     *
+     * 
      * @param c
      *            the class
      * @return the namespace object
@@ -239,26 +226,16 @@ public class StringNamespace implements Namespace, Cloneable {
     }
 
     /**
-     * @see java.lang.Object#hashCode()
-     */
-    public int hashCode() {
-        return toString(JAVA_NS_TOKEN).hashCode();
-    }
-
-    /**
-     * Two namespaces are equal when they are namespaces and have the same
-     * string representation.
-     *
-     * @param namespace
+     * two namespaces are equal when they are namespaces and have the same
+     * string representation
+     * 
+     * @param ns
      *            the namespace to compare with
-     * @return true if equal
-     *
-     * @see java.lang.Object#equals(java.lang.Object)
      */
-    public boolean equals(Object namespace) {
-        if (namespace instanceof Namespace) {
+    public boolean equals(Object ns) {
+        if (ns instanceof Namespace) {
             String ns1 = this.toString(JAVA_NS_TOKEN);
-            String ns2 = ((Namespace) namespace).toString(JAVA_NS_TOKEN);
+            String ns2 = ((Namespace) ns).toString(JAVA_NS_TOKEN);
             return ns1.equals(ns2);
         }
         return false;
@@ -267,22 +244,19 @@ public class StringNamespace implements Namespace, Cloneable {
     /**
      * @see org.argouml.uml.util.namespace.Namespace#toString(java.lang.String)
      */
-    public String toString(String theToken) {
+    public String toString(String token) {
         StringBuffer result = new StringBuffer();
         Iterator i = ns.iterator();
         while (i.hasNext()) {
-            result.append(i.next());
-            if (i.hasNext()) {
-                result.append(theToken);
-            }
+            result.append((NamespaceElement) i.next());
+            if (i.hasNext()) result.append(token);
         }
         return result.toString();
     }
 
     /**
-     * Create a string representation using the default scope token.
-     *
-     * @see java.lang.Object#toString()
+     * create a string representation using the default scope token.
+     *  
      */
     public String toString() {
         return toString(token);

@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,8 +24,13 @@
 
 package org.argouml.uml.ui.behavior.collaborations;
 
-import org.argouml.model.Model;
+import org.argouml.model.uml.behavioralelements.collaborations.CollaborationsFactory;
 import org.argouml.uml.ui.AbstractUMLModelElementListModel2Test;
+
+import ru.novosoft.uml.MBase;
+import ru.novosoft.uml.behavior.collaborations.MAssociationEndRole;
+import ru.novosoft.uml.behavior.collaborations.MAssociationRole;
+import ru.novosoft.uml.foundation.core.MAssociationEnd;
 
 /**
  * @since Oct 27, 2002
@@ -47,35 +52,36 @@ public class TestUMLAssociationRoleAssociationEndRoleListModel
      * @see org.argouml.uml.ui.AbstractUMLModelElementListModel2Test#buildElement()
      */
     protected void buildElement() {
-        setElem(Model.getCollaborationsFactory().createAssociationRole());
+        elem = CollaborationsFactory.getFactory().createAssociationRole();
     }
 
     /**
-     * @see org.argouml.uml.ui.AbstractUMLModelElementListModel2Test#buildModel()
+     * @see org.argouml.uml.ui.AbstractUMLModelElementListModel2Test#buildModel(org.argouml.uml.ui.UMLUserInterfaceContainer)
      */
     protected void buildModel() {
-        setModel(new UMLAssociationRoleAssociationEndRoleListModel());
+        model = new UMLAssociationRoleAssociationEndRoleListModel();
     }
 
     /**
      * @see org.argouml.uml.ui.AbstractUMLModelElementListModel2Test#fillModel()
      */
-    protected Object[] fillModel() {
-        Object[] ends = new Object[10];
+    protected MBase[] fillModel() {
+        MAssociationEndRole[] ends = new MAssociationEndRole[10];
         for (int i = 0; i < ends.length; i++) {
             ends[i] =
-		Model.getCollaborationsFactory().createAssociationEndRole();
-            Model.getCoreHelper().setAssociation(ends[i], getElem());
+		CollaborationsFactory.getFactory().createAssociationEndRole();
+            ends[i].setAssociation((MAssociationRole) elem);
         }
         return ends;
     }
 
     /**
-     * @see org.argouml.uml.ui.AbstractUMLModelElementListModel2Test#removeHalfModel(Object[])
+     * @see org.argouml.uml.ui.AbstractUMLModelElementListModel2Test#removeHalfModel(ru.novosoft.uml.MBase)
      */
-    protected void removeHalfModel(Object[] elements) {
+    protected void removeHalfModel(MBase[] elements) {
         for (int i = 0; i < 5; i++) {
-            Model.getCoreHelper().removeConnection(getElem(), elements[i]);
+            ((MAssociationRole) elem)
+		.removeConnection((MAssociationEnd) elements[i]);
         }
     }
 

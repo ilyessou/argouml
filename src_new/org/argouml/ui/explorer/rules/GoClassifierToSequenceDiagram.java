@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,6 +22,8 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// Original author: jaap.branderhorst@xs4all.nl
+
 package org.argouml.ui.explorer.rules;
 
 import java.util.ArrayList;
@@ -30,44 +32,40 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import org.argouml.i18n.Translator;
 import org.argouml.kernel.Project;
 import org.argouml.kernel.ProjectManager;
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
 import org.argouml.ui.ArgoDiagram;
 import org.argouml.uml.diagram.sequence.SequenceDiagramGraphModel;
 import org.argouml.uml.diagram.sequence.ui.UMLSequenceDiagram;
 
 /**
- * Go rule from represented operation to sequence diagram representing it.
- *
- * @author Jaap Branderhorst
+ * Go rule from represented operation to sequence diagram representing it
+ * @author : jaap.branderhorst@xs4all.nl
  */
 public class GoClassifierToSequenceDiagram extends AbstractPerspectiveRule {
 
     /**
      * @see org.argouml.ui.explorer.rules.PerspectiveRule#getRuleName()
      */
-    public String getRuleName() {
-	return Translator.localize ("misc.classifier.sequence-diagram");
+    public String getRuleName() {        
+	return "Classifier->Sequence diagram";
     }
 
     /**
      * @see org.argouml.ui.explorer.rules.PerspectiveRule#getChildren(java.lang.Object)
      */
     public Collection getChildren(Object parent) {
-	if (Model.getFacade().isAClassifier(parent)) {
-	    Collection col = Model.getFacade().getCollaborations(parent);
+	if (org.argouml.model.ModelFacade.isAClassifier(parent)) {
+	    Collection col = ModelFacade.getCollaborations(parent);
 	    List ret = new ArrayList();
 	    Project p = ProjectManager.getManager().getCurrentProject();
 	    Iterator it = p.getDiagrams().iterator();
 
 	    while (it.hasNext()) {
 		ArgoDiagram diagram = (ArgoDiagram) it.next();
-		if (diagram instanceof UMLSequenceDiagram
-		    && col.contains(((SequenceDiagramGraphModel)
-		            ((UMLSequenceDiagram) diagram).getGraphModel())
-		                            .getCollaboration())) {
+		if (diagram instanceof UMLSequenceDiagram &&
+		    col.contains(((SequenceDiagramGraphModel)((UMLSequenceDiagram)diagram).getGraphModel()).getCollaboration())) {
 		    ret.add(diagram);
 		}
 	    }
@@ -78,9 +76,6 @@ public class GoClassifierToSequenceDiagram extends AbstractPerspectiveRule {
 	return null;
     }
 
-    /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getDependencies(java.lang.Object)
-     */
     public Set getDependencies(Object parent) {
         // TODO: What?
 	return null;

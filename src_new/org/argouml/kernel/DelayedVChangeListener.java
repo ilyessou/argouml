@@ -24,7 +24,7 @@
 
 package org.argouml.kernel;
 
-import java.beans.PropertyChangeEvent;
+import java.beans.*;
 
 /**
  * This appears to be a gui specific class, therefore it does not belong in
@@ -32,9 +32,6 @@ import java.beans.PropertyChangeEvent;
  */
 public interface DelayedVChangeListener {
 
-    /**
-     * @param pce the event
-     */
     public void delayedVetoableChange(PropertyChangeEvent pce);
 
 } /* end interface DelayedVChangeListener */

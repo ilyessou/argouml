@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2003 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,33 +24,30 @@
 
 package org.argouml.uml.ui;
 
-import org.apache.log4j.Logger;
 import org.argouml.kernel.ProjectManager;
-import org.argouml.model.Model;
-import org.argouml.uml.diagram.DiagramFactory;
+import org.argouml.model.ModelFacade;
 import org.argouml.uml.diagram.deployment.ui.UMLDeploymentDiagram;
 import org.argouml.uml.diagram.ui.UMLDiagram;
+import org.apache.log4j.Logger;
 
-/**
- * Action to trigger creation of a deployment diagram.
+/** Action to trigger creation of a deployment diagram.
+ *  @stereotype singleton
  */
 public class ActionDeploymentDiagram extends ActionAddDiagram {
 
     ////////////////////////////////////////////////////////////////
     // static variables
-    /**
-     * Logger.
-     */
-    private static final Logger LOG =
+
+    public static ActionDeploymentDiagram SINGLETON =
+        new ActionDeploymentDiagram();
+    
+    private static final Logger LOG = 
         Logger.getLogger(ActionDeploymentDiagram.class);
 
     ////////////////////////////////////////////////////////////////
     // constructors
 
-    /**
-     * Constructor.
-     */
-    public ActionDeploymentDiagram() {
+    private ActionDeploymentDiagram() {
         super("action.deployment-diagram");
     }
 
@@ -60,52 +57,39 @@ public class ActionDeploymentDiagram extends ActionAddDiagram {
     /**
      * @see org.argouml.uml.ui.ActionAddDiagram#createDiagram(Object)
      */
-    public UMLDiagram createDiagram(Object notUsedHandle) {
+    public UMLDiagram createDiagram(Object handle) {
         // a deployment diagram shows something about the whole model
         // according to the uml spec
-	Object handle =
-            ProjectManager.getManager().getCurrentProject().getRoot();
-        if (!Model.getFacade().isANamespace(handle)) {
+	handle = ProjectManager.getManager().getCurrentProject().getRoot();   
+        if (!ModelFacade.isANamespace(handle)) {
             LOG.error("No namespace as argument");
             LOG.error(handle);
             throw new IllegalArgumentException(
 					       "The argument " + handle
 					       + "is not a namespace.");
         }
-        return (UMLDiagram) DiagramFactory.getInstance().createDiagram(
-                UMLDeploymentDiagram.class,
-                handle,
-                null);
+        return new UMLDeploymentDiagram(handle);
     }
 
     /**
      * @see org.argouml.uml.ui.ActionAddDiagram#isValidNamespace(Object)
      */
-    public boolean isValidNamespace(Object notUsedHandle) {
+    public boolean isValidNamespace(Object handle) {
         // a deployment diagram shows something about the whole model
         // according to the uml spec
-        Object handle =
-            ProjectManager.getManager().getCurrentProject().getRoot();
-        if (!Model.getFacade().isANamespace(handle)) {
+        handle = ProjectManager.getManager().getCurrentProject().getRoot(); 
+        if (!ModelFacade.isANamespace(handle)) {
             LOG.error("No namespace as argument");
             LOG.error(handle);
             throw new IllegalArgumentException(
 					       "The argument " + handle
 					       + "is not a namespace.");
         }
+        Object/*MNamespace*/ ns = handle;
         // may only occur as child of the model or in a package
-        if (handle
-                == ProjectManager.getManager().getCurrentProject().getModel()) {
-            return true;
-        }
-        if (Model.getFacade().isAPackage(handle)) {
-            return true;
-        }
-        return false;
+        return (
+		ns == ProjectManager.getManager().getCurrentProject().getModel()
+                || org.argouml.model.ModelFacade.isAPackage(ns));
     }
 
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = 9027235104963895167L;
 } /* end class ActionDeploymentDiagram */

@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2003 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,23 +22,26 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// Original Author: jrobbins@ics.uci.edu
+
 package org.argouml.pattern.cognitive.critics;
 
 import java.util.Iterator;
 
 import org.argouml.cognitive.Designer;
-import org.argouml.cognitive.ToDoItem;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
 import org.argouml.uml.cognitive.critics.CrUML;
+import org.argouml.cognitive.ToDoItem;
+// Use Model through ModelFacade
+import org.argouml.model.ModelFacade;
 
 /**
  * A critic to detect whether a class violates the conditions required for
- * using a Singleton Stereotype.<p>
+ * using a Singleton Stereotype.
  *
+ * <p>
  * This stereotype is used to indicate a class which only ever has a single
  * instance. The critic will trigger whenever a class has stereotype
- * &laquo;Singleton&raquo; (or &laquo;singleton&raquo;), but does not
+ * &laquo;Singleton&raquo; (or &laquo;singleton&raquo;), but does not 
  * meet the requirements of a Singleton class. These are:
  *
  * <ol>
@@ -48,15 +51,13 @@ import org.argouml.uml.cognitive.critics.CrUML;
  *   <li>At least one constructor to override the default constructor.
  * </ol>
  *
+ * <p>
  * This version includes an implementation for the first test above!
  *
- * @see <a
- * href="http://argouml.tigris.org/documentation/snapshots/manual/argouml.html/
- * #s2.ref.critics_singleton_violated">
+ * <p>
+ * @see <a href="http://argouml.tigris.org/documentation/snapshots/manual/argouml.html/#s2.ref.critics_singleton_violated">
  * ArgoUML User Manual: Singleton Violated
  * </a>
- *
- * @author jrobbins
  */
 public class CrSingletonViolatedMissingStaticAttr extends CrUML {
 
@@ -71,8 +72,9 @@ public class CrSingletonViolatedMissingStaticAttr extends CrUML {
      */
 
     public CrSingletonViolatedMissingStaticAttr() {
-        setupHeadAndDesc();
-        addSupportedDecision(UMLDecision.PATTERNS);
+        setResource("CrSingletonViolatedMissingStaticAttr");
+
+        addSupportedDecision(CrUML.decPATTERNS);
         setPriority(ToDoItem.MED_PRIORITY);
 
         // These may not actually make any difference at present (the code
@@ -84,16 +86,18 @@ public class CrSingletonViolatedMissingStaticAttr extends CrUML {
 
 
     /**
-     * The trigger for the critic.<p>
+     * The trigger for the critic.
      *
+     * <p>
      * First check we are actually stereotyped "Singleton" (or we will
-     * accept "singleton").<p>
+     * accept "singleton").
      *
+     * <p>
      * Then check for a static attribute with the same type as the Singleton
      * class that will hold the instance of the Singleton class when its
      * created.<p>
      *
-     * @param  dm    the {@link java.lang.Object Object} to be checked
+     * @param  dm    the {@link java.lang.Object Object} to be checked 
      *               against the critic.
      *
      * @param  dsgr  the {@link org.argouml.cognitive.Designer Designer}
@@ -101,31 +105,29 @@ public class CrSingletonViolatedMissingStaticAttr extends CrUML {
      *               development of ArgoUML.
      *
      * @return       {@link #PROBLEM_FOUND PROBLEM_FOUND} if the critic is
-     *               triggered, otherwise {@link #NO_PROBLEM NO_PROBLEM}.
+     *               triggered, otherwise {@link #NO_PROBLEM NO_PROBLEM}.  
      */
     public boolean predicate2(Object dm, Designer dsgr) {
         // Only look at classes
-        if (!(Model.getFacade().isAClass(dm))) {
+        if (!(ModelFacade.isAClass(dm))) {
             return NO_PROBLEM;
         }
 
         // We only look at singletons
-        if (!(Model.getFacade().isSingleton(dm))) {
+        if (!(ModelFacade.isSingleton(dm))) {
             return NO_PROBLEM;
         }
 
-	Iterator attrs = Model.getFacade().getAttributes(dm).iterator();
+	Iterator attrs = ModelFacade.getAttributes(dm).iterator();
 
 	while (attrs.hasNext()) {
 	    Object attr = attrs.next();
 
-	    if (!(Model.getFacade().isClassifierScope(attr))) {
-	        continue;
-	    }
+	    if (!(ModelFacade.isClassifierScope(attr)))
+		continue;
 
-	    if (Model.getFacade().getType(attr) == dm) {
-	        return NO_PROBLEM;
-	    }
+	    if (ModelFacade.getType(attr) == dm)
+		return NO_PROBLEM;
 	}
 
 	// Found no such attribute

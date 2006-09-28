@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 2003-2006 The Regents of the University of California. All
+// Copyright (c) 2003 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -27,39 +27,54 @@ package org.argouml.uml.diagram.ui;
 import java.awt.event.ActionEvent;
 import java.util.Iterator;
 
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
 import org.argouml.uml.diagram.static_structure.ui.UMLClassDiagram;
 import org.argouml.uml.reveng.DiagramInterface;
+import org.argouml.uml.ui.UMLAction;
+
 import org.tigris.gef.base.Globals;
-import org.tigris.gef.undo.UndoableAction;
 
 /**
- * ActionAddAllClassesFromModel enables pasting of an existing node into a
+ * ActionAddAllClassesFromModel enables pasting of an existing node into a 
  * Diagram.
  *
  * @author Timothy M. Lebo (Oct 2003)
  * Smart Information Flow Technologies.
  */
-public class ActionAddAllClassesFromModel extends UndoableAction {
+public class ActionAddAllClassesFromModel extends UMLAction {
 
-    private Object object;
+    // Instance Variables
+    protected String _tabName;
+    protected Object _object;
 
     /**
      * Constructor
-     *
-     * @param name the name of the action
-     * @param o the Diagram
      */
-    public ActionAddAllClassesFromModel(String name, Object o) {
-        super(name);
-        object = o;
+    public ActionAddAllClassesFromModel(String tabName) {
+        super(tabName, NO_ICON);
+        _tabName = tabName;
     }
 
     /**
-     * @see javax.swing.Action#isEnabled()
+     * Constructor
      */
-    public boolean isEnabled() {
-	return object instanceof UMLClassDiagram;
+    public ActionAddAllClassesFromModel(String tabName, Object o) {
+        super(tabName, NO_ICON);
+        _tabName = tabName;
+        _object = o;
+    }
+
+    /**
+     * shouldBeEnabled
+     *
+     * Returns true if this popup menu item should be enabled, false
+     * if it should be grayed out.
+     *
+     * @author Timothy M. Lebo (Oct 2003)
+     * Smart Information Flow Technologies.
+     */
+    public boolean shouldBeEnabled() {	
+	return _object instanceof UMLClassDiagram;
     }
 
     /**
@@ -75,22 +90,21 @@ public class ActionAddAllClassesFromModel extends UndoableAction {
      * Smart Information Flow Technologies.
      */
     public void actionPerformed(ActionEvent ae) {
-        super.actionPerformed(ae);
-	if (object instanceof UMLClassDiagram) {
+
+	if ( _object instanceof UMLClassDiagram ) {
 
 	    // Use DiagramInterface to add classes to diagram
 	    DiagramInterface diagram =
-		new DiagramInterface(Globals.curEditor());
-	    diagram.setCurrentDiagram((UMLClassDiagram) object);
+		new DiagramInterface( Globals.curEditor() );
+	    diagram.setCurrentDiagram( (UMLClassDiagram) _object );
 
-	    Object namespace = ((UMLClassDiagram) object).getNamespace();
+	    Object namespace = ((UMLClassDiagram) _object).getNamespace();
 	    Iterator elements =
-		Model.getFacade().getOwnedElements(namespace).iterator();
-	    while (elements.hasNext()) {
+		ModelFacade.getOwnedElements( namespace ).iterator();
+	    while ( elements.hasNext() ) {
 		Object element = elements.next();
-		if (Model.getFacade().isAClass(element)
-		    && !Model.getFacade().isAAssociationClass(element)) {
-		    diagram.addClass(element, false);
+		if ( ModelFacade.isAClass(element) ) {
+		    diagram.addClass( element , false );
 		}
 	    }
 	}

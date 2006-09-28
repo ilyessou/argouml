@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -26,13 +26,12 @@ package org.argouml.uml.cognitive.critics;
 
 import java.util.Iterator;
 import java.util.Vector;
-
 import javax.swing.Icon;
-
 import org.argouml.cognitive.Designer;
 import org.argouml.cognitive.critics.Critic;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
+import org.argouml.model.ModelFacade;
+
+// Use Model through ModelFacade
 
 /**
  * A critic to detect when a class has operations with two matching
@@ -48,9 +47,7 @@ import org.argouml.uml.cognitive.UMLDecision;
  * classes have a lot of operations. See the {@link #predicate2}
  * method for possible solutions.<p>
  *
- * See <a href=
- * "http://argouml.tigris.org/documentation/printablehtml/manual/argouml.html/
- * #s2.ref.oper_name_conflict">
+ * @see <a href="http://argouml.tigris.org/documentation/printablehtml/manual/argouml.html/#s2.ref.oper_name_conflict">
  * ArgoUML User Manual: Change Names or Signatures in &lt;artifact&gt;
  * </a>
  * @author jrobbins@ics.uci.edu
@@ -68,9 +65,11 @@ public class CrOperNameConflict extends CrUML {
      * and feature_name".<p>
      */
     public CrOperNameConflict() {
-        setupHeadAndDesc();
-        addSupportedDecision(UMLDecision.METHODS);
-        addSupportedDecision(UMLDecision.NAMING);
+
+        setResource("CrOperNameConflict");
+
+        addSupportedDecision(CrUML.decMETHODS);
+        addSupportedDecision(CrUML.decNAMING);
 
         setKnowledgeTypes(Critic.KT_SYNTAX);
 
@@ -114,11 +113,11 @@ public class CrOperNameConflict extends CrUML {
 
         // Only do this for classifiers
 
-        if (!(Model.getFacade().isAClassifier(dm))) {
+        if (!(ModelFacade.isAClassifier(dm))) {
             return NO_PROBLEM;
         }
 
-	Iterator ops = Model.getFacade().getOperations(dm).iterator();
+	Iterator enum = ModelFacade.getOperations(dm).iterator();
 
         // Get all the features (giving up if there are none). Then loop
         // through finding all operations. Each time we find one, we compare
@@ -127,9 +126,9 @@ public class CrOperNameConflict extends CrUML {
 
         Vector operSeen = new Vector();
 
-        while (ops.hasNext()) {
+        while (enum.hasNext()) {
 
-	    Object op = ops.next();
+	    Object op = enum.next();
 
             // Compare against all earlier operations. If there's a match we've
             // found the problem
@@ -166,7 +165,7 @@ public class CrOperNameConflict extends CrUML {
      * @return       The {@link javax.swing.Icon Icon} to use.
      */
     public Icon getClarifier() {
-        return ClOperationCompartment.getTheInstance();
+        return ClOperationCompartment.TheInstance;
     }
 
 
@@ -203,11 +202,11 @@ public class CrOperNameConflict extends CrUML {
 
 	// Check that the names match.
 
-	String name1 = Model.getFacade().getName(op1);
+	String name1 = ModelFacade.getName(op1);
 	if (name1 == null)
 	    return false;
 
-	String name2 = Model.getFacade().getName(op2);
+	String name2 = ModelFacade.getName(op2);
 	if (name2 == null)
 	    return false;
 
@@ -216,24 +215,24 @@ public class CrOperNameConflict extends CrUML {
 
 	// Check that the parameter lists match.
 
-	Iterator params1 = Model.getFacade().getParameters(op1).iterator();
-	Iterator params2 = Model.getFacade().getParameters(op2).iterator();
+	Iterator params1 = ModelFacade.getParameters(op1).iterator();
+	Iterator params2 = ModelFacade.getParameters(op2).iterator();
 
-	while (params1.hasNext()
+	while (params1.hasNext() 
 	       && params2.hasNext()) {
 
 	    // Get the next non-return parameter. Null if non left.
 	    Object p1 = null;
 	    while (p1 == null && params1.hasNext()) {
 		p1 = params1.next();
-		if (Model.getFacade().isReturn(p1))
+		if (ModelFacade.isReturn(p1))
 		    p1 = null;
 	    }
 
 	    Object p2 = null;
 	    while (p2 == null && params1.hasNext()) {
 		p2 = params1.next();
-		if (Model.getFacade().isReturn(p2))
+		if (ModelFacade.isReturn(p2))
 		    p2 = null;
 	    }
 
@@ -248,11 +247,11 @@ public class CrOperNameConflict extends CrUML {
 
 	    // Compare the type of the parameters. If any of the types is
 	    // null, then we have a match.
-	    Object p1type = Model.getFacade().getType(p1);
+	    Object p1type = ModelFacade.getType(p1);
 	    if (p1type == null)
 		continue;
 
-	    Object p2type = Model.getFacade().getType(p2);
+	    Object p2type = ModelFacade.getType(p2);
 	    if (p2type == null)
 		continue;
 
@@ -267,7 +266,7 @@ public class CrOperNameConflict extends CrUML {
 	    // Both lists have the same length.
 	    return true;
 	}
-
+	    
 	return false;
     }
 

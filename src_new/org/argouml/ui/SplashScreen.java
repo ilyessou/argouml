@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -27,45 +27,35 @@ package org.argouml.ui;
 import java.awt.BorderLayout;
 import java.awt.Cursor;
 import java.awt.Dimension;
-import java.awt.Graphics;
-import java.awt.GraphicsEnvironment;
-import java.awt.Point;
-
+import java.awt.Toolkit;
+import java.util.Vector;
 import javax.swing.JPanel;
 import javax.swing.JWindow;
 import javax.swing.border.EtchedBorder;
-
 import org.tigris.gef.ui.IStatusBar;
 
-/**
- * The splash screen.
- *
- * TODO: JWindow? I don't want a frame or close widgets.
- *
- */
+// JWindow? I don't want a frame or close widgets
 public class SplashScreen extends JWindow implements IStatusBar {
 
-    private StatusBar statusBar = new StatusBar();
+    protected StatusBar _statusBar = new StatusBar();
+
+    private static SplashScreen instance;
+    // = new SplashScreen("Loading ArgoUML...", "Splash");
+
+    private static boolean _doSplash;
+    public static synchronized SplashScreen getInstance() {
+        if (!_doSplash) return null;
+        if (instance == null) {
+            instance = new SplashScreen("Loading ArgoUML...", "Splash");
+        }
+        return instance;
+    }
     
     /**
-     * Flag indicating that the splash screen has been painted.
+     * @deprecated 0.15 will become private in release 0.16.
+     * Use SplashScreen.getInstance() instead
      */
-    private boolean paintCalled = false;
-
-    /**
-     * The constructor.
-     */
-    public SplashScreen() {
-        this("Loading ArgoUML...", "Splash");
-    }
-
-    /**
-     * The constructor.
-     *
-     * @param title the title of the window
-     * @param iconName the icon for the window
-     */
-    private SplashScreen(String title, String iconName) {
+    public SplashScreen(String title, String iconName) {
 	super();
 
 	setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
@@ -75,16 +65,15 @@ public class SplashScreen extends JWindow implements IStatusBar {
 	if (panel.getImage() != null) {
 	    int imgWidth = panel.getImage().getIconWidth();
 	    int imgHeight = panel.getImage().getIconHeight();
-            Point scrCenter = GraphicsEnvironment.getLocalGraphicsEnvironment()
-                    .getCenterPoint();
-	    setLocation(scrCenter.x - imgWidth / 2,
-			scrCenter.y - imgHeight / 2);
+	    Dimension scrSize = Toolkit.getDefaultToolkit().getScreenSize();
+	    setLocation(scrSize.width / 2 - imgWidth / 2,
+			scrSize.height / 2 - imgHeight / 2);
 	}
 
 	JPanel splash = new JPanel(new BorderLayout());
 	splash.setBorder(new EtchedBorder(EtchedBorder.RAISED));
 	splash.add(panel, BorderLayout.CENTER);
-	splash.add(statusBar, BorderLayout.SOUTH);
+	splash.add(_statusBar, BorderLayout.SOUTH);
 	getContentPane().add(splash);
 	// add preloading progress bar?
 	Dimension contentPaneSize = getContentPane().getPreferredSize();
@@ -92,47 +81,26 @@ public class SplashScreen extends JWindow implements IStatusBar {
 	pack();
     }
 
-    /**
-     * @return the status bar of this dialog
-     */
-    public StatusBar getStatusBar() { return statusBar; }
+    public void preload(Vector classnames) {
+	//preload classes?
+    }
 
+
+    public StatusBar getStatusBar() { return _statusBar; }
+  
     ////////////////////////////////////////////////////////////////
     // IStatusBar
-
-    /**
-     * @see org.tigris.gef.ui.IStatusBar#showStatus(java.lang.String)
-     */
-    public void showStatus(String s) { statusBar.showStatus(s); }
+    public void showStatus(String s) { _statusBar.showStatus(s); }
+  
+    public void setVisible(boolean b) {
+	super.setVisible(b);
+    }
     
-    /**
-     * Override paint so we can set a flag the first time we're called
-     * and notify any waiting threads that the splash screen has been
-     * painted.
-     * @see java.awt.Component#paint(java.awt.Graphics)
-     */
-    public void paint(Graphics g) {
-        super.paint(g);
-        if (!paintCalled) {
-            synchronized (this) {
-                paintCalled = true;
-                notifyAll();
-            }
-        }
+    public static void setDoSplash(boolean doSplash) {
+        _doSplash = doSplash;
     }
-
-    /**
-     * @param called true if paint() is already called
-     */
-    public void setPaintCalled(boolean called) {
-        this.paintCalled = called;
+    
+    public static boolean getDoSplash() {
+        return _doSplash;
     }
-
-    /**
-     * @return true if paint() is already called
-     */
-    public boolean isPaintCalled() {
-        return paintCalled;
-    }
-
 } /* end class SplashScreen */

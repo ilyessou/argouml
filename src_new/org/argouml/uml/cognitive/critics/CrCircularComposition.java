@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -25,96 +25,72 @@
 package org.argouml.uml.cognitive.critics;
 
 import java.util.Enumeration;
-
 import org.apache.log4j.Logger;
+
 import org.argouml.cognitive.Designer;
-import org.argouml.cognitive.ListSet;
 import org.argouml.cognitive.ToDoItem;
-import org.argouml.cognitive.critics.Critic;
-import org.argouml.model.Model;
-import org.argouml.uml.GenCompositeClasses;
-import org.argouml.uml.cognitive.UMLDecision;
 import org.argouml.uml.cognitive.UMLToDoItem;
+import org.argouml.cognitive.critics.Critic;
+import org.argouml.model.ModelFacade;
+import org.argouml.uml.GenCompositeClasses;
+import org.tigris.gef.util.VectorSet;
 
 /**
  * @author jrobbins@ics.uci.edu
  */
 public class CrCircularComposition extends CrUML {
-    private static final Logger LOG =
+    protected static Logger cat =
 	Logger.getLogger(CrCircularComposition.class);
-
-    /**
-     * The constructor.
-     */
+						      
     public CrCircularComposition() {
-        setupHeadAndDesc();
-	addSupportedDecision(UMLDecision.CONTAINMENT);
+	setHeadline("Remove Circular Composition");
+	addSupportedDecision(CrUML.decCONTAINMENT);
 	setKnowledgeTypes(Critic.KT_SYNTAX);
-	setPriority(ToDoItem.LOW_PRIORITY);
 	// no good trigger
     }
-
-    /**
-     * @see org.argouml.uml.cognitive.critics.CrUML#predicate2(
-     * java.lang.Object, org.argouml.cognitive.Designer)
-     */
+							  
     public boolean predicate2(Object dm, Designer dsgr) {
-	if (!(Model.getFacade().isAClassifier(dm))) return NO_PROBLEM;
-	ListSet reach =
-	    (new ListSet(dm)).reachable(GenCompositeClasses.getSINGLETON());
+	if (!(ModelFacade.isAClassifier(dm))) return NO_PROBLEM;
+	VectorSet reach =
+	    (new VectorSet(dm)).reachable(GenCompositeClasses.SINGLETON);
 	if (reach.contains(dm)) return PROBLEM_FOUND;
 	return NO_PROBLEM;
     }
-
-    /**
-     * @see org.argouml.cognitive.critics.Critic#toDoItem(java.lang.Object,
-     * org.argouml.cognitive.Designer)
-     */
+							      
     public ToDoItem toDoItem(Object dm, Designer dsgr) {
-
-        ListSet offs = computeOffenders(dm);
+	
+        VectorSet offs = computeOffenders(dm);
 	return new UMLToDoItem(this, offs, dsgr);
     }
-
-    /**
-     * @param dm is the UML entity that is being checked
-     * @return the list of offenders
-     */
-    protected ListSet computeOffenders(Object dm) {
-	ListSet offs = new ListSet(dm);
-	ListSet above = offs.reachable(GenCompositeClasses.getSINGLETON());
-	Enumeration elems = above.elements();
-	while (elems.hasMoreElements()) {
-	    Object cls2 = elems.nextElement();
-	    ListSet trans = (new ListSet(cls2))
-	        .reachable(GenCompositeClasses.getSINGLETON());
+								  
+    protected VectorSet computeOffenders(Object dm) {
+	VectorSet offs = new VectorSet(dm);
+	VectorSet above = offs.reachable(GenCompositeClasses.SINGLETON);
+	Enumeration enum = above.elements();
+	while (enum.hasMoreElements()) {
+	    Object cls2 = enum.nextElement();
+	    VectorSet trans =
+		(new VectorSet(cls2)).reachable(GenCompositeClasses.SINGLETON);
 	    if (trans.contains(dm)) offs.addElement(cls2);
 	}
 	return offs;
     }
-
-    /**
-     * @see org.argouml.cognitive.Poster#stillValid(
-     * org.argouml.cognitive.ToDoItem, org.argouml.cognitive.Designer)
-     */
+								      
     public boolean stillValid(ToDoItem i, Designer dsgr) {
 	if (!isActive()) return false;
-	ListSet offs = i.getOffenders();
+	VectorSet offs = i.getOffenders();
 	Object dm =  offs.firstElement();
 	if (!predicate(dm, dsgr)) return false;
-	ListSet newOffs = computeOffenders(dm);
+	VectorSet newOffs = computeOffenders(dm);
 	boolean res = offs.equals(newOffs);
-	LOG.debug("offs=" + offs.toString()
+	cat.debug("offs=" + offs.toString()
 		  + " newOffs=" + newOffs.toString()
 		  + " res = " + res);
 	return res;
     }
-
-    /**
-     * @see org.argouml.cognitive.critics.Critic#getWizardClass(org.argouml.cognitive.ToDoItem)
-     */
+									  
     public Class getWizardClass(ToDoItem item) {
 	return WizBreakCircularComp.class;
     }
-
+									      
 } /* end class CrCircularComposition.java */

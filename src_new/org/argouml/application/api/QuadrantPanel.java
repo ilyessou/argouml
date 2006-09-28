@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2001 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,64 +24,24 @@
 
 package org.argouml.application.api;
 
-/**
- * An interface which must be implemented as the UI for
- * each primary panel.
+/**  An interface which must be implemented as the UI for 
+ *   each primary panel.
  *
- * @author Thierry Lach
- * @since 0.9.5
+ *   @author Thierry Lach
+ *   @since 0.9.5
  */
 public interface QuadrantPanel {
 
-    /**
-     * The bit-number for a side.
-     */
-    int Q_TOP           = 1;
+    public static final int Q_TOP           = 1;
+    public static final int Q_BOTTOM        = 2;
+    public static final int Q_LEFT          = 4;
+    public static final int Q_RIGHT         = 8;
+    public static final int Q_TOP_LEFT      = Q_TOP + Q_LEFT;
+    public static final int Q_TOP_RIGHT     = Q_TOP + Q_RIGHT;
+    public static final int Q_BOTTOM_LEFT   = Q_BOTTOM + Q_LEFT;
+    public static final int Q_BOTTOM_RIGHT  = Q_BOTTOM + Q_RIGHT;
 
-    /**
-     * The bit-number for a side.
-     */
-    int Q_BOTTOM        = 2;
-
-    /**
-     * The bit-number for a side.
-     */
-    int Q_LEFT          = 4;
-
-    /**
-     * The bit-number for a side.
-     */
-    int Q_RIGHT         = 8;
-
-    /**
-     * A bit-combination indicating uniquely 2 orthogonal sides,
-     * and hence a corner.
-     */
-    int Q_TOP_LEFT      = Q_TOP + Q_LEFT;
-
-    /**
-     * A bit-combination indicating uniquely 2 orthogonal sides,
-     * and hence a corner.
-     */
-    int Q_TOP_RIGHT     = Q_TOP + Q_RIGHT;
-
-    /**
-     * A bit-combination indicating uniquely 2 orthogonal sides,
-     * and hence a corner.
-     */
-    int Q_BOTTOM_LEFT   = Q_BOTTOM + Q_LEFT;
-
-    /**
-     * A bit-combination indicating uniquely 2 orthogonal sides,
-     * and hence a corner.
-     */
-    int Q_BOTTOM_RIGHT  = Q_BOTTOM + Q_RIGHT;
-
-    /**
-     * This shall return a corner indentification.
-     * @return one of Q_TOP_LEFT, Q_TOP_RIGHT, Q_BOTTOM_LEFT, Q_BOTTOM_RIGHT
-     */
-    int getQuadrant();
+    public int getQuadrant();
 
 } /* End interface QuadrantPanel */
 

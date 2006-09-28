@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 2003-2006 The Regents of the University of California. All
+// Copyright (c) 2003-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,13 +24,12 @@
 
 package org.argouml.uml.ui;
 
-import org.argouml.model.Model;
-
+import org.argouml.model.ModelFacade;
 /**
  * This class provides a text field that can be used to access
- * tagged values of a MModelElement object.
+ * tagged values of a MModelElement object;
  * UMLModelElementTaggedValueDocument is especially useful when
- * using LabelledLayout.
+ * using LabelledLayout;
  *
  * @since 5th April 2003
  * @author Raphael Langerhorst (raphael-langerhorst@gmx.at)
@@ -39,33 +38,24 @@ public class UMLModelElementTaggedValueDocument extends UMLPlainTextDocument {
 
     /**
      * Creates a UMLPlainTextDocument object that represents a tagged value of
-     * an MModelElement object.
-     *
-     * @param taggedValue the tagged value
+     * an MModelElement object
+     * @param taggedValue
      */
-    public UMLModelElementTaggedValueDocument(String taggedValue) {
-        //stores the action command into the UMLPlainTextDocument
-        //class which is also used
+    public UMLModelElementTaggedValueDocument(String taggedValue)
+    {
+        //stores the action command into the UMLPlainTextDocument class which is also used
         //for setProperty and getProperty
-        
-        // TODO: This appears to expect that the UML 1.3 tag name
-        // will appear as a property name in an event, but with the
-        // UML 1.4 switch to TagDefinitions, this won't work
         super(taggedValue);
     }
 
     /**
-     * Sets the tagged value to given String.
-     *
-     * @param text the property
+     * Sets the tagged value to given String
+     * @param text
      */
     protected void setProperty(String text) {
-        if (getTarget() != null) {
-            Model.getCoreHelper().setTaggedValue(
-                    getTarget(),
-                    getEventName(),
-                    text);
-        }
+	if (ModelFacade.isAModelElement(getTarget())) {
+	    ModelFacade.setTaggedValue(getTarget(), getEventName(), text);
+	}
     }
 
     /**
@@ -73,13 +63,16 @@ public class UMLModelElementTaggedValueDocument extends UMLPlainTextDocument {
      * @return the value of the tagged value
      */
     protected String getProperty() {
-        String eventName = getEventName();
-        Object taggedValue =
-            Model.getFacade().getTaggedValue(getTarget(), eventName);
-        if (taggedValue != null) {
-            return Model.getFacade().getValueOfTag(taggedValue);
-        } else {
+        if (!ModelFacade.isAModelElement(getTarget())) {
             return "";
         }
+
+        String property = null;
+        String eventName = getEventName();
+        Object taggedValue = ModelFacade.getTaggedValue(getTarget(), eventName);
+        if (taggedValue != null)
+            return ModelFacade.getValueOfTag(taggedValue);
+        else
+            return "";
     }
 }

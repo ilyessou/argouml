@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 2003-2006 The Regents of the University of California. All
+// Copyright (c) 2003-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,41 +24,41 @@
 
 package org.argouml.uml.ui;
 
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
 
 /**
  * Class to represent a checkbox for the deprecated checkbox in the
  * documentation tab.
- *
+ * 
  * @author mkl
- *
+ *  
  */
 public class UMLDeprecatedCheckBox extends UMLCheckBox2 {
 
-    /**
-     * The constructor.
-     *
-     */
     public UMLDeprecatedCheckBox() {
         super(null, new ActionBooleanTaggedValue("deprecated"), "deprecated");
     }
 
     /**
      * Set the checkbox according to the tagged values of the target.
-     *
+     * 
      * @see org.argouml.uml.ui.UMLCheckBox2#buildModel()
      */
     public void buildModel() {
 
-        String tagName = "deprecated";
+        String _tagName = "deprecated";
         setSelected(false);
 
-        Object tv = Model.getFacade().getTaggedValue(getTarget(), tagName);
+	if (!ModelFacade.isAModelElement(getTarget())) {
+	    return;
+	}
+
+        Object tv = ModelFacade.getTaggedValue(getTarget(), _tagName);
         if (tv != null) {
-            String tag = Model.getFacade().getValueOfTag(tv);
+            String tag = ModelFacade.getValueOfTag(tv);
             if ("true".equals(tag)) {
-                setSelected(true);
-            }
+		setSelected(true);
+	    }
         }
     }
 }

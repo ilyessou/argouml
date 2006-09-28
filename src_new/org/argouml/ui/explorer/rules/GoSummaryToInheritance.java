@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -31,11 +31,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
 
 /**
- * Rule for Summary->Inheritance.
  * This class is a Go Rule for the "Class - centric" Navigation perspective.
  *
  * @author  alexb, d00mst
@@ -43,47 +41,40 @@ import org.argouml.model.Model;
  */
 public class GoSummaryToInheritance extends AbstractPerspectiveRule {
 
-    /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getRuleName()
-     */
     public String getRuleName() {
-        return Translator.localize ("misc.summary.inheritance");
+	return "Summary->Inheritance";
     }
 
-    /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getChildren(java.lang.Object)
-     */
     public Collection getChildren(Object parent) {
 	if (parent instanceof InheritanceNode) {
 	    List list = new ArrayList();
 
 	    Iterator it =
-		Model.getFacade().getSupplierDependencies(
+		ModelFacade.getSupplierDependencies(
 			((InheritanceNode) parent).getParent()).iterator();
 
 	    while (it.hasNext()) {
 		Object next = it.next();
-		if (Model.getFacade().isAAbstraction(next)) {
+		if (ModelFacade.isAAbstraction(next))
 		    list.add(next);
-		}
 	    }
 
 	    it =
-		Model.getFacade().getClientDependencies(
-		        ((InheritanceNode) parent).getParent()).iterator();
+		ModelFacade.getClientDependencies(((InheritanceNode) parent)
+						  .getParent())
+		    .iterator();
 
 	    while (it.hasNext()) {
 		Object next = it.next();
-		if (Model.getFacade().isAAbstraction(next)) {
+		if (ModelFacade.isAAbstraction(next))
 		    list.add(next);
-		}
 	    }
 
 	    Iterator generalizationsIt =
-		Model.getFacade().getGeneralizations(
+		ModelFacade.getGeneralizations(
 			((InheritanceNode) parent).getParent()).iterator();
 	    Iterator specializationsIt =
-		Model.getFacade().getSpecializations(
+		ModelFacade.getSpecializations(
 			((InheritanceNode) parent).getParent()).iterator();
 
 	    while (generalizationsIt.hasNext()) {
@@ -100,9 +91,6 @@ public class GoSummaryToInheritance extends AbstractPerspectiveRule {
 	return null;
     }
 
-    /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getDependencies(java.lang.Object)
-     */
     public Set getDependencies(Object parent) {
         if (parent instanceof InheritanceNode) {
 	    Set set = new HashSet();

@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -23,127 +23,83 @@
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 package org.argouml.uml.ui;
-import java.util.Collection;
-import java.util.Iterator;
+import org.argouml.uml.*;
+import java.util.*;
+import org.argouml.model.ModelFacade;
+import org.argouml.model.uml.UmlFactory;
 
-import org.apache.log4j.Logger;
-import org.argouml.model.Model;
-import org.argouml.uml.Profile;
-
-/**
- * A combobox entry. <p>
- *
- * TODO: What is a Phantom element? Document it.
- * MVW: I think it is an entry in the list, 
- * that when selected, deletes the
- * UML model-association, just like the "" 
- * in the comboboxes currently. <p>
- * 
- *  This class does not seem to be in use currently. 
- *  Is it a good idea to complete this? Or shall we remove?
- */
 public class UMLComboBoxEntry implements Comparable {
+    private Object/*MModelElement*/ _element;
+    private String _shortName;
     
-    private static final Logger LOG = Logger.getLogger(UMLComboBoxEntry.class);
+    /** _longName is composed of an identifier and a name as in Class: String */
+    private String _longName;
+    private Profile _profile;
     
-    private Object/*MModelElement*/ element;
-    private String shortName;
-
-    /** longName is composed of an identifier and a name as in Class: String */
-    private String longName;
-    private Profile profile;
-
-    /** display name will be the same as shortName unless there
+    /** _display name will be the same as shortName unless there 
      *  is a name collision */
-    private String displayName;
-
-    /** i am not quite sure what isPhantom means, it may be that it is an
+    private String _displayName;
+    
+    /** i am not quite sure what _isPhantom means, it may be that it is an
      *  entry that is not in the model list...pjs */
-    private boolean thisIsAPhantom;
+    private boolean _isPhantom;
 
-    /**
-     * The constructor.
-     *
-     * @param modelElement the model element that this combobox entry represents
-     * @param theProfile the profile according which the textual
-     *                   representatation of the modelelement is generated
-     * @param isPhantom true if this is a phantom element
-     */
-    public UMLComboBoxEntry(Object modelElement,
-            Profile theProfile, boolean isPhantom) {
-        element = modelElement;
-        if (modelElement != null) {
-            Object ns = Model.getFacade().getNamespace(modelElement);
-            shortName = theProfile.formatElement(modelElement, ns);
-        } else {
-            shortName = "";
+    public UMLComboBoxEntry(Object/*MModelElement*/ element, Profile profile, boolean isPhantom) {
+        _element = element;
+        if (element != null) {
+            Object/*MNamespace*/ ns = ModelFacade.getNamespace(element);
+            _shortName = profile.formatElement(element, ns);
         }
+        else {
+            _shortName = "";
+        }
+
 
         //
         //   format the element in its own namespace
         //       should result in an name without packages
-        profile = theProfile;
-        longName = null;
-        displayName = shortName;
-        thisIsAPhantom = isPhantom;
+        _profile = profile;
+        _longName = null;
+        _displayName = _shortName;
+        _isPhantom = isPhantom;
     }
 
-    /**
-     * @see java.lang.Object#toString()
-     */
     public String toString() {
-        return displayName;
+        return _displayName;
     }
 
-    /**
-     * Generate a string representatation of the UML modelelement
-     * of this combobox element.
-     */
     public void updateName() {
-        if (element != null) {
-            Object/*MNamespace*/ ns = Model.getFacade().getNamespace(element);
-            shortName = profile.formatElement(element, ns);
+        if (_element != null) {
+            Object/*MNamespace*/ ns = ModelFacade.getNamespace(_element);
+            _shortName = _profile.formatElement(_element, ns);
         }
     }
 
-    /**
-     * If one of the given names equals the "short name", then
-     * we'll display the longname.
-     *
-     * @param before the first given name
-     * @param after the 2nd given name
-     */
     public void checkCollision(String before, String after) {
-        boolean collision = (before != null && before.equals(shortName))
-            || (after != null && after.equals(shortName));
+        boolean collision = (before != null && before.equals(_shortName)) ||
+                (after != null && after.equals(_shortName));
         if (collision) {
-            if (longName == null) {
-                longName = getLongName();
+            if (_longName == null) {
+                _longName = getLongName();
             }
-            displayName = longName;
+            _displayName = _longName;
         }
     }
 
-    /**
-     * @return the short name of the modelelement
-     */
     public String getShortName() {
-        return shortName;
+        return _shortName;
     }
 
-    /**
-     * @return the long name of the modelelement
-     */
     public String getLongName() {
-        if (longName == null) {
-            if (element != null) {
-                longName = profile.formatElement(element, null);
+        if (_longName == null) {
+            if (_element != null) {
+                _longName = _profile.formatElement(_element, null);
             }
             else {
-                longName = "void";
+                _longName = "void";
             }
         }
-        return longName;
+        return _longName;
     }
 
     // Refactoring: static to denote that it doesn't use any class members.
@@ -151,29 +107,29 @@ public class UMLComboBoxEntry implements Comparable {
     // Idea to move this to MMUtil together with the same function from
     // org/argouml/uml/cognitive/critics/WizOperName.java
     // org/argouml/uml/generator/ParserDisplay.java
-    private static Object findNamespace(Object phantomNS, Object targetModel) {
-        Object ns = null;
-        Object targetParentNS = null;
-        Object parentNS = Model.getFacade().getNamespace(phantomNS);
+    private static Object findNamespace(Object/*MNamespace*/ phantomNS, Object/*MModel*/ targetModel) {
+        Object/*MNamespace*/ ns = null;
+        Object/*MNamespace*/ targetParentNS = null;
+        Object/*MNamespace*/ parentNS = ModelFacade.getNamespace(phantomNS);
         if (parentNS == null) {
             ns = targetModel;
-        } else {
+        }
+        else {
             targetParentNS = findNamespace(parentNS, targetModel);
             //
             //   see if there is already an element with the same name
             //
-            Collection ownedElements =
-                Model.getFacade().getOwnedElements(targetParentNS);
-            String phantomName = Model.getFacade().getName(phantomNS);
+            Collection ownedElements = ModelFacade.getOwnedElements(targetParentNS);
+            String phantomName = ModelFacade.getName(phantomNS);
             String targetName;
             if (ownedElements != null) {
                 Object/*MModelElement*/ ownedElement;
                 Iterator iter = ownedElements.iterator();
                 while (iter.hasNext()) {
                     ownedElement = iter.next();
-                    targetName = Model.getFacade().getName(ownedElement);
+                    targetName = ModelFacade.getName(ownedElement);
                     if (targetName != null && phantomName.equals(targetName)) {
-                        if (Model.getFacade().isAPackage(ownedElement)) {
+                        if (ModelFacade.isAPackage(ownedElement)) {
                             ns = ownedElement;
                             break;
                         }
@@ -181,67 +137,50 @@ public class UMLComboBoxEntry implements Comparable {
                 }
             }
             if (ns == null) {
-                ns = Model.getModelManagementFactory()
-                    .createPackage();
-                Model.getCoreHelper().setName(ns, phantomName);
-                Model.getCoreHelper().addOwnedElement(targetParentNS, ns);
+                ns = UmlFactory.getFactory().getModelManagement().createPackage();
+                ModelFacade.setName(ns, phantomName);
+                ModelFacade.addOwnedElement(targetParentNS, ns);
             }
         }
         return ns;
     }
 
-    /**
-     * @param targetModel the UML Model that contains the modelelement
-     * @return the modelelement represented by this combobox item
-     */
     public Object/*MModelElement*/ getElement(Object targetModel) {
         //
         //  if phantom then
         //    we need to possibly recreate the package structure
         //       in the target model
-        if (thisIsAPhantom && targetModel != null) {
-            Object/*MNamespace*/ targetNS =
-                findNamespace(
-                        Model.getFacade().getNamespace(element),
-                        targetModel);
+        if (_isPhantom && targetModel != null) {
+            Object/*MNamespace*/ targetNS = findNamespace(ModelFacade.getNamespace(_element), targetModel);
             Object/*MModelElement*/ clone = null;
             try {
-                clone = element.getClass().getConstructor(
-                        new Class[] {}).newInstance(new Object[] {});
-                Model.getCoreHelper().setName(
-                        clone,
-                        Model.getFacade().getName(element));
-                Model.getCoreHelper().addAllStereotypes(clone,
-                        Model.getFacade().getStereotypes(element));
-                if (Model.getFacade().isAStereotype(clone)) {
-                    Model.getExtensionMechanismsHelper().setBaseClass(clone,
-                            Model.getFacade().getBaseClass(element));
+                clone = _element.getClass().getConstructor(new Class[] {}).newInstance(new Object[] {});
+                ModelFacade.setName(clone, ModelFacade.getName(_element));
+                Object stereo = null;
+                if (ModelFacade.getStereotypes(_element).size() > 0) {
+                    stereo = ModelFacade.getStereotypes(_element).iterator().next();
                 }
-                Model.getCoreHelper().addOwnedElement(targetNS, clone);
-                element = clone;
+                ModelFacade.setStereotype(clone, stereo);
+                if (ModelFacade.isAStereotype(clone)) {
+                    ModelFacade.setBaseClass(clone, ModelFacade.getBaseClass(_element));
+                }
+                ModelFacade.addOwnedElement(targetNS, clone);
+                _element = clone;
             }
             catch (Exception ex) {
-                LOG.error("Exception in getElement()", ex);
+                ex.printStackTrace();
             }
-            thisIsAPhantom = false;
+            _isPhantom = false;
         }
-        return element;
+        return _element;
     }
 
 
-    /**
-     * @param modelElement the modelelement represented by this combobox item
-     * @param isPhantom true if this is a phantom element
-     */
-    public void setElement(Object/*MModelElement*/ modelElement,
-            boolean isPhantom) {
-        element = modelElement;
-        thisIsAPhantom = isPhantom;
+    public void setElement(Object/*MModelElement*/ element, boolean isPhantom) {
+        _element = element;
+        _isPhantom = isPhantom;
     }
 
-    /**
-     * @see java.lang.Comparable#compareTo(java.lang.Object)
-     */
     public int compareTo(final java.lang.Object other) {
         int compare = -1;
         if (other instanceof UMLComboBoxEntry) {
@@ -251,7 +190,7 @@ public class UMLComboBoxEntry implements Comparable {
                 //
                 //  if this is a "void" entry it goes first
                 //
-                if (element == null) {
+                if (_element == null) {
                     compare = -1;
                 }
                 else {
@@ -265,14 +204,12 @@ public class UMLComboBoxEntry implements Comparable {
                         //
                         //   compare short names
                         //
-                        compare = getShortName()
-                            .compareTo(otherEntry.getShortName());
+                        compare = getShortName().compareTo(otherEntry.getShortName());
                         //
                         //   compare long names
                         //
                         if (compare == 0) {
-                            compare = getLongName()
-                                .compareTo(otherEntry.getLongName());
+                            compare = getLongName().compareTo(otherEntry.getLongName());
                         }
                     }
                 }
@@ -281,22 +218,16 @@ public class UMLComboBoxEntry implements Comparable {
         return compare;
     }
 
-    /**
-     * @param modelElement the modelelement that has its name changed
-     */
-    public void nameChanged(Object/*MModelElement*/ modelElement) {
-        if (modelElement == element && element != null) {
-            Object/*MNamespace*/ ns = Model.getFacade().getNamespace(element);
-            shortName = profile.formatElement(element, ns);
-            displayName = shortName;
-            longName = null;
+    public void nameChanged(Object/*MModelElement*/ element) {
+        if (element == _element && _element != null) {
+            Object/*MNamespace*/ ns = ModelFacade.getNamespace(_element);
+            _shortName = _profile.formatElement(_element, ns);
+            _displayName = _shortName;
+            _longName = null;
         }
     }
 
-    /**
-     * @return true if this is a phantom element
-     */
     public boolean isPhantom() {
-        return thisIsAPhantom;
+        return _isPhantom;
     }
 }

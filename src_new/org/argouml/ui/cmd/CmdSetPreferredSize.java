@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -37,11 +37,11 @@ import org.tigris.gef.base.SelectionManager;
 import org.tigris.gef.presentation.Fig;
 
 
-/**
- * A command to set selected figs to their preferred size or minimum size.
- *
+/** A command to set selected figs to their preferred size or minimum size.
+ * 
  * @author Markus Klink
  */
+
 public class CmdSetPreferredSize extends Cmd {
 
     /** constant for PREFERRED_SIZE */
@@ -49,53 +49,41 @@ public class CmdSetPreferredSize extends Cmd {
 
     /** constant for MINIMUM_SIZE */
     public static final int MINIMUM_SIZE = 1;
+    
+    private int _mode;
 
-    private int mode;
-
-    /**
-     * Constructor for the command.
-     *
-     * @param theMode one of the defined constants
+    /** Constructor for the command.
+     * @param mode one of the defined constants
      */
-    public CmdSetPreferredSize(int theMode) {
-	super(Translator.localize("action.set-" + wordFor(theMode) + "-size"));
-        mode = theMode;
+    public CmdSetPreferredSize(int mode) {
+	super(Translator.localize("action", 
+			    "action.set-" + wordFor(mode) + "-size"));
+        _mode = mode;
     }
 
-    private static String wordFor(int r) {
+    protected static String wordFor(int r) {
         switch (r) {
-        case PREFERRED_SIZE: 
-            return "preferred";
-        case MINIMUM_SIZE: 
-            return "minimum";
+        case PREFERRED_SIZE: return "preferred";
+        case MINIMUM_SIZE: return "minimum";
         }
         throw new IllegalArgumentException("CmdSetPreferredSize invoked with "
 					   + "incompatible mode: " + r);
     }
-
-    /**
-     * Set the fig to be resized.
-     *
-     * @param f the fig to resize
-     */
+    
+    /** set the fig to be resized */
     public void setFigToResize(Fig f) {
         Vector figs = new Vector(1);
         figs.add(f);
         setArg("figs", figs);
     }
 
-    /**
-     * Set the figs to be resized.
-     *
-     * @param figs the list of figs to resize
-     */
+    /** set the figs to be resized */
     public void setFigToResize(Vector figs) {
         setArg("figs", figs);
     }
 
 
-    /**
-     * Set all the figs in the selection or passed by param "figs" to the
+    /** set all the figs in the selection or passed by param "figs" to the 
      * size according to the mode of the command.
      */
     public void doIt() {
@@ -113,15 +101,17 @@ public class CmdSetPreferredSize extends Cmd {
         if (figs == null) return;
         int size = figs.size();
         if (size == 0) return;
-
+    
         for (int i = 0; i < size; i++) {
             Fig fi = (Fig) figs.elementAt(i);
-            // only resize elements which the user would also be able
+            // only resize elements which the user would also be able 
             // to resize.
-            if (fi.isResizable() && (!((fi instanceof FigPackage)
-		                     || (fi instanceof FigCompositeState)))) {
-                if (mode == PREFERRED_SIZE)
-                    fi.setSize(fi.getPreferredSize());
+            if (fi.isResizable() == true
+		&& (!((fi instanceof FigPackage)
+		      || (fi instanceof FigCompositeState))))
+	    {
+                if (_mode == PREFERRED_SIZE)
+                    fi.setSize(fi.getPreferedSize());
                 else
                     fi.setSize(fi.getMinimumSize());
                 Globals.showStatus("Setting size for " + fi);
@@ -132,5 +122,5 @@ public class CmdSetPreferredSize extends Cmd {
 
     /** unsupported. */
     public void undoIt() { }
-
+            
 }

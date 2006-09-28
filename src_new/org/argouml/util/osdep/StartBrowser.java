@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 2002-2006 The Regents of the University of California. All
+// Copyright (c) 2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -26,7 +26,6 @@ package org.argouml.util.osdep;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
-import java.net.URL;
 
 import org.apache.log4j.Logger;
 
@@ -36,58 +35,59 @@ import org.apache.log4j.Logger;
  */
 public class StartBrowser {
     /** logger */
-    private static final Logger LOG = Logger.getLogger(StartBrowser.class);
+    private static Logger cat = Logger.getLogger(StartBrowser.class);
 
     /**
-     * Open an URL in the system's default browser.
-     *
-     * @param url string containing the given URL
+     * Open an Url in the system's default browser.
+     * <P>
+     * This will probably not be perfect for everyone but hopefully it is a
+     * good enough alternative.
      */
-    public static void openUrl(String url) {
+    public static void openUrl(String url)
+    {
 	try {
 	    if (OsUtil.isWin32()) {
-		Runtime.getRuntime().exec(
-                        "rundll32 url.dll,FileProtocolHandler " + url);
+		Runtime.getRuntime().exec("rundll32 url.dll,FileProtocolHandler "
+					  + url);
 	    }
 	    else if (OsUtil.isMac()) {
 		try {
 		    ClassLoader cl = ClassLoader.getSystemClassLoader();
 		    Class c = cl.loadClass("com.apple.mrj.MRJFileUtils");
 		    Class[] argtypes = {
-			String.class,
+			String.class 
 		    };
 		    Method m = c.getMethod("openURL", argtypes);
 		    Object[] args = {
-			url,
+			url 
 		    };
 		    m.invoke(c.newInstance(), args);
 		} catch (Exception cnfe) {
-		    LOG.error(cnfe);
-		    LOG.info("Trying a default browser (netscape)");
+		    cat.error(cnfe);
+		    cat.info("Trying a default browser (netscape)");
 		    String[] commline = {
-			"netscape", url,
+			"netscape", url 
 		    };
 		    Runtime.getRuntime().exec(commline);
 		}
+		return;
 	    }
 	    else {
-                Runtime.getRuntime().exec("firefox " + url);
+		Process proc =
+		    Runtime.getRuntime().exec("netscape -remote (" + url + ")");
+		try {
+		    if (proc.waitFor() != 0) {
+			Runtime.getRuntime().exec("netscape " + url);
+		    }
+		} catch (InterruptedException ie) {
+		}
 	    }
 	}
 	catch (IOException ioe) {
 	    // Didn't work.
-            LOG.error(ioe);
-	}
+            cat.error(ioe);
+	}	    
 
+	cat.error("Could not open url: " + url);
     }
-    
-    /**
-     * Open an URL in the system's default browser.
-     *
-     * @param url the URL to open
-     */
-    public static void openUrl(URL url) {
-        openUrl(url.toString());
-    }
-
 }

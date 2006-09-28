@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -29,54 +29,48 @@ import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.Locale;
-
 import javax.xml.parsers.SAXParserFactory;
-
-import org.apache.log4j.Logger;
 import org.argouml.i18n.Translator;
+import org.apache.log4j.Logger;
 
-/**
- * Some tools thrown together...
- *
- */
 public class Tools {
 
-    /**
-     * Logger.
-     */
+    /** logger */
     private static final Logger LOG = Logger.getLogger(Tools.class);
 
-    private static final String[] PACKAGELIST =
+    static String packageList[] =
 	new String[]{
-	    "org.argouml.application", "org.netbeans.mdr",
-            "org.tigris.gef.base", "org.xml.sax",
+	    "org.argouml.application", "ru.novosoft.uml", 
+            "org.tigris.gef.base", "org.xml.sax", 
             "java.lang", "org.apache.log4j",
 	};
 
-    private static void getComponentVersionInfo(StringBuffer sb, String pn) {
-        sb.append(Translator.localize("label.package")).append(": ");
+    private static void getComponentVersionInfo(StringBuffer sb, String pn) 
+    {
+        sb.append(Translator.localize("label", "label.package")).append(": ");
         sb.append(pn);
         sb.append('\n');
         Package pkg = Package.getPackage(pn);
         if (pkg == null) {
-            sb.append(Translator.localize("label.no-version"));
-        } else {
+            sb.append(Translator.localize("label", "label.no-version"));
+        }
+        else {
             String in = pkg.getImplementationTitle();
             if (in != null) {
-                sb.append(Translator.localize("label.component"));
+                sb.append(Translator.localize("label", "label.component"));
 		sb.append(": ");
                 sb.append(in);
             }
             in = pkg.getImplementationVendor();
             if (in != null) {
-                sb.append(Translator.localize("label.by"));
+                sb.append(Translator.localize("label", "label.by"));
 		sb.append(": ");
                 sb.append(in);
             }
             in = pkg.getImplementationVersion();
             if (in != null) {
                 sb.append(", ");
-		sb.append(Translator.localize("label.version"));
+		sb.append(Translator.localize("label", "label.version"));
 		sb.append(" ");
                 sb.append(in);
                 sb.append('\n');
@@ -85,27 +79,25 @@ public class Tools {
         sb.append('\n');
     }
 
-    /**
-     * @return a String containing the version information
-     */
-    public static String getVersionInfo() {
+    public static String getVersionInfo()
+    {
         try {
 
             // class preloading, so packages are there...
             Class cls = Class.forName("org.tigris.gef.base.Editor");
             cls = Class.forName("org.xml.sax.AttributeList");
             cls = Class.forName("org.apache.log4j.Logger");
-            cls = Class.forName("org.netbeans.api.mdr.MDRManager");
 
             StringBuffer sb = new StringBuffer();
 
-            String saxFactory =
+            String saxFactory = 
                 System.getProperty("javax.xml.parsers.SAXParserFactory");
             if (saxFactory != null) {
                 Object[] msgArgs = {
-                    saxFactory,
+                    saxFactory
                 };
-                sb.append(Translator.messageFormat("label.sax-factory1",
+                sb.append(Translator.messageFormat("label",
+						   "label.sax-factory1", 
                                                    msgArgs));
             }
 
@@ -113,17 +105,20 @@ public class Tools {
             try {
                 saxObject = SAXParserFactory.newInstance();
                 Object[] msgArgs = {
-                    saxObject.getClass().getName(),
+                    saxObject.getClass().getName()
                 };
-                sb.append(Translator.messageFormat("label.sax-factory2",
+                sb.append(Translator.messageFormat("label",
+						   "label.sax-factory2", 
                                                    msgArgs));
                 sb.append("\n");
-            } catch (Exception ex) {
-                sb.append(Translator.localize("label.error-sax-factory"));
+            }
+            catch (Exception ex) {
+                sb.append(Translator.localize("label", 
+                        "label.error-sax-factory"));
             }
 
-            for (int i = 0; i < PACKAGELIST.length; i++) {
-                getComponentVersionInfo(sb, PACKAGELIST[i]);
+            for (int i = 0; i < packageList.length; i++) {
+                getComponentVersionInfo(sb, packageList[i]);
             }
 
             if (saxObject != null) {
@@ -134,20 +129,20 @@ public class Tools {
                     getComponentVersionInfo(sb, pckg.getName());
                 }
             }
-
+      
 
 
             sb.append("\n");
-            sb.append(Translator.localize("label.os"));
+            sb.append(Translator.localize("label", "label.os"));
             sb.append(System.getProperty("os.name", "unknown"));
             sb.append('\n');
-            sb.append(Translator.localize("label.os-version"));
+            sb.append(Translator.localize("label", "label.os-version"));
             sb.append(System.getProperty("os.version", "unknown"));
             sb.append('\n');
-            sb.append(Translator.localize("label.language"));
+            sb.append(Translator.localize("label", "label.language"));
             sb.append(Locale.getDefault().getLanguage());
             sb.append('\n');
-            sb.append(Translator.localize("label.country"));
+            sb.append(Translator.localize("label", "label.country"));
             sb.append(Locale.getDefault().getCountry());
             sb.append('\n');
             sb.append('\n');
@@ -159,38 +154,31 @@ public class Tools {
 
     }
 
-    /**
-     * Print out some version info for debugging.
-     */
-    public static void logVersionInfo() {
-        BufferedReader r =
+    public static void logVersionInfo()
+    {
+        BufferedReader r = 
             new BufferedReader(new StringReader(getVersionInfo()));
 
         try {
             while (true) {
                 String s = r.readLine();
-                if (s == null) {
-                    break;
-                }
+                if (s == null) break;
                 LOG.info(s);
             }
-        } catch (IOException ioe) { }
+        }
+        catch (IOException ioe) { }
     }
 
-    /**
-     * Gets the file extension of a file.
-     *
-     * @param file the File to examine
-     * @return extension including the dot, or null
-     */
+    /** getFileExtension returns the file extension of a file.
+     *  @param file the File to examine
+     *  @return extension including the dot, or null
+     */  
     public static String getFileExtension(File file) {
         String ext = null;
         String s = file.getName();
         int i = s.lastIndexOf('.');
 
-        if (i > 0) {
-            ext = s.substring(i).toLowerCase();
-        }
+        if (i > 0) ext = s.substring(i).toLowerCase();
         return ext;
     }
 }

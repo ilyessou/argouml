@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -27,44 +27,32 @@ package org.argouml.uml.diagram.collaboration.ui;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Vector;
 
-import org.argouml.model.Model;
-import org.argouml.notation.NotationProviderFactory2;
+import org.argouml.application.api.Notation;
 import org.argouml.uml.diagram.ui.FigAssociation;
 import org.argouml.uml.diagram.ui.FigMessage;
 import org.tigris.gef.base.Layer;
 import org.tigris.gef.base.PathConvPercent;
 import org.tigris.gef.presentation.Fig;
 import org.tigris.gef.presentation.FigGroup;
-import org.tigris.gef.presentation.FigText;
 
-
-/**
- * This class represents the Fig of an AssociationRole
- * for a collaboration diagram.
- *
- */
+import ru.novosoft.uml.MElementEvent;
 public class FigAssociationRole extends FigAssociation {
+    ////////////////////////////////////////////////////////////////
+    // constructors
+  
+    protected FigMessageGroup _messages = new FigMessageGroup();
 
-    /**
-     * Serial version - Eclipse generated for rev. 1.30
-     */
-    private static final long serialVersionUID = -6543020797101620194L;
-    
-    private FigMessageGroup messages = new FigMessageGroup();
-
-    /**
-     * Main Constructor
-     */
     public FigAssociationRole() {
 	super(); // this really is questionable
-	addPathItem(messages, new PathConvPercent(this, 50, 10));
+	addPathItem(_messages, new PathConvPercent(this, 50, 10));
     }
 
     /**
      * Constructor for FigAssociationRole.
-     * @param edge the owning UML element
-     * @param lay the layer
+     * @param edge
+     * @param lay
      */
     public FigAssociationRole(Object edge, Layer lay) {
 	this();
@@ -72,67 +60,44 @@ public class FigAssociationRole extends FigAssociation {
     	setOwner(edge);
     }
 
+    ////////////////////////////////////////////////////////////////
+    // event handlers
     /**
-     * Create the NotationProviders.
-     * 
-     * @param own the current owner
-     */
-    protected void initNotationProviders(Object own) {
-        if (Model.getFacade().isAAssociationRole(own)) {
-            notationProviderName =
-                NotationProviderFactory2.getInstance().getNotationProvider(
-                        NotationProviderFactory2.TYPE_ASSOCIATION_ROLE, 
-                        own);
-        }
+     * calls the method on the "super" (FigAssociation)
+     * and then changes the name to take care of the
+     * "/ name : base association name" form.
+     **/    
+    protected void modelChanged(MElementEvent e) {
+        super.modelChanged(e);
+        //change the name
+        Object ar = /*(MAssociationRole)*/ getOwner();
+        if (ar == null) return;
+        // String asNameStr = ((ar.getName() == null) && (ar.getBase()
+        // == null)) ? "" : Notation.generate(this, ar);
+        String asNameStr = Notation.generate(this, ar);
+        _name.setText(asNameStr);
     }
-
-    /**
-     * @see org.argouml.uml.diagram.ui.FigAssociation#updateListeners(
-     * java.lang.Object)
-     */
-    public void updateListeners(Object oldOwner, Object newOwner) {
-        super.updateListeners(oldOwner, newOwner);
-        if (newOwner != null) {
-            /* Also listen to the base: */
-            Object assoc = Model.getFacade().getBase(newOwner);
-            if (assoc != null) {
-                addElementListener(assoc);
-            }
-        }
-    }
-
-    /**
-     * @param message the message to be added
-     */
+    
     public void addMessage(FigMessage message) {
-    	messages.addFig(message);
+    	_messages.addFig(message);
+    	// damage();
     	updatePathItemLocations();
-    	messages.damage();
+    	_messages.damage();
     }
 
     /**
-     * @see org.argouml.uml.diagram.ui.FigEdgeModelElement#textEditStarted(org.tigris.gef.presentation.FigText)
+     * @see org.tigris.gef.presentation.Fig#delete()
      */
-    protected void textEditStarted(FigText ft) {
-        if (ft == getNameFig()) {
-            showHelp(notationProviderName.getParsingHelp());
-        }
+    public void delete() {
+        super.delete();
+        _messages.delete();
     }
 
 } /* end class FigAssociationRole */
 
-/**
- * TODO: Should this be in its own source file?
- *
- */
+// TODO: Should this be in its own source file?
 class FigMessageGroup extends FigGroup {
-
-    /**
-     * Serial version - Eclipse generated for rev 1.30
-     */
-    private static final long serialVersionUID = 6899342966031358691L;
-
-
+	
     /**
      * Constructor for FigMessageGroup.
      */
@@ -143,39 +108,49 @@ class FigMessageGroup extends FigGroup {
     /**
      * Constructor for FigMessageGroup.
      * @param figs
+     * @deprecated in 0.15.3 in favour of FigMessageGroup(List)
+     */
+    public FigMessageGroup(Vector figs) {
+	super(figs);
+    }
+
+    /**
+     * Constructor for FigMessageGroup.
+     * @param figs
      */
     public FigMessageGroup(List figs) {
         super(figs);
     }
 
-    private void updateFigPositions() {
-    	Collection figs = getFigs(); // the figs that make up this group
+    protected void updateFigPositions() {
+    	Collection figs = getFigs(null);
         Iterator it = figs.iterator();
     	if (!figs.isEmpty()) {
             FigMessage previousFig = null;
-            for (int i = 0; it.hasNext(); i++) {
-                FigMessage fig = (FigMessage) it.next();
-                int y;
-                if (i != 0) {
-                    y = previousFig.getY() + previousFig.getHeight() + 5;
-                } else {
-                    y = getY();
-                }
-                fig.setLocation(getX(), y);
-                fig.endTrans();
+	    for (int i = 0; it.hasNext(); i++) {
+		FigMessage fig = (FigMessage) it.next();
+		fig.setX(getX());
+		if (i != 0) {
+		    fig.setY(previousFig.getY()
+			     + previousFig.getHeight()
+			     + 5);
+		} else {
+		    fig.setY(getY());
+		}
+		fig.endTrans();
                 previousFig = fig;
-            }
+	    }
     	}
     }
-
-
+    
+    
 
     /**
      * @see org.tigris.gef.presentation.Fig#calcBounds()
      */
     public void calcBounds() {
 	super.calcBounds();
-	Collection figs = getFigs();
+	Collection figs = getFigs(null);
 	if (!figs.isEmpty()) {
 	    Fig last = null;
 	    Fig first = null;
@@ -186,15 +161,15 @@ class FigMessageGroup extends FigGroup {
             int size = figs.size();
 	    for (int i = 0; i < size; i++) {
                 Fig fig = (Fig) it.next();
-
+                
                 if (i == 0) {
                     first = fig;
                 }
                 if (i == size - 1) {
                     last = fig;
                 }
-
-		if (fig.getWidth() > _w) {
+                
+		if (fig.getWidth() > _w) { 
 		    _w = fig.getWidth();
 		}
 	    }
@@ -204,8 +179,8 @@ class FigMessageGroup extends FigGroup {
 	    _h = 0;
 	}
     }
-
-
+	
+	
 
     /**
      * @see org.tigris.gef.presentation.FigGroup#addFig(Fig)
@@ -215,5 +190,40 @@ class FigMessageGroup extends FigGroup {
 	updateFigPositions();
 	calcBounds();
     }
+
+
+    /**
+     * @see org.tigris.gef.presentation.Fig#delete()
+     */ 
+    public void delete() { 
+        Collection figs = getFigs(null);
+        if (figs != null) {
+            Iterator it = figs.iterator();
+            while (it.hasNext()) {
+                Fig fig = (Fig) it.next();
+                fig.delete();
+            }
+        } 
+        removeAll();
+        super.delete();
+    }
+
+
+    /**
+     * @see org.tigris.gef.presentation.Fig#dispose()
+     */
+    public void dispose() {
+    	Collection figs = getFigs(null);
+        if (figs != null) {
+	    Iterator it = figs.iterator();
+	    while (it.hasNext()) {
+		Fig fig = (Fig) it.next();
+		fig.dispose();
+	    }
+        }
+        removeAll();
+        super.dispose();
+    }
+
 }
 

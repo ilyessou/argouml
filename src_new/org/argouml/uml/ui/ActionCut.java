@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -44,24 +44,24 @@ import org.argouml.i18n.Translator;
 import org.tigris.gef.base.CmdCut;
 import org.tigris.gef.base.Globals;
 
-/**
- * The Cut Action.
+/** @stereotype singleton
  */
 public class ActionCut extends AbstractAction implements CaretListener {
 
-    private static ActionCut instance = new ActionCut();
+    private static ActionCut _Instance = new ActionCut();
 
     private static final String LOCALIZE_KEY = "action.cut";
 
     ////////////////////////////////////////////////////////////////
     // constructors
 
-    /**
-     * Constructor.
-     */
-    public ActionCut() {
+    private ActionCut() {
         super(Translator.localize(LOCALIZE_KEY));
-        Icon icon = ResourceLoaderWrapper.lookupIcon(LOCALIZE_KEY);
+        Icon icon =
+            ResourceLoaderWrapper.getResourceLoaderWrapper()
+	        .lookupIconResource(
+				    Translator.getImageBinding(LOCALIZE_KEY),
+				    Translator.localize(LOCALIZE_KEY));
         if (icon != null) {
             putValue(Action.SMALL_ICON, icon);
 	}
@@ -70,28 +70,21 @@ public class ActionCut extends AbstractAction implements CaretListener {
 		 Translator.localize(LOCALIZE_KEY) + " ");
     }
 
-    /**
-     * @return the singleton
-     */
     public static ActionCut getInstance() {
-        return instance;
+        return _Instance;
     }
 
-    private JTextComponent textSource;
+    private JTextComponent _textSource;
 
     /**
-     * Cuts some text or a fig.
-     *
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
+     * Cuts some text or a fig
      */
     public void actionPerformed(ActionEvent ae) {
-        if (textSource == null) {
-            if (removeFromDiagramAllowed()) {
-                CmdCut cmd = new CmdCut();
-                cmd.doIt();
-            }
+        if (_textSource == null) {
+            CmdCut cmd = new CmdCut();
+            cmd.doIt();
         } else {
-            textSource.cut();
+            _textSource.cut();
         }
         if (isSystemClipBoardEmpty()
             && Globals.clipBoard == null
@@ -103,32 +96,21 @@ public class ActionCut extends AbstractAction implements CaretListener {
     }
 
     /**
-     * Disable cutting figs from a diagram to prevent issue 3480.
-     * See also ActionPaste, which is also disabled for similar reasons.
-     *
-     * @return true if cut is allowed for the selected items
-     */
-    private boolean removeFromDiagramAllowed() {
-        return false;
-    }
-
-    /**
      * @see
      * javax.swing.event.CaretListener#caretUpdate(javax.swing.event.CaretEvent)
      */
     public void caretUpdate(CaretEvent e) {
-        if (e.getMark() != e.getDot()) { // there is a selection
+        if (e.getMark() != e.getDot()) { // there is a selection        
             setEnabled(true);
-            textSource = (JTextComponent) e.getSource();
+            _textSource = (JTextComponent) e.getSource();
         } else {
             Collection figSelection =
                 Globals.curEditor().getSelectionManager().selections();
             if (figSelection == null || figSelection.isEmpty()) {
                 setEnabled(false);
-            } else {
+            } else
                 setEnabled(true);
-            }
-            textSource = null;
+            _textSource = null;
         }
 
     }

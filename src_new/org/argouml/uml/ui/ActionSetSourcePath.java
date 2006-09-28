@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -27,74 +27,68 @@ package org.argouml.uml.ui;
 import java.awt.event.ActionEvent;
 import java.io.File;
 
-import javax.swing.Action;
 import javax.swing.JFileChooser;
 
 import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
-import org.argouml.ui.ArgoFrame;
+import org.argouml.kernel.Project;
+import org.argouml.kernel.ProjectManager;
+import org.argouml.model.ModelFacade;
+import org.argouml.ui.ProjectBrowser;
+import org.argouml.util.osdep.OsUtil;
 import org.argouml.ui.targetmanager.TargetManager;
-import org.tigris.gef.undo.UndoableAction;
 
 
-/**
- * Action to choose and set source path for model elements.
+/** Action to choose and set source path for model elements
+ * @stereotype singleton
  */
-public class ActionSetSourcePath extends UndoableAction {
+public class ActionSetSourcePath extends UMLAction {
+
+    ////////////////////////////////////////////////////////////////
+    // static variables
+
+    public static ActionSetSourcePath SINGLETON = new ActionSetSourcePath();
+
+    public static final String separator = "/";
+    //System.getProperty("file.separator");
 
     ////////////////////////////////////////////////////////////////
     // constructors
 
-    /**
-     * The constructor.
-     */
-    public ActionSetSourcePath() {
-        super(Translator.localize("action.set-source-path"), null);
-        // Set the tooltip string:
-        putValue(Action.SHORT_DESCRIPTION, 
-                Translator.localize("action.set-source-path"));
+    protected ActionSetSourcePath() {
+	super("action.set-source-path", NO_ICON);
     }
+
 
     ////////////////////////////////////////////////////////////////
     // main methods
 
-    /**
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-     */
     public void actionPerformed(ActionEvent e) {
-    	super.actionPerformed(e);
 	File f = getNewDirectory();
 	if (f != null) {
 	    Object obj = TargetManager.getInstance().getTarget();
-	    if (Model.getFacade().isAModelElement(obj)) {
-		Model.getCoreHelper().setTaggedValue(obj, "src_path",
-		        f.getPath());
+	    if (ModelFacade.isAModelElement(obj)) {
+		ModelFacade.setTaggedValue(obj, "src_path",f.getPath());
 	    }
 	}
     }
 
-    /**
-     * @return the new source path directory
-     */
     protected File getNewDirectory() {
+	Project p = ProjectManager.getManager().getCurrentProject();
 	Object obj = TargetManager.getInstance().getTarget();
 	String name = null;
 	String type = null;
 	String path = null;
-	if (Model.getFacade().isAModelElement(obj)) {
-	    name = Model.getFacade().getName(obj);
-            Object tv = Model.getFacade().getTaggedValue(obj, "src_path");
-            if (tv != null) {
-                path = Model.getFacade().getValueOfTag(tv);
-            }
-	    if (Model.getFacade().isAPackage(obj)) {
-                type = "Package";
-            } else if (Model.getFacade().isAClass(obj)) {
-                type = "Class";
-            }
-	    if (Model.getFacade().isAInterface(obj)) {
-                type = "Interface";
-            }
+	if (ModelFacade.isAModelElement(obj)) {
+	    name = ModelFacade.getName(obj);
+            Object tv = ModelFacade.getTaggedValue(obj, "src_path");
+            if (tv != null)
+                path = ModelFacade.getValueOfTag(tv);
+	    if (ModelFacade.isAPackage(obj))
+		type = "Package";
+	    else if (ModelFacade.isAClass(obj))
+		type = "Class";
+	    if (ModelFacade.isAInterface(obj))
+		type = "Interface";
 	} else {
 	    return null;
 	}
@@ -105,10 +99,10 @@ public class ActionSetSourcePath extends UndoableAction {
 	    f = new File(path);
 	}
 	if ((f != null) && (f.getPath().length() > 0)) {
-	    chooser = new JFileChooser(f.getPath());
+	    chooser  = OsUtil.getFileChooser(f.getPath());
 	}
 	if (chooser == null) {
-	    chooser = new JFileChooser();
+	    chooser  = OsUtil.getFileChooser();
 	}
 	if (f != null) {
 	    chooser.setSelectedFile(f);
@@ -116,18 +110,14 @@ public class ActionSetSourcePath extends UndoableAction {
 
 	String sChooserTitle =
 	    Translator.localize("action.set-source-path");
-	if (type != null) {
-            sChooserTitle += ' ' + type;
-        }
-	if (name != null) {
-            sChooserTitle += ' ' + name;
-        }
+	if (type != null)
+	    sChooserTitle += ' ' + type;
+	if (name != null)
+	    sChooserTitle += ' ' + name;
 	chooser.setDialogTitle(sChooserTitle);
 	chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 
-	int retval =
-            chooser.showDialog(ArgoFrame.getInstance(),
-                    Translator.localize("dialog.button.ok"));
+	int retval = chooser.showDialog(ProjectBrowser.getInstance(), "OK");
 	if (retval == JFileChooser.APPROVE_OPTION) {
 	    return chooser.getSelectedFile();
 	} else {
@@ -135,8 +125,7 @@ public class ActionSetSourcePath extends UndoableAction {
 	}
     }
 
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = -6455209886706784094L;
+    public boolean shouldBeEnabled() {
+	return true;
+    }
 } /* end class ActionSetSourcePath */

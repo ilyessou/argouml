@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,26 +22,22 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $header$
 package org.argouml.uml.ui.foundation.core;
 
 import org.argouml.i18n.Translator;
+
+import org.argouml.uml.ui.UMLComboBoxNavigator;
 import org.argouml.util.ConfigLoader;
 
 /**
- * The properties panel for a Flow.
- *
  * @since Oct 12, 2002
  * @author jaap.branderhorst@xs4all.nl
  */
 public class PropPanelFlow extends PropPanelRelationship {
 
     /**
-     * The serial version.
-     */
-    private static final long serialVersionUID = 2967789232647658450L;
-
-    /**
-     * Construct a property panel for Flow elements.
+     * Constructor for PropPanelFlow.
      */
     public PropPanelFlow() {
         super("Flow", ConfigLoader.getTabPropsOrientation());
@@ -49,13 +45,11 @@ public class PropPanelFlow extends PropPanelRelationship {
     }
 
     private void initialize() {
-        addField(Translator.localize("label.name"),
-                getNameTextField());
-        addField(Translator.localize("label.namespace"),
-                getNamespaceScroll());
-        addField(Translator.localize("label.constraints"),
-                getConstraintScroll());
+        addField(Translator.localize("UMLMenu", "label.name"), getNameTextField());
+        addField(Translator.localize("UMLMenu", "label.stereotype"), new UMLComboBoxNavigator(this, Translator.localize("UMLMenu", "tooltip.nav-stereo"), getStereotypeBox()));
+        addField(Translator.localize("UMLMenu", "label.namespace"), getNamespaceScroll());
+        addField(Translator.localize("UMLMenu", "label.constraints"), getConstraintScroll());
 
-        addSeparator();
+        addSeperator();
     }
 }

@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2002 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,36 +22,31 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $header$
 package org.argouml.uml.diagram.static_structure.ui;
 
-import java.awt.Color;
 import java.awt.Rectangle;
+import java.awt.event.KeyEvent;
 
+import org.argouml.ui.targetmanager.TargetManager;
 import org.argouml.uml.diagram.ui.CompartmentFigText;
-import org.argouml.uml.diagram.ui.FigNodeModelElement;
-import org.argouml.uml.notation.NotationProvider;
 import org.tigris.gef.base.Selection;
 import org.tigris.gef.presentation.Fig;
-import org.tigris.gef.presentation.FigText;
+import org.tigris.gef.presentation.FigGroup;
 import org.tigris.gef.presentation.Handle;
 
 /**
- * Fig to show features in class or interface like attributes or operations.
- *
- * TODO: This doesn't have any behavior specific to Features.  It's really
- * just an item for a ListCompartment and should probably have a better name
- * tfm - 20060310
- *
+ * Fig to show features in class or interface like attributes or operations
  * @since Dec 1, 2002
  * @author jaap.branderhorst@xs4all.nl
  */
 public class FigFeature extends CompartmentFigText {
 
-    private static class SelectionFeature extends Selection {
+    private class SelectionFeature extends Selection {
+
         /**
          * Constructor for SelectionFeature.
-         *
-         * @param f The Fig.
+         * @param f
          */
         public SelectionFeature(Fig f) {
             super(f);
@@ -62,7 +57,7 @@ public class FigFeature extends CompartmentFigText {
          * @see org.tigris.gef.base.Selection#dragHandle(int, int,
          * int, int, org.tigris.gef.presentation.Handle)
          */
-        public void dragHandle(int mx, int my, int anX, int anY, Handle h) {
+        public void dragHandle(int mx, int my, int an_x, int an_y, Handle h) {
         }
 
         /**
@@ -75,60 +70,61 @@ public class FigFeature extends CompartmentFigText {
         }
 
         /**
-         * The UID.
+         * @see java.awt.event.KeyListener#keyPressed(java.awt.event.KeyEvent)
          */
-        private static final long serialVersionUID = 7437255966804296937L;
+        public void keyPressed(KeyEvent e) {
+            if (e.getKeyCode() == KeyEvent.VK_DOWN
+                || e.getKeyCode() == KeyEvent.VK_UP) {
+
+                Fig fig = getGroup().getGroup();
+                if (fig instanceof FigClass) {
+                    FigClass classFig = (FigClass) fig;
+                    FigGroup group = (FigGroup) getGroup();
+                    // TODO in future version of GEF call getFigs returning array
+                    Object[] figs = group.getFigs(null).toArray();
+                    for (int i = 1; i < figs.length; i++) {
+			// the first element is no attr or oper
+                        if (figs[i].equals(_content)) {
+                            if (e.getKeyCode() == KeyEvent.VK_DOWN) {
+                                if (i < figs.length - 1) {
+                                    TargetManager.getInstance().setTarget(
+                                        figs[i + 1]);
+                                }
+                            } else if (i > 1) {
+                                TargetManager.getInstance().setTarget(
+                                    figs[i - 1]);
+
+                            }
+                            e.consume();
+                            return;
+                        }
+                    }
+                }
+
+            }
+        }
+
     }
 
     /**
     * Constructor for FigFeature.
-    * @param x x
-    * @param y x
-    * @param w w
-    * @param h h
-    * @param aFig the fig
-    * @param np the notation provider for the text
+    * @param x
+    * @param y
+    * @param w
+    * @param h
+    * @param aFig
     */
-    public FigFeature(int x, int y, int w, int h, Fig aFig, 
-            NotationProvider np) {
-        super(x, y, w, h, aFig, np);
-        setFilled(false);
-        setLineWidth(0);
-        setFont(FigNodeModelElement.getLabelFont());
-        setTextColor(Color.black);
-        setTextFilled(false);
-        setJustification(FigText.JUSTIFY_LEFT);
-        setReturnAction(FigText.END_EDITING);
-        setRightMargin(3);
-        setLeftMargin(3);
+    public FigFeature(int x, int y, int w, int h, Fig aFig) {
+        super(x, y, w, h, aFig);
     }
 
     /**
      * Via makeSelection we can add a custom selection class. This way
-     * we can add a custom keyevent handler for our attributes or operations.
-     *
+     * we can add a custom keyevent handler for our attributes or operations
      * @see org.tigris.gef.presentation.Fig#makeSelection()
      */
     public Selection makeSelection() {
         return new SelectionFeature(this);
     }
 
-    /**
-     * @see org.tigris.gef.presentation.FigText#setTextFilled(boolean)
-     */
-    public void setTextFilled(boolean filled) {
-        super.setTextFilled(false);
-    }
-
-    /**
-     * @see org.tigris.gef.presentation.Fig#setFilled(boolean)
-     */
-    public void setFilled(boolean filled) {
-        super.setFilled(false);
-    }
-
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = -6174252286709779782L;
 }

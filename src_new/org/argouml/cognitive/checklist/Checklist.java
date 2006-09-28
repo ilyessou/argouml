@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,76 +22,61 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+
+// File: Checklist.java
+// Class: Checklist
+// Original Author: jrobbins@ics.uci.edu
+
+
 package org.argouml.cognitive.checklist;
 
 import java.io.Serializable;
 import java.util.Enumeration;
 import java.util.Vector;
 
-/**
- * A Checklist is basically a list of CheckItems.  It also provides
- * some convience functions for adding trivial CheckItems (ones that
- * have no predicate).
+/** A Checklist is basically a list of CheckItems.  It also provides
+ *  some convience functions for adding trivial CheckItems (ones that
+ *  have no predicate).
  *
- * In ArgoUML, Checklists are shown in the TabChecklist panel.
+ *  In ArgoUML, Checklists are shown in the TabChecklist panel.
  *
- * @see org.argouml.cognitive.checklist.ui.TabChecklist
- *
- * @author Jason Robbins
+ *  @see org.argouml.cognitive.checklist.ui.TabChecklist
  */
+
 public class Checklist implements Serializable {
 
     ////////////////////////////////////////////////////////////////
     // instance variables
 
-    /**
-     * Pending CheckItems for the designer to consider.
-     */
-    private Vector items = new Vector();
+    /** Pending CheckItems for the designer to consider. */
+    protected Vector _items = new Vector();
 
-    private String nextCategory = "General";
+    protected String _nextCategory = "General";
 
-    /**
-     * The constructor.
-     *
-     */
+    ////////////////////////////////////////////////////////////////
+    // constructor
+
     public Checklist() { }
 
     ////////////////////////////////////////////////////////////////
     // accessors
 
-    /**
-     * @return the items
-     */
-    public Vector getCheckItems() { return items; }
+    public Vector getCheckItems() { return _items; }
 
-    /**
-     * @param item the item to be added to the list
-     */
     public void addItem(CheckItem item) {
-	items.addElement(item);
+	_items.addElement(item);
     }
 
-    /**
-     * @param item the item to be removed
-     */
     public void removeItem(CheckItem item) {
-	items.removeElement(item);
+	_items.removeElement(item);
     }
 
-    /**
-     * @param description the description for a new item
-     */
     public void addItem(String description) {
-	CheckItem item = new CheckItem(nextCategory, description);
-	items.addElement(item);
+	CheckItem item = new CheckItem(_nextCategory, description);
+	_items.addElement(item);
     }
 
-    /**
-     * Replace the list by the given new list.
-     *
-     * @param list the given new list
-     */
     public synchronized void addAll(Checklist list) {
 	Enumeration cur = list.elements();
 	while (cur.hasMoreElements()) {
@@ -100,33 +85,17 @@ public class Checklist implements Serializable {
 	}
     }
 
-    /**
-     * @return the list in enumeration format
-     */
-    public Enumeration elements() { return items.elements(); }
+    public Enumeration elements() { return _items.elements(); }
 
-    /**
-     * @return the number of items in the list
-     */
-    public int size() { return items.size(); }
+    public int size() { return _items.size(); }
 
-    /**
-     * @param index the position of the item to retrieve
-     * @return the item
-     */
     public CheckItem elementAt(int index) {
-	return (CheckItem) items.elementAt(index);
+	return (CheckItem) _items.elementAt(index);
     }
 
-    /**
-     * @param cat the category
-     */
-    public void setNextCategory(String cat) { nextCategory = cat; }
+    public void setNextCategory(String cat) { _nextCategory = cat; }
+    
 
-
-    /**
-     * @see java.lang.Object#toString()
-     */
     public String toString() {
 	String res;
 	res = getClass().getName() + " {\n";

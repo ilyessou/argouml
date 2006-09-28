@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -31,11 +31,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
+import org.argouml.model.ModelFacade;
 
 /**
- * Rule for Summary->OutgoingDependency.
  * This class is a Go Rule for the "Class - centric" Navigation perspective.
  *
  * @author  alexb, d00mst
@@ -43,30 +41,22 @@ import org.argouml.model.Model;
  */
 public class GoSummaryToOutgoingDependency extends AbstractPerspectiveRule {
 
-    /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getRuleName()
-     */
     public String getRuleName() {
-        return Translator.localize ("misc.summary.outgoing-dependency");
+	return "Summary->OutgoingDependency";
     }
 
-    /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getChildren(
-     *         java.lang.Object)
-     */
     public Collection getChildren(Object parent) {
 	if (parent instanceof OutgoingDependencyNode) {
 	    List list = new ArrayList();
 	    Iterator it =
-		Model.getFacade().getClientDependencies(
+		ModelFacade.getClientDependencies(
 			((OutgoingDependencyNode) parent).getParent())
 		    .iterator();
 
 	    while (it.hasNext()) {
 		Object next = it.next();
-		if (!Model.getFacade().isAAbstraction(next)) {
-                    list.add(next);
-                }
+		if (!ModelFacade.isAAbstraction(next))
+		    list.add(next);
 	    }
 
 	    return list;
@@ -74,10 +64,6 @@ public class GoSummaryToOutgoingDependency extends AbstractPerspectiveRule {
 	return null;
     }
 
-    /**
-     * @see org.argouml.ui.explorer.rules.PerspectiveRule#getDependencies(
-     *         java.lang.Object)
-     */
     public Set getDependencies(Object parent) {
         if (parent instanceof OutgoingDependencyNode) {
 	    Set set = new HashSet();

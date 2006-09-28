@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,173 +22,112 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+
+// File: CrUnconventionalOperName.java
+// Classes: CrUnconventionalOperName
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.cognitive.critics;
 
-import java.util.Collection;
-import java.util.Iterator;
-
 import org.argouml.cognitive.Designer;
-import org.argouml.cognitive.ListSet;
 import org.argouml.cognitive.ToDoItem;
-import org.argouml.cognitive.critics.Critic;
-import org.argouml.cognitive.ui.Wizard;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
 import org.argouml.uml.cognitive.UMLToDoItem;
+import org.argouml.cognitive.critics.Critic;
+import org.argouml.kernel.Wizard;
+import org.argouml.model.ModelFacade;
+import org.tigris.gef.util.VectorSet;
 
-/**
- * Critic to detect whether an operation name obeys to certain rules.
+/** Critic to detect whether an operation name obeys to certain rules.
  */
-public class CrUnconventionalOperName extends AbstractCrUnconventionalName {
+public class CrUnconventionalOperName extends CrUML {
 
-    /**
-     * The constructor.
-     */
     public CrUnconventionalOperName() {
-        setupHeadAndDesc();
-	addSupportedDecision(UMLDecision.NAMING);
+	setHeadline("Choose a Better MOperation Name");
+	addSupportedDecision(CrUML.decNAMING);
 	setKnowledgeTypes(Critic.KT_SYNTAX);
 	addTrigger("feature_name");
     }
 
-    /**
-     * @see org.argouml.uml.cognitive.critics.CrUML#predicate2(
-     * java.lang.Object, org.argouml.cognitive.Designer)
-     */
     public boolean predicate2(Object dm, Designer dsgr) {
-        if (!(Model.getFacade().isAOperation(dm))) {
-            return NO_PROBLEM;
+	if (!(ModelFacade.isAOperation(dm))) return NO_PROBLEM;
+	Object oper = /*(MOperation)*/ dm;
+	String myName = ModelFacade.getName(oper);
+	if (myName == null || myName.equals("")) return NO_PROBLEM;
+	String nameStr = myName;
+	if (nameStr == null || nameStr.length() == 0) return NO_PROBLEM;
+	char initalChar = nameStr.charAt(0);
+        Object stereo = null;
+        if (ModelFacade.getStereotypes(oper).size() > 0) {
+            stereo = ModelFacade.getStereotypes(oper).iterator().next();
         }
-        Object oper = /*(MOperation)*/ dm;
-        String myName = Model.getFacade().getName(oper);
-        if (myName == null || myName.equals("")) {
-            return NO_PROBLEM;
+	if ((stereo != null) && 
+                ("create".equals(ModelFacade.getName(stereo)) ||
+                 "constructor".equals(ModelFacade.getName(stereo)))) {
+	    return NO_PROBLEM;
         }
-        String nameStr = myName;
-        if (nameStr == null || nameStr.length() == 0) {
-            return NO_PROBLEM;
-        }
-        char initalChar = nameStr.charAt(0);
-        
-        Collection stereos = Model.getFacade().getStereotypes(oper);
-        Iterator i = stereos.iterator();
-        while (i.hasNext()) {
-            Object stereo = i.next();
-            if ("create".equals(Model.getFacade().getName(stereo))
-                || "constructor".equals(Model.getFacade().getName(stereo))) {
-                return NO_PROBLEM;
-            }
-        }
-        if (!Character.isLowerCase(initalChar)) {
-            return PROBLEM_FOUND;
-        }
-        return NO_PROBLEM;
+	if (!Character.isLowerCase(initalChar)) return PROBLEM_FOUND;
+	return NO_PROBLEM;
     }
 
-    /**
-     * @see org.argouml.cognitive.critics.Critic#toDoItem(
-     * java.lang.Object, org.argouml.cognitive.Designer)
-     */
     public ToDoItem toDoItem(Object dm, Designer dsgr) {
 	Object f = /*(MFeature)*/ dm;
-	ListSet offs = computeOffenders(f);
+	VectorSet offs = computeOffenders(f);
 	return new UMLToDoItem(this, offs, dsgr);
     }
 
-    /**
-     * @param dm the object to be checked
-     * @return the set of offenders
-     */
-    protected ListSet computeOffenders(Object/*MFeature*/ dm) {
-	ListSet offs = new ListSet(dm);
-	offs.addElement(Model.getFacade().getOwner(dm));
+    protected VectorSet computeOffenders(Object/*MFeature*/ dm) {
+	VectorSet offs = new VectorSet(dm);
+	offs.addElement(ModelFacade.getOwner(dm));
 	return offs;
     }
 
-    /**
-     * @see org.argouml.cognitive.Poster#stillValid(
-     * org.argouml.cognitive.ToDoItem, org.argouml.cognitive.Designer)
-     */
     public boolean stillValid(ToDoItem i, Designer dsgr) {
-	if (!isActive()) {
-	    return false;
-	}
-	ListSet offs = i.getOffenders();
+	if (!isActive()) return false;
+	VectorSet offs = i.getOffenders();
 	Object f = /*(MFeature)*/ offs.firstElement();
-	if (!predicate(f, dsgr)) {
-	    return false;
-	}
-	ListSet newOffs = computeOffenders(f);
+	if (!predicate(f, dsgr)) return false;
+	VectorSet newOffs = computeOffenders(f);
 	boolean res = offs.equals(newOffs);
 	return res;
     }
 
 
-    /**
-     * CandidateForConstructor tests if the operation name is the same
-     * as the class name. If so, an alternative path in the wizard is
+    /** candidateForConstructor tests if the operation name is the same
+     * as the class name. If so, an alternative path in the wizard is 
      * possible where we are suggested to make the operation a constructor.
-     *
-     * @param me the operation to check
-     * @return true if this operation looks like a constructor
      */
     protected boolean candidateForConstructor(Object/*MModelElement*/ me) {
-	if (!(Model.getFacade().isAOperation(me))) {
-	    return false;
-	}
+	if (!(ModelFacade.isAOperation(me))) return false;
 	Object oper = /*(MOperation)*/ me;
-	String myName = Model.getFacade().getName(oper);
-	if (myName == null || myName.equals("")) {
-	    return false;
-	}
-	Object cl = Model.getFacade().getOwner(oper);
-	String nameCl = Model.getFacade().getName(cl);
-	if (nameCl == null || nameCl.equals("")) {
-	    return false;
-	}
-	if (myName.equals(nameCl)) {
-	    return true;
-	}
+	String myName = ModelFacade.getName(oper);
+	if (myName == null || myName.equals("")) return false;
+	Object cl = ModelFacade.getOwner(oper);
+	String nameCl = ModelFacade.getName(cl);
+	if (nameCl == null || nameCl.equals("")) return false;
+	if (myName.equals(nameCl)) return true;
 	return false;
     }
 
 
-    /**
-     * @see org.argouml.cognitive.critics.Critic#initWizard(
-     *         org.argouml.cognitive.ui.Wizard)
-     */
     public void initWizard(Wizard w) {
 	if (w instanceof WizOperName) {
-	    ToDoItem item = (ToDoItem) w.getToDoItem();
+	    ToDoItem item = w.getToDoItem();
 	    Object me = /*(MModelElement)*/ item.getOffenders().elementAt(0);
-	    String sug = Model.getFacade().getName(me);
-	    sug = computeSuggestion(sug);
+	    String sug = ModelFacade.getName(me);
+	    sug = sug.substring(0, 1).toLowerCase() + sug.substring(1);
 	    boolean cand = candidateForConstructor(me);
-	    String ins;
-            if (cand) {
-	        ins = super.getLocalizedString("-ins-ext");
-	    } else {
-                ins = super.getInstructions();       
-            }
+	    String ins = "Change the operation name to start with a " +
+		"lowercase letter";
+	    if (cand)
+		ins = ins + " or make it a constructor";
+	    ins = ins + ".";
 	    ((WizOperName) w).setInstructions(ins);
 	    ((WizOperName) w).setSuggestion(sug);
 	    ((WizOperName) w).setPossibleConstructor(cand);
 	}
     }
-
-    /**
-     * @see org.argouml.uml.cognitive.critics.AbstractCrUnconventionalName#computeSuggestion(java.lang.String)
-     */
-    public String computeSuggestion(String sug) {
-        if (sug == null) {
-            return "";
-        }
-        return sug.substring(0, 1).toLowerCase() + sug.substring(1);
-    }
-
-    /**
-     * @see org.argouml.cognitive.critics.Critic#getWizardClass(org.argouml.cognitive.ToDoItem)
-     */
     public Class getWizardClass(ToDoItem item) { return WizOperName.class; }
 
 } /* end class CrUnconventionalOperName */

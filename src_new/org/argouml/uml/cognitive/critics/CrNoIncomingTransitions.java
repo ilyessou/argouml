@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,71 +22,46 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: CrNoIncomingTransitions.java
+// Classes: CrNoIncomingTransitions
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.cognitive.critics;
 
 import java.util.Collection;
-
 import org.argouml.cognitive.Designer;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
+import org.argouml.model.ModelFacade;
 
-/**
- * A critic to detect when a state has no outgoing transitions.
- *
- * @author jrobbins
- */
+/** A critic to detect when a state has no outgoing transitions. */
+
 public class CrNoIncomingTransitions extends CrUML {
 
-    /**
-     * Constructor.
-     */
     public CrNoIncomingTransitions() {
-        setupHeadAndDesc();
-	addSupportedDecision(UMLDecision.STATE_MACHINES);
+	setHeadline("Add Incoming Transitions to <ocl>self</ocl>");
+	addSupportedDecision(CrUML.decSTATE_MACHINES);
 	addTrigger("incoming");
     }
 
-    /**
-     * This is the decision routine for the critic.
-     *
-     * @param dm is the UML entity that is being checked.
-     * @param dsgr is for future development and can be ignored.
-     *
-     * @return boolean problem found
-     */
     public boolean predicate2(Object dm, Designer dsgr) {
-	if (!(Model.getFacade().isAStateVertex(dm))) {
-	    return NO_PROBLEM;
-	}
+	if (!(ModelFacade.isAStateVertex(dm))) return NO_PROBLEM;
 	Object sv = /*(MStateVertex)*/ dm;
-	if (Model.getFacade().isAState(sv)) {
-	    Object sm = Model.getFacade().getStateMachine(sv);
-	    if (sm != null && Model.getFacade().getTop(sm) == sv) {
-	        return NO_PROBLEM;
-	    }
+	if (ModelFacade.isAState(sv)) {
+	    Object sm = ModelFacade.getStateMachine(sv);
+	    if (sm != null && ModelFacade.getTop(sm) == sv) return NO_PROBLEM;
 	}
-	if (Model.getFacade().isAPseudostate(sv)) {
-            Object k = Model.getFacade().getPseudostateKind(sv);
-            if (k.equals(Model.getPseudostateKind().getChoice())) {
-                return NO_PROBLEM;
-            }
-            if (k.equals(Model.getPseudostateKind().getJunction())) {
-                return NO_PROBLEM;
-            }
-        }
-	Collection incoming = Model.getFacade().getIncomings(sv);
+
+	Collection incoming = ModelFacade.getIncomings(sv);
 
 	boolean needsIncoming = incoming == null || incoming.size() == 0;
-	if (Model.getFacade().isAPseudostate(sv)) {
-	    if (Model.getFacade().getKind(sv)
-                    .equals(Model.getPseudostateKind().getInitial())) {
+	if (ModelFacade.isAPseudostate(sv)) {
+	    if (ModelFacade.getKind(sv)
+                    .equals(ModelFacade.INITIAL_PSEUDOSTATEKIND)) {
 		needsIncoming = false;
             }
 	}
 
-	if (needsIncoming) {
-	    return PROBLEM_FOUND;
-	}
+	if (needsIncoming) return PROBLEM_FOUND;
 	return NO_PROBLEM;
     }
 

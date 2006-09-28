@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,9 +22,19 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// $Id$
 package org.argouml.ui;
 
+import java.awt.Component;
+
+import javax.swing.JTabbedPane;
+
 import junit.framework.TestCase;
+
+import org.argouml.model.uml.foundation.core.CoreFactory;
+import org.argouml.ui.targetmanager.TargetEvent;
+import org.argouml.uml.diagram.static_structure.ui.UMLClassDiagram;
+import org.tigris.gef.presentation.FigText;
 
 /**
  * @author jaap.branderhorst@xs4all.nl
@@ -46,8 +56,89 @@ public class GUITestMultiEditorPane extends TestCase {
      * multieditorpane and even have an editor in it?
      */
     public void testConstruction() {
-	MultiEditorPane pane = new MultiEditorPane();
-	assertNotNull(pane);
-	assertEquals(pane.getComponents().length, 1);
+        try {
+            MultiEditorPane pane = new MultiEditorPane();
+            assertNotNull(pane);
+            assertEquals(pane.getComponents().length, 1);
+        } catch (Exception ex) {
+            // on a headless system (without display) this will crash
+        }
     }
+
+    public void testTargetSet() {
+        try {
+            MultiEditorPane pane = new MultiEditorPane();
+            Component[] tabs = pane._tabs.getComponents();
+            Object target = new Object();
+            boolean[] shouldBeEnabled = getShouldBeEnabled(target, tabs);
+            TargetEvent e =
+                new TargetEvent(this,
+				TargetEvent.TARGET_SET,
+				new Object[] {
+				    null,
+				},
+				new Object[] {
+				    target,
+				});
+            pane.targetSet(e);
+            assertEnabled(pane._tabs, shouldBeEnabled);
+            target = new UMLClassDiagram();
+            shouldBeEnabled = getShouldBeEnabled(target, tabs);
+            e = new TargetEvent(
+				this,
+				TargetEvent.TARGET_SET,
+				new Object[] {
+				    null,
+				},
+				new Object[] {
+				    target
+				});
+            pane.targetSet(e);
+            assertEnabled(pane._tabs, shouldBeEnabled);
+            target = CoreFactory.getFactory().createClass();
+            shouldBeEnabled = getShouldBeEnabled(target, tabs);
+            e =
+                new TargetEvent(this,
+				TargetEvent.TARGET_SET,
+				new Object[] {
+				    null,
+				},
+				new Object[] {
+				    target,
+				});
+            pane.targetSet(e);
+            assertEnabled(pane._tabs, shouldBeEnabled);
+            target = new FigText(0, 0, 0, 0);
+            shouldBeEnabled = getShouldBeEnabled(target, tabs);
+            e = new TargetEvent(this,
+				TargetEvent.TARGET_SET,
+				new Object[] {
+				    null,
+				},
+				new Object[] {
+				    target,
+				});
+            pane.targetSet(e);
+            assertEnabled(pane._tabs, shouldBeEnabled);
+        } catch (Exception ex) {
+            // on a headless system (without display) this will crash
+        }
+    }
+
+    private boolean[] getShouldBeEnabled(Object target, Component[] tabs) {
+        boolean[] shouldBeEnabled = new boolean[tabs.length];
+        for (int i = 0; i < tabs.length; i++) {
+            shouldBeEnabled[i] = ((TabTarget) tabs[i]).shouldBeEnabled(target);
+        }
+        return shouldBeEnabled;
+    }
+
+    private void assertEnabled(
+        JTabbedPane tabbedPane,
+        boolean[] shouldBeEnabled) {
+        for (int i = 0; i < shouldBeEnabled.length; i++) {
+            assertEquals(shouldBeEnabled[i], tabbedPane.isEnabledAt(i));
+        }
+    }
+
 }

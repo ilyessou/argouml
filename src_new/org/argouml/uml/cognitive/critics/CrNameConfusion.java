@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,195 +22,134 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+
+// File: CrNameConfusion.java
+// Classes: CrNameConfusion
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.cognitive.critics;
 
 import java.util.Collection;
 import java.util.Iterator;
-
 import javax.swing.Icon;
-
 import org.argouml.cognitive.Designer;
-import org.argouml.cognitive.ListSet;
 import org.argouml.cognitive.ToDoItem;
-import org.argouml.cognitive.critics.Critic;
-import org.argouml.cognitive.ui.Wizard;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
 import org.argouml.uml.cognitive.UMLToDoItem;
+import org.argouml.cognitive.critics.Critic;
+import org.argouml.kernel.Wizard;
+import org.argouml.model.ModelFacade;
+import org.tigris.gef.util.VectorSet;
+/** Well-formedness rule [1] for MNamespace. See page 33 of UML 1.1
+ *  Semantics. OMG document ad/97-08-04. */
 
-/**
- * Well-formedness rule [1] for MNamespace. See page 33 of UML 1.1
- * Semantics. OMG document ad/97-08-04.
- */
 public class CrNameConfusion extends CrUML {
 
-    /**
-     * The constructor.
-     */
     public CrNameConfusion() {
-        setupHeadAndDesc();
-	addSupportedDecision(UMLDecision.NAMING);
+	setHeadline("Revise Name to Avoid Confusion");
+	addSupportedDecision(CrUML.decNAMING);
 	setKnowledgeTypes(Critic.KT_PRESENTATION);
 	setKnowledgeTypes(Critic.KT_SYNTAX);
 	addTrigger("name");
     }
 
-    /**
-     * @see org.argouml.uml.cognitive.critics.CrUML#predicate2(
-     * java.lang.Object, org.argouml.cognitive.Designer)
-     */
     public boolean predicate2(Object dm, Designer dsgr) {
-	if (!(Model.getFacade().isAModelElement(dm))) {
-	    return NO_PROBLEM;
-	}
+	if (!(ModelFacade.isAModelElement(dm))) return NO_PROBLEM;
 	Object me = /*(MModelElement)*/ dm;
-	ListSet offs = computeOffenders(me);
-	if (offs.size() > 1) {
-	    return PROBLEM_FOUND;
-	}
+	VectorSet offs = computeOffenders(me);
+	if (offs.size() > 1) return PROBLEM_FOUND;
 	return NO_PROBLEM;
     }
 
-    /**
-     * @param dm the given modelelement
-     * @return the vectorset of offenders
-     */
-    public ListSet computeOffenders(Object/*MModelElement*/ dm) {
-	Object ns = Model.getFacade().getNamespace(dm);
-	ListSet res = new ListSet(dm);
-	String n = Model.getFacade().getName(dm);
-	if (n == null || n.equals("")) {
-	    return res;
-	}
+    public VectorSet computeOffenders(Object/*MModelElement*/ dm) {
+	Object ns = ModelFacade.getNamespace(dm);
+	VectorSet res = new VectorSet(dm);
+	String n = ModelFacade.getName(dm);
+	if (n == null || n.equals("")) return res;
 	String dmNameStr = n;
-	if (dmNameStr == null || dmNameStr.length() == 0) {
-	    return res;
-	}
+	if (dmNameStr == null || dmNameStr.length() == 0) return res;
 	String stripped2 = strip(dmNameStr);
-	if (ns == null) {
-	    return res;
-	}
-	Collection oes = Model.getFacade().getOwnedElements(ns);
-	if (oes == null) {
-	    return res;
-	}
-	Iterator elems = oes.iterator();
-	while (elems.hasNext()) {
-	    Object me2 = /*(MModelElement)*/ elems.next();
-	    if (me2 == dm) {
-	        continue;
-	    }
-	    String meName = Model.getFacade().getName(me2);
-	    if (meName == null || meName.equals("")) {
-	        continue;
-	    }
+	if (ns == null) return res;
+	Collection oes = ModelFacade.getOwnedElements(ns);
+	if (oes == null) return res;
+	Iterator enum = oes.iterator();
+	while (enum.hasNext()) {
+	    Object me2 = /*(MModelElement)*/ enum.next();
+	    if (me2 == dm) continue;
+	    String meName = ModelFacade.getName(me2);
+	    if (meName == null || meName.equals("")) continue;
 	    String compareName = meName;
-	    if (confusable(stripped2, strip(compareName))
-                && !dmNameStr.equals(compareName)) {
+	    if (confusable(stripped2, strip(compareName)) &&
+		!dmNameStr.equals(compareName)) {
 		res.addElement(me2);
 	    }
 	}
 	return res;
     }
 
-    /**
-     * @see org.argouml.cognitive.critics.Critic#toDoItem(
-     * java.lang.Object, org.argouml.cognitive.Designer)
-     */
     public ToDoItem toDoItem(Object dm, Designer dsgr) {
 	Object me = /*(MModelElement)*/ dm;
-	ListSet offs = computeOffenders(me);
+	VectorSet offs = computeOffenders(me);
 	return new UMLToDoItem(this, offs, dsgr);
     }
 
-    /**
-     * @see org.argouml.cognitive.Poster#stillValid(
-     * org.argouml.cognitive.ToDoItem, org.argouml.cognitive.Designer)
-     */
     public boolean stillValid(ToDoItem i, Designer dsgr) {
-	if (!isActive()) {
-	    return false;
-	}
-	ListSet offs = i.getOffenders();
+	if (!isActive()) return false;
+	VectorSet offs = i.getOffenders();
 	Object dm = /*(MModelElement)*/ offs.firstElement();
-	if (!predicate(dm, dsgr)) {
-	    return false;
-	}
-	ListSet newOffs = computeOffenders(dm);
+	if (!predicate(dm, dsgr)) return false;
+	VectorSet newOffs = computeOffenders(dm);
 	boolean res = offs.equals(newOffs);
 	return res;
     }
 
-    /**
-     * @param stripped1 given string 1
-     * @param stripped2 given string 2
-     * @return true if the both given strings are confusingly similar
-     */
     public boolean confusable(String stripped1, String stripped2) {
 	int countDiffs = countDiffs(stripped1, stripped2);
 	return countDiffs <= 1;
     }
 
-    /**
-     * @param s1 given string 1
-     * @param s2 given string 2
-     * @return positive int, representing the number of different chars, or
-     *         if the lengths differ more than 2, this length difference
-     */
     public int countDiffs(String s1, String s2) {
 	int len = Math.min(s1.length(), s2.length());
 	int count = Math.abs(s1.length() - s2.length());
-	if (count > 2) {
-	    return count;
-	}
+	if (count > 2) return count;
 	for (int i = 0; i < len; i++) {
-	    if (s1.charAt(i) != s2.charAt(i)) {
-	        count++;
-	    }
+	    if (s1.charAt(i) != s2.charAt(i)) count++;
 	}
 	return count;
     }
 
-    /**
-     * @param s the given string
-     * @return the string s with all non-letters/digits stripped off
-     */
     public String strip(String s) {
 	StringBuffer res = new StringBuffer(s.length());
 	int len = s.length();
 	for (int i = 0; i < len; i++) {
 	    char c = s.charAt(i);
-	    if (Character.isLetterOrDigit(c)) {
-	        res.append(Character.toLowerCase(c));
-	    } else if (c == ']' && i > 1 && s.charAt(i - 1) == '[') {
+	    if (Character.isLetterOrDigit(c))
+		res.append(Character.toLowerCase(c));
+	    else if (c == ']' && i > 1 && s.charAt(i - 1) == '[') {
 		res.append("[]");
 	    }
 	}
 	return res.toString();
     }
 
-    /**
-     * @see org.argouml.cognitive.Poster#getClarifier()
-     */
     public Icon getClarifier() {
-	return ClClassName.getTheInstance();
+	return ClClassName.TheInstance;
     }
 
 
-    /**
-     * @see org.argouml.cognitive.critics.Critic#initWizard(
-     *         org.argouml.cognitive.ui.Wizard)
-     */
     public void initWizard(Wizard w) {
 	if (w instanceof WizManyNames) {
-	    ToDoItem item = (ToDoItem) w.getToDoItem();
+	    ToDoItem item = w.getToDoItem();
+	    String ins =
+		"Change each name to be significantly different from "
+		+ "the others.  "
+		+ "Names should differ my more than one character and " 
+		+ "not just differ my case (capital or lower case).";
+	    ((WizManyNames) w).setInstructions(ins);
 	    ((WizManyNames) w).setMEs(item.getOffenders().asVector());
 	}
     }
-
-    /**
-     * @see org.argouml.cognitive.critics.Critic#getWizardClass(org.argouml.cognitive.ToDoItem)
-     */
     public Class getWizardClass(ToDoItem item) {
 	return WizManyNames.class;
     }

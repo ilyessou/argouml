@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,6 +22,8 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: FigTrace.java
+// Classes: FigTrace
 
 package org.argouml.uml.diagram.ui;
 
@@ -29,28 +31,19 @@ import java.awt.Color;
 import org.tigris.gef.presentation.ArrowHeadTriangle;
 import org.tigris.gef.presentation.FigEdgeLine;
 
-/**
- * This class is not used at all.
- *
- */
 public class FigTrace extends FigEdgeLine {
 
-    /**
-     * The constructor.
-     */
+    ////////////////////////////////////////////////////////////////
+    // constructors
+
     public FigTrace() {
-	getFig().setLineColor(Color.red);
+	_fig.setLineColor(Color.red);
 	ArrowHeadTriangle endArrow = new ArrowHeadTriangle();
 	endArrow.setFillColor(Color.red);
 	setDestArrowHead(endArrow);
 	setBetweenNearestPoints(true);
     }
 
-    /**
-     * The constructor.
-     *
-     * @param edge the owning UML element
-     */
     public FigTrace(Object edge) {
 	this();
 	setOwner(edge);

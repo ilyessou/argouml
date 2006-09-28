@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-2004 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,11 +24,14 @@
 
 package org.argouml.uml.cognitive.checklist;
 
-import org.argouml.cognitive.checklist.CheckItem;
+import org.apache.log4j.Logger;
+
+import java.util.Locale;
 import org.argouml.cognitive.checklist.CheckManager;
 import org.argouml.cognitive.checklist.Checklist;
+import org.argouml.cognitive.checklist.CheckItem;
+import org.argouml.model.ModelFacade;
 import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
 
 
 /**
@@ -38,11 +41,27 @@ import org.argouml.model.Model;
  * @see org.argouml.cognitive.checklist.CheckManager
  */
 public class Init {
+
     /**
-     * static initializer, register all appropriate critics.
+     * @deprecated as of 0.15.3. Visibility changed to private.
+     */
+    protected static Logger cat =
+	Logger.getLogger(Init.class);
+
+    /** 
+     * static initializer, register all appropriate critics<p>
      */
     public static void init() {
 	createChecklists();
+    }
+
+    /**
+     * static initializer, register all appropriate critics<p>
+     *
+     * @deprecated as of 0.15.3. use @see #init()
+     */
+    public static void init(Locale locale) {
+	init();
     }
 
 
@@ -54,10 +73,10 @@ public class Init {
      * @param key to get the localized string.
      * @param checklist to add the item to.
      */
-    private static void newCheckItem(String category, String key,
+    private static void newCheckItem(String category, String key, 
 				     Checklist checklist) {
-	CheckItem checkitem =
-	    new UMLCheckItem(category, Translator.localize(key));
+	CheckItem checkitem = new UMLCheckItem(category, 
+					       Translator.localize(key));
 	checklist.addItem(checkitem);
     }
 
@@ -69,13 +88,13 @@ public class Init {
      * what to check.<p>
      *
      * The purpose of this is to allow the ArgoUML project to jointly develop
-     * the knowledge database and let the internationalizations be just
+     * the knowledge database and let the internationalizations be just 
      * internationalizations.<p>
      *
      * When adding a new check list or an item to an existing check list you
      * will have to:<ol>
      * <li>Add the lines in this function.
-     * <li>Add the tags for the new items to the i18n property file
+     * <li>Add the tags for the new items to the i18n property file 
      *     (checklist.properties).
      * <li>Notify the localization teams.
      * </ol>
@@ -85,7 +104,7 @@ public class Init {
 	// This function will, by design, contain long lists of i18n keys.
 	// It might be tempting to shorten these by constructing them from
 	// the parts but please then consider that we might loose the
-	// possibility to build tools to statically check the property files
+	// possibility to build tools to statically check the property files 
 	// against this file.
 	//
 	Checklist cl;
@@ -109,8 +128,8 @@ public class Init {
 		     cl);
 	newCheckItem(cat, "checklist.class.value.convert-to-invariant", cl);
 	newCheckItem(cat,
-		 "checklist.class.value.establish-invariant-in-constructors",
-		 cl);
+		     "checklist.class.value.establish-invariant-in-constructors",
+		     cl);
 	newCheckItem(cat, "checklist.class.value.maintain-invariant", cl);
 
 	cat = Translator.localize("checklist.class.location");
@@ -118,14 +137,14 @@ public class Init {
 	newCheckItem(cat, "checklist.class.location.planned-subclasses", cl);
 	newCheckItem(cat, "checklist.class.location.eliminate-from-model", cl);
 	newCheckItem(cat,
-	        "checklist.class.location.eliminates-or-affects-something-else",
-		cl);
+		     "checklist.class.location.eliminates-or-affects-something-else",
+		     cl);
 
 	cat = Translator.localize("checklist.class.updates");
         newCheckItem(cat, "checklist.class.updates.reasons-for-update", cl);
 	newCheckItem(cat, "checklist.class.updates.affects-something-else", cl);
 
-	CheckManager.register(Model.getMetaTypes().getUMLClass(), cl);
+	CheckManager.register((Class) ModelFacade.CLASS, cl);
 
 
 	// Attribute
@@ -161,8 +180,8 @@ public class Init {
 	newCheckItem(cat, "checklist.attribute.location.could-be-eliminated",
 		     cl);
 	newCheckItem(cat,
-	    "checklist.attribute.location.eliminates-or-affects-something-else",
-	    cl);
+		     "checklist.attribute.location.eliminates-or-affects-something-else",
+		     cl);
 
 	cat = Translator.localize("checklist.attribute.updates");
         newCheckItem(cat, "checklist.attribute.updates.reasons-for-update", cl);
@@ -172,10 +191,10 @@ public class Init {
 		     "checklist.attribute.updates.exists-method-for-update",
 		     cl);
 	newCheckItem(cat,
-	    "checklist.attribute.updates.exists-method-for-specific-value",
-	    cl);
+		     "checklist.attribute.updates.exists-method-for-specific-value",
+		     cl);
 
-	CheckManager.register(Model.getMetaTypes().getAttribute(), cl);
+	CheckManager.register((Class) ModelFacade.ATTRIBUTE, cl);
 
 
 	// Operation
@@ -189,13 +208,12 @@ public class Init {
 
 	cat = Translator.localize("checklist.operation.encoding");
 	newCheckItem(cat,
-	    "checklist.operation.encoding.is-returntype-too-restrictive",
-	    cl);
+		     "checklist.operation.encoding.is-returntype-too-restrictive",
+		     cl);
 	newCheckItem(cat,
-	    "checklist.operation.encoding.does-returntype-allow-impossible-"
-            + "values", cl);
-	newCheckItem(cat,
-            "checklist.operation.encoding.combine-with-other", cl);
+		     "checklist.operation.encoding.does-returntype-allow-impossible-values",
+		     cl);
+	newCheckItem(cat, "checklist.operation.encoding.combine-with-other", cl);
 	newCheckItem(cat, "checklist.operation.encoding.break-into-parts", cl);
 	newCheckItem(cat, "checklist.operation.encoding.break-into-series", cl);
 	newCheckItem(cat, "checklist.operation.encoding.reduce-number-of-calls",
@@ -210,14 +228,14 @@ public class Init {
 		     "checklist.operation.value.express-preconditions-possible",
 		     cl);
 	newCheckItem(cat,
-	    "checklist.operation.value.express-postconditions-possible",
-	    cl);
+		     "checklist.operation.value.express-postconditions-possible",
+		     cl);
 	newCheckItem(cat,
-	    "checklist.operation.value.how-behave-preconditions-violated",
-	    cl);
+		     "checklist.operation.value.how-behave-preconditions-violated",
+		     cl);
 	newCheckItem(cat,
-	    "checklist.operation.value.how-behave-postconditions-not-achieved",
-	    cl);
+		     "checklist.operation.value.how-behave-postconditions-not-achieved",
+		     cl);
 
 	cat = Translator.localize("checklist.operation.location");
 	newCheckItem(cat, "checklist.operation.location.move-somewhere", cl);
@@ -226,10 +244,10 @@ public class Init {
 	newCheckItem(cat, "checklist.operation.location.could-be-eliminated",
 		     cl);
 	newCheckItem(cat,
-	    "checklist.operation.location.eliminates-or-affects-something-else",
-	    cl);
+		     "checklist.operation.location.eliminates-or-affects-something-else",
+		     cl);
 
-	CheckManager.register(Model.getMetaTypes().getOperation(), cl);
+	CheckManager.register((Class) ModelFacade.OPERATION, cl);
 
 
 
@@ -256,8 +274,8 @@ public class Init {
 	newCheckItem(cat, "checklist.association.value.convert-to-invariant",
 		     cl);
 	newCheckItem(cat,
-	    "checklist.association.value.establish-invariant-in-constructors",
-	    cl);
+		     "checklist.association.value.establish-invariant-in-constructors",
+		     cl);
 	newCheckItem(cat, "checklist.association.value.maintain-invariant", cl);
 
 	cat = Translator.localize("checklist.association.location");
@@ -267,17 +285,16 @@ public class Init {
 	newCheckItem(cat, "checklist.association.location.eliminate-from-model",
 		     cl);
 	newCheckItem(cat,
-	    "checklist.association.location.eliminates-or-affects-"
-            + "something-else", cl);
+		     "checklist.association.location.eliminates-or-affects-something-else",
+		     cl);
 
 	cat = Translator.localize("checklist.association.updates");
 	newCheckItem(cat, "checklist.association.updates.reasons-for-update",
 		     cl);
-	newCheckItem(cat,
-            "checklist.association.updates.affects-something-else",
-	    cl);
+	newCheckItem(cat, "checklist.association.updates.affects-something-else",
+		     cl);
 
-	CheckManager.register(Model.getMetaTypes().getAssociation(), cl);
+	CheckManager.register((Class) ModelFacade.ASSOCIATION, cl);
 
 
 	// Interface
@@ -300,8 +317,8 @@ public class Init {
 		     cl);
 	newCheckItem(cat, "checklist.interface.value.convert-to-invariant", cl);
 	newCheckItem(cat,
-	    "checklist.interface.value.establish-invariant-in-constructors",
-	    cl);
+		     "checklist.interface.value.establish-invariant-in-constructors",
+		     cl);
 	newCheckItem(cat, "checklist.interface.value.maintain-invariant", cl);
 
 	cat = Translator.localize("checklist.interface.location");
@@ -311,15 +328,15 @@ public class Init {
 	newCheckItem(cat, "checklist.interface.location.eliminate-from-model",
 		     cl);
 	newCheckItem(cat,
-	    "checklist.interface.location.eliminates-or-affects-something-else",
-	    cl);
+		     "checklist.interface.location.eliminates-or-affects-something-else",
+		     cl);
 
 	cat = Translator.localize("checklist.interface.updates");
 	newCheckItem(cat, "checklist.interface.updates.reasons-for-update", cl);
 	newCheckItem(cat, "checklist.interface.updates.affects-something-else",
 		     cl);
 
-	CheckManager.register(Model.getMetaTypes().getInterface(), cl);
+	CheckManager.register((Class) ModelFacade.INTERFACE, cl);
 
 
 	// Instance
@@ -338,13 +355,13 @@ public class Init {
 	newCheckItem(cat, "checklist.instance.structure.do-just-one-thing", cl);
 	newCheckItem(cat, "checklist.instance.structure.break-into-parts", cl);
 	newCheckItem(cat,
-	    "checklist.instance.structure.can-write-characteristic-equation",
-	    cl);
+		     "checklist.instance.structure.can-write-characteristic-equation",
+		     cl);
 	newCheckItem(cat, "checklist.instance.structure.belong", cl);
 	newCheckItem(cat, "checklist.instance.structure.make-internal", cl);
 	newCheckItem(cat,
-	    "checklist.instance.structure.is-state-in-another-machine-"
-            + "exclusive", cl);
+		     "checklist.instance.structure.is-state-in-another-machine-exclusive",
+		     cl);
 
 	cat = Translator.localize("checklist.instance.actions");
 	newCheckItem(cat, "checklist.instance.actions.list-entry-actions", cl);
@@ -359,28 +376,28 @@ public class Init {
 
 	cat = Translator.localize("checklist.instance.transitions");
 	newCheckItem(cat,
-	    "checklist.instance.transitions.need-another-transition-into",
-	    cl);
+		     "checklist.instance.transitions.need-another-transition-into",
+		     cl);
 	newCheckItem(cat,
-	    "checklist.instance.transitions.use-all-transitions-into",
-	    cl);
+		     "checklist.instance.transitions.use-all-transitions-into",
+		     cl);
 	newCheckItem(cat,
-	    "checklist.instance.transitions.combine-with-other-incoming",
-	    cl);
+		     "checklist.instance.transitions.combine-with-other-incoming",
+		     cl);
 	newCheckItem(cat,
-	    "checklist.instance.transitions.need-another-transition-out-of",
-	    cl);
+		     "checklist.instance.transitions.need-another-transition-out-of",
+		     cl);
 	newCheckItem(cat,
-	    "checklist.instance.transitions.use-all-transitions-out-of",
-	    cl);
+		     "checklist.instance.transitions.use-all-transitions-out-of",
+		     cl);
 	newCheckItem(cat,
-	    "checklist.instance.transitions.are-transitions-out-of-exclusive",
-	    cl);
+		     "checklist.instance.transitions.are-transitions-out-of-exclusive",
+		     cl);
 	newCheckItem(cat,
-	    "checklist.instance.transitions.combine-with-other-outgoing",
-	    cl);
+		     "checklist.instance.transitions.combine-with-other-outgoing",
+		     cl);
 
-	CheckManager.register(Model.getMetaTypes().getInstance(), cl);
+	CheckManager.register((Class) ModelFacade.INSTANCE, cl);
 
 
 	// Link
@@ -410,14 +427,14 @@ public class Init {
 	newCheckItem(cat, "checklist.link.location.planned-subclasses", cl);
 	newCheckItem(cat, "checklist.link.location.eliminate-from-model", cl);
 	newCheckItem(cat,
-	    "checklist.link.location.eliminates-or-affects-something-else",
-	    cl);
+		     "checklist.link.location.eliminates-or-affects-something-else",
+		     cl);
 
 	cat = Translator.localize("checklist.link.updates");
 	newCheckItem(cat, "checklist.link.updates.reasons-for-update", cl);
 	newCheckItem(cat, "checklist.link.updates.affects-something-else", cl);
 
-	CheckManager.register(Model.getMetaTypes().getLink(), cl);
+	CheckManager.register((Class) ModelFacade.LINK, cl);
 
 
 	// State
@@ -433,13 +450,13 @@ public class Init {
 	newCheckItem(cat, "checklist.state.structure.do-just-one-thing", cl);
 	newCheckItem(cat, "checklist.state.structure.break-into-parts", cl);
 	newCheckItem(cat,
-	    "checklist.state.structure.can-write-characteristic-equation",
-	    cl);
+		     "checklist.state.structure.can-write-characteristic-equation",
+		     cl);
 	newCheckItem(cat, "checklist.state.structure.belong", cl);
 	newCheckItem(cat, "checklist.state.structure.make-internal", cl);
 	newCheckItem(cat,
-	    "checklist.state.structure.is-state-in-another-machine-exclusive",
-	    cl);
+		     "checklist.state.structure.is-state-in-another-machine-exclusive",
+		     cl);
 
 	cat = Translator.localize("checklist.state.actions");
 	newCheckItem(cat, "checklist.state.actions.list-entry-actions", cl);
@@ -453,28 +470,28 @@ public class Init {
 
 	cat = Translator.localize("checklist.state.transitions");
 	newCheckItem(cat,
-	    "checklist.state.transitions.need-another-transition-into",
-	    cl);
+		     "checklist.state.transitions.need-another-transition-into",
+		     cl);
 	newCheckItem(cat,
-	    "checklist.state.transitions.use-all-transitions-into",
-	    cl);
+		     "checklist.state.transitions.use-all-transitions-into",
+		     cl);
 	newCheckItem(cat,
-	    "checklist.state.transitions.combine-with-other-incoming",
-	    cl);
+		     "checklist.state.transitions.combine-with-other-incoming",
+		     cl);
 	newCheckItem(cat,
-	    "checklist.state.transitions.need-another-transition-out-of",
-	    cl);
+		     "checklist.state.transitions.need-another-transition-out-of",
+		     cl);
 	newCheckItem(cat,
-	    "checklist.state.transitions.use-all-transitions-out-of",
-	    cl);
+		     "checklist.state.transitions.use-all-transitions-out-of",
+		     cl);
 	newCheckItem(cat,
-	    "checklist.state.transitions.are-transitions-out-of-exclusive",
-	    cl);
+		     "checklist.state.transitions.are-transitions-out-of-exclusive",
+		     cl);
 	newCheckItem(cat,
-	    "checklist.state.transitions.combine-with-other-outgoing",
-	    cl);
+		     "checklist.state.transitions.combine-with-other-outgoing",
+		     cl);
 
-	CheckManager.register(Model.getMetaTypes().getState(), cl);
+	CheckManager.register((Class) ModelFacade.STATE, cl);
 
 
 	// Transition
@@ -509,10 +526,10 @@ public class Init {
 	newCheckItem(cat, "checklist.transition.actions.is-precondition-met",
 		     cl);
 	newCheckItem(cat,
-	    "checklist.transition.actions.is-postcondition-consistant-with-"
-            + "destination", cl);
+		     "checklist.transition.actions.is-postcondition-consistant-with-destination",
+		     cl);
 
-	CheckManager.register(Model.getMetaTypes().getTransition(), cl);
+	CheckManager.register((Class) ModelFacade.TRANSITION, cl);
 
 
 	// Use Case
@@ -535,8 +552,8 @@ public class Init {
 		     cl);
 	newCheckItem(cat, "checklist.usecase.value.convert-to-invariant", cl);
 	newCheckItem(cat,
-	    "checklist.usecase.value.establish-invariant-in-constructors",
-	    cl);
+		     "checklist.usecase.value.establish-invariant-in-constructors",
+		     cl);
 	newCheckItem(cat, "checklist.usecase.value.maintain-invariant", cl);
 
 	cat = Translator.localize("checklist.usecase.location");
@@ -545,15 +562,15 @@ public class Init {
 	newCheckItem(cat, "checklist.usecase.location.eliminate-from-model",
 		     cl);
 	newCheckItem(cat,
-	    "checklist.usecase.location.eliminates-or-affects-something-else",
-	    cl);
+		     "checklist.usecase.location.eliminates-or-affects-something-else",
+		     cl);
 
 	cat = Translator.localize("checklist.usecase.updates");
 	newCheckItem(cat, "checklist.usecase.updates.reasons-for-update", cl);
 	newCheckItem(cat, "checklist.usecase.updates.affects-something-else",
 		     cl);
 
-	CheckManager.register(Model.getMetaTypes().getUseCase(), cl);
+	CheckManager.register((Class) ModelFacade.USE_CASE, cl);
 
 
 	// Actor
@@ -574,24 +591,23 @@ public class Init {
 		     cl);
 	newCheckItem(cat, "checklist.actor.value.convert-to-invariant", cl);
 	newCheckItem(cat,
-	    "checklist.actor.value.establish-invariant-in-constructors",
-	    cl);
+		     "checklist.actor.value.establish-invariant-in-constructors",
+		     cl);
 	newCheckItem(cat, "checklist.actor.value.maintain-invariant", cl);
 
 	cat = Translator.localize("checklist.actor.location");
 	newCheckItem(cat, "checklist.actor.location.move-somewhere", cl);
 	newCheckItem(cat, "checklist.actor.location.planned-subclasses", cl);
 	newCheckItem(cat, "checklist.actor.location.eliminate-from-model", cl);
-	newCheckItem(cat,
-            "checklist.actor.location.eliminates-or-affects-something-else",
-	    cl);
+	newCheckItem(cat, "checklist.actor.location.eliminates-or-affects-something-else",
+		     cl);
 
 	cat = Translator.localize("checklist.actor.updates");
 	newCheckItem(cat, "checklist.actor.updates.reasons-for-update", cl);
 	newCheckItem(cat, "checklist.actor.updates.affects-something-else", cl);
 
-	CheckManager.register(Model.getMetaTypes().getActor(), cl);
+	CheckManager.register((Class) ModelFacade.ACTOR, cl);
 
-    }
+    }	
 
 } /* end class Init */
