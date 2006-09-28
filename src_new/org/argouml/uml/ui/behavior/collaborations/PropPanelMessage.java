@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,118 +21,146 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+
+// File: PropPanelMessage.java
+// Classes: PropPanelMessage
+// Original Author: agauthie@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.ui.behavior.collaborations;
 
-import java.awt.event.ActionEvent;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.*;
+import java.beans.*;
+import javax.swing.*;
+import javax.swing.event.*;
+import javax.swing.tree.*;
+import javax.swing.text.*;
+import javax.swing.border.*;
+import javax.swing.table.*;
+import javax.swing.plaf.metal.MetalLookAndFeel;
 
-import javax.swing.Action;
-import javax.swing.Icon;
-import javax.swing.JList;
-import javax.swing.JScrollPane;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
+import ru.novosoft.uml.model_management.*;
+import ru.novosoft.uml.behavior.collaborations.*;
+import ru.novosoft.uml.behavior.common_behavior.*;
 
-import org.argouml.application.helpers.ResourceLoaderWrapper;
-import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
-import org.argouml.ui.targetmanager.TargetManager;
-import org.argouml.uml.ui.AbstractActionNewModelElement;
-import org.argouml.uml.ui.ActionNavigateContainerElement;
-import org.argouml.uml.ui.UMLLinkedList;
-import org.argouml.uml.ui.UMLMutableLinkedList;
-import org.argouml.uml.ui.foundation.core.PropPanelModelElement;
-import org.argouml.uml.ui.foundation.extension_mechanisms.ActionNewStereotype;
-import org.argouml.util.ConfigLoader;
+import org.argouml.ui.*;
+import org.argouml.uml.ui.*;
 
-/**
- * Properties panel for a Message.
- */
-public class PropPanelMessage extends PropPanelModelElement {
+/** User interface panel shown at the bottom of the screen that allows
+ *  the user to edit the properties of the selected UML model element.
+ *  Needs-More-Work: cut and paste base class code from
+ *  PropPanelClass. */
 
-    /**
-     * Construct a new property panel for a Message.
-     */
-    public PropPanelMessage() {
-        super("Message", ConfigLoader.getTabPropsOrientation());
+public class PropPanelMessage extends PropPanel {
 
-        addField(Translator.localize("label.name"),
-                getNameTextField());
-        JList interactionList =
-            new UMLLinkedList(new UMLMessageInteractionListModel());
-        interactionList.setVisibleRowCount(1);
-        addField(Translator.localize("label.interaction"),
-        	 new JScrollPane(interactionList));
+  ////////////////////////////////////////////////////////////////
+  // constants
 
-        JList senderList = new UMLLinkedList(new UMLMessageSenderListModel());
-        senderList.setVisibleRowCount(1);
-        JScrollPane senderScroll = new JScrollPane(senderList);
-        addField(Translator.localize("label.sender"), senderScroll);
+  ////////////////////////////////////////////////////////////////
+  // instance vars
+  JLabel _actionLabel = new JLabel("Action: ");
+  SpacerPanel _spacer = new SpacerPanel();
+  SpacerPanel _placeHolder = new SpacerPanel();
 
-        JList receiverList =
-            new UMLLinkedList(new UMLMessageReceiverListModel());
-        receiverList.setVisibleRowCount(1);
-        JScrollPane receiverScroll = new JScrollPane(receiverList);
-        addField(Translator.localize("label.receiver"),
-                receiverScroll);
+  JTextField _actionField = new JTextField();
 
-        addSeparator();
+  ////////////////////////////////////////////////////////////////
+  // contructors
+  public PropPanelMessage() {
+    super("Message Properties");
+    GridBagLayout gb = (GridBagLayout) getLayout();
+    GridBagConstraints c = new GridBagConstraints();
+    c.fill = GridBagConstraints.BOTH;
+    c.weightx = 0.0;
+    c.ipadx = 0; c.ipady = 0;
 
-        addField(Translator.localize("label.activator"),
-        	 new UMLMessageActivatorComboBox(this,
-        		 new UMLMessageActivatorComboBoxModel()));
+    // add all widgets and labels
+    c.gridx = 0;
+    c.gridwidth = 1;
+    c.gridy = 1;
+    c.weightx = 0.0;
+    gb.setConstraints(_actionLabel, c);
+    add(_actionLabel);
 
-        JList actionList =
-        	 new UMLMutableLinkedList(new UMLMessageActionListModel(),
-        	         null, ActionNewActionForMessage.getInstance());
-        actionList.setVisibleRowCount(1);
-        JScrollPane actionScroll = new JScrollPane(actionList);
-        addField(Translator.localize("label.action"), actionScroll);
+    c.weightx = 1.0;
+    c.gridx = 1;
+    c.gridy = 1;
+    _actionField.setMinimumSize(new Dimension(120, 20));
+    gb.setConstraints(_actionField, c);
+    add(_actionField);
+    _actionField.getDocument().addDocumentListener(this);
+    _actionField.setFont(_stereoField.getFont());
 
-        JScrollPane predecessorScroll =
-                new JScrollPane(
-                new UMLMutableLinkedList(new UMLMessagePredecessorListModel(),
-        	ActionAddMessagePredecessor.getInstance(),
-        	null));
-        addField(Translator.localize("label.predecessor"),
-        	 predecessorScroll);
+    c.gridx = 2;
+    c.gridwidth = 1;
+    c.weightx = 0;
+    c.gridy = 0;
+    gb.setConstraints(_spacer, c);
+    add(_spacer);
 
-        addAction(new ActionNavigateContainerElement());
-        addAction(new ActionToolNewAction());
-        addAction(new ActionNewStereotype());
-        addAction(getDeleteAction());
+    c.gridx = 3;
+    c.gridwidth = 3;
+    c.gridheight = 5;
+    c.weightx = 1;
+    c.gridy = 1;
+    gb.setConstraints(_placeHolder, c);
+    add(_placeHolder);
+
+    // register interest in change events from all widgets
+  }
+
+  ////////////////////////////////////////////////////////////////
+  // accessors
+
+  /** Set the values to be shown in all widgets based on model */
+  protected void setTargetInternal(Object t) {
+    super.setTargetInternal(t);
+    MMessage mes = (MMessage) t;
+	String ua = null;
+	if (mes.getAction() != null && mes.getAction().getScript() != null 
+		&&  mes.getAction().getScript().getBody() != null) {
+		ua = (((MAction)mes.getAction()).getScript()).getBody();
+	}
+    //MUninterpretedAction uaNew = new MUninterpretedAction(ua);
+    if (ua != null)
+		_actionField.setText(ua.trim());
+	else
+		_actionField.setText("(none)");
+
+    validate();
+  }
+
+  ////////////////////////////////////////////////////////////////
+  // event handlers
+
+    public void focusLost(FocusEvent e){
+	super.focusLost(e);
+	if (e.getComponent() == _actionField)
+	    setTargetActionString(_actionField.getText().trim());
     }
 
-    private static class ActionToolNewAction
-        extends AbstractActionNewModelElement {
-
-        /**
-         * Construct an action to add a new UML Action to the Message.
-         */
-        public ActionToolNewAction() {
-            super("button.new-action");
-            putValue(Action.NAME, Translator.localize("button.new-action"));
-            Icon icon = ResourceLoaderWrapper.lookupIcon("CallAction");
-            putValue(Action.SMALL_ICON, icon);
-        }
-
-        /**
-         * @see java.awt.event.ActionListener#actionPerformed(
-         *         java.awt.event.ActionEvent)
-         */
-        public void actionPerformed(ActionEvent e) {
-            Object target = TargetManager.getInstance().getModelTarget();
-            if (Model.getFacade().isAMessage(target)) {
-                Model.getCommonBehaviorFactory().buildAction(target);
-                super.actionPerformed(e);
-            }
-        }
-
-        /**
-         * The UID.
-         */
-        private static final long serialVersionUID = -6588197204256288453L;
+  protected void setTargetActionString(String s) {
+    if (_target == null) return;
+	if (_inChange) return;
+	
+	MAction action = new MActionImpl();
+	action.setScript(new MActionExpression("Java",s));
+	action.setNamespace(ProjectBrowser.TheInstance.getProject().getModel());
+	((MMessage)_target).setAction(action); 
+    /*try {
+      ((MUninterpretedAction)((MMessage)_target).getAction()).setBody(s);
     }
+    catch (PropertyVetoException pve) { }*/
+  }
 
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = -8433911715875762175L;
+
+
 } /* end class PropPanelMessage */
+
+
+    

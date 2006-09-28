@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,276 +23,76 @@
 
 package org.argouml.uml;
 
-import java.util.Collection;
-import java.util.Iterator;
+import java.util.*;
+import java.beans.*;
 
-import org.argouml.model.Model;
-import org.argouml.util.MyTokenizer;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.extension_mechanisms.*;
+import ru.novosoft.uml.foundation.data_types.*;
+import ru.novosoft.uml.model_management.*;
 
-/**
- * This class handles the Documentation of ModelElements.
- * Documentation is represented internally by the tagged value "documentation",
- * but it has its own tab-panel to ease user handling.
- *
- */
 public class DocumentationManager {
 
-    /**
-     * The system's native line-ends, for when things are written to file.
-     */
-    private static final String LINE_SEPARATOR =
-	System.getProperty("line.separator");
+  public static String getDocs(Object o) {
+    if (o instanceof MModelElementImpl) {
+      Collection tValues = ((MModelElement) o).getTaggedValues();
+      if (!tValues.isEmpty()) {
+		  Iterator iter = tValues.iterator();
+		  while(iter.hasNext()) {
+			  MTaggedValue tv = (MTaggedValue)iter.next();
+			  if ("javadocs".equals(tv.getTag()))
+				  return tv.getValue();
+		  }
+      }
+      else return defaultFor(o);
+    }
+    return defaultFor(o);
+  }
 
-    /**
-     * This function returns the documentation in C-style comment format.
-     *
-     * @param o the ModelElement
-     * @param indent the current indentation for new lines
-     * @return the documentation, as a String
-     */
-    public static String getDocs(Object o, String indent) {
-        return getDocs(o, indent, "/** ", " *  ", " */");
+  public static void setDocs(Object o, String s) {
+	  ((MModelElement)o).setTaggedValue("javadocs", s);
+  }
+
+  ////////////////////////////////////////////////////////////////
+  // default documentation
+
+  public static String defaultFor(Object o) {
+    if (o instanceof MClass) {
+      return
+	"/** A class that represents ...\n"+
+	" * \n"+
+	" * @see OtherClasses\n"+
+	" * @author your_name_here\n"+
+	" */";
+    }
+    if (o instanceof MAttribute) {
+      return
+	"/** An attribute that represents ...\n"+
+	" */";
     }
 
-    /**
-     * @param o the ModelElement
-     * @param indent the current indentation for new lines
-     * @param header is the first line
-     * @param prefix is inserted at every line before the doc
-     * @param footer is the closing line
-     * @return the string that represents the documentation
-     *         for the given ModelElement
-     */
-    public static String getDocs(Object o, String indent, String header,
-				 String prefix, String footer) {
-        String sResult = defaultFor(o, indent);
-
-        if (Model.getFacade().isAModelElement(o)) {
-            Iterator iter = Model.getFacade().getTaggedValues(o);
-            if (iter != null) {
-                while (iter.hasNext()) {
-                    Object tv = iter.next();
-                    String tag = Model.getFacade().getTagOfTag(tv);
-                    if (tag.equals("documentation") || tag.equals("javadocs")) {
-                        sResult = Model.getFacade().getValueOfTag(tv);
-                        // give priority to "documentation"
-                        if (tag.equals("documentation")) break;
-                    }
-                }
-            }
-        }
-
-        if (sResult == null)
-            return "(No comment)";
-
-	StringBuffer result = new StringBuffer();
-	if (header != null) {
-	    result.append(header).append(LINE_SEPARATOR);
-	}
-
-	if (indent != null) {
-	    if (prefix != null) {
-		prefix = indent + prefix;
-	    }
-
-	    if (footer != null) {
-		footer = indent + footer;
-	    }
-	}
-
-	appendComment(result, prefix, sResult, 0);
-
-	if (footer != null) {
-	    result.append(footer);
-	}
-
-        return result.toString();
+    if (o instanceof MOperation) {
+      return
+	"/** An operation that does ...\n"+
+	" * \n"+
+	" * @param firstParamName  a description of this parameter\n"+
+	" */";
     }
-
-    /**
-     * @param o the ModelElement. If it is not a ModelElement,
-     *          then you'll get a IllegalArgumentException
-     * @param s the string representing the documentation
-     */
-    public static void setDocs(Object o, String s) {
-        Model.getCoreHelper().setTaggedValue(o, "documentation", s);
+    if (o instanceof MInterface) {
+      return
+	"/** A interface defining operations expected of ...\n"+
+	" * \n"+
+	" * @see OtherClasses\n"+
+	" * @author your_name_here\n"+
+	" */";
     }
-
-    /**
-     * Determine whether documentation is associated with the given
-     * element or not.
-     *
-     * Added 2001-10-05 STEFFEN ZSCHALER for use by
-     * org.argouml.language.java.generator.CodeGenerator
-     *
-     * @param o The given element.
-     * @return true if the given element has docs.
-     */
-    public static boolean hasDocs(Object o) {
-        if (Model.getFacade().isAModelElement(o)) {
-            Iterator i = Model.getFacade().getTaggedValues(o);
-
-            if (i != null) {
-                while (i.hasNext()) {
-                    Object tv = i.next();
-                    String tag = Model.getFacade().getTagOfTag(tv);
-                    String value = Model.getFacade().getValueOfTag(tv);
-                    if (("documentation".equals(tag) || "javadocs".equals(tag))
-                        && value != null && value.trim().length() > 0) {
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
+    if (o instanceof MModelElement) {
+      return
+	"/**\n"+
+	" * \n"+
+	" */";
     }
-
-    /**
-     * Generate default documentation.
-     *
-     * @param o the ModelElement
-     * @param indent the current indentation string for new lines
-     * @return the default documentation
-     */
-    public static String defaultFor(Object o, String indent) {
-	if (Model.getFacade().isAClass(o)) {
-            // TODO: Needs localization
-	    return " A class that represents ...\n\n"
-		+ indent + " @see OtherClasses\n"
-		+ indent + " @author your_name_here";
-	}
-	if (Model.getFacade().isAAttribute(o)) {
-
-	    return " An attribute that represents ...";
-	}
-
-	if (Model.getFacade().isAOperation(o)) {
-	    return " An operation that does...\n\n"
-		+ indent + " @param firstParam a description of this parameter";
-	}
-	if (Model.getFacade().isAInterface(o)) {
-	    return " An interface defining operations expected of ...\n\n"
-		+ indent + " @see OtherClasses\n"
-		+ indent + " @author your_name_here";
-	}
-	if (Model.getFacade().isAModelElement(o)) {
-	    return "\n";
-	}
-
-	return null;
-    }
-
-
-    ////////////////////////////////////////////////////////////////
-    // comments
-
-    /**
-     * Get the comments (the notes in a diagram) for a modelelement.<p>
-     *
-     * This returns a c-style comments.
-     *
-     * @param o The modelelement.
-     * @return a String.
-     */
-    public static String getComments(Object o) {
-        return getComments(o, "/*", " * ", " */");
-    }
-
-    /**
-     * Get the comments (the notes in a diagram) for a modelelement.
-     *
-     * @return a string with the comments.
-     * @param o The given modelelement.
-     * @param header is the comment header.
-     * @param prefix is the comment prefix (on every line).
-     * @param footer is the comment footer.
-     */
-    public static String getComments(Object o,
-				     String header, String prefix,
-				     String footer) {
-	StringBuffer result = new StringBuffer();
-	if (header != null) {
-	    result.append(header).append(LINE_SEPARATOR);
-	}
-
-	if (Model.getFacade().isAModelElement(o)) {
-	    Collection comments = Model.getFacade().getComments(o);
-	    if (!comments.isEmpty()) {
-		int nlcount = 2;
-		for (Iterator iter = comments.iterator(); iter.hasNext();) {
-		    Object c = iter.next();
-		    String s = Model.getFacade().getName(c);
-		    nlcount = appendComment(result,
-					    prefix,
-					    s,
-					    nlcount > 1 ? 0 : 1);
-		}
-	    } else {
-		return "";
-	    }
-	} else {
-	    return "";
-	}
-
-	if (footer != null) {
-	    result.append(footer).append(LINE_SEPARATOR);
-	}
-
-	return result.toString();
-    }
-
-    /**
-     * Append a string to sb which is chopped into lines and each line
-     * prefixed with prefix.
-     *
-     * @param sb the StringBuffer to append to.
-     * @param prefix the prefix to each line.
-     * @param comment the text to reformat.
-     * @param nlprefix the number of empty lines to prefix the comment with.
-     * @return the number of pending empty lines.
-     */
-    private static int appendComment(StringBuffer sb, String prefix,
-				      String comment, int nlprefix) {
-	int nlcount = 0;
-
-	for (; nlprefix > 0; nlprefix--) {
-	    if (prefix != null)
-		sb.append(prefix);
-	    sb.append(LINE_SEPARATOR);
-	    nlcount++;
-	}
-
-	if (comment == null) {
-	    return nlcount;
-	}
-
-	MyTokenizer tokens = new MyTokenizer(comment,
-					     "",
-					     MyTokenizer.LINE_SEPARATOR);
-
-	while (tokens.hasMoreTokens()) {
-	    String s = tokens.nextToken();
-	    if (!s.startsWith("\r") && !s.startsWith("\n")) {
-		if (prefix != null)
-		    sb.append(prefix);
-		sb.append(s);
-		sb.append(LINE_SEPARATOR);
-		nlcount = 0;
-	    } else if (nlcount > 0) {
-		if (prefix != null)
-		    sb.append(prefix);
-		sb.append(LINE_SEPARATOR);
-		nlcount++;
-	    } else {
-		nlcount++;
-	    }
-	}
-
-	return nlcount;
-    }
+    return "(No documentation)";
+  }
 
 } /* end class DocumentationManager */
-
-
-
-

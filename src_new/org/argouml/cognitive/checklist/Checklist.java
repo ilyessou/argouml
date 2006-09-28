@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,122 +21,104 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+
+// File: Checklist.java
+// Class: Checklist
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.cognitive.checklist;
 
-import java.io.Serializable;
-import java.util.Enumeration;
-import java.util.Vector;
+import java.util.*;
 
-/**
- * A Checklist is basically a list of CheckItems.  It also provides
- * some convience functions for adding trivial CheckItems (ones that
- * have no predicate).
+/** A Checklist is basically a list of CheckItems.  It also provides
+ *  some convience functions for adding trivial CheckItems (ones that
+ *  have no predicate).
  *
- * In ArgoUML, Checklists are shown in the TabChecklist panel.
+ *  In Argo/UML, Checklists are shown in the TabChecklist panel.
  *
- * @see org.argouml.cognitive.checklist.ui.TabChecklist
- *
- * @author Jason Robbins
+ *  @see org.argouml.cognitive.checklist.ui.TabChecklist
  */
-public class Checklist implements Serializable {
 
-    ////////////////////////////////////////////////////////////////
-    // instance variables
+public class Checklist implements java.io.Serializable {
 
-    /**
-     * Pending CheckItems for the designer to consider.
-     */
-    private Vector items = new Vector();
+  ////////////////////////////////////////////////////////////////
+  // instance variables
 
-    private String nextCategory = "General";
+  /** Pending CheckItems for the designer to consider. */
+  protected Vector _items = new Vector(100);
 
-    /**
-     * The constructor.
-     *
-     */
-    public Checklist() { }
+  protected String _nextCategory = "General";
 
-    ////////////////////////////////////////////////////////////////
-    // accessors
+  ////////////////////////////////////////////////////////////////
+  // constructor
 
-    /**
-     * @return the items
-     */
-    public Vector getCheckItems() { return items; }
+  public Checklist() { }
 
-    /**
-     * @param item the item to be added to the list
-     */
-    public void addItem(CheckItem item) {
-	items.addElement(item);
+  ////////////////////////////////////////////////////////////////
+  // accessors
+
+  public Vector getCheckItems() { return _items; }
+
+  public void addItem(CheckItem item) {
+    _items.addElement(item);
+  }
+
+  public void removeItem(CheckItem item) {
+    _items.removeElement(item);
+  }
+
+  public void addItem(String description) {
+    CheckItem item = new CheckItem(_nextCategory, description);
+    _items.addElement(item);
+  }
+
+  public synchronized void addAll(Checklist list) {
+    Enumeration cur = list.elements();
+    while (cur.hasMoreElements()) {
+      CheckItem item = (CheckItem) cur.nextElement();
+      addItem(item);
     }
+  }
 
-    /**
-     * @param item the item to be removed
-     */
-    public void removeItem(CheckItem item) {
-	items.removeElement(item);
+  public Enumeration elements() { return _items.elements(); }
+
+  public int size() { return _items.size(); }
+
+  public CheckItem elementAt(int index) {
+    return (CheckItem)_items.elementAt(index);
+  }
+
+  public void setNextCategory(String cat) { _nextCategory = cat; }
+
+  
+  ////////////////////////////////////////////////////////////////
+  // internal methods
+  
+  /** Sort the items by priority.
+   *
+   *  Needs-More-Work: not done yet.  It has been pointed out that
+   *  sorting and priorities will probably be pretty arbitrary and hard
+   *  to match with the Designer's (tacit) feelings about the
+   *  importance of various items.  We are thinking about a
+   *  sort-by-category user interface that would be part of a complete
+   *  java PIM (personal information manager, AKA, a daily planner).  */
+  private synchronized void sort() {
+    // do some sorting?
+  }
+
+  public String toString() {
+    String res;
+    res = getClass().getName() + " {\n";
+    Enumeration cur = elements();
+    while (cur.hasMoreElements()) {
+      CheckItem item = (CheckItem) cur.nextElement();
+      res += "    " + item.toString() + "\n";
     }
-
-    /**
-     * @param description the description for a new item
-     */
-    public void addItem(String description) {
-	CheckItem item = new CheckItem(nextCategory, description);
-	items.addElement(item);
-    }
-
-    /**
-     * Replace the list by the given new list.
-     *
-     * @param list the given new list
-     */
-    public synchronized void addAll(Checklist list) {
-	Enumeration cur = list.elements();
-	while (cur.hasMoreElements()) {
-	    CheckItem item = (CheckItem) cur.nextElement();
-	    addItem(item);
-	}
-    }
-
-    /**
-     * @return the list in enumeration format
-     */
-    public Enumeration elements() { return items.elements(); }
-
-    /**
-     * @return the number of items in the list
-     */
-    public int size() { return items.size(); }
-
-    /**
-     * @param index the position of the item to retrieve
-     * @return the item
-     */
-    public CheckItem elementAt(int index) {
-	return (CheckItem) items.elementAt(index);
-    }
-
-    /**
-     * @param cat the category
-     */
-    public void setNextCategory(String cat) { nextCategory = cat; }
-
-
-    /**
-     * @see java.lang.Object#toString()
-     */
-    public String toString() {
-	String res;
-	res = getClass().getName() + " {\n";
-	Enumeration cur = elements();
-	while (cur.hasMoreElements()) {
-	    CheckItem item = (CheckItem) cur.nextElement();
-	    res += "    " + item.toString() + "\n";
-	}
-	res += "  }";
-	return res;
-    }
+    res += "  }";
+    return res;
+  }
 
 } /* end class Checklist */
 

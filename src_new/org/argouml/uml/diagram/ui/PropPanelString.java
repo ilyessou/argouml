@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,164 +23,103 @@
 
 package org.argouml.uml.diagram.ui;
 
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-import javax.swing.JLabel;
-import javax.swing.JTextField;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.*;
+import java.beans.*;
+import javax.swing.*;
+import javax.swing.event.*;
+import javax.swing.tree.*;
+import javax.swing.text.*;
 
-import org.argouml.ui.AbstractArgoJPanel;
-import org.argouml.ui.targetmanager.TargetEvent;
-import org.argouml.uml.ui.TabModelTarget;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
+import ru.novosoft.uml.foundation.extension_mechanisms.*;
+import ru.novosoft.uml.model_management.*;
 
-import org.tigris.gef.presentation.FigText;
+import org.tigris.gef.base.Diagram;
 
-/**
- * The properties panel for a simple text / string.
- *
- */
-public class PropPanelString
-    extends AbstractArgoJPanel
-    implements TabModelTarget, PropertyChangeListener, DocumentListener {
-    ////////////////////////////////////////////////////////////////
-    // instance vars
-    private FigText target;
-    private JLabel nameLabel = new JLabel("Text: ");
-    private JTextField nameField = new JTextField();
+import org.argouml.ui.*;
+import org.argouml.uml.ui.*;
 
-    /**
-     * The constructor.
-     *
-     */
-    public PropPanelString() {
-	super("String");
-	GridBagLayout gb = new GridBagLayout();
-	setLayout(gb);
-	GridBagConstraints c = new GridBagConstraints();
-	c.fill = GridBagConstraints.BOTH;
-	c.weightx = 0.0;
-	c.ipadx = 3; c.ipady = 3;
+public class PropPanelString extends TabSpawnable
+implements TabModelTarget, DocumentListener {
+  ////////////////////////////////////////////////////////////////
+  // instance vars
+  Object _target;
+  JLabel _nameLabel = new JLabel("Owner: ");
+  JTextField _nameField = new JTextField();
 
-	c.gridx = 0;
-	c.gridwidth = 1;
-	c.gridy = 0;
-	gb.setConstraints(nameLabel, c);
-	add(nameLabel);
+  ////////////////////////////////////////////////////////////////
+  // constructors
 
-	c.weightx = 1.0;
-	c.gridx = 1;
-	c.gridwidth = GridBagConstraints.REMAINDER;
-	c.gridheight = GridBagConstraints.REMAINDER;
-	c.gridy = 0;
-	gb.setConstraints(nameField, c);
-	add(nameField);
+  public PropPanelString() {
+    super("String");
+    GridBagLayout gb = new GridBagLayout();
+    setLayout(gb);
+    GridBagConstraints c = new GridBagConstraints();
+    c.fill = GridBagConstraints.BOTH;
+    c.weightx = 0.0;
+    c.ipadx = 3; c.ipady = 3;
 
-	nameField.getDocument().addDocumentListener(this);
-	nameField.setEditable(true);
-	// TODO: set font?
+    c.gridx = 0;
+    c.gridwidth = 1;
+    c.gridy = 0;
+    gb.setConstraints(_nameLabel, c);
+    add(_nameLabel);
 
-    }
+    c.weightx = 1.0;
+    c.gridx = 1;
+    //c.gridwidth = GridBagConstraints.REMAINDER;
+    c.gridy = 0;
+    gb.setConstraints(_nameField, c);
+    add(_nameField);
 
-    ////////////////////////////////////////////////////////////////
-    // accessors
+    _nameField.getDocument().addDocumentListener(this);
+    _nameField.setEditable(false);
+    // needs-more-work: set font?
 
-    /**
-     * @see org.argouml.ui.TabTarget#setTarget(java.lang.Object)
-     */
-    public void setTarget(Object t) {
-	if (t instanceof FigText) {
-	    target = (FigText) t;
-	    // to circumvent to much registred listeners
-	    target.removePropertyChangeListener(this);
-	    target.addPropertyChangeListener(this);
-	}
+  }
 
-    }
+  ////////////////////////////////////////////////////////////////
+  // accessors
 
-    /**
-     * @see org.argouml.ui.TabTarget#getTarget()
-     */
-    public Object getTarget() { return target; }
+  public void setTarget(Object t) {
+    _target = t;
+    if (!(_target instanceof String)) return;
+    _nameField.setText((String)t);
+  }
 
-    /**
-     * @see org.argouml.ui.TabTarget#refresh()
-     */
-    public void refresh() { setTarget(target); }
+  public Object getTarget() { return _target; }
 
-    /**
-     * @see org.argouml.ui.TabTarget#shouldBeEnabled(java.lang.Object)
-     */
-    public boolean shouldBeEnabled(Object theTarget) { return false; }
+  public void refresh() { setTarget(_target); }
+
+  public boolean shouldBeEnabled() { return _target instanceof Diagram; }
 
 
-    /**
-     * Set the target name.
-     */
-    protected void setTargetName() {
-    }
+  protected void setTargetName() {
+//     if (!(_target instanceof Diagram)) return;
+//     try {
+//       ((Diagram)_target).setName(_nameField.getText());
+//     }
+//     catch (PropertyVetoException pve) {
+//       System.out.println("Could not set diagram name");
+//     }
+  }
 
-    ////////////////////////////////////////////////////////////////
-    // event handling
+  ////////////////////////////////////////////////////////////////
+  // event handling
 
-    /**
-     * @see javax.swing.event.DocumentListener#insertUpdate(javax.swing.event.DocumentEvent)
-     */
-    public void insertUpdate(DocumentEvent e) {
-	if (e.getDocument() == nameField.getDocument() && target != null) {
-	    target.setText(nameField.getText());
-	    target.damage();
-	}
-    }
+  public void insertUpdate(DocumentEvent e) {
+    //System.out.println(getClass().getName() + " insert");
+    if (e.getDocument() == _nameField.getDocument()) setTargetName();
+  }
 
-    /**
-     * @see javax.swing.event.DocumentListener#removeUpdate(javax.swing.event.DocumentEvent)
-     */
-    public void removeUpdate(DocumentEvent e) { insertUpdate(e); }
+  public void removeUpdate(DocumentEvent e) { insertUpdate(e); }
 
-    /**
-     * @see javax.swing.event.DocumentListener#changedUpdate(javax.swing.event.DocumentEvent)
-     */
-    public void changedUpdate(DocumentEvent e) {
-    }
-
-    /**
-     * @see
-     * java.beans.PropertyChangeListener#propertyChange(PropertyChangeEvent)
-     */
-    public void propertyChange(PropertyChangeEvent evt) {
-	if (evt.getPropertyName().equals("editing")
-	    && evt.getNewValue().equals(Boolean.FALSE)) {
-	    // ending editing
-	    nameField.setText(target.getText());
-	}
-
-    }
-
-    /**
-     * @see org.argouml.ui.targetmanager.TargetListener#targetAdded(org.argouml.ui.targetmanager.TargetEvent)
-     */
-    public void targetAdded(TargetEvent e) {
-        // TODO: Auto-generated method stub
-
-    }
-
-    /**
-     * @see org.argouml.ui.targetmanager.TargetListener#targetRemoved(org.argouml.ui.targetmanager.TargetEvent)
-     */
-    public void targetRemoved(TargetEvent e) {
-        // TODO: Auto-generated method stub
-
-    }
-
-    /**
-     * @see org.argouml.ui.targetmanager.TargetListener#targetSet(org.argouml.ui.targetmanager.TargetEvent)
-     */
-    public void targetSet(TargetEvent e) {
-        // TODO: Auto-generated method stub
-
-    }
+  public void changedUpdate(DocumentEvent e) {
+    System.out.println(getClass().getName() + " changed");
+    // Apparently, this method is never called.
+  }
 
 } /* end class PropPanelString */

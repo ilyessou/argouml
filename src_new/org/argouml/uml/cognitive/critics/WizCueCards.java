@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,71 +21,70 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+
+// File: WizCueCards.java
+// Classes: WizCueCards
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.cognitive.critics;
 
-import java.util.Vector;
+import java.util.*;
+import java.beans.*;
+import javax.swing.*;
 
-import javax.swing.JPanel;
+import org.argouml.cognitive.ui.*;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
+import ru.novosoft.uml.model_management.*;
 
-import org.argouml.cognitive.ui.WizStepCue;
+import org.argouml.kernel.*;
+import org.tigris.gef.util.*;
 
-/**
- *  A cue card wizard presents the user with a deck of instructions.
- *
- * @see org.argouml.cognitive.ui.WizStepCue
- *
- * @author jrobbins
- */
-public class WizCueCards extends UMLWizard {
+/** A non-modal wizard to help the user change navigability
+ *  of an association. */
 
-    private Vector cues = new Vector();
+public class WizCueCards extends Wizard {
 
-    /**
-     * The constructor.
-     */
-    public WizCueCards() { }
+  protected Vector _cues = new Vector();
+  protected WizStepCue _steps[] = null;
 
-    /**
-     * @see org.argouml.cognitive.ui.Wizard#getNumSteps()
-     */
-    public int getNumSteps() { return cues.size(); }
+  public WizCueCards() { }
 
-    /**
-     * @param s the text for the wizard step
-     */
-    public void addCue(String s) { cues.addElement(s); }
+  public int getNumSteps() { return _cues.size(); }
 
-    /**
-     * Create a new panel for the given step.
-     * Returns a newly created panel or null if there isn't that many steps.
-     *
-     * @see org.argouml.cognitive.ui.Wizard#makePanel(int)
-     */
-    public JPanel makePanel(int newStep) {
-	if (newStep <= getNumSteps()) {
-	    String c = (String) cues.elementAt(newStep - 1);
-	    return new WizStepCue(this, c);
-	}
-	return null;
+  public MModelElement getModelElement() {
+    if (_item != null) {
+      VectorSet offs = _item.getOffenders();
+      if (offs.size() >= 1) {
+	MModelElement me = (MModelElement) offs.elementAt(0);
+	return me;
+      }
     }
+    return null;
+  }
 
-    /**
-     * This wizard never takes action, it just displays step by step
-     * instructions.
-     *
-     * @see org.argouml.cognitive.ui.Wizard#doAction(int)
-     */
-    public void doAction(int oldStep) {  }
+  public void addCue(String s) { _cues.addElement(s); }
 
-    /**
-     * This wizard cannot automatically finish the task. It can only be
-     * finished when the user is on the last step.
-     *
-     * @see org.argouml.cognitive.ui.Wizard#canFinish()
-     */
-    public boolean canFinish() {
-	return getStep() == getNumSteps();
+  /** Create a new panel for the given step.  */
+  public JPanel makePanel(int newStep) {
+    if (newStep <= getNumSteps()) {
+      String c = (String) _cues.elementAt(newStep - 1);
+      return new WizStepCue(this, c);
     }
+    return null;
+  }
+
+  /** This wizard never takes action, it just displays step by step
+   *  instructions. */
+  public void doAction(int oldStep) {  }
+
+  /** This wizard cannot automatically finish the task. It can only be
+   *  finished when the user is on the last step. */
+  public boolean canFinish() {
+    return _step == getNumSteps();
+  }
 
 
 } /* end class WizCueCards */

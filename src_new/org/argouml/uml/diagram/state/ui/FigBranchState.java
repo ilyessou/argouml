@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 2004-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,171 +21,120 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: FigBranchState.java
+// Classes: FigBranchState
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.diagram.state.ui;
 
-import java.awt.Color;
-import java.awt.Point;
-import java.awt.event.KeyEvent;
-import java.awt.event.MouseEvent;
-import java.util.Iterator;
-import org.tigris.gef.graph.GraphModel;
-import org.tigris.gef.presentation.FigCircle;
-//import org.tigris.gef.presentation.FigPoly;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.*;
+import java.beans.*;
+import javax.swing.*;
 
-/**
- * Class to display graphics for a UML Choice State in a diagram - the circle.
- *
- * TODO: This should really be renamed FigChoiceState.  It's the
- * last vestige the UML 1.3 name.
- *
- * @author pepargouml
- */
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.behavior.state_machines.*;
+
+import org.tigris.gef.base.*;
+import org.tigris.gef.presentation.*;
+import org.tigris.gef.graph.*;
+
+import org.argouml.uml.diagram.ui.*;
+
+/** Class to display graphics for a UML Branch MState in a diagram. */
+
 public class FigBranchState extends FigStateVertex {
 
-    ////////////////////////////////////////////////////////////////
-    // constants
+  ////////////////////////////////////////////////////////////////
+  // constants
 
-    private static final int X = 10;
-    private static final int Y = 10;
-    private static final int WIDTH = 24;
-    private static final int HEIGHT = 24;
+  public static final int MARGIN = 2;
+  public static final int X = 0;
+  public static final int Y = 0;
+  public static final int WIDTH = 32;
+  public static final int HEIGHT = 32;
 
-    ////////////////////////////////////////////////////////////////
-    // instance variables
+  ////////////////////////////////////////////////////////////////
+  // instance variables
 
-    private FigCircle head;
-    private FigCircle bp;
+  FigPoly _bigPort;
+  FigPoly _head;
 
-    ////////////////////////////////////////////////////////////////
-    // constructors
+  ////////////////////////////////////////////////////////////////
+  // constructors
+  public FigBranchState() {
+    _bigPort = new FigPoly( Color.cyan, Color.cyan);
+    _head = new FigPoly(Color.black, Color.white);
+    _bigPort.addPoint(X, Y);
+    _bigPort.addPoint(X+WIDTH/2, Y+HEIGHT/2);
+    _bigPort.addPoint(X, Y+HEIGHT);
+    _bigPort.addPoint(X-WIDTH/2, Y+HEIGHT/2);
 
-    /**
-     * Constructor.
-     */
-    public FigBranchState() {
-        setEditable(false);
-        bp = new FigCircle(X, Y, WIDTH, HEIGHT, Color.cyan, Color.cyan);
-        setBigPort(bp);
-        head = new FigCircle(X, Y, WIDTH, HEIGHT, Color.black, Color.white);
+    _head.addPoint(X, Y);
+    _head.addPoint(X+WIDTH/2, Y+HEIGHT/2);
+    _head.addPoint(X, Y+HEIGHT);
+    _head.addPoint(X-WIDTH/2, Y+HEIGHT/2);
+    _head.addPoint(X, Y);
 
-        // add Figs to the FigNode in back-to-front order
-        addFig(getBigPort());
-        addFig(head);
+    // add Figs to the FigNode in back-to-front order
+    addFig(_bigPort);
+    addFig(_head);
 
-        setBlinkPorts(false); //make port invisble unless mouse enters
-    }
+    setBlinkPorts(false); //make port invisble unless mouse enters
+    Rectangle r = getBounds();
+  }
 
-    /**
-     * Constructor.
-     *
-     * @param gm ignored
-     * @param node the owner
-     */
-    public FigBranchState(GraphModel gm, Object node) {
-        this();
-        setOwner(node);
-    }
+  public FigBranchState(GraphModel gm, Object node) {
+    this();
+    setOwner(node);
+  }
 
-    /**
-     * This makes dragging connected edges very smooth.
-     *
-     * @see org.tigris.gef.presentation.Fig#getClosestPoint(java.awt.Point)
-     */
-    public Point getClosestPoint(Point anotherPt) {
-        Point p = bp.connectionPoint(anotherPt);
-        return p;
-    }
+  public Object clone() {
+    FigBranchState figClone = (FigBranchState) super.clone();
+    Vector v = figClone.getFigs();
+    figClone._bigPort = (FigPoly) v.elementAt(0);
+    figClone._head = (FigPoly) v.elementAt(1);
+    return figClone;
+  }
 
-    /**
-     * @see java.lang.Object#clone()
-     */
-    public Object clone() {
-        FigBranchState figClone = (FigBranchState) super.clone();
-        Iterator it = figClone.getFigs().iterator();
-        figClone.setBigPort((FigCircle) it.next());
-        figClone.head = (FigCircle) it.next();
-        return figClone;
-    }
+  ////////////////////////////////////////////////////////////////
+  // Fig accesors
 
-    ////////////////////////////////////////////////////////////////
-    // Fig accessors
+  public void setOwner(Object node) {
+    super.setOwner(node);
+    bindPort(node, _bigPort);
+    // if it is a UML meta-model object, register interest in any change events
+    if (node instanceof MElementImpl)
+      ((MElementImpl)node).addMElementListener(this);
+  }
 
-    /**
-     * Choice states are fixed size.
-     *
-     * @see org.tigris.gef.presentation.Fig#isResizable()
-     */
-    public boolean isResizable() {
-        return false;
-    }
+  /** Initial states are fixed size. */
+  public boolean isResizable() { return false; }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#setLineColor(java.awt.Color)
-     */
-    public void setLineColor(Color col) {
-        head.setLineColor(col);
-    }
+  public Selection makeSelection() {
+    return new SelectionMoveClarifiers(this);
+  }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#getLineColor()
-     */
-    public Color getLineColor() {
-        return head.getLineColor();
-    }
+  public void setLineColor(Color col) { _head.setLineColor(col); }
+  public Color getLineColor() { return _head.getLineColor(); }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#setFillColor(java.awt.Color)
-     */
-    public void setFillColor(Color col) {
-        head.setFillColor(col);
-    }
+  public void setFillColor(Color col) { _head.setFillColor(col); }
+  public Color getFillColor() { return _head.getFillColor(); }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#getFillColor()
-     */
-    public Color getFillColor() {
-        return head.getFillColor();
-    }
+  public void setFilled(boolean f) { }
+  public boolean getFilled() { return true; }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#setFilled(boolean)
-     */
-    public void setFilled(boolean f) {
-    }
+  public void setLineWidth(int w) { _head.setLineWidth(w); }
+  public int getLineWidth() { return _head.getLineWidth(); }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#getFilled()
-     */
-    public boolean getFilled() {
-        return true;
-    }
+  ////////////////////////////////////////////////////////////////
+  // Event handlers
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#setLineWidth(int)
-     */
-    public void setLineWidth(int w) {
-        head.setLineWidth(w);
-    }
+  public void mouseClicked(MouseEvent me) { }
+  public void keyPressed(KeyEvent ke) { }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#getLineWidth()
-     */
-    public int getLineWidth() {
-        return head.getLineWidth();
-    }
-
-    ////////////////////////////////////////////////////////////////
-    // Event handlers
-
-    /**
-     * @see java.awt.event.MouseListener#mouseClicked(java.awt.event.MouseEvent)
-     */
-    public void mouseClicked(MouseEvent me) {
-    }
-
-    /**
-     * The UID.
-     */
-    static final long serialVersionUID = 6572261327347541373L;
+  static final long serialVersionUID = 7975577199958200215L;
 
 } /* end class FigBranchState */

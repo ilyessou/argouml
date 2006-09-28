@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,210 +21,233 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: SelectionNodeInstance.java
+// Classes: SelectionNodeInstance
+// Original Author: 5eichler@informatik.uni-hamburg.de
+// $Id$
+
+
 package org.argouml.uml.diagram.deployment.ui;
 
-import java.awt.Graphics;
-import java.awt.Rectangle;
-
+import java.util.*;
+import java.awt.*;
+import java.awt.event.*;
 import javax.swing.Icon;
 
-import org.apache.log4j.Logger;
-import org.argouml.application.helpers.ResourceLoaderWrapper;
-import org.argouml.model.Model;
-import org.argouml.uml.diagram.ui.SelectionNodeClarifiers;
-import org.tigris.gef.base.Editor;
-import org.tigris.gef.base.Globals;
-import org.tigris.gef.base.ModeCreateEdgeAndNode;
-import org.tigris.gef.base.ModeManager;
-import org.tigris.gef.base.ModeModify;
-import org.tigris.gef.base.SelectionManager;
-import org.tigris.gef.graph.MutableGraphModel;
-import org.tigris.gef.presentation.Fig;
-import org.tigris.gef.presentation.FigNode;
-import org.tigris.gef.presentation.Handle;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
+import ru.novosoft.uml.behavior.common_behavior.*;
 
-/**
- * @author 5eichler@informatik.uni-hamburg.de
- */
-public class SelectionNodeInstance extends SelectionNodeClarifiers {
+import org.tigris.gef.base.*;
+import org.tigris.gef.presentation.*;
+import org.tigris.gef.graph.*;
+import org.tigris.gef.util.Util;
 
-    private static final Logger LOG =
-        Logger.getLogger(SelectionNodeInstance.class);
-    ////////////////////////////////////////////////////////////////
-    // constants
-    private static Icon dep =
-	ResourceLoaderWrapper.lookupIconResource("Link");
+import org.argouml.uml.diagram.ui.*;
+
+public class SelectionNodeInstance extends SelectionWButtons {
+  ////////////////////////////////////////////////////////////////
+  // constants
+  public static Icon dep = Util.loadIconResource("Link");
 
 
 
-    ////////////////////////////////////////////////////////////////
-    // constructors
+  ////////////////////////////////////////////////////////////////
+  // constructors
 
-    /**
-     * Construct a new SelectionNodeInstance for the given Fig.
-     *
-     * @param f The given Fig.
-     */
-    public SelectionNodeInstance(Fig f) { super(f); }
+  /** Construct a new SelectionNodeInstance for the given Fig */
+  public SelectionNodeInstance(Fig f) { super(f); }
 
-    /**
-     * @see org.tigris.gef.base.Selection#hitHandle(java.awt.Rectangle,
-     * org.tigris.gef.presentation.Handle)
-     */
-    public void hitHandle(Rectangle r, Handle h) {
-	super.hitHandle(r, h);
-	if (h.index != -1) {
-	    return;
-	}
-	if (!isPaintButtons()) {
-	    return;
-	}
-	Editor ce = Globals.curEditor();
-	SelectionManager sm = ce.getSelectionManager();
-	if (sm.size() != 1) {
-	    return;
-	}
-	ModeManager mm = ce.getModeManager();
-	if (mm.includes(ModeModify.class) && getPressedButton() == -1) {
-	    return;
-	}
-	int cx = getContent().getX();
-	int cy = getContent().getY();
-	int cw = getContent().getWidth();
-	int ch = getContent().getHeight();
-	int aw = dep.getIconWidth();
-	int ah = dep.getIconHeight();
-	if (hitAbove(cx + cw / 2, cy, aw, ah, r)) {
-	    h.index = 10;
-	    h.instructions = "Add a component";
-	} else if (hitBelow(cx + cw / 2, cy + ch, aw, ah, r)) {
-	    h.index = 11;
-	    h.instructions = "Add a component";
-	} else if (hitLeft(cx + cw, cy + ch / 2, aw, ah, r)) {
-	    h.index = 12;
-	    h.instructions = "Add a component";
-	} else if (hitRight(cx, cy + ch / 2, aw, ah, r)) {
-	    h.index = 13;
-	    h.instructions = "Add a component";
-	} else {
-	    h.index = -1;
-	    h.instructions = "Move object(s)";
-	}
+  public void hitHandle(Rectangle r, Handle h) {
+    super.hitHandle(r, h);
+    if (h.index != -1) return;
+    if (!_paintButtons) return;
+    Editor ce = Globals.curEditor();
+    SelectionManager sm = ce.getSelectionManager();
+    if (sm.size() != 1) return;
+    ModeManager mm = ce.getModeManager();
+    if (mm.includes(ModeModify.class) && _pressedButton == -1) return;
+    int cx = _content.getX();
+    int cy = _content.getY();
+    int cw = _content.getWidth();
+    int ch = _content.getHeight();
+    int aw = dep.getIconWidth();
+    int ah = dep.getIconHeight();
+    if (hitAbove(cx + cw/2, cy, aw, ah, r)) {
+      h.index = 10;
+      h.instructions = "Add a component";
+    }
+    else if (hitBelow(cx + cw/2, cy + ch, aw, ah, r)) {
+      h.index = 11;
+      h.instructions = "Add a component";
+    }
+    else if (hitLeft(cx + cw, cy + ch/2, aw, ah, r)) {
+      h.index = 12;
+      h.instructions = "Add a component";
+    }
+    else if (hitRight(cx, cy + ch/2, aw, ah, r)) {
+      h.index = 13;
+      h.instructions = "Add a component";
+    }
+    else {
+      h.index = -1;
+      h.instructions = "Move object(s)";
+    }
+  }
+
+
+  /** Paint the handles at the four corners and midway along each edge
+   * of the bounding box.  */
+  public void paintButtons(Graphics g) {
+    int cx = _content.getX();
+    int cy = _content.getY();
+    int cw = _content.getWidth();
+    int ch = _content.getHeight();
+    paintButtonAbove(dep, g, cx + cw/2, cy, 10);
+    paintButtonBelow(dep, g, cx + cw/2, cy + ch, 11);
+    paintButtonLeft(dep, g, cx + cw, cy + ch/2, 12);
+    paintButtonRight(dep, g, cx, cy + ch/2, 13);
+  }
+
+
+  public void dragHandle(int mX, int mY, int anX, int anY, Handle hand) {
+    if (hand.index < 10) {
+      _paintButtons = false;
+      super.dragHandle(mX, mY, anX, anY, hand);
+      return;
+    }
+    int cx = _content.getX(), cy = _content.getY();
+    int cw = _content.getWidth(), ch = _content.getHeight();
+    int newX = cx, newY = cy, newW = cw, newH = ch;
+    Dimension minSize = _content.getMinimumSize();
+    int minWidth = minSize.width, minHeight = minSize.height;
+    Class edgeClass = null;
+    Class nodeClass = MNodeInstanceImpl.class;
+    int bx = mX, by = mY;
+    boolean reverse = false;
+    switch (hand.index) {
+    case 10: //add dep
+      edgeClass = MLinkImpl.class;
+      by = cy;
+      bx = cx + cw/2;
+      break;
+    case 11: //add dep
+      edgeClass = MLinkImpl.class;
+      reverse = true;
+      by = cy + ch;
+      bx = cx + cw/2;
+      break;
+    case 12: //add dep
+      edgeClass = MLinkImpl.class;
+      by = cy + ch/2;
+      bx = cx + cw;
+      break;
+    case 13: // add dep
+      edgeClass = MLinkImpl.class;
+      reverse = true;
+      by = cy + ch/2;
+      bx = cx;
+      break;
+    default:
+      System.out.println("invalid handle number");
+      break;
+    }
+    if (edgeClass != null && nodeClass != null) {
+      Editor ce = Globals.curEditor();
+      ModeCreateEdgeAndNode m = new
+	ModeCreateEdgeAndNode(ce, edgeClass, nodeClass, false);
+      m.setup((FigNode)_content, _content.getOwner(), bx, by, reverse);
+      ce.mode(m);
     }
 
+  }
 
-    /**
-     * @see org.tigris.gef.base.SelectionButtons#paintButtons(Graphics)
-     */
-    public void paintButtons(Graphics g) {
-	int cx = getContent().getX();
-	int cy = getContent().getY();
-	int cw = getContent().getWidth();
-	int ch = getContent().getHeight();
-	paintButtonAbove(dep, g, cx + cw / 2, cy, 10);
-	paintButtonBelow(dep, g, cx + cw / 2, cy + ch, 11);
-	paintButtonLeft(dep, g, cx + cw, cy + ch / 2, 12);
-	paintButtonRight(dep, g, cx, cy + ch / 2, 13);
+
+  public void buttonClicked(int buttonCode) {
+    super.buttonClicked(buttonCode);
+    MNodeInstance newNode = new MNodeInstanceImpl();
+    FigMNodeInstance fc = (FigMNodeInstance) _content;
+    MNodeInstance cls = (MNodeInstance) fc.getOwner();
+
+    Editor ce = Globals.curEditor();
+    GraphModel gm = ce.getGraphModel();
+    if (!(gm instanceof MutableGraphModel)) return;
+    MutableGraphModel mgm = (MutableGraphModel) gm;
+
+    if (!mgm.canAddNode(newNode)) return;
+    GraphNodeRenderer renderer = ce.getGraphNodeRenderer();
+    LayerPerspective lay = (LayerPerspective)
+      ce.getLayerManager().getActiveLayer();
+    Fig newFC = renderer.getFigNodeFor(gm, lay, newNode);
+
+    Rectangle outputRect = new Rectangle(Math.max(0, fc.getX() - 200),
+					 Math.max(0, fc.getY() - 200),
+					 fc.getWidth() + 400,
+					 fc.getHeight() + 400);
+    if (buttonCode == 10) {
+      newFC.setLocation(fc.getX(), Math.max(0, fc.getY() - 200));
+      outputRect.height = 200;
+      lay.bumpOffOtherNodesIn(newFC, outputRect, false, true);
     }
-
-
-    /**
-     * @see org.tigris.gef.base.Selection#dragHandle(int, int, int, int,
-     * org.tigris.gef.presentation.Handle)
-     */
-    public void dragHandle(int mX, int mY, int anX, int anY, Handle hand) {
-	if (hand.index < 10) {
-	    setPaintButtons(false);
-	    super.dragHandle(mX, mY, anX, anY, hand);
-	    return;
-	}
-	int cx = getContent().getX(), cy = getContent().getY();
-	int cw = getContent().getWidth(), ch = getContent().getHeight();
-	Object edgeType = null;
-	Object nodeType = Model.getMetaTypes().getNodeInstance();
-	int bx = mX, by = mY;
-	boolean reverse = false;
-	switch (hand.index) {
-	case 10: //add dep
-	    edgeType = Model.getMetaTypes().getLink();
-	    by = cy;
-	    bx = cx + cw / 2;
-	    break;
-	case 11: //add dep
-	    edgeType = Model.getMetaTypes().getLink();
-	    reverse = true;
-	    by = cy + ch;
-	    bx = cx + cw / 2;
-	    break;
-	case 12: //add dep
-	    edgeType = Model.getMetaTypes().getLink();
-	    by = cy + ch / 2;
-	    bx = cx + cw;
-	    break;
-	case 13: // add dep
-	    edgeType = Model.getMetaTypes().getLink();
-	    reverse = true;
-	    by = cy + ch / 2;
-	    bx = cx;
-	    break;
-	default:
-	    LOG.warn("invalid handle number");
-	    break;
-	}
-	if (edgeType != null && nodeType != null) {
-	    Editor ce = Globals.curEditor();
-	    ModeCreateEdgeAndNode m =
-	        new ModeCreateEdgeAndNode(ce, edgeType, false, this);
-	    m.setup((FigNode) getContent(), getContent().getOwner(),
-	            bx, by, reverse);
-	    ce.pushMode(m);
-	}
-
+    else if (buttonCode == 11) {
+      newFC.setLocation(fc.getX(), fc.getY() + fc.getHeight() + 100);
+      outputRect.y = fc.getY() + fc.getHeight() + 100;
+      outputRect.height = 200;
+      lay.bumpOffOtherNodesIn(newFC, outputRect, false, true);
     }
-
-
-    /**
-     * @see org.tigris.gef.base.SelectionButtons#createEdgeAbove(
-     *         org.tigris.gef.graph.MutableGraphModel, java.lang.Object)
-     */
-    protected Object createEdgeAbove(MutableGraphModel gm, Object newNode) {
-        return gm.connect(getContent().getOwner(), newNode,
-			  (Class) Model.getMetaTypes().getLink());
+    else if (buttonCode == 12) {
+      newFC.setLocation(fc.getX() + fc.getWidth() + 100, fc.getY());
+      outputRect.x = fc.getX()+ fc.getWidth() + 100 ;
+      outputRect.width = 200;
+      lay.bumpOffOtherNodesIn(newFC, outputRect, false, true);
     }
-
-    /**
-     * @see org.tigris.gef.base.SelectionButtons#createEdgeLeft(
-     *         org.tigris.gef.graph.MutableGraphModel, java.lang.Object)
-     */
-    protected Object createEdgeLeft(MutableGraphModel gm, Object newNode) {
-        return gm.connect(newNode, getContent().getOwner(),
-			  (Class) Model.getMetaTypes().getLink());
+    else if (buttonCode == 13) {
+      newFC.setLocation(Math.max(0, fc.getX() - 200), fc.getY());
+      outputRect.x = fc.getX() - 200;
+      outputRect.width = 200;
+      lay.bumpOffOtherNodesIn(newFC, outputRect, false, true);
     }
+    ce.add(newFC);
+    mgm.addNode(newNode);
 
-    /**
-     * @see org.tigris.gef.base.SelectionButtons#createEdgeRight(
-     *         org.tigris.gef.graph.MutableGraphModel, java.lang.Object)
-     */
-    protected Object createEdgeRight(MutableGraphModel gm, Object newNode) {
-        return gm.connect(getContent().getOwner(), newNode,
-			  (Class) Model.getMetaTypes().getLink());
-    }
+    FigPoly edgeShape = new FigPoly();
+    Point fcCenter = fc.center();
+    edgeShape.addPoint(fcCenter.x, fcCenter.y);
+    Point newFCCenter = newFC.center();
+    edgeShape.addPoint(newFCCenter.x, newFCCenter.y);
+    Object newEdge = null;
 
-    /**
-     * @see org.tigris.gef.base.SelectionButtons#createEdgeUnder(
-     *         org.tigris.gef.graph.MutableGraphModel, java.lang.Object)
-     */
-    protected Object createEdgeUnder(MutableGraphModel gm, Object newNode) {
-        return gm.connect(newNode, getContent().getOwner(),
-			  (Class) Model.getMetaTypes().getLink());
-    }
+    if (buttonCode == 10) newEdge = addCompClassAbove(mgm, cls, newNode);
+    else if (buttonCode == 11) newEdge = addCompClassBelow(mgm, cls, newNode);
+    else if (buttonCode == 12) newEdge = addCompClassRight(mgm, cls, newNode);
+    else if (buttonCode == 13) newEdge = addCompClassLeft(mgm, cls, newNode);
 
-    /**
-     * @see org.tigris.gef.base.SelectionButtons#getNewNode(int)
-     */
-    protected Object getNewNode(int buttonCode) {
-        return Model.getCommonBehaviorFactory().createNodeInstance();
-    }
+    FigEdge fe = (FigEdge) lay.presentationFor(newEdge);
+    edgeShape.setLineColor(Color.black);
+    edgeShape.setFilled(false);
+    edgeShape._isComplete = true;
+    fe.setFig(edgeShape);
+    ce.getSelectionManager().select(fc);
+  }
+
+  public Object addCompClassAbove(MutableGraphModel mgm, MNodeInstance cls,
+			    MNodeInstance newCls) {
+    return mgm.connect(cls, newCls, MLinkImpl.class);
+  }
+
+  public Object addCompClassBelow(MutableGraphModel mgm, MNodeInstance cls,
+			    MNodeInstance newCls) {
+    return mgm.connect(newCls, cls, MLinkImpl.class);
+  }
+  public Object addCompClassRight(MutableGraphModel mgm, MNodeInstance cls,
+			    MNodeInstance newCls) {
+    return mgm.connect(cls, newCls, MLinkImpl.class);
+  }
+
+  public Object addCompClassLeft(MutableGraphModel mgm, MNodeInstance cls,
+			    MNodeInstance newCls) {
+    return mgm.connect(newCls, cls, MLinkImpl.class);
+  }
 
 
 } /* end class SelectionNodeInstance */

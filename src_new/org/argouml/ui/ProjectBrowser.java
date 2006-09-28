@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,1691 +23,681 @@
 
 package org.argouml.ui;
 
-import java.awt.BorderLayout;
-import java.awt.Component;
-import java.awt.Dimension;
-import java.awt.Font;
-import java.awt.KeyboardFocusManager;
-import java.awt.Window;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.net.URI;
-import java.text.MessageFormat;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Vector;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.*;
+import javax.swing.*;
+import javax.swing.event.*;
+import javax.swing.tree.*;
 
-import javax.swing.AbstractAction;
-import javax.swing.ImageIcon;
-import javax.swing.JDialog;
-import javax.swing.JFileChooser;
-import javax.swing.JFrame;
-import javax.swing.JMenuBar;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.model_management.*;
 
-import org.apache.log4j.Logger;
-import org.argouml.application.api.Argo;
-import org.argouml.application.api.Configuration;
-import org.argouml.application.helpers.ResourceLoaderWrapper;
-import org.argouml.cognitive.Designer;
-import org.argouml.cognitive.ui.TabToDo;
-import org.argouml.cognitive.ui.ToDoPane;
-import org.argouml.i18n.Translator;
-import org.argouml.kernel.Project;
-import org.argouml.kernel.ProjectManager;
-import org.argouml.model.Model;
-import org.argouml.persistence.AbstractFilePersister;
-import org.argouml.persistence.OpenException;
-import org.argouml.persistence.PersistenceManager;
-import org.argouml.persistence.ProjectFilePersister;
-import org.argouml.persistence.UmlVersionException;
-import org.argouml.persistence.VersionException;
-import org.argouml.persistence.XmiFormatException;
-import org.argouml.swingext.LoadSwingWorker;
-import org.argouml.swingext.ProgressMonitorWindow;
-import org.argouml.swingext.SaveSwingWorker;
-import org.argouml.ui.cmd.GenericArgoMenuBar;
-import org.argouml.ui.targetmanager.TargetEvent;
-import org.argouml.ui.targetmanager.TargetListener;
-import org.argouml.ui.targetmanager.TargetManager;
-import org.argouml.uml.diagram.DiagramFactory;
-import org.argouml.uml.diagram.UMLMutableGraphSupport;
-import org.argouml.uml.diagram.ui.ActionRemoveFromDiagram;
-import org.argouml.uml.ui.ActionSaveProject;
-import org.argouml.uml.ui.ProjectFileView;
-import org.argouml.uml.ui.TabProps;
-import org.argouml.util.ThreadUtils;
-import org.tigris.gef.base.Diagram;
-import org.tigris.gef.base.Editor;
-import org.tigris.gef.base.Globals;
-import org.tigris.gef.graph.GraphModel;
-import org.tigris.gef.presentation.Fig;
-import org.tigris.gef.ui.IStatusBar;
-import org.tigris.gef.undo.RedoAction;
-import org.tigris.gef.undo.UndoAction;
-import org.tigris.gef.undo.UndoManager;
-import org.tigris.gef.util.Util;
-import org.tigris.swidgets.BorderSplitPane;
-import org.tigris.swidgets.Horizontal;
-import org.tigris.swidgets.Orientation;
-import org.tigris.swidgets.Vertical;
-import org.tigris.toolbar.layouts.DockBorderLayout;
+import org.tigris.gef.base.*;
+import org.tigris.gef.ui.*;
+import org.tigris.gef.util.*;
 
-/**
- * The main window of the ArgoUML application.
- *
- * @stereotype singleton
- */
-public final class ProjectBrowser
-    extends JFrame
-    implements IStatusBar, PropertyChangeListener, TargetListener {
+import org.argouml.kernel.*;
+import org.argouml.ui.*;
+import org.argouml.cognitive.*;
+import org.argouml.cognitive.ui.*;
+import org.argouml.uml.diagram.ui.UMLDiagram;
 
-    /**
-     * Default width.
-     */
-    public static final int DEFAULT_COMPONENTWIDTH = 220;
+/** The main window of the Argo/UML application. */
 
-    /**
-     * Default height.
-     */
-    public static final int DEFAULT_COMPONENTHEIGHT = 200;
+public class ProjectBrowser extends JFrame
+implements IStatusBar {
+  ////////////////////////////////////////////////////////////////
+  // constants
 
-    /**
-     * Logger.
-     */
-    private static final Logger LOG =
-        Logger.getLogger(ProjectBrowser.class);
+//   public static int WIDTH = 800;
+//   public static int HEIGHT = 600;
+//   public static int INITIAL_WIDTH = 400; // for showing progress bar
+//   public static int INITIAL_HEIGHT = 200;
 
-    ////////////////////////////////////////////////////////////////
-    // class variables
+  ////////////////////////////////////////////////////////////////
+  // class variables
 
-    /**
-     * Member attribute to contain the singleton.
-     */
-    private static ProjectBrowser theInstance;
+  public static ProjectBrowser TheInstance;
+  
+  // Actions
+  // file menu
+  //-protected static Action _actionNew =  Actions.New;
+  //protected static Action _actionOpen = Actions.Open;
+  //protected static Action _actionOpenXMI = Actions.OpenXMI;
+  //-protected static Action _actionOpenProject = Actions.OpenProject;
+  //protected static Action _actionSave = Actions.Save;
+  //protected static Action _actionSaveAs = Actions.SaveAs;
+  //protected static Action _actionSaveAsXMI = Actions.SaveAsXMI;
+  //-protected static Action _actionSaveProject = Actions.SaveProject;
+  //-protected static Action _actionSaveProjectAs = Actions.SaveProjectAs;
+  // -----
+  //protected static Action _actionAddToProj = Actions.AddToProj;
+  // -----
+  //-protected static Action _actionPrint = Actions.Print;
+  // -----
+  //-protected static Action _actionExit = Actions.Exit;
 
-    ////////////////////////////////////////////////////////////////
-    // instance variables
+  // edit menu
+  //-protected static Action _actionUndo = Actions.Undo;
+  //-protected static Action _actionRedo = Actions.Redo;
+  //-protected static Action _actionCut = Actions.Cut;
+  //-protected static Action _actionCopy = Actions.Copy;
+  //-protected static Action _actionPaste = Actions.Paste;
+  //-protected static Action _actionDelete = Actions.DeleteFromDiagram;
+  //-protected static Action _actionRemove = Actions.RemoveFromModel;
+  //-protected static Action _actionEmpty = Actions.EmptyTrash;
 
-    private String appName = "ProjectBrowser";
+  // view menu
+//   protected static Action _actionNavUp = Actions.NavUp;
+//   protected static Action _actionNavDown = Actions.NavDown;
+  //-protected static Action _actionNavBack = Actions.NavBack;
+  //-protected static Action _actionNavForw = Actions.NavForw;
+  //-protected static Action _actionFind = Actions.Find;
+  //-protected static Action _actionGotoDiagram = Actions.GotoDiagram;
+  //-protected static Action _actionNextEditTab = Actions.NextEditTab;
+  //protected static Action _actionAddToFavs = Actions.AddToFavs;
+  //-protected static Action _actionNextDetailsTab = Actions.NextDetailsTab;
 
-    private MultiEditorPane editorPane;
+  // create menu
+  protected static Action _actionCreateMultiple = Actions.CreateMultiple;
+  // ----- diagrams
+  protected static Action _actionClassDiagram = Actions.ClassDiagram;
+  protected static Action _actionUseCaseDiagram = Actions.UseCaseDiagram;
+  protected static Action _actionStateDiagram = Actions.StateDiagram;
+  protected static Action _actionActivityDiagram = Actions.ActivityDiagram;
+  protected static Action _actionCollaborationDiagram = Actions.CollaborationDiagram;
+  protected static Action _actionDeploymentDiagram = Actions.DeploymentDiagram;
 
-    /*
-     * TODO: Work in progress here to allow multiple details panes with
-     * different contents - Bob Tarling
-     */
-    private DetailsPane northEastPane;
-    private DetailsPane northPane;
-    private DetailsPane northWestPane;
-    private DetailsPane eastPane;
-    private DetailsPane southEastPane;
-    private DetailsPane southPane;
+  // ----- model elements
+  //protected static Action _actionModel = Actions.MModel;
+  protected static Action _actionAddTopLevelPackage = Actions.AddTopLevelPackage;
+  //protected static Action _actionClass = Actions.Class;
+  //protected static Action _actionInterface = Actions.MInterface;
+  //protected static Action _actionActor = Actions.MActor;
+  //protected static Action _actionUseCase = Actions.MUseCase;
+  //protected static Action _actionState = Actions.MState;
+  //protected static Action _actionPseudostate = Actions.MPseudostate;
+  //protected static Action _actionAttr = Actions.Attr;
+  //protected static Action _actionOper = Actions.Oper;
+  // -----  shapes
+//   protected static Action _actionRectangle = new org.tigris.gef.base.CmdSetMode(org.tigris.gef.base.ModeCreateFigRect.class, "Rectangle");
+//   protected static Action _actionRRectangle = new org.tigris.gef.base.CmdSetMode(org.tigris.gef.base.ModeCreateFigRRect.class, "RRect");
+//   protected static Action _actionCircle = new org.tigris.gef.base.CmdSetMode(org.tigris.gef.base.ModeCreateFigCircle.class, "Circle");
+//   protected static Action _actionLine = new org.tigris.gef.base.CmdSetMode(org.tigris.gef.base.ModeCreateFigLine.class, "Line");
+//   protected static Action _actionText = new org.tigris.gef.base.CmdSetMode(org.tigris.gef.base.ModeCreateFigText.class, "Text");
+//   protected static Action _actionPoly = new org.tigris.gef.base.CmdSetMode(org.tigris.gef.base.ModeCreateFigPoly.class, "Polygon");
+//   protected static Action _actionInk = new org.tigris.gef.base.CmdSetMode(org.tigris.gef.base.ModeCreateFigInk.class, "Ink");
 
-    private Map detailsPanesByCompassPoint = new HashMap();
+  // actions menu
+  //-protected static Action _actionGenerateOne = Actions.GenerateOne;
+  //-protected static Action _actionGenerateAll = Actions.GenerateAll;
+  //protected static Action _actionGenerateWeb = Actions.GenerateWeb;
 
-    private GenericArgoMenuBar menuBar;
+  // critique menu
+  //-protected static Action _actionAutoCritique = Actions.AutoCritique;
+  //-protected static Action _actionOpenDecisions = Actions.OpenDecisions;
+  //-protected static Action _actionOpenGoals = Actions.OpenGoals;
+  //-protected static Action _actionOpenCritics = Actions.OpenCritics;
 
-    /**
-     * Partially implemented. Needs work to display
-     * import of source and saving of zargo.
-     */
-    private StatusBar statusBar = new StatusBar();
 
-    /**
-     * TODO: this needs work so that users can set the font
-     * size through a gui preference window.
-     */
-    private Font defaultFont = new Font("Dialog", Font.PLAIN, 10);
+  // Help menu
+  //-protected static Action _actionAboutArgoUML = Actions.AboutArgoUML;
 
-    private BorderSplitPane workAreaPane;
+  ////////////////////////////////////////////////////////////////
+  // instance variables
 
-    /**
-     * The explorer (formerly called navigator) pane
-     * containing the modelstructure.
-     */
-    private NavigatorPane explorerPane;
+  protected String _appName = "ProjectBrowser";
+  protected Project _project = null;
 
-    /**
-     * The todopane (lower left corner of screen).
-     */
-    private ToDoPane todoPane;
+  protected NavigatorPane _navPane;
+  public ToDoPane _toDoPane;
+  protected MultiEditorPane _multiPane;
+  protected DetailsPane _detailsPane;
+  protected JMenuBar _menuBar = new JMenuBar();
+  protected StatusBar _statusBar = new StatusBar();
+  //protected JToolBar _toolBar = new JToolBar();
 
-    /**
-     * A class that handles the title of this frame, 
-     * e.g. to indicate save status.
-     */
-    private TitleHandler titleHandler = new TitleHandler();
 
-    /**
-     * The action to save the current project.
-     */
-    private AbstractAction saveAction;
+  public Font defaultFont = new Font("Dialog", Font.PLAIN, 10);
+  //  public static JFrame _Frame;
 
-    /**
-     * The action to redo the last undone action.
-     */
-    private final AbstractAction redoAction =
-        new RedoAction(Translator.localize("action.redo"));
+  protected JSplitPane _mainSplit, _topSplit, _botSplit;
 
-    /**
-     * The action to undo the last user interaction.
-     */
-    private final UndoAction undoAction =
-        new UndoAction(Translator.localize("action.undo"));
 
-    /**
-     * The action to remove the current selected Figs from the diagram.
-     */
-    private final ActionRemoveFromDiagram removeFromDiagram =
-        new ActionRemoveFromDiagram(
-                Translator.localize("action.remove-from-diagram"));
+  ////////////////////////////////////////////////////////////////
+  // constructors
 
-    /**
-     * For testing purposes. In tests this constructor can be called so
-     * TheInstance is filled.
-     */
-    private ProjectBrowser() {
-        this("ArgoUML", null);
+	public ProjectBrowser() {new ProjectBrowser("Test",null);}
+
+  public ProjectBrowser(String appName, StatusBar sb) {
+    super(appName);
+    sb.showStatus("Making Project Browser: Navigator Pane");
+    sb.incProgress(5);
+    _navPane = new NavigatorPane();
+    sb.showStatus("Making Project Browser: To Do Pane");
+    sb.incProgress(5);
+    _toDoPane = new ToDoPane();
+    _multiPane = new MultiEditorPane(sb);
+    _detailsPane = new DetailsPane(sb);
+    setAppName(appName);
+    if (TheInstance == null) TheInstance = this;
+    //setName(title);
+    //loadImages();
+    getContentPane().setFont(defaultFont);
+    getContentPane().setLayout(new BorderLayout());
+    initMenus();
+    //initToolBar();
+    getContentPane().add(_menuBar, BorderLayout.NORTH);
+    //JPanel p = new JPanel();
+    //p.setLayout(new BorderLayout());
+    //getContentPane().add(p, BorderLayout.CENTER);
+    //p.add(_toolBar, BorderLayout.NORTH);
+    getContentPane().add(createPanels(), BorderLayout.CENTER);
+    getContentPane().add(_statusBar, BorderLayout.SOUTH);
+    _toDoPane.setRoot(Designer.TheDesigner.getToDoList());
+
+    // allows me to ask "Do you want to save first?"
+    setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
+    addWindowListener(new WindowCloser());
+  }
+
+
+//   void loadImages() {
+//     String s = "A blue bullet icon - to draw attention to a menu item";
+//     blueDot = loadImageIcon("images/dot.gif", s);
+//     s = "A red bullet icon - to draw attention to a menu item";
+//     redDot = loadImageIcon("images/redDot.gif", s);
+//   }
+
+
+  protected void initMenus() {
+    KeyStroke ctrlN = KeyStroke.getKeyStroke(KeyEvent.VK_N, KeyEvent.CTRL_MASK);
+    KeyStroke ctrlO = KeyStroke.getKeyStroke(KeyEvent.VK_O, KeyEvent.CTRL_MASK);
+    KeyStroke ctrlS = KeyStroke.getKeyStroke(KeyEvent.VK_S, KeyEvent.CTRL_MASK);
+    KeyStroke ctrlP = KeyStroke.getKeyStroke(KeyEvent.VK_P, KeyEvent.CTRL_MASK);
+    KeyStroke ctrlA = KeyStroke.getKeyStroke(KeyEvent.VK_A, KeyEvent.CTRL_MASK);
+    KeyStroke ctrlC = KeyStroke.getKeyStroke(KeyEvent.VK_C, KeyEvent.CTRL_MASK);
+    KeyStroke ctrlV = KeyStroke.getKeyStroke(KeyEvent.VK_V, KeyEvent.CTRL_MASK);
+    KeyStroke ctrlX = KeyStroke.getKeyStroke(KeyEvent.VK_X, KeyEvent.CTRL_MASK);
+    KeyStroke ctrlR = KeyStroke.getKeyStroke(KeyEvent.VK_R, KeyEvent.CTRL_MASK);
+
+    KeyStroke F3 = KeyStroke.getKeyStroke(KeyEvent.VK_F3, 0);
+    KeyStroke F7 = KeyStroke.getKeyStroke(KeyEvent.VK_F7, 0);
+    KeyStroke altF4 = KeyStroke.getKeyStroke(KeyEvent.VK_F4, KeyEvent.ALT_MASK);
+
+
+//     KeyStroke ctrlup =
+//       KeyStroke.getKeyStroke(KeyEvent.VK_UP, KeyEvent.CTRL_MASK);
+//     KeyStroke ctrldown =
+//       KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, KeyEvent.CTRL_MASK);
+//     KeyStroke ctrlleft =
+//       KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, KeyEvent.CTRL_MASK);
+//     KeyStroke ctrlright =
+//       KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, KeyEvent.CTRL_MASK);
+
+    KeyStroke delKey =
+      KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0);
+
+    JMenuItem mi;
+    // File Menu
+    JMenu file = (JMenu) _menuBar.add(new JMenu("File"));
+    file.setMnemonic('F');
+    JMenuItem newItem = file.add(Actions.New);
+    newItem.setMnemonic('N');
+    newItem.setAccelerator(ctrlN);
+    //JMenuItem openItem = file.add(_actionOpen);
+    //JMenuItem openXMIItem = file.add(_actionOpenXMI);
+    JMenuItem openProjectItem = file.add(Actions.OpenProject);
+    openProjectItem.setMnemonic('O');
+    openProjectItem.setAccelerator(ctrlO);
+    //JMenuItem saveItem = file.add(_actionSave);
+    //file.add(_actionSaveAs);
+    //file.add(_actionSaveAsXMI);
+    JMenuItem saveProjectItem = file.add(Actions.SaveProject);
+    saveProjectItem.setMnemonic('S');
+    saveProjectItem.setAccelerator(ctrlS);
+    JMenuItem saveProjectAsItem = file.add(Actions.SaveProjectAs);
+    saveProjectAsItem.setMnemonic('A');
+    file.addSeparator();
+    JMenuItem loadModelFromDBItem = file.add(Actions.LoadModelFromDB);
+    JMenuItem storeModelToDBItem = file.add(Actions.StoreModelToDB);
+    file.addSeparator();
+    JMenuItem printItem = file.add(Actions.Print);
+    printItem.setMnemonic('P');
+    printItem.setAccelerator(ctrlP);
+    JMenuItem saveGraphicsItem = file.add(Actions.SaveGraphics);
+    saveGraphicsItem.setMnemonic('G');
+    // JMenuItem savePSItem = file.add(Actions.SavePS);
+    //file.addSeparator();
+    //file.add(_actionProjectInfo);
+    file.addSeparator();
+    JMenuItem exitItem = file.add(Actions.Exit);
+    exitItem.setMnemonic('x');
+    exitItem.setAccelerator(altF4);
+
+    JMenu edit = (JMenu) _menuBar.add(new JMenu("Edit"));
+    edit.setMnemonic('E');
+
+    JMenu select = new JMenu("Select");
+    edit.add(select);
+    JMenuItem selectAllItem = select.add(new CmdSelectAll());
+    selectAllItem.setAccelerator(ctrlA);
+    JMenuItem selectNextItem = select.add(new CmdSelectNext(false));
+    //tab
+    JMenuItem selectPrevItem = select.add(new CmdSelectNext(true));
+    // shift tab
+    select.add(new CmdSelectInvert());
+
+    edit.add(Actions.Undo);
+    edit.add(Actions.Redo);
+    edit.addSeparator();
+    JMenuItem cutItem = edit.add(Actions.Cut);
+    cutItem.setMnemonic('X');
+    cutItem.setAccelerator(ctrlX);
+    JMenuItem copyItem = edit.add(Actions.Copy);
+    copyItem.setMnemonic('C');
+    copyItem.setAccelerator(ctrlC);
+    JMenuItem pasteItem = edit.add(Actions.Paste);
+    pasteItem.setMnemonic('V');
+    pasteItem.setAccelerator(ctrlV);
+    edit.addSeparator();
+    // needs-more-work: confusing name change
+    JMenuItem deleteItem = edit.add(Actions.DeleteFromDiagram);
+    deleteItem.setMnemonic('R');
+    deleteItem.setAccelerator(ctrlR);
+    JMenuItem removeItem = edit.add(Actions.RemoveFromModel);
+    removeItem.setMnemonic('D');
+    removeItem.setAccelerator(delKey);
+    JMenuItem emptyItem = edit.add(Actions.EmptyTrash);
+
+    Menu view = (Menu) _menuBar.add(new Menu("View"));
+    // maybe should be Navigate instead of view
+    view.setMnemonic('V');
+
+//     JMenu nav = (JMenu) view.add(new JMenu("Navigate"));
+//     JMenuItem downItem = nav.add(_actionNavDown);
+//     downItem.setAccelerator(ctrldown);
+//     JMenuItem upItem = nav.add(_actionNavUp);
+//     upItem.setAccelerator(ctrlup);
+//     JMenuItem backItem = nav.add(_actionNavBack);
+//     backItem.setAccelerator(ctrlleft);
+//     JMenuItem forwItem = nav.add(_actionNavForw);
+//     forwItem.setAccelerator(ctrlright);
+
+    view.add(Actions.GotoDiagram);
+    JMenuItem findItem =  view.add(Actions.Find);
+    findItem.setAccelerator(F3);
+    view.addSeparator();
+
+    JMenu editTabs = (JMenu) view.add(new JMenu("Editor Tabs"));
+
+    //view.addSeparator();
+    //view.add(_actionAddToFavorites);
+    JMenu detailsTabs = (JMenu) view.add(new JMenu("Details Tabs"));
+
+    view.addSeparator();
+    view.add(new CmdAdjustGrid());
+    view.add(new CmdAdjustGuide());
+    view.add(new CmdAdjustPageBreaks());
+    view.addCheckItem(Actions.ShowRapidButtons);
+
+
+    JMenu create = (JMenu) _menuBar.add(new JMenu("Create"));
+    create.setMnemonic('C');
+    create.add(Actions.CreateMultiple);
+    create.addSeparator();
+
+    JMenu createDiagrams = (JMenu) create.add(new JMenu("Diagrams"));
+    createDiagrams.add(Actions.ClassDiagram);
+    createDiagrams.add(Actions.UseCaseDiagram);
+    createDiagrams.add(Actions.StateDiagram);
+    createDiagrams.add(Actions.ActivityDiagram);
+    createDiagrams.add(Actions.CollaborationDiagram);
+    createDiagrams.add(Actions.DeploymentDiagram);
+
+    //JMenu createModelElements = (JMenu) create.add(new JMenu("Model Elements"));
+    //createModelElements.add(Actions.AddTopLevelPackage);
+    //createModelElements.add(_actionClass);
+    //createModelElements.add(_actionInterface);
+    //createModelElements.add(_actionActor);
+    //createModelElements.add(_actionUseCase);
+    //createModelElements.add(_actionState);
+    //createModelElements.add(_actionPseudostate);
+    //createModelElements.add(_actionAttr);
+    //createModelElements.add(_actionOper);
+
+    //JMenu createFig = (JMenu) create.add(new JMenu("Shapes"));
+    //createFig.add(_actionRectangle);
+    //createFig.add(_actionRRectangle);
+    //createFig.add(_actionCircle);
+    //createFig.add(_actionLine);
+    //createFig.add(_actionText);
+    //createFig.add(_actionPoly);
+    //createFig.add(_actionInk);
+
+    JMenu arrange = (JMenu) _menuBar.add(new JMenu("Arrange"));
+    arrange.setMnemonic('A');
+
+    JMenu align = (JMenu) arrange.add(new JMenu("Align"));
+    JMenu distribute = (JMenu) arrange.add(new JMenu("Distribute"));
+    JMenu reorder = (JMenu) arrange.add(new JMenu("Reorder"));
+    JMenu nudge = (JMenu) arrange.add(new JMenu("Nudge"));
+
+    Runnable initLater = new
+      InitMenusLater(align, distribute, reorder, nudge, editTabs, detailsTabs);
+    org.argouml.application.Main.addPostLoadAction(initLater);
+
+    JMenu generate = (JMenu) _menuBar.add(new JMenu("Generation"));
+    generate.setMnemonic('G');
+    generate.add(Actions.GenerateOne);
+    JMenuItem genAllItem = generate.add(Actions.GenerateAll);
+    genAllItem.setAccelerator(F7);
+    //generate.add(Actions.GenerateWeb);
+
+    Menu critique = (Menu) _menuBar.add(new Menu("Critique"));
+    critique.setMnemonic('R');
+    critique.addCheckItem(Actions.AutoCritique);
+    critique.addSeparator();
+    critique.add(Actions.OpenDecisions);
+    critique.add(Actions.OpenGoals);
+    critique.add(Actions.OpenCritics);
+
+    // Help Menu
+    JMenu help = new JMenu("Help");
+    help.setMnemonic('H');
+    help.add(Actions.AboutArgoUML);
+    //_menuBar.setHelpMenu(help);
+    _menuBar.add(help);
+  }
+
+
+  protected Component createPanels() {
+    _topSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, _navPane, _multiPane);
+    _botSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,
+			       _toDoPane, _detailsPane);
+    _mainSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT, _topSplit, _botSplit);
+    _topSplit.setDividerSize(2);
+    _topSplit.setDividerLocation(270);
+    _botSplit.setDividerSize(2);
+    _mainSplit.setDividerSize(2);
+    //_botSplit.setOneTouchExpandable(true);
+    return _mainSplit;
+  }
+
+  ////////////////////////////////////////////////////////////////
+  // accessors
+
+  public void setProject(Project p) {
+    _project = p;
+    _navPane.setRoot(_project);
+    updateTitle();
+    Actions.updateAllEnabled();
+    //Designer.TheDesigner.getToDoList().removeAllElements();
+    Designer.TheDesigner.setCritiquingRoot(_project);
+    // update all panes
+    setTarget(_project.getInitialTarget());
+    _navPane.forceUpdate();
+  }
+  public Project getProject() { 
+	  // only for testing...
+	  if (_project == null) _project = Project.makeEmptyProject();
+	  return _project; 
+  }
+
+  public void updateTitle() {
+    if (_project == null) setTitle(null);
+    else setTitle(_project.getName());
+  }
+
+  public void setTitle(String title) {
+    if (title == null || "".equals(title)) setTitle(getAppName());
+    else super.setTitle(getAppName() + " - " + title);
+  }
+
+  public String getAppName() { return _appName; }
+  public void setAppName(String n) { _appName = n; }
+
+  public void setPerspectives(Vector v) {
+    _navPane.setPerspectives(v);
+  }
+  public Vector getPerspectives() {
+    return _navPane.getPerspectives();
+  }
+
+  public void setCurPerspective(NavPerspective tm) {
+    _navPane.setCurPerspective(tm);
+  }
+  public NavPerspective getCurPerspective() {
+    return _navPane.getCurPerspective();
+  }
+
+  public void setToDoPerspectives(Vector v) {
+    _toDoPane.setPerspectives(v);
+  }
+  public Vector getToDoPerspectives() {
+    return _toDoPane.getPerspectives();
+  }
+  public void setToDoCurPerspective(TreeModel tm) {
+    _toDoPane.setCurPerspective(tm);
+  }
+
+  public void select(Object o) {
+    _multiPane.select(o);
+    _detailsPane.setTarget(o);
+    Actions.updateAllEnabled();
+  }
+
+  public void setTarget(Object o) {
+	  _multiPane.setTarget(o);
+	  _detailsPane.setTarget(o);
+	  if (o instanceof MNamespace) _project.setCurrentNamespace((MNamespace)o);
+	  if (o instanceof UMLDiagram) {
+		  MNamespace m = ((UMLDiagram)o).getNamespace();
+		  if (m != null) _project.setCurrentNamespace(m);
+	  }
+	  if (o instanceof MModelElement) {
+		  MModelElement eo = (MModelElement)o;
+		  if (eo == null) { System.out.println("no path to model"); return; }
+		  _project.setCurrentNamespace(eo.getNamespace());
+	  }
+	  Actions.updateAllEnabled();
+  }
+
+  public Object getTarget() {
+    if (_multiPane == null) return null;
+    return _multiPane.getTarget();
+  }
+
+  public void setToDoItem(Object o) {
+    _detailsPane.setToDoItem(o);
+  }
+
+  public void setDetailsTarget(Object o) {
+    _detailsPane.setTarget(o);
+    Actions.updateAllEnabled();
+  }
+
+  public Object getDetailsTarget() {
+    return _detailsPane.getTarget();
+  }
+
+  public StatusBar getStatusBar() { return _statusBar; }
+
+
+  public ToDoPane getToDoPane() { return _toDoPane; }
+  public NavigatorPane getNavPane() { return _navPane; }
+  public MultiEditorPane getEditorPane() { return _multiPane; }
+  public DetailsPane getDetailsPane() { return _detailsPane; }
+
+  public void jumpToDiagramShowing(VectorSet dms) {
+    if (dms.size() == 0) return;
+    Object first = dms.elementAt(0);
+    if (first instanceof Diagram && dms.size() > 1) {
+      setTarget(first);
+      select(dms.elementAt(1));
+      return;
+    }
+    if (first instanceof Diagram && dms.size() == 1) {
+      setTarget(first);
+      select(null);
+      return;
+    }
+    Vector diagrams = getProject().getDiagrams();
+    Object target = _multiPane.getTarget();
+    if ((target instanceof Diagram) &&
+	((Diagram)target).countContained(dms) == dms.size()) {
+      select(first);
+      return;
     }
 
-    /**
-     * The constructor.
-     *
-     * @param applicationName  the title of the frame
-     * @param splash the splash screen to show at startup
-     */
-    private ProjectBrowser(String applicationName, SplashScreen splash) {
-        super(applicationName);
-        theInstance = this;
-
-        saveAction = new ActionSaveProject();
-        ProjectManager.getManager().setSaveAction(saveAction);
-
-        if (splash != null) {
-	    splash.getStatusBar().showStatus(
-	        Translator.localize("statusmsg.bar.making-project-browser"));
-            splash.getStatusBar().showProgress(10);
-            splash.setVisible(true);
-        }
-
-        menuBar = new GenericArgoMenuBar();
-
-        editorPane = new MultiEditorPane();
-        getContentPane().setFont(defaultFont);
-        getContentPane().setLayout(new BorderLayout());
-        this.setJMenuBar(menuBar);
-        //getContentPane().add(_menuBar, BorderLayout.NORTH);
-        getContentPane().add(createPanels(splash), BorderLayout.CENTER);
-        getContentPane().add(statusBar, BorderLayout.SOUTH);
-
-        setAppName(applicationName);
-
-        // allows me to ask "Do you want to save first?"
-        setDefaultCloseOperation(ProjectBrowser.DO_NOTHING_ON_CLOSE);
-        addWindowListener(new WindowCloser());
-        ImageIcon argoImage =
-            ResourceLoaderWrapper.lookupIconResource("ArgoIcon");
-        this.setIconImage(argoImage.getImage());
-        //
-
-        // adds this as listener to projectmanager so it gets updated when the
-        // project changes
-        ProjectManager.getManager().addPropertyChangeListener(this);
-
-        // adds this as listener to TargetManager so gets notified
-        // when the active diagram changes
-        TargetManager.getInstance().addTargetListener(this);
-
-        // Add a listener to focus changes.
-        // Rationale: reset the undo manager to start a new chain.
-        KeyboardFocusManager kfm =
-            KeyboardFocusManager.getCurrentKeyboardFocusManager();
-        kfm.addPropertyChangeListener(new PropertyChangeListener() {
-            private Object obj;
-
-            /**
-             * @see java.beans.PropertyChangeListener#propertyChange(java.beans.PropertyChangeEvent)
-             */
-            public void propertyChange(PropertyChangeEvent evt) {
-                if ("focusOwner".equals(evt.getPropertyName())
-                        && (evt.getNewValue() != null)
-                        /* We get many many events (why?), so let's filter: */
-                        && (obj != evt.getNewValue())) {
-                    obj = evt.getNewValue();
-                    UndoManager.getInstance().startChain();
-                    /* This next line is ideal for debugging the taborder
-                     * (focus traversal), see e.g. issue 1849.
-                     */
-//                  System.out.println("Focus changed " + obj);
-                }
-            }
-        });
+    Diagram bestDiagram = null;
+    int bestNumContained = 0;
+    for (int i = 0; i < diagrams.size(); i++) {
+      Diagram d = (Diagram) diagrams.elementAt(i);
+      int nc = d.countContained(dms);
+      if (nc > bestNumContained) {
+	bestNumContained = nc;
+	bestDiagram = d;
+      }
+      if (nc == dms.size()) break;
     }
-
-    /**
-     * Singleton retrieval method for the projectbrowser. Lazely instantiates
-     * the projectbrowser.
-     * @return the singleton instance of the projectbrowser
-     */
-    public static synchronized ProjectBrowser getInstance() {
-        if (theInstance == null) {
-            theInstance = new ProjectBrowser();
-        }
-        return theInstance;
+    if (bestDiagram != null) {
+      setTarget(bestDiagram);
+      select(first);
     }
+  }
 
-    /**
-     * Creator method for the projectbrowser.
-     *
-     * @return the singleton instance of the projectbrowser
-     *
-     * @param splash true if we are allowed to show a splash screen
-     */
-    public static ProjectBrowser makeInstance(SplashScreen splash) {
-        return new ProjectBrowser("ArgoUML", splash);
-    }
+  ////////////////////////////////////////////////////////////////
+  // window operations
 
-    /**
-     * @see java.awt.Component#getLocale()
-     */
-    public Locale getLocale() {
-        return Locale.getDefault();
-    }
+  public void setVisible(boolean b) {
+    super.setVisible(b);
+    if (b) org.tigris.gef.base.Globals.setStatusBar(this);
+  }
 
+  ////////////////////////////////////////////////////////////////
+  // IStatusBar
+  public void showStatus(String s) { _statusBar.showStatus(s); }
 
-    /**
-     * Creates the panels in the working area.
-     *
-     * @param splash true if we show  the splashscreen during startup
-     * @return Component the area between the menu and the statusbar.
-     *                   It contains the workarea at centre and the toolbar
-     *                   position north, south, east or west.
-     *
-     */
-    protected Component createPanels(SplashScreen splash) {
-        if (splash != null) {
-	    splash.getStatusBar().showStatus(
-	            Translator.localize(
-	                    "statusmsg.bar.making-project-browser-explorer"));
-            splash.getStatusBar().incProgress(5);
-        }
-        explorerPane = new NavigatorPane(splash);
 
-        /* Work in progress here to allow multiple details panes with
-        ** different contents - Bob Tarling
-        */
-        eastPane  =
-	    makeDetailsPane(BorderSplitPane.EAST,  Vertical.getInstance());
-        southPane =
-	    makeDetailsPane(BorderSplitPane.SOUTH, Horizontal.getInstance());
-        southEastPane =
-	    makeDetailsPane(BorderSplitPane.SOUTHEAST,
-			    Horizontal.getInstance());
-        northWestPane =
-	    makeDetailsPane(BorderSplitPane.NORTHWEST,
-			    Horizontal.getInstance());
-        northPane =
-	    makeDetailsPane(BorderSplitPane.NORTH, Horizontal.getInstance());
-        northEastPane =
-	    makeDetailsPane(BorderSplitPane.NORTHEAST,
-			    Horizontal.getInstance());
-
-        if (southPane != null) {
-            detailsPanesByCompassPoint.put(BorderSplitPane.SOUTH, southPane);
-        }
-        if (southEastPane != null) {
-            detailsPanesByCompassPoint.put(BorderSplitPane.SOUTHEAST,
-					   southEastPane);
-        }
-        if (eastPane != null) {
-            detailsPanesByCompassPoint.put(BorderSplitPane.EAST, eastPane);
-        }
-        if (northWestPane != null) {
-            detailsPanesByCompassPoint.put(BorderSplitPane.NORTHWEST,
-					   northWestPane);
-        }
-        if (northPane != null) {
-            detailsPanesByCompassPoint.put(BorderSplitPane.NORTH, northPane);
-        }
-        if (northEastPane != null) {
-            detailsPanesByCompassPoint.put(BorderSplitPane.NORTHEAST,
-					   northEastPane);
-        }
-
-        // The workarea is all the visible space except the menu,
-        // toolbar and status bar.  Workarea is layed out as a
-        // BorderSplitPane where the various components that make up
-        // the argo application can be positioned.
-        workAreaPane = new BorderSplitPane();
-        // create the todopane
-        if (splash != null) {
-	    splash.getStatusBar().showStatus(Translator.localize(
-		    "statusmsg.bar.making-project-browser-to-do-pane"));
-            splash.getStatusBar().incProgress(5);
-        }
-        todoPane = new ToDoPane(splash);
-        restorePanelSizes();
-
-        // There are various details panes all of which could hold
-        // different tabs pages according to users settings.
-        // Place each pane in the required border area.
-        Iterator it = detailsPanesByCompassPoint.entrySet().iterator();
-        while (it.hasNext()) {
-            Map.Entry entry = (Map.Entry) it.next();
-            String position = (String) entry.getKey();
-            if (entry.getValue() instanceof DetailsPane) {
-                DetailsPane detailsPane = (DetailsPane) entry.getValue();
-                TargetManager.getInstance().addTargetListener(detailsPane);
-            }
-            addPanel((Component) entry.getValue(), position);
-        }
-        addPanel(explorerPane, BorderSplitPane.WEST);
-
-        getTab(TabToDo.class); // TODO: If this doesn't have side effects,
-                               //       it can be removed alltogether.
-        //todo.setTree(_todoPane);
-        addPanel(todoPane, BorderSplitPane.SOUTHWEST);
-        addPanel(editorPane, BorderSplitPane.CENTER);
-        // Toolbar boundry is the area between the menu and the status
-        // bar. It contains the workarea at centre and the toolbar
-        // position north, south, east or west.
-        JPanel toolbarBoundry = new JPanel();
-        toolbarBoundry.setLayout(new DockBorderLayout());
-        // TODO: - should save and restore the last positions of the toolbars
-        toolbarBoundry.add(menuBar.getFileToolbar(), BorderLayout.NORTH);
-        toolbarBoundry.add(menuBar.getEditToolbar(), BorderLayout.NORTH);
-        toolbarBoundry.add(menuBar.getViewToolbar(), BorderLayout.NORTH);
-        toolbarBoundry.add(menuBar.getCreateDiagramToolbar(),
-			   BorderLayout.NORTH);
-        toolbarBoundry.add(workAreaPane, BorderLayout.CENTER);
-
-        return toolbarBoundry;
-    }
-
-    /**
-     * Add a panel to a split pane area.
-     *
-     * @param comp the panel to add
-     * @param obj the position (BorderSplitPane.EAST etc)
-     */
-    void addPanel(Component comp, Object obj) {
-        workAreaPane.add(comp, obj);
-    }
-
-    /**
-     * Remove a panel from a split pane area.
-     *
-     * @param comp the panel to remove
-     */
-    void removePanel(Component comp) {
-        workAreaPane.remove(comp);
-        workAreaPane.validate();
-        workAreaPane.repaint();
-    }
-
-    /**
-     * Set the size of each panel to that last saved in the configuration file.
-     */
-    private void restorePanelSizes() {
-        if (northPane != null) {
-            northPane.setPreferredSize(
-		    new Dimension(0,
-				  Configuration.getInteger(
-					  Argo.KEY_SCREEN_NORTH_HEIGHT,
-					  DEFAULT_COMPONENTHEIGHT)));
-        }
-        if (southPane != null) {
-            southPane.setPreferredSize(
-		    new Dimension(0,
-				  Configuration.getInteger(
-					  Argo.KEY_SCREEN_SOUTH_HEIGHT,
-					  DEFAULT_COMPONENTHEIGHT)));
-        }
-        if (eastPane != null) {
-            eastPane.setPreferredSize(
-		    new Dimension(Configuration.getInteger(
-					  Argo.KEY_SCREEN_EAST_WIDTH,
-					  DEFAULT_COMPONENTHEIGHT),
-				  0));
-        }
-        if (explorerPane != null) {
-            explorerPane.setPreferredSize(
-		    new Dimension(Configuration.getInteger(
-					  Argo.KEY_SCREEN_WEST_WIDTH,
-					  DEFAULT_COMPONENTHEIGHT),
-				  0));
-        }
-	//        if (_northWestPane != null) {
-	//            _northWestPane.setPreferredSize(new Dimension(
-	//                Configuration.getInteger(
-	// Argo.KEY_SCREEN_NORTHWEST_WIDTH, DEFAULT_COMPONENTWIDTH),
-	//                Configuration.getInteger(
-	// Argo.KEY_SCREEN_NORTH_HEIGHT, DEFAULT_COMPONENTHEIGHT)
-	//            ));
-	//        }
-	//        if (_todoPane != null) {
-	//            _todoPane.setPreferredSize(new Dimension(
-	//                Configuration.getInteger(
-	// Argo.KEY_SCREEN_SOUTHWEST_WIDTH, DEFAULT_COMPONENTWIDTH),
-	//                Configuration.getInteger(
-	// Argo.KEY_SCREEN_SOUTH_HEIGHT, DEFAULT_COMPONENTHEIGHT)
-	//            ));
-	//        }
-	//        if (_northEastPane != null) {
-	//            _northEastPane.setPreferredSize(new Dimension(
-	//                Configuration.getInteger(
-	// Argo.KEY_SCREEN_NORTHEAST_WIDTH, DEFAULT_COMPONENTWIDTH),
-	//                Configuration.getInteger(
-	// Argo.KEY_SCREEN_NORTH_HEIGHT, DEFAULT_COMPONENTHEIGHT)
-	//            ));
-	//        }
-	//        if (_southEastPane != null) {
-	//            _southEastPane.setPreferredSize(new Dimension(
-	//                Configuration.getInteger(
-	// Argo.KEY_SCREEN_SOUTHEAST_WIDTH, DEFAULT_COMPONENTWIDTH),
-	//                Configuration.getInteger(
-	// Argo.KEY_SCREEN_SOUTH_HEIGHT, DEFAULT_COMPONENTHEIGHT)
-	//            ));
-	//        }
-    }
-
-    /**
-     * Handle the title-bar of the window.
-     * 
-     * @author michiel
-     */
-    private class TitleHandler implements PropertyChangeListener {
-        
-        private ArgoDiagram monitoredDiagram = null;
-
-        /**
-         * Create a title for the main window's title.
-         *
-         * @param projectFileName the project-file name
-         * @param activeDiagram the (new) current diagram
-         */
-        protected void buildTitle(String projectFileName, 
-                ArgoDiagram activeDiagram) {
-            if (projectFileName == null || "".equals(projectFileName)) {
-                if (ProjectManager.getManager().getCurrentProject() != null) {
-                    projectFileName = ProjectManager.getManager()
-                        .getCurrentProject().getName();
-                }
-            }
-            if (activeDiagram == null) {
-                activeDiagram = ProjectManager.getManager()
-                    .getCurrentProject().getActiveDiagram();
-            }
-            String changeIndicator = "";
-            if (saveAction != null && saveAction.isEnabled()) {
-                changeIndicator = " *";
-            }
-            if (activeDiagram != null) {
-                if (monitoredDiagram != null) {
-                    monitoredDiagram.removePropertyChangeListener("name", this);
-                }
-                activeDiagram.addPropertyChangeListener("name", this);
-                monitoredDiagram = activeDiagram;
-                setTitle(projectFileName + " - " + activeDiagram.getName()
-                        + " - " + getAppName() + changeIndicator);
-            } else {
-                setTitle(projectFileName + " - " + getAppName() 
-                        + changeIndicator);
-            }
-        }
-        /**
-         * @see java.beans.PropertyChangeListener#propertyChange(java.beans.PropertyChangeEvent)
-         */
-        public void propertyChange(PropertyChangeEvent evt) {
-            if (evt.getPropertyName().equals("name")
-                    && evt.getSource() instanceof ArgoDiagram) {
-                buildTitle(
-                    ProjectManager.getManager().getCurrentProject().getName(), 
-                    (ArgoDiagram) evt.getSource());
-            }            
-        }
-    }
-    /**
-     * Set the save indicator (the * after the title) to appear depending on
-     * the curreny save action enabled status.
-     */
-    public void showSaveIndicator() {
-        titleHandler.buildTitle(null, null);
-    }
-
-    /**
-     * @return the application name ("ArgoUML") as shown in the titlebar
-     */
-    public String getAppName() {
-        return appName;
-    }
-
-    /**
-     * @param n the application name ("ArgoUML") as shown in the titlebar
-     */
-    public void setAppName(String n) {
-        appName = n;
-    }
-
-    /**
-     * The method used by the NavigatorPane, MultiEditor and DetailsPane
-     * to set the target of the application.<p>
-     *
-     * the target is either a Model Element (usually selected in
-     * the Navigation pane or Properties panel) or a Fig (selected in
-     * a diagram).<p>
-     *
-     * The concept of a selection transaction is used to prevent a change
-     * of target in one view creating a call back to this method, which
-     * would then change the target in all views again...<p>
-     *
-     * @param o the target
-     */
-    private void setTarget(Object o) {
-        TargetManager.getInstance().setTarget(o);
-    }
-
-    /**
-     * Select the tab page containing the todo item.
-     *
-     * TODO: should introduce an instance variable to go straight to
-     * the correct tab instead of trying all
-     *
-     * @param o the todo item to select
-     */
-    public void setToDoItem(Object o) {
-        Iterator it = detailsPanesByCompassPoint.values().iterator();
-        while (it.hasNext()) {
-            DetailsPane detailsPane = (DetailsPane) it.next();
-            if (detailsPane.setToDoItem(o)) {
-                return;
-            }
-        }
-    }
-
-    /**
-     * Get the tab page containing the properties.
-     *
-     * @return the TabProps tabpage
-     */
-    public TabProps getTabProps() {
-        // In theory there can be multiple details pane (work in
-        // progress). It must first be determined which details
-        // page contains the properties tab. Bob Tarling 7 Dec 2002
-        Iterator it = detailsPanesByCompassPoint.values().iterator();
-        while (it.hasNext()) {
-            DetailsPane detailsPane = (DetailsPane) it.next();
-            TabProps tabProps = detailsPane.getTabProps();
-            if (tabProps != null) {
-                return tabProps;
-            }
-        }
-        throw new IllegalStateException("No properties tab found");
-    }
-
-    /**
-     * Get the tab page instance of the given class.
-     *
-     * @param tabClass the given class
-     * @return the tabpage
-     */
-    public AbstractArgoJPanel getTab(Class tabClass) {
-        // In theory there can be multiple details pane (work in
-        // progress). It must first be determined which details
-        // page contains the properties tab. Bob Tarling 7 Dec 2002
-        Iterator it = detailsPanesByCompassPoint.values().iterator();
-        while (it.hasNext()) {
-            DetailsPane detailsPane = (DetailsPane) it.next();
-            AbstractArgoJPanel tab = detailsPane.getTab(tabClass);
-            if (tab != null) {
-                return tab;
-            }
-        }
-        throw new IllegalStateException("No " + tabClass.getName()
-					+ " tab found");
-    }
-
-    /**
-     * @return the status bar
-     */
-    public StatusBar getStatusBar() {
-        return statusBar;
-    }
-
-    /**
-     * @see javax.swing.JFrame#getJMenuBar()
-     */
-    public JMenuBar getJMenuBar() {
-        return menuBar;
-    }
-
-    /**
-     * @return the editor pane
-     */
-    public MultiEditorPane getEditorPane() {
-        return editorPane;
-    }
-
-    /**
-     * Find the tabpage with the given label and make it the front tab.
-     *
-     * @param tabName The tabpage label
-     */
-    public void selectTabNamed(String tabName) {
-        Iterator it = detailsPanesByCompassPoint.values().iterator();
-        while (it.hasNext()) {
-            DetailsPane detailsPane = (DetailsPane) it.next();
-            if (detailsPane.selectTabNamed(Translator.localize(tabName))) {
-                return;
-            }
-        }
-        throw new IllegalArgumentException("No such tab named " + tabName);
-    }
-
-    /**
-     * Find the tabpage with the given label.
-     *
-     * @param tabName The tabpage label
-     * @return the tabpage
-     * @deprecated by Andrea Nironi (0.22 August 2006). Replaced by
-     *             {@link org.argouml.ui.ProjectBrowser#getTab(Class tabClass)}.
-     *             See issue 3278.
-     */
-    public JPanel getNamedTab(String tabName) {
-        JPanel panel;
-        Iterator it = detailsPanesByCompassPoint.values().iterator();
-        while (it.hasNext()) {
-            DetailsPane detailsPane = (DetailsPane) it.next();
-            panel = detailsPane.getNamedTab(tabName);
-            if (panel != null) {
-                return panel;
-            }
-        }
-        //TODO: I'd prefer to throw this exception here but doing Argo currently
-        //falls over - needs more investigation Bob Tarling 8 Dec 2002
-        //throw new IllegalArgumentException("No such tab named " + tabName);
-        return null;
-    }
-
-    /**
-     * Given a list of targets, displays the according diagram.
-     * This method jumps to the diagram showing the targets,
-     * and scrolls to make it visible.
-     *
-     * @param targets Collection of targets to show
-     */
-    public void jumpToDiagramShowing(Collection targets) {
-
-        if (targets == null || targets.size() == 0) {
-            return;
-        }
-        Vector dms = new Vector(targets);
-        Object first = dms.elementAt(0);
-        if (first instanceof Diagram && dms.size() > 1) {
-            setTarget(first);
-            setTarget(dms.elementAt(1));
-            return;
-        }
-        if (first instanceof Diagram && dms.size() == 1) {
-            setTarget(first);
-            return;
-        }
-        Vector diagrams =
-            ProjectManager.getManager().getCurrentProject().getDiagrams();
-        Object target = TargetManager.getInstance().getTarget();
-        if ((target instanceof Diagram)
-            && ((Diagram) target).countContained(dms) == dms.size()) {
-            setTarget(first);
-            return;
-        }
-
-        Diagram bestDiagram = null;
-        int bestNumContained = 0;
-        for (int i = 0; i < diagrams.size(); i++) {
-            Diagram d = (Diagram) diagrams.elementAt(i);
-            int nc = d.countContained(dms);
-            if (nc > bestNumContained) {
-                bestNumContained = nc;
-                bestDiagram = d;
-            }
-            if (nc == dms.size()) {
-                break;
-            }
-        }
-        if (bestDiagram != null) {
-            if (!ProjectManager.getManager().getCurrentProject()
-                    .getActiveDiagram().equals(bestDiagram)) {
-                setTarget(bestDiagram);
-            }
-            setTarget(first);
-        }
-        // making it possible to jump to the modelroot
-        if (first.equals(ProjectManager.getManager().getCurrentProject()
-			 .getRoot())) {
-            setTarget(first);
-        }
-
-        // and finally, adjust the scrollbars to show the Fig
-        Project p = ProjectManager.getManager().getCurrentProject();
-        if (p != null) {
-            Object f = TargetManager.getInstance().getFigTarget();
-            if (f instanceof Fig) {
-                Globals.curEditor().scrollToShow((Fig) f);
-            }
-        }
-    }
-
-    ////////////////////////////////////////////////////////////////
-    // window operations
-
-    /**
-     * @see java.awt.Component#setVisible(boolean)
-     */
-    public void setVisible(boolean b) {
-        super.setVisible(b);
-        if (b) {
-            Globals.setStatusBar(this);
-        }
-    }
-
-    ////////////////////////////////////////////////////////////////
-    // IStatusBar
-    /**
-     * @see org.tigris.gef.ui.IStatusBar#showStatus(java.lang.String)
-     */
-    public void showStatus(String s) {
-        statusBar.showStatus(s);
-    }
-
-    /**
-     * Save the positions of the screen splitters, sizes and postion
-     * of main window in the properties file.
-     */
-    private void saveScreenConfiguration() {
-        if (explorerPane != null) {
-	    Configuration.setInteger(Argo.KEY_SCREEN_WEST_WIDTH,
-				     explorerPane.getWidth());
-        }
-
-        if (eastPane != null) {
-	    Configuration.setInteger(Argo.KEY_SCREEN_EAST_WIDTH,
-				     eastPane.getWidth());
-        }
-
-        if (northPane != null) {
-	    Configuration.setInteger(Argo.KEY_SCREEN_NORTH_HEIGHT,
-				     northPane.getHeight());
-        }
-
-        if (southPane != null) {
-	    Configuration.setInteger(Argo.KEY_SCREEN_SOUTH_HEIGHT,
-				     southPane.getHeight());
-        }
-
-	//        if (_todoPane != null)
-	// Configuration.setInteger(Argo.KEY_SCREEN_SOUTHWEST_WIDTH,
-	// _todoPane.getWidth());
-	//        if (_southEastPane != null)
-	// Configuration.setInteger(Argo.KEY_SCREEN_SOUTHEAST_WIDTH,
-	// _southEastPane.getWidth());
-	//        if (_northWestPane != null)
-	// Configuration.setInteger(Argo.KEY_SCREEN_NORTHWEST_WIDTH,
-	// _northWestPane.getWidth());
-	//        if (_northEastPane != null)
-	// Configuration.setInteger(Argo.KEY_SCREEN_NORTHEAST_WIDTH,
-	// _northEastPane.getWidth());
-        Configuration.setInteger(Argo.KEY_SCREEN_WIDTH, getWidth());
-        Configuration.setInteger(Argo.KEY_SCREEN_HEIGHT, getHeight());
-        Configuration.setInteger(Argo.KEY_SCREEN_LEFT_X, getX());
-        Configuration.setInteger(Argo.KEY_SCREEN_TOP_Y, getY());
-    }
-
-    /**
-     * Build a new details pane for the given compass point.
-     *
-     * @param compassPoint the position for which to build the pane
-     * @param orientation the required orientation of the pane.
-     * @return the details pane or null if none is required for the given
-     *         compass point.
-     */
-    private DetailsPane makeDetailsPane(String compassPoint,
-					Orientation orientation) {
-        DetailsPane detailsPane =
-	    new DetailsPane(compassPoint.toLowerCase(), orientation);
-        if (detailsPane.getTabCount() == 0) {
-            return null;
-        }
-        return detailsPane;
-    }
-
-    /**
-     * Exit the application if no save is required.
-     * If a save is required then prompt the user if they wish to,
-     * save and exit, exit without saving or cancel the exit operation.
-     */
-    public void tryExit() {
-        if (saveAction != null && saveAction.isEnabled()) {
-            Project p = ProjectManager.getManager().getCurrentProject();
-
-            String t =
-                MessageFormat.format(Translator.localize(
-                        "optionpane.exit-save-changes-to"),
-                    new Object[] {p.getName()});
-            int response =
-                JOptionPane.showConfirmDialog(
-                    this, t, t, JOptionPane.YES_NO_CANCEL_OPTION);
-
-            if (response == JOptionPane.CANCEL_OPTION
-                    || response == JOptionPane.CLOSED_OPTION) {
-                return;
-            }
-            if (response == JOptionPane.YES_OPTION) {
-                trySave(ProjectManager.getManager().getCurrentProject() != null
-                        && ProjectManager.getManager().getCurrentProject()
-                                .getURI() != null);
-                if (saveAction.isEnabled()) {
-                    return;
-                }
-            }
-        }
-        saveScreenConfiguration();
-        Configuration.save();
-        System.exit(0);
-    }
-
-    /**
-     * @see java.awt.Window#dispose()
-     */
-    public void dispose() {
-
-    }
-
-    /**
-     * Receives window events.
-     */
-    class WindowCloser extends WindowAdapter {
-        /**
-         * Constructor.
-         */
-        public WindowCloser() {
-        }
-
-        /**
-         * @see java.awt.event.WindowListener#windowClosing(java.awt.event.WindowEvent)
-         */
-        public void windowClosing(WindowEvent e) {
-            tryExit();
-        }
-    } /* end class WindowCloser */
-
-    /**
-     * @see java.beans.PropertyChangeListener#propertyChange(
-     *         java.beans.PropertyChangeEvent)
-     */
-    public void propertyChange(PropertyChangeEvent evt) {
-        // the project changed
-        if (evt.getPropertyName()
-            .equals(ProjectManager.CURRENT_PROJECT_PROPERTY_NAME)) {
-            Project p = (Project) evt.getNewValue();
-            if (p != null) {
-                titleHandler.buildTitle(p.getName(), null);
-                //Designer.TheDesigner.getToDoList().removeAllElements();
-                Designer.setCritiquingRoot(p);
-                // update all panes
-                TargetManager.getInstance().setTarget(p.getInitialTarget());
-            }
-        }
-    }
-
-    /////////////////////////////////////////////////////////////////////////
-    // TargetListener methods implemented so notified when selected
-    // diagram changes. Used to update the window title.
-
-    /**
-     * @see org.argouml.ui.targetmanager.TargetListener#targetAdded(org.argouml.ui.targetmanager.TargetEvent)
-     */
-    public void targetAdded(TargetEvent e) {
-        Object target = e.getNewTarget();
-        if (target instanceof ArgoDiagram) {
-            titleHandler.buildTitle(null, (ArgoDiagram) target);
-        }
-        determineRemoveEnabled();
-    }
-
-    /**
-     * @see org.argouml.ui.targetmanager.TargetListener#targetRemoved(org.argouml.ui.targetmanager.TargetEvent)
-     */
-    public void targetRemoved(TargetEvent e) {
-        Object target = e.getNewTarget();
-        if (target instanceof ArgoDiagram) {
-            titleHandler.buildTitle(null, (ArgoDiagram) target);
-        }
-        determineRemoveEnabled();
-    }
-
-    /**
-     * @see org.argouml.ui.targetmanager.TargetListener#targetSet(org.argouml.ui.targetmanager.TargetEvent)
-     */
-    public void targetSet(TargetEvent e) {
-        Object target = e.getNewTarget();
-        if (target instanceof ArgoDiagram) {
-            titleHandler.buildTitle(null, (ArgoDiagram) target);
-        }
-        determineRemoveEnabled();
-    }
-
-    /**
-     * Enabled the remove action if an item is selected in anything other then
-     * the activity or state diagrams.
-     */
-    private void determineRemoveEnabled() {
-        Editor editor = Globals.curEditor();
-        Collection figs = editor.getSelectionManager().getFigs();
-        boolean removeEnabled = !figs.isEmpty();
-        GraphModel gm = editor.getGraphModel();
-        if (gm instanceof UMLMutableGraphSupport) {
-            removeEnabled =
-                ((UMLMutableGraphSupport) gm).isRemoveFromDiagramAllowed(figs);
-        }
-        removeFromDiagram.setEnabled(removeEnabled);
-    }
-
-    /**
-     * Returns the todopane.
-     * @return ToDoPane
-     */
-    public ToDoPane getTodoPane() {
-        return todoPane;
-    }
-
-    /**
-     * @return Returns the defaultFont.
-     */
-    public Font getDefaultFont() {
-        return defaultFont;
-    }
-
-    /**
-     * Try to save the project, possibly not creating a new file
-     * @param overwrite if true, then we overwrite without asking
-     */
-    public void trySave(boolean overwrite) {
-        this.trySave(overwrite, false);
-    }
-    
-    
-    /**
-     * Try to save the project.
-     * @param overwrite if true, then we overwrite without asking
-     * @param saveNewFile if true, we'll ask for a new file even if
-     *                    the current project already had one  
-     */
-    public void trySave(boolean overwrite, boolean saveNewFile) {
-        URI uri = ProjectManager.getManager().getCurrentProject().getURI();
-
-        File file = null;
-
-        // this method is invoked from several places, so we have to check
-        // whether if the project uri is set or not
-        if (uri != null && !saveNewFile) {
-            file = new File(uri);
-
-            // does the file really exists?
-            if (!file.exists()) {
-                // project file doesn't exist. let's pop up a message dialog..
-                int response = JOptionPane.showConfirmDialog(
-                        this,
-                        Translator.localize(
-                                "optionpane.save-project-file-not-found"),
-                        Translator.localize(
-                                "optionpane.save-project-file-not-found-title"),
-                        JOptionPane.YES_NO_OPTION);
-
-                // ..and let's ask the user whether he wants to save the actual
-                // project into a new file or not
-                if (response == JOptionPane.YES_OPTION) {
-                    saveNewFile = true;
-                } else {
-                    // save action has been cancelled
-                    return;
-                }
-            }
-        } else {
-            // Attempt to save this project under a new name.
-            saveNewFile = true;
-        }
-
-        // Prompt the user for the new name.
-        if (saveNewFile) {
-            file = getNewFile();
-
-            // if the user cancelled the operation,
-            // we don't have to save anything
-            if (file == null) {
-                return;
-            }
-        }
-
-        // let's call the real save method
-        trySaveWithProgressMonitor(overwrite, file);
-    }
-    
-    /**
-     * Checks if the given file is writable or read-only
-     * @param file the file to be checked
-     * @return true if the given file is read-only
-     */
-    private boolean isFileReadonly(File file) {
-        try {
-            return (file == null) 
-                || (file.exists() && !file.canWrite()) 
-                || (!file.exists() && !file.createNewFile());
-        
-        } catch (IOException ioExc) {
-            return true;
-        }
-    }
-
-    /**
-     * Loads a project displaying a nice ProgressMonitor
-     * 
-     * @param overwrite if true, the file is going to be overwritten
-     * @param file      the target file
-     */
-    public void trySaveWithProgressMonitor(boolean overwrite, File file) {
-        SaveSwingWorker worker = new SaveSwingWorker(overwrite, file);
-        Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
-        worker.start();
-    }
-    
-    /**
-     * Rebuild the title using the name of the current project.
-     *
-     */
-    public void buildTitleWithCurrentProjectName() {
-        titleHandler.buildTitle(
-                ProjectManager.getManager().getCurrentProject().getName(), 
-                null);
-    }
-    
-    /**
-     * Try to save the project.
-     * @param overwrite if true, then we overwrite without asking
-     * @param file the File to save to
-     * @param pmw       the ProgressMonitorWindow to be updated;  
-     * @return true if successful
-     */
-    public boolean trySave(boolean overwrite, 
-            File file, 
-            ProgressMonitorWindow pmw) {
-        LOG.info("Saving the project");
-        Project project = ProjectManager.getManager().getCurrentProject();
-        PersistenceManager pm = PersistenceManager.getInstance();
-        ProjectFilePersister persister = null;
-        
-        try {
-            if (!PersistenceManager.getInstance()
-                    .confirmOverwrite(overwrite, file)) {
-                return false;
-            }
-
-            if (this.isFileReadonly(file)) {
-                JOptionPane.showMessageDialog(this, 
-                        Translator.localize(
-                                "optionpane.save-project-cant-write"),
-                        Translator.localize(
-                                "optionpane.save-project-cant-write-title"),
-                              JOptionPane.INFORMATION_MESSAGE);
-                
-                return false;
-            }
-
-            String sStatus =
-                MessageFormat.format(Translator.localize(
-                    "label.save-project-status-writing"),
-                         new Object[] {file});
-            this.showStatus (sStatus);
-
-            persister = pm.getSavePersister();
-            pm.setSavePersister(null);
-            if (persister == null) {
-                persister = pm.getPersisterFromFileName(file.getName());
-            }
-            if (persister == null) {
-                throw new IllegalStateException("Filename " + project.getName()
-                            + " is not of a known file type");
-            }
-
-            // Simulate some errors to repair.
-            // TODO: Replace with junits - Bob
-//            Layer lay =
-//                Globals.curEditor().getLayerManager().getActiveLayer();
-//            List figs = lay.getContentsNoEdges();
-//            // A Fig with a null owner
-//            if (figs.size() > 0) {
-//                Fig fig = (Fig)figs.get(0);
-//                LOG.error("Setting owner of " 
-//                    + fig.getClass().getName() + " to null");
-//                fig.setOwner(null);
-//            }
-//            // A Fig with a null layer
-//            if (figs.size() > 1) {
-//                Fig fig = (Fig)figs.get(1);
-//                fig.setLayer(null);
-//            }
-//            // A Fig with a removed model element
-//            if (figs.size() > 2) {
-//                Fig fig = (Fig)figs.get(2);
-//                Object owner = fig.getOwner();
-//                Model.getUmlFactory().delete(owner);
-//            }
-
-            // Repair any errors in the project
-            String report = project.repair();
-            if (report.length() > 0) {
-                reportError(
-                        Translator.localize("dialog.repair"), true, report);
-            }
-            
-            if (pmw != null) {
-                pmw.progress(25);
-                persister.addProgressListener(pmw);
-            }
-            
-            project.preSave();
-            persister.save(project, file);
-            project.postSave();
-
-            sStatus =
-                MessageFormat.format(Translator.localize(
-                    "label.save-project-status-wrote"),
-                         new Object[] {project.getURI()});
-            showStatus(sStatus);
-            LOG.debug ("setting most recent project file to "
-                   + file.getCanonicalPath());
-
-            /*
-             * notification of menu bar
-             */
-            saveAction.setEnabled(false);
-            addFileSaved(file);
-
-            Configuration.setString(Argo.KEY_MOST_RECENT_PROJECT_FILE,
-                        file.getCanonicalPath());
-
-            return true;
-        } catch (Exception ex) {
-            String sMessage =
-                MessageFormat.format(Translator.localize(
-                    "optionpane.save-project-general-exception"),
-                         new Object[] {ex.getMessage()});
-
-            JOptionPane.showMessageDialog(this, sMessage,
-                    Translator.localize(
-                    "optionpane.save-project-general-exception-title"),
-                          JOptionPane.ERROR_MESSAGE);
-
-            reportError(
-                    Translator.localize(
-                            "dialog.error.save.error",
-                            new Object[] {file.getName()}),
-                    true, ex);
-
-            LOG.error(sMessage, ex);
-        }
-
-        return false;
-    }
-
-    /**
-     * Register a new file saved.
-     *
-     * @param file The file.
-     * @throws IOException if we cannot get the file name from the file.
-     */
-    public void addFileSaved(File file) throws IOException {
-        GenericArgoMenuBar menu = (GenericArgoMenuBar) getJMenuBar();
-        menu.addFileSaved(file.getCanonicalPath());
-    }
-
-    /**
-     * If the current project is dirty (needs saving) then this function will
-     * ask confirmation from the user.
-     * If the user indicates that saving is needed, then saving is attempted.
-     * See ActionExit.actionPerformed() for a very similar procedure!
-     *
-     * @return true if we can continue with opening
-     */
-    public boolean askConfirmationAndSave() {
-        ProjectBrowser pb = ProjectBrowser.getInstance();
-        Project p = ProjectManager.getManager().getCurrentProject();
-
-
-        if (p != null && saveAction.isEnabled()) {
-            String t =
-                MessageFormat.format(Translator.localize(
-                        "optionpane.open-project-save-changes-to"),
-                        new Object[] {p.getName()});
-
-            int response =
-                JOptionPane.showConfirmDialog(pb, t, t,
-                    JOptionPane.YES_NO_CANCEL_OPTION);
-
-            if (response == JOptionPane.CANCEL_OPTION
-                    || response == JOptionPane.CLOSED_OPTION) {
-                return false;
-            }
-            if (response == JOptionPane.YES_OPTION) {
-
-                trySave(ProjectManager.getManager().getCurrentProject() != null
-                        && ProjectManager.getManager().getCurrentProject()
-                                .getURI() != null);
-                if (saveAction.isEnabled()) {
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
-
-    /**
-     * Loads a project displaying a nice ProgressMonitor
-     * 
-     * @param file      the project to be opened
-     * @param showUI    whether to show the GUI or not
-     */
-    public void loadProjectWithProgressMonitor(File file, boolean showUI) {
-        LoadSwingWorker worker = new LoadSwingWorker(file, showUI);
-        Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
-        worker.start();
-    }
-    	
-    /**
-     * Loads the project file and opens all kinds of error message windows
-     * if it doesn't work for some reason. In those cases it preserves
-     * the old project.
-     *
-     * @param file the file to open.
-     * @param showUI true if an error message may be shown to the user,
-     *               false if run in commandline mode
-     * @param pmw 	the ProgressMonitorWindow to be updated;  
-     * 				if not needed, use null 
-     * @return true if the file was successfully opened
-     */
-    public boolean loadProject(File file, boolean showUI, 
-    		ProgressMonitorWindow pmw) {
-        LOG.info("Loading project.");
-
-        PersistenceManager pm = PersistenceManager.getInstance();
-        Project oldProject = ProjectManager.getManager().getCurrentProject();
-        boolean success = true;
-
-        // TODO:
-        // This is actually a hack! Some diagram types
-        // (like the statechart diagrams) access the current
-        // diagram to get some info. This might cause
-        // problems if there's another statechart diagram
-        // active, so I remove the current project, before
-        // loading the new one.
-
-        Designer.disableCritiquing();
-        Designer.clearCritiquing();
-        clearDialogs();
-        Project project = null;
-
-        if (!(file.canRead())) {
-            reportError("File not found " + file + ".", showUI);
-            Designer.enableCritiquing();
-            success = false;
-        } else {
-            // Hide save action during load. Otherwise we get the
-            // * appearing in title bar as models are updated
-            AbstractAction rememberedSaveAction = this.saveAction;
-            this.saveAction = null;
-            ProjectManager.getManager().setSaveAction(null);
-            try {
-                ProjectFilePersister persister =
-                    pm.getPersisterFromFileName(file.getName());
-                if (persister == null) {
-                    success = false;
-                    throw new IllegalStateException("Filename "
-                            + file.getName()
-                            + " is not of a known file type");
-                }
-
-                if (pmw != null) {
-                    persister.addProgressListener(pmw);
-                }
-                
-                DiagramFactory.getInstance().getDiagram().clear();
-
-                project = persister.doLoad(file);
-                
-                if (pmw != null) {
-                    persister.removeProgressListener(pmw);
-                }
-                ThreadUtils.checkIfInterrupted();
-                
-                if (Model.getDiagramInterchangeModel() != null) {
-                    Collection diagrams =
-                        DiagramFactory.getInstance().getDiagram();
-                    Iterator diag = diagrams.iterator();
-                    while (diag.hasNext()) {
-                        project.addMember(diag.next());
-                    }
-                    if (!diagrams.isEmpty()) {
-                        project.setActiveDiagram(
-                                (ArgoDiagram) diagrams.iterator().next());
-                    }
-                }
-
-                // Let's save this project in the mru list
-                this.addFileSaved(file);
-                // Let's save this project as the last used one
-                // in the configuration file
-                Configuration.setString(Argo.KEY_MOST_RECENT_PROJECT_FILE,
-                        file.getCanonicalPath());
-                
-                ProjectBrowser.getInstance().showStatus(
-                        Translator.localize(
-                                "label.open-project-status-read",
-                                new Object[] {file.getName(), }));
-            } catch (VersionException ex) {
-                project = oldProject;
-                success = false;
-                reportError(
-                        Translator.localize(
-                                "dialog.error.file.version",
-                                new Object[] {ex.getMessage()}),
-                        showUI);
-            } catch (OutOfMemoryError ex) {
-                project = oldProject;
-                success = false;
-                LOG.error("Out of memory while loading project", ex);
-                reportError(
-                        Translator.localize("dialog.error.memory.limit.error"),
-                        showUI);
-            } catch (java.lang.InterruptedException ex) {
-                project = oldProject;
-                success = false;
-                LOG.error("Project loading interrupted by user");
-            } catch (UmlVersionException ex) {
-                project = oldProject;
-                success = false;
-                reportError(
-                        Translator.localize(
-                                "dialog.error.file.version.error",
-                                new Object[] {ex.getMessage()}),
-                        showUI, ex);
-            } catch (XmiFormatException ex) {
-                project = oldProject;
-                success = false;
-                reportError(
-                        Translator.localize(
-                                "dialog.error.xmi.format.error",
-                                new Object[] {ex.getMessage()}),
-                        showUI, ex);
-            } catch (Exception ex) {
-                success = false;
-                project = oldProject;
-                LOG.error("Exception while loading project", ex);
-                reportError(
-                        Translator.localize(
-                                "dialog.error.open.error",
-                                new Object[] {file.getName()}),
-                        showUI, ex);
-            } finally {
-
-                if (!PersistenceManager.getInstance().getLastLoadStatus()) {
-                    project = oldProject;
-                    success = false;
-                    // TODO: This seems entirely redundant
-                    // for now I've made the message more generic, but it
-                    // should be removed at a convenient time - tfm
-                    reportError(
-                            "Problem loading the project "
-                            + file.getName()
-                            + "\n"
-                            + "Error message:\n"
-                            + PersistenceManager.getInstance().getLastLoadMessage()
-                            + "\n"
-                            + "Some (or all) information may be missing "
-                            + "from the project.\n"
-                            + "Please report this problem at "
-                            + "http://argouml.tigris.org\n",
-                            showUI);
-                } else if (oldProject != null) {
-                    // if p equals oldProject there was an exception and we do
-                    // not have to gc (garbage collect) the old project
-                    if (project != null && !project.equals(oldProject)) {
-                        //prepare the old project for gc
-                        LOG.info("There are " + oldProject.getMembers().size()
-                                + " members in the old project");
-                        LOG.info("There are " + project.getMembers().size()
-                                + " members in the new project");
-                        // Set new project before removing old so we always have
-                        // a valid current project
-                        ProjectManager.getManager().setCurrentProject(project);
-                        ProjectManager.getManager().removeProject(oldProject);
-                    }
-                }
-
-                if (project == null) {
-                    LOG.info("The current project is null");
-                } else {
-                    LOG.info("There are " + project.getMembers().size()
-                            + " members in the current project");
-                }
-                UndoManager.getInstance().empty();
-                Designer.enableCritiquing();
-
-                // Make sure save action is always reinstated
-                this.saveAction = rememberedSaveAction;
-                ProjectManager.getManager().setSaveAction(rememberedSaveAction);
-                if (success) {
-                    rememberedSaveAction.setEnabled(false);
-                }
-            }
-        }
-        return success;
-    }
-
-    /**
-     * Open a Message Dialog with an error message.
-     *
-     * @param message the message to display.
-     * @param showUI true if an error message may be shown to the user,
-     *               false if run in commandline mode
-     */
-    private void reportError(String message, boolean showUI) {
-        if (showUI) {
-            JOptionPane.showMessageDialog(
-                      ArgoFrame.getInstance(),
-                      message,
-                      "Error",
-                      JOptionPane.ERROR_MESSAGE);
-        } else {
-            System.err.print(message);
-        }
-    }
-
-    /**
-     * Open a Message Dialog with an error message.
-     *
-     * @param message the message to display.
-     * @param showUI true if an error message may be shown to the user,
-     *               false if run in commandline mode
-     * @param error the error
-     * 
-     * TODO: This appears to have been cloned from the method below
-     * without updating the Javadoc. Not sure what the difference
-     * is meant to be... - tfm
-     */
-    private void reportError(String message, boolean showUI, String error) {
-        if (showUI) {
-            JDialog dialog =
-                new ExceptionDialog(
-                        ArgoFrame.getInstance(),
-                        message,
-                        error);
-            dialog.setVisible(true);
-        } else {
-            // TODO:  Does anyone use command line?
-            // If so, localization is needed - tfm
-            reportError("Please report the error below to the ArgoUML"
-                    + "development team at http://argouml.tigris.org.\n"
-                    + message + "\n\n" + error, showUI);
-        }
-    }
-
-    /**
-     * Open a Message Dialog with an error message.
-     *
-     * @param message the message to display.
-     * @param showUI true if an error message may be shown to the user,
-     *               false if run in commandline mode
-     * @param ex The exception that was thrown.
-     */
-    private void reportError(String message, boolean showUI, Throwable ex) {
-        if (showUI) {
-            JDialog dialog =
-                new ExceptionDialog(
-                        ArgoFrame.getInstance(),
-                        message,
-                        ex,
-                        ex instanceof OpenException);
-            dialog.setVisible(true);
-        } else {
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
-            ex.printStackTrace(pw);
-            String exception = sw.toString();
-            // TODO:  Does anyone use command line?
-            // If so, localization is needed - tfm
-            reportError("Please report the error below to the ArgoUML"
-                    + "development team at http://argouml.tigris.org.\n"
-                    + message + "\n\n" + exception, showUI);
-        }
-    }
-
-    /**
-     * We should remove all open dialogs. They have as parent the
-     * ProjectBrowser. This is needed for the non-modal dialogs
-     * such as Find and Goto.
-     */
-    public void clearDialogs() {
-        Window[] windows = getOwnedWindows();
-        for (int i = 0; i < windows.length; i++) {
-            windows[i].dispose();
-        }
-        FindDialog.getInstance().doClearTabs();
-        FindDialog.getInstance().doResetFields();
-    }
-
-    /**
-     * Get the action that can undo the last user interaction on this project.
-     * @return the undo action.
-     */
-    public AbstractAction getUndoAction() {
-        return undoAction;
-    }
-
-    /**
-     * Get the action that can redo the last undone action.
-     * @return the redo action.
-     */
-    public AbstractAction getRedoAction() {
-        return redoAction;
-    }
-
-    /**
-     * Get the action that can save the current project.
-     * @return the save action.
-     */
-    public AbstractAction getSaveAction() {
-        return saveAction;
-    }
-
-    /**
-     * Get the action that removes selected figs from the diagram.
-     * @return the remove from diagram action.
-     */
-    public AbstractAction getRemoveFromDiagramAction() {
-        return removeFromDiagram;
-    }
-
-    /**
-     * @return the File to save to
-     */
-    protected File getNewFile() {
-        ProjectBrowser pb = ProjectBrowser.getInstance();
-        Project p = ProjectManager.getManager().getCurrentProject();
-
-        JFileChooser chooser = null;
-        URI uri = p.getURI();
-        
-        if (uri != null) {
-            File projectFile = new File(uri);
-            if (projectFile.length() > 0) {
-                chooser = new JFileChooser(projectFile);
-            } else {
-                chooser = new JFileChooser();
-            }
-            chooser.setSelectedFile(projectFile);
-        } else {
-            chooser = new JFileChooser();
-        }
-
-        String sChooserTitle =
-            Translator.localize("filechooser.save-as-project");
-        chooser.setDialogTitle(sChooserTitle + " " + p.getName());
-
-        // adding project files icon
-        chooser.setFileView(ProjectFileView.getInstance());
-
-        chooser.setAcceptAllFileFilterUsed(false);
-        
-        PersistenceManager.getInstance().setSaveFileChooserFilters(
-                chooser, 
-                uri != null ? Util.URIToFilename(uri.toString()) : null);
-
-        int retval = chooser.showSaveDialog(pb);
-        if (retval == JFileChooser.APPROVE_OPTION) {
-            File theFile = chooser.getSelectedFile();
-            AbstractFilePersister filter =
-                (AbstractFilePersister) chooser.getFileFilter();
-            if (theFile != null) {
-                Configuration.setString(
-                        PersistenceManager.KEY_PROJECT_NAME_PATH,
-                        PersistenceManager.getInstance().getBaseName(
-                                theFile.getPath()));
-                String name = theFile.getName();
-                if (!name.endsWith("." + filter.getExtension())) {
-                    theFile =
-                        new File(
-                            theFile.getParent(),
-                            name + "." + filter.getExtension());
-                }
-            }
-            PersistenceManager.getInstance().setSavePersister(filter);
-            return theFile;
-        }
-        return null;
-    }
-
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = 6974246679451284917L;
 } /* end class ProjectBrowser */
+
+
+
+
+class WindowCloser extends WindowAdapter {
+  public WindowCloser() { }
+  public void windowClosing(WindowEvent e) {
+    Actions.Exit.actionPerformed(null);
+  }
+} /* end class WindowCloser */
+
+class InitMenusLater implements Runnable {
+  JMenu align, distribute, reorder, nudge;
+  JMenu editTabs, detailsTabs;
+
+  public InitMenusLater(JMenu a, JMenu d, JMenu r, JMenu n,
+			JMenu et, JMenu dt) {
+    align = a;
+    distribute = d;
+    reorder = r;
+    nudge = n;
+    editTabs = et;
+    detailsTabs = dt;
+  }
+
+  public void run() {
+    KeyStroke F1 = KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0);
+    KeyStroke F2 = KeyStroke.getKeyStroke(KeyEvent.VK_F2, 0);
+    KeyStroke F3 = KeyStroke.getKeyStroke(KeyEvent.VK_F3, 0);
+    KeyStroke F4 = KeyStroke.getKeyStroke(KeyEvent.VK_F4, 0);
+    KeyStroke F5 = KeyStroke.getKeyStroke(KeyEvent.VK_F5, 0);
+    KeyStroke F6 = KeyStroke.getKeyStroke(KeyEvent.VK_F6, 0);
+    KeyStroke F7 = KeyStroke.getKeyStroke(KeyEvent.VK_F7, 0);
+    KeyStroke F8 = KeyStroke.getKeyStroke(KeyEvent.VK_F8, 0);
+    KeyStroke F9 = KeyStroke.getKeyStroke(KeyEvent.VK_F9, 0);
+    KeyStroke F10 = KeyStroke.getKeyStroke(KeyEvent.VK_F10, 0);
+
+    KeyStroke alt1 = KeyStroke.getKeyStroke(KeyEvent.VK_1, KeyEvent.ALT_MASK);
+    KeyStroke alt2 = KeyStroke.getKeyStroke(KeyEvent.VK_2, KeyEvent.ALT_MASK);
+    KeyStroke alt3 = KeyStroke.getKeyStroke(KeyEvent.VK_3, KeyEvent.ALT_MASK);
+    KeyStroke alt4 = KeyStroke.getKeyStroke(KeyEvent.VK_4, KeyEvent.ALT_MASK);
+    KeyStroke alt5 = KeyStroke.getKeyStroke(KeyEvent.VK_5, KeyEvent.ALT_MASK);
+    KeyStroke alt6 = KeyStroke.getKeyStroke(KeyEvent.VK_6, KeyEvent.ALT_MASK);
+    KeyStroke alt7 = KeyStroke.getKeyStroke(KeyEvent.VK_7, KeyEvent.ALT_MASK);
+    KeyStroke alt8 = KeyStroke.getKeyStroke(KeyEvent.VK_8, KeyEvent.ALT_MASK);
+    KeyStroke alt9 = KeyStroke.getKeyStroke(KeyEvent.VK_9, KeyEvent.ALT_MASK);
+    KeyStroke alt0 = KeyStroke.getKeyStroke(KeyEvent.VK_0, KeyEvent.ALT_MASK);
+
+    KeyStroke altshift1 =
+      KeyStroke.getKeyStroke(KeyEvent.VK_1,
+			     KeyEvent.ALT_MASK | KeyEvent.SHIFT_MASK);
+    KeyStroke altshift2 =
+      KeyStroke.getKeyStroke(KeyEvent.VK_2,
+			     KeyEvent.ALT_MASK | KeyEvent.SHIFT_MASK);
+    KeyStroke altshift3 =
+      KeyStroke.getKeyStroke(KeyEvent.VK_3,
+			     KeyEvent.ALT_MASK | KeyEvent.SHIFT_MASK);
+
+    align.add(new CmdAlign(CmdAlign.ALIGN_TOPS));
+    align.add(new CmdAlign(CmdAlign.ALIGN_BOTTOMS));
+    align.add(new CmdAlign(CmdAlign.ALIGN_LEFTS));
+    align.add(new CmdAlign(CmdAlign.ALIGN_RIGHTS));
+    align.add(new CmdAlign(CmdAlign.ALIGN_H_CENTERS));
+    align.add(new CmdAlign(CmdAlign.ALIGN_V_CENTERS));
+    align.add(new CmdAlign(CmdAlign.ALIGN_TO_GRID));
+
+    distribute.add(new CmdDistribute(CmdDistribute.H_SPACING));
+    distribute.add(new CmdDistribute(CmdDistribute.H_CENTERS));
+    distribute.add(new CmdDistribute(CmdDistribute.V_SPACING));
+    distribute.add(new CmdDistribute(CmdDistribute.V_CENTERS));
+
+    reorder.add(new CmdReorder(CmdReorder.SEND_TO_BACK));
+    reorder.add(new CmdReorder(CmdReorder.BRING_TO_FRONT));
+    reorder.add(new CmdReorder(CmdReorder.SEND_BACKWARD));
+    reorder.add(new CmdReorder(CmdReorder.BRING_FORWARD));
+
+    nudge.add(new CmdNudge(CmdNudge.LEFT));
+    nudge.add(new CmdNudge(CmdNudge.RIGHT));
+    nudge.add(new CmdNudge(CmdNudge.UP));
+    nudge.add(new CmdNudge(CmdNudge.DOWN));
+
+    JMenuItem nextEditItem = editTabs.add(Actions.NextEditTab);
+    nextEditItem.setAccelerator(F6);
+    editTabs.addSeparator();
+
+    JMenuItem tabe1Item = editTabs.add(new ActionGoToEdit("As Diagram"));
+    tabe1Item.setAccelerator(altshift1);
+    JMenuItem tabe2Item = editTabs.add(new ActionGoToEdit("As Table"));
+    tabe2Item.setAccelerator(altshift2);
+    JMenuItem tabe3Item = editTabs.add(new ActionGoToEdit("As Metrics"));
+    tabe3Item.setAccelerator(altshift3);
+
+    JMenuItem nextDetailsItem = detailsTabs.add(Actions.NextDetailsTab);
+    nextDetailsItem.setAccelerator(F5);
+    detailsTabs.addSeparator();
+
+    JMenuItem tab1Item = detailsTabs.add(new ActionGoToDetails("ToDoItem"));
+    tab1Item.setAccelerator(alt1);
+    JMenuItem tab2Item = detailsTabs.add(new ActionGoToDetails("Properties"));
+    tab2Item.setAccelerator(alt2);
+    JMenuItem tab3Item = detailsTabs.add(new ActionGoToDetails("Javadocs"));
+    tab3Item.setAccelerator(alt3);
+    JMenuItem tab4Item = detailsTabs.add(new ActionGoToDetails("Source"));
+    tab4Item.setAccelerator(alt4);
+    JMenuItem tab5Item = detailsTabs.add(new ActionGoToDetails("Constraints"));
+    tab5Item.setAccelerator(alt5);
+    JMenuItem tab6Item = detailsTabs.add(new ActionGoToDetails("TaggedValues"));
+    tab6Item.setAccelerator(alt6);
+    JMenuItem tab7Item = detailsTabs.add(new ActionGoToDetails("Checklist"));
+    tab7Item.setAccelerator(alt7);
+    JMenuItem tab8Item = detailsTabs.add(new ActionGoToDetails("History"));
+    tab8Item.setAccelerator(alt8);
+    //JMenuItem tab9Item = detailsTabs.add(new ActionGoToDetails(""));
+    //tab9Item.setAccelerator(alt9);
+    //JMenuItem tab0Item = detailsTabs.add(new ActionGoToDetails(""));
+    //tab0Item.setAccelerator(alt0);
+  }
+} /* end class InitMenusLater */
+

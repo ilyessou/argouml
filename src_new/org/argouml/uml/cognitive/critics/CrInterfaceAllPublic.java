@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,59 +21,56 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+
+// File: CrInterfaceAllPublic.java
+// Classes: CrInterfaceAllPublic
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.cognitive.critics;
 
-import java.util.Collection;
-import java.util.Iterator;
+import java.util.*;
 
-import org.argouml.cognitive.Designer;
-import org.argouml.cognitive.critics.Critic;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
 
-/**
- * Well-formedness rule [3] for MInterface. See page 32 of UML 1.1
- *
- * @author jrobbins
- *  Semantics. OMG document ad/97-08-04.
- */
+import org.argouml.cognitive.*;
+
+/** Well-formedness rule [3] for MInterface. See page 32 of UML 1.1
+ *  Semantics. OMG document ad/97-08-04. */
+
+import org.argouml.cognitive.critics.*;
+
 public class CrInterfaceAllPublic extends CrUML {
 
-    /**
-     * The constructor.
-     */
-    public CrInterfaceAllPublic() {
-        setupHeadAndDesc();
-	addSupportedDecision(UMLDecision.PLANNED_EXTENSIONS);
-	setKnowledgeTypes(Critic.KT_SYNTAX);
-	addTrigger("behavioralFeature");
-    }
+  public CrInterfaceAllPublic() {
+    setHeadline("Operations in Interfaces must be public");
+    sd("Interfaces are intended to specify the set of operations that "+
+       "other classes must implement.  The must be public. \n\n"+
+       "A well-designed set of interfaces is a good way to define the "+
+       "possible extensions of a class framework. \n\n"+
+       "To fix this, use the \"Next>\" button, or manually select the operations "+
+       "of the interface and use the Properties tab add them public.");
+    addSupportedDecision(CrUML.decPLANNED_EXTENSIONS);
+    setKnowledgeTypes(Critic.KT_SYNTAX);
+    addTrigger("behavioralFeature");
+  }
 
-    /**
-     * @see org.argouml.uml.cognitive.critics.CrUML#predicate2(
-     * java.lang.Object, org.argouml.cognitive.Designer)
-     */
-    public boolean predicate2(Object dm, Designer dsgr) {
-	if (!(Model.getFacade().isAInterface(dm))) {
-	    return NO_PROBLEM;
-	}
-	Object inf = /*(MInterface)*/ dm;
-	Collection bf = Model.getFacade().getFeatures(inf);
-	if (bf == null) {
-	    return NO_PROBLEM;
-	}
-	Iterator features = bf.iterator();
-	while (features.hasNext()) {
-	    Object f = /*(MFeature)*/ features.next();
-	    if (Model.getFacade().getVisibility(f) == null) {
-	        return NO_PROBLEM;
-	    }
-	    if (!Model.getFacade().getVisibility(f)
-                .equals(Model.getVisibilityKind().getPublic())) {
-	        return PROBLEM_FOUND;
-	    }
-	}
-	return NO_PROBLEM;
+  public boolean predicate2(Object dm, Designer dsgr) {
+    if (!(dm instanceof MInterface)) return NO_PROBLEM;
+    MInterface inf = (MInterface) dm;
+    Collection bf = inf.getFeatures();
+    if (bf == null) return NO_PROBLEM;
+    Iterator enum = bf.iterator();
+    while (enum.hasNext()) {
+      MFeature f = (MFeature) enum.next();
+	  if (f.getVisibility() == null) return NO_PROBLEM;
+      if (!f.getVisibility().equals(MVisibilityKind.PUBLIC))
+	return PROBLEM_FOUND;
     }
+    return NO_PROBLEM;
+  }
 
 } /* end class CrInterfaceAllPublic.java */
+

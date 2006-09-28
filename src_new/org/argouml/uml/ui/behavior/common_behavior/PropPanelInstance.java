@@ -1,16 +1,15 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
-// and this paragraph appear in all copies. This software program and
+// and this paragraph appear in all copies.  This software program and
 // documentation are copyrighted by The Regents of the University of
 // California. The software program and documentation are supplied "AS
 // IS", without any accompanying services from The Regents. The Regents
 // does not warrant that the operation of the program will be
 // uninterrupted or error-free. The end-user understands that the program
 // was developed for research purposes and is advised not to rely
-// exclusively on the program for any reason. IN NO EVENT SHALL THE
+// exclusively on the program for any reason.  IN NO EVENT SHALL THE
 // UNIVERSITY OF CALIFORNIA BE LIABLE TO ANY PARTY FOR DIRECT, INDIRECT,
 // SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, INCLUDING LOST PROFITS,
 // ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN IF
@@ -22,67 +21,78 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+
+// File: PropPanelInstance.java
+// Classes: PropPanelInstance
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.ui.behavior.common_behavior;
 
-import javax.swing.ImageIcon;
-import javax.swing.JList;
-import javax.swing.JScrollPane;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.*;
+import java.beans.*;
+import javax.swing.*;
+import javax.swing.event.*;
+import javax.swing.tree.*;
+import javax.swing.text.*;
+import javax.swing.border.*;
 
-import org.argouml.uml.ui.UMLLinkedList;
-import org.argouml.uml.ui.foundation.core.PropPanelModelElement;
-import org.tigris.swidgets.Orientation;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
+import ru.novosoft.uml.model_management.*;
+import ru.novosoft.uml.behavior.common_behavior.*;
 
-/**
- * The abstract properties panel for any type of Instance.
- *
- * @author jrobbins
- */
-public abstract class PropPanelInstance extends PropPanelModelElement {
+import org.argouml.uml.ui.*;
 
-    private JScrollPane stimuliSenderScroll;
+/** User interface panel shown at the bottom of the screen that allows
+ *  the user to edit the properties of the selected UML model
+ *  element. */
 
-    private JScrollPane stimuliReceiverScroll;
+public class PropPanelInstance extends PropPanel {
 
-    private static UMLInstanceSenderStimulusListModel
-        stimuliSenderListModel = new UMLInstanceSenderStimulusListModel();
+  ////////////////////////////////////////////////////////////////
+  // constants
+  // needs-more-work 
 
-    private static UMLInstanceReceiverStimulusListModel
-        stimuliReceiverListModel = new UMLInstanceReceiverStimulusListModel();
+  ////////////////////////////////////////////////////////////////
+  // instance vars
+  JLabel _nmwLabel = new JLabel("Needs-more-work PropPanelInstance");
 
-    /**
-     * The constructor.
-     *
-     * @param name the name for the properties panel
-     * @param icon the icon shown next to the name
-     * @param orientation the orientation
-     */
-    public PropPanelInstance(String name, ImageIcon icon,
-            Orientation orientation) {
-        super(name, icon, orientation);
-    }
+  // declare and initialize all widgets
 
-    /**
-     * @return the scrollpane for stimuli sender
-     */
-    protected JScrollPane getStimuliSenderScroll() {
-        if (stimuliSenderScroll == null) {
-            JList stimuliSenderList = new UMLLinkedList(stimuliSenderListModel);
-            stimuliSenderList.setVisibleRowCount(1);
-            stimuliSenderScroll = new JScrollPane(stimuliSenderList);
-        }
-        return stimuliSenderScroll;
-    }
+  ////////////////////////////////////////////////////////////////
+  // contructors
+  public PropPanelInstance() {
+    super("Instance Properties");
+    GridBagLayout gb = (GridBagLayout) getLayout();
+    GridBagConstraints c = new GridBagConstraints();
+    c.fill = GridBagConstraints.BOTH;
+    c.weightx = 0.0;
+    c.ipadx = 0; c.ipady = 0;
 
-    /**
-     * @return the scrollpane for stimuli receiver
-     */
-    protected JScrollPane getStimuliReceiverScroll() {
-        if (stimuliReceiverScroll == null) {
-            JList stimuliReceiverList = new UMLLinkedList(
-                    stimuliReceiverListModel);
-            stimuliReceiverList.setVisibleRowCount(1);
-            stimuliReceiverScroll = new JScrollPane(stimuliReceiverList);
-        }
-        return stimuliReceiverScroll;
-    }
-} /* end class PropPanelInstance */
+
+    c.gridx = 0;
+    c.gridwidth = 1;
+    c.gridy = 1;
+    gb.setConstraints(_nmwLabel, c);
+    add(_nmwLabel);
+
+    // add all widgets and labels
+
+    // register interest in change events from all widgets
+  }
+
+  ////////////////////////////////////////////////////////////////
+  // accessors
+
+  /** Set the values to be shown in all widgets based on model */
+  protected void setTargetInternal(Object t) {
+    super.setTargetInternal(t);
+    MInstance tt = (MInstance) t;
+    // set the values to be shown in all widgets based on model
+  }
+
+} /* end class PropPanelState */

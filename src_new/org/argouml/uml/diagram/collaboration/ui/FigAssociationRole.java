@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,196 +23,153 @@
 
 package org.argouml.uml.diagram.collaboration.ui;
 
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
+import java.awt.*;
+import java.awt.event.*;
+import java.beans.*;
+import java.util.*;
+import javax.swing.*;
 
-import org.argouml.model.Model;
-import org.argouml.notation.NotationProviderFactory2;
-import org.argouml.uml.diagram.ui.FigAssociation;
-import org.argouml.uml.diagram.ui.FigMessage;
-import org.tigris.gef.base.Layer;
-import org.tigris.gef.base.PathConvPercent;
-import org.tigris.gef.presentation.Fig;
-import org.tigris.gef.presentation.FigGroup;
-import org.tigris.gef.presentation.FigText;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
+import ru.novosoft.uml.behavior.collaborations.*;
 
+import org.tigris.gef.base.*;
+import org.tigris.gef.presentation.*;
 
-/**
- * This class represents the Fig of an AssociationRole
- * for a collaboration diagram.
- *
- */
-public class FigAssociationRole extends FigAssociation {
+import org.argouml.uml.generator.*;
+import org.argouml.uml.diagram.ui.*;
 
-    /**
-     * Serial version - Eclipse generated for rev. 1.30
-     */
-    private static final long serialVersionUID = -6543020797101620194L;
+public class FigAssociationRole extends FigEdgeModelElement {
+
+  // needs-more-work: should be part of some preferences object
+  public static boolean SUPPRESS_BIDIRECTIONAL_ARROWS = true;
+
+  protected FigText _srcMult, _srcRole;
+  protected FigText _destMult, _destRole;
+
+  public FigAssociationRole() {
+    addPathItem(_name, new PathConvPercent(this, 50, 10));
+
+    _srcMult = new FigText(10, 30, 90, 20);
+    _srcMult.setFont(LABEL_FONT);
+    _srcMult.setTextColor(Color.black);
+    _srcMult.setTextFilled(false);
+    _srcMult.setFilled(false);
+    _srcMult.setLineWidth(0);
+    addPathItem(_srcMult, new PathConvPercentPlusConst(this, 0, 15, 15));
+
+    _srcRole = new FigText(10, 30, 90, 20);
+    _srcRole.setFont(LABEL_FONT);
+    _srcRole.setTextColor(Color.black);
+    _srcRole.setTextFilled(false);
+    _srcRole.setFilled(false);
+    _srcRole.setLineWidth(0);
+    addPathItem(_srcRole, new PathConvPercentPlusConst(this, 0, 35, -15));
+
+    _destMult = new FigText(10, 30, 90, 20);
+    _destMult.setFont(LABEL_FONT);
+    _destMult.setTextColor(Color.black);
+    _destMult.setTextFilled(false);
+    _destMult.setFilled(false);
+    _destMult.setLineWidth(0);
+    addPathItem(_destMult, new PathConvPercentPlusConst(this, 100, -15, 15));
+
+    _destRole = new FigText(10, 30, 90, 20);
+    _destRole.setFont(LABEL_FONT);
+    _destRole.setTextColor(Color.black);
+    _destRole.setTextFilled(false);
+    _destRole.setFilled(false);
+    _destRole.setLineWidth(0);
+    addPathItem(_destRole, new PathConvPercentPlusConst(this, 100, -35, -15));
+    setBetweenNearestPoints(true);
+  }
+
+  public FigAssociationRole(Object edge) {
+    this();
+    setOwner(edge);
+  }
+
+  protected void textEdited(FigText ft) throws PropertyVetoException {
+    MAssociationRole asc = (MAssociationRole) getOwner();
+    super.textEdited(ft);
+
+    Collection conn = asc.getConnections();
+    if (conn == null || conn.size() == 0) return;
+
+    if (ft == _srcRole) {
+      MAssociationEndRole srcAE = (MAssociationEndRole) ((Object[])conn.toArray())[0];
+      srcAE.setName(_srcRole.getText());
+    }
+    if (ft == _destRole) {
+		MAssociationEndRole destAE = (MAssociationEndRole)((Object[])conn.toArray())[1];
+      destAE.setName(_destRole.getText());
+    }
+  }
+
+  protected void modelChanged() {
+    MAssociationRole as = (MAssociationRole) getOwner();
+    if (as == null) return;
+    String asNameStr = GeneratorDisplay.Generate(as.getName());
+
+    super.modelChanged();
+
+    Collection endRoles = as.getConnections();
+    if (endRoles == null || endRoles.size() != 2) {
+      System.out.println("endRoles=" + endRoles);
+    }
     
-    private FigMessageGroup messages = new FigMessageGroup();
+    MAssociationEndRole ae0 = (MAssociationEndRole) ((Object[])endRoles.toArray())[0];
+    MAssociationEndRole ae1 = (MAssociationEndRole) ((Object[])endRoles.toArray())[1];
 
-    /**
-     * Main Constructor
-     */
-    public FigAssociationRole() {
-	super(); // this really is questionable
-	addPathItem(messages, new PathConvPercent(this, 50, 10));
-    }
+    MMultiplicity mult0 = ae0.getMultiplicity();
+    MMultiplicity mult1 = ae1.getMultiplicity();
+    _srcMult.setText(GeneratorDisplay.Generate(mult0));
+    if (MMultiplicity.M1_1.equals(mult0)) _srcMult.setText("");
+    _destMult.setText(GeneratorDisplay.Generate(mult1));
+    if (MMultiplicity.M1_1.equals(mult1)) _destMult.setText("");
 
-    /**
-     * Constructor for FigAssociationRole.
-     * @param edge the owning UML element
-     * @param lay the layer
-     */
-    public FigAssociationRole(Object edge, Layer lay) {
-	this();
-	setLayer(lay);
-    	setOwner(edge);
-    }
+    _srcRole.setText(GeneratorDisplay.Generate(ae0.getName()));
+    _destRole.setText(GeneratorDisplay.Generate(ae1.getName()));
 
-    /**
-     * Create the NotationProviders.
-     * 
-     * @param own the current owner
-     */
-    protected void initNotationProviders(Object own) {
-        if (Model.getFacade().isAAssociationRole(own)) {
-            notationProviderName =
-                NotationProviderFactory2.getInstance().getNotationProvider(
-                        NotationProviderFactory2.TYPE_ASSOCIATION_ROLE, 
-                        own);
-        }
-    }
+    boolean srcNav = ae0.isNavigable();
+    boolean destNav = ae1.isNavigable();
+    if (srcNav && destNav && SUPPRESS_BIDIRECTIONAL_ARROWS)
+      srcNav = destNav = false;
+    setSourceArrowHead(chooseArrowHead(ae0.getAggregation(), srcNav));
+    setDestArrowHead(chooseArrowHead(ae1.getAggregation(), destNav));
+  }
 
-    /**
-     * @see org.argouml.uml.diagram.ui.FigAssociation#updateListeners(
-     * java.lang.Object)
-     */
-    public void updateListeners(Object oldOwner, Object newOwner) {
-        super.updateListeners(oldOwner, newOwner);
-        if (newOwner != null) {
-            /* Also listen to the base: */
-            Object assoc = Model.getFacade().getBase(newOwner);
-            if (assoc != null) {
-                addElementListener(assoc);
-            }
-        }
-    }
 
-    /**
-     * @param message the message to be added
-     */
-    public void addMessage(FigMessage message) {
-    	messages.addFig(message);
-    	updatePathItemLocations();
-    	messages.damage();
-    }
+  static ArrowHead _NAV_AGGREGATE =
+  new ArrowHeadComposite(ArrowHeadDiamond.WhiteDiamond,
+			 ArrowHeadGreater.TheInstance);
 
-    /**
-     * @see org.argouml.uml.diagram.ui.FigEdgeModelElement#textEditStarted(org.tigris.gef.presentation.FigText)
-     */
-    protected void textEditStarted(FigText ft) {
-        if (ft == getNameFig()) {
-            showHelp(notationProviderName.getParsingHelp());
-        }
+  static ArrowHead _NAV_COMP =
+  new ArrowHeadComposite(ArrowHeadDiamond.BlackDiamond,
+			 ArrowHeadGreater.TheInstance);
+
+  protected ArrowHead chooseArrowHead(MAggregationKind ak, boolean nav) {
+    if (nav) {
+//       if (MAggregationKind.UNSPEC.equals(ak))
+// 	    return ArrowHeadGreater.TheInstance;
+      if (MAggregationKind.NONE.equals(ak))
+	    return ArrowHeadGreater.TheInstance;
+      else if (MAggregationKind.AGGREGATE.equals(ak))
+	    return _NAV_AGGREGATE;
+      else if (MAggregationKind.COMPOSITE.equals(ak))
+	    return _NAV_COMP;
     }
+//     if (MAggregationKind.UNSPEC.equals(ak))
+//       return ArrowHeadNone.TheInstance;
+    if (MAggregationKind.NONE.equals(ak))
+      return ArrowHeadNone.TheInstance;
+    else if (MAggregationKind.AGGREGATE.equals(ak))
+      return ArrowHeadDiamond.WhiteDiamond;
+    else if (MAggregationKind.COMPOSITE.equals(ak))
+      return ArrowHeadDiamond.BlackDiamond;
+    // System.out.println("unknown case in drawing assoc arrowhead");
+    return ArrowHeadNone.TheInstance;
+  }
 
 } /* end class FigAssociationRole */
-
-/**
- * TODO: Should this be in its own source file?
- *
- */
-class FigMessageGroup extends FigGroup {
-
-    /**
-     * Serial version - Eclipse generated for rev 1.30
-     */
-    private static final long serialVersionUID = 6899342966031358691L;
-
-
-    /**
-     * Constructor for FigMessageGroup.
-     */
-    public FigMessageGroup() {
-	super();
-    }
-
-    /**
-     * Constructor for FigMessageGroup.
-     * @param figs
-     */
-    public FigMessageGroup(List figs) {
-        super(figs);
-    }
-
-    private void updateFigPositions() {
-    	Collection figs = getFigs(); // the figs that make up this group
-        Iterator it = figs.iterator();
-    	if (!figs.isEmpty()) {
-            FigMessage previousFig = null;
-            for (int i = 0; it.hasNext(); i++) {
-                FigMessage fig = (FigMessage) it.next();
-                int y;
-                if (i != 0) {
-                    y = previousFig.getY() + previousFig.getHeight() + 5;
-                } else {
-                    y = getY();
-                }
-                fig.setLocation(getX(), y);
-                fig.endTrans();
-                previousFig = fig;
-            }
-    	}
-    }
-
-
-
-    /**
-     * @see org.tigris.gef.presentation.Fig#calcBounds()
-     */
-    public void calcBounds() {
-	super.calcBounds();
-	Collection figs = getFigs();
-	if (!figs.isEmpty()) {
-	    Fig last = null;
-	    Fig first = null;
-	    // _x = first.getX();
-	    // _y = first.getY();
-	    _w = 0;
-            Iterator it = figs.iterator();
-            int size = figs.size();
-	    for (int i = 0; i < size; i++) {
-                Fig fig = (Fig) it.next();
-
-                if (i == 0) {
-                    first = fig;
-                }
-                if (i == size - 1) {
-                    last = fig;
-                }
-
-		if (fig.getWidth() > _w) {
-		    _w = fig.getWidth();
-		}
-	    }
-            _h = last.getY() + last.getHeight() - first.getY();
-	} else {
-	    _w = 0;
-	    _h = 0;
-	}
-    }
-
-
-
-    /**
-     * @see org.tigris.gef.presentation.FigGroup#addFig(Fig)
-     */
-    public void addFig(Fig f) {
-	super.addFig(f);
-	updateFigPositions();
-	calcBounds();
-    }
-}
 

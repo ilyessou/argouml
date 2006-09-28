@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,61 +21,43 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: PropPanelActor.java
+// Classes: PropPanelActor
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.ui.behavior.use_cases;
 
-import org.argouml.i18n.Translator;
-import org.argouml.uml.ui.ActionNavigateContainerElement;
-import org.argouml.uml.ui.foundation.core.PropPanelClassifier;
-import org.argouml.uml.ui.foundation.extension_mechanisms.ActionNewStereotype;
-import org.argouml.util.ConfigLoader;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.*;
+import java.beans.*;
+import javax.swing.*;
+import javax.swing.event.*;
+import javax.swing.tree.*;
+import javax.swing.text.*;
+import javax.swing.border.*;
+
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
+import ru.novosoft.uml.model_management.*;
+import ru.novosoft.uml.behavior.use_cases.*;
+
+import org.argouml.uml.ui.*;
+
+/** User interface panel shown at the bottom of the screen that allows
+ *  the user to edit the properties of the selected UML model
+ *  element. Actors have no properties other than name, so this is a
+ *  trivial class.  Needs-More-Work: cut and paste base class code
+ *  from PropPanelClass.*/
+
+public class PropPanelActor extends PropPanel {
+
+  ////////////////////////////////////////////////////////////////
+  // contructors
+  public PropPanelActor() {
+    super("Actor Properties");
+  }
 
 
-/**
- * Builds the property panel for a actor.<p>
- *
- * @author jrobbins
- */
-
-public class PropPanelActor extends PropPanelClassifier {
-
-    /**
-     * The serial version.
-     */
-    private static final long serialVersionUID = 7368183497864490115L;
-
-    /**
-     * Construct a new property panel for an Actor.
-     */
-    public PropPanelActor() {
-    	super("Actor", lookupIcon("Actor"),
-                ConfigLoader.getTabPropsOrientation());
-
-
-    	addField(Translator.localize("label.name"),
-                getNameTextField());
-    	addField(Translator.localize("label.namespace"),
-                getNamespaceSelector());
-
-        add(getModifiersPanel());
-
-    	addSeparator();
-
-    	addField(Translator.localize("label.generalizations"),
-                getGeneralizationScroll());
-    	addField(Translator.localize("label.specializations"),
-                getSpecializationScroll());
-
-    	addSeparator();
-
-    	addField(Translator.localize("label.association-ends"),
-            getAssociationEndScroll());
-
-        // The toolbar buttons that go at the top:
-        addAction(new ActionNavigateContainerElement());
-        addAction(new ActionNewActor());
-        addAction(getActionNewReception());
-        addAction(new ActionNewStereotype());
-        addAction(getDeleteAction());
-    }
-
-} /* end class PropActor */
+} /* end class PropPanelActor */

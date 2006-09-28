@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,84 +21,40 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+
+// File: CrCrossNamespaceAssoc.java
+// Classes: CrCrossNamespaceAssoc
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.cognitive.critics;
 
-import java.util.Iterator;
+import java.util.*;
 
-import org.argouml.cognitive.Designer;
-import org.argouml.cognitive.critics.Critic;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
+import ru.novosoft.uml.foundation.core.*;
 
-/**
- * A critic to check that the classifiers associated with the ends of an
- * association are in the same namespace as the association.<p>
- *
- * This is the fourth well-formedness rule for associations in the UML 1.3
- * standard (see section 2.5.3 of the standard).<p>
- *
- * See <a href=
- * "http://argouml.tigris.org/documentation/snapshots/manual/argouml.html/
- * #s2.ref.critics_cross_namespace_assoc">
- * ArgoUML User Manual: Classifier not in Namespace of its Association</a>
- * @author Jason Robbins
- */
+import org.argouml.cognitive.*;
+import org.argouml.cognitive.critics.*;
+
+/** Well-formedness rule [1] for Associations. See page 27 of UML 1.1
+ *  Semantics. OMG document ad/97-08-04. */
+
 public class CrCrossNamespaceAssoc extends CrUML {
-    /**
-     * Constructor for the critic.<p>
-     *
-     * Sets up the resource name, which will allow headline and description
-     * to found for the current locale. Provides a design issue category
-     * (MODULARITY) and a knowledge type (SYNTAX).
-     */
-    public CrCrossNamespaceAssoc() {
-        setupHeadAndDesc();
-        addSupportedDecision(UMLDecision.MODULARITY);
-        setKnowledgeTypes(Critic.KT_SYNTAX);
-    }
 
-    /**
-     * The trigger for the critic.<p>
-     *
-     * Get the association. Then loop through the association ends, checking
-     * that their associated classifiers are in the namespace, i.e. are part of
-     * the same model or subsystem.<p>
-     *
-     * @param  dm    the {@link java.lang.Object Object} to be checked against
-     *               the critic.
-     *
-     * @param  dsgr  the {@link org.argouml.cognitive.Designer Designer}
-     *               creating the model. Not used, this is for future
-     *               development of ArgoUML.
-     *
-     * @return       {@link #PROBLEM_FOUND PROBLEM_FOUND} if the critic is
-     *               triggered, otherwise {@link #NO_PROBLEM NO_PROBLEM}.
-     */
-    public boolean predicate2(Object dm, Designer dsgr) {
-        // Only look at associations
-        if (!Model.getFacade().isAAssociation(dm)) {
-            return NO_PROBLEM;
-        }
+  public CrCrossNamespaceAssoc() {
+    setHeadline("Aggregate Role in N-way MAssociation");
+    sd("Each Class or MInterface involved in an MAssociation should be in "+
+       "the MNamespace of the MAssociation.\n");
 
-        Object ns = Model.getFacade().getNamespace(dm);
-        if (ns == null) {
-            return PROBLEM_FOUND;
-        }
+    addSupportedDecision(CrUML.decMODULARITY);
+    setKnowledgeTypes(Critic.KT_SYNTAX);
+  }
 
-        // Get the Association and its connections.
-        // Iterate over all the AssociationEnds and check that each connected
-        // classifier is in the same sub-system or model
-        Iterator assocEnds = Model.getFacade().getConnections(dm).iterator();
-        while (assocEnds.hasNext()) {
-            // The next AssociationEnd, and its classifier. Check the
-            // classifier is in the namespace of the association. If not we
-            // have a problem.
-            Object clf = Model.getFacade().getType(assocEnds.next());
-            if (clf != null && ns != Model.getFacade().getNamespace(clf)) {
-                return PROBLEM_FOUND;
-            }
-        }
-        // If we drop out there is no problem
-        return NO_PROBLEM;
-    }
+  public boolean predicate2(Object dm, Designer dsgr) {
+    // needs-more-work: not implemented
+    return NO_PROBLEM;
+  }
+
 } /* end class CrCrossNamespaceAssoc.java */
+

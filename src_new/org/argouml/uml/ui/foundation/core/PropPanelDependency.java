@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,92 +23,61 @@
 
 package org.argouml.uml.ui.foundation.core;
 
-import javax.swing.JList;
-import javax.swing.JScrollPane;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.*;
+import java.beans.*;
+import javax.swing.*;
+import javax.swing.event.*;
+import javax.swing.tree.*;
+import javax.swing.text.*;
 
-import org.argouml.i18n.Translator;
-import org.argouml.uml.ui.ActionNavigateNamespace;
-import org.argouml.uml.ui.UMLLinkedList;
-import org.argouml.uml.ui.foundation.extension_mechanisms.ActionNewStereotype;
-import org.argouml.util.ConfigLoader;
-import org.tigris.swidgets.Orientation;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
+import ru.novosoft.uml.foundation.extension_mechanisms.*;
+import ru.novosoft.uml.model_management.*;
 
-/**
- * The properties panel for a Dependency.
- *
- */
-public class PropPanelDependency extends PropPanelRelationship {
+import org.argouml.uml.diagram.ui.*;
 
-    /**
-     * The serial version.
-     */
-    private static final long serialVersionUID = 3665986064546532722L;
+public class PropPanelDependency extends PropPanelTwoEnds {
 
-    /**
-     * The scrollpane with the modelelement that is the supplier of this
-     * dependency
-     */
-    private JScrollPane supplierScroll;
+  ////////////////////////////////////////////////////////////////
+  // constructors
 
-    /**
-     * The scrollpane with the modelelement that is the client of this
-     * dependency
-     */
-    private JScrollPane clientScroll;
+  public PropPanelDependency() {
+    super("Dependency");
 
-    /**
-     * 'default' constructor used if a modelelement is a child of dependency (or
-     * dependency itself) but does not have a proppanel of their own.
-     */
-    public PropPanelDependency() {
-        this("Dependency", ConfigLoader.getTabPropsOrientation());
+  }
 
-        addField(Translator.localize("label.name"),
-                getNameTextField());
-        addField(Translator.localize("label.namespace"),
-                getNamespaceSelector());
 
-        addSeparator();
-
-        addField(Translator.localize("label.suppliers"),
-                supplierScroll);
-        addField(Translator.localize("label.clients"),
-                clientScroll);
-
-        addAction(new ActionNavigateNamespace());
-        addAction(new ActionNewStereotype());
-        addAction(getDeleteAction());
-    }
-
-    /**
-     * Constructor that should be used by subclasses to initialize the
-     * attributes a dependency has.
-     * @see org.argouml.uml.ui.PropPanel#PropPanel(String, Orientation)
-     */
-    protected PropPanelDependency(String name, Orientation orientation) {
-        super(name, lookupIcon(name), orientation);
-        JList supplierList = new UMLLinkedList(
-                new UMLDependencySupplierListModel(), true);
-        supplierScroll = new JScrollPane(supplierList);
-
-        JList clientList = new UMLLinkedList(
-                new UMLDependencyClientListModel(), true);
-        clientScroll = new JScrollPane(clientList);
-    }
-
-    /**
-     * @return Returns the supplierScroll.
-     */
-    protected JScrollPane getSupplierScroll() {
-        return supplierScroll;
-    }
-
-    /**
-     * @return Returns the clientScroll.
-     */
-    protected JScrollPane getClientScroll() {
-        return clientScroll;
-    }
-
+  public String getSourceLabel() {
+    if (!(_target instanceof MDependency)) return "non dep";
+    return "Supplier:";
+  }
+  public String getSourceValue() {
+    if (!(_target instanceof MDependency)) return "non dep";
+    MDependency d = (MDependency) _target;
+    Vector suppliers = new Vector(d.getSuppliers());
+    if (suppliers == null) return "null suppliers";
+    if (suppliers.size() == 0) return "no suppliers";
+    MModelElement sup = (MModelElement) suppliers.elementAt(0);
+    if (sup == null) return "null";
+    return sup.getName();
+  }
+  public String getDestLabel() {
+    if (!(_target instanceof MDependency)) return "non dep";
+    return "Client:";
+  }
+  public String getDestValue() {
+    if (!(_target instanceof MDependency)) return "non dep";
+    MDependency d = (MDependency) _target;
+    Vector clients = new Vector(d.getClients());
+    if (clients == null) return "null clients";
+    if (clients.size() == 0) return "no clients";
+    MModelElement tar = (MModelElement) clients.elementAt(0);
+    if (tar == null) return "null";
+    return tar.getName();
+  }
+  
 
 } /* end class PropPanelDependency */

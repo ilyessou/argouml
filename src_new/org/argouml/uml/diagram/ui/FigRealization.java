@@ -1,16 +1,15 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
-// and this paragraph appear in all copies. This software program and
+// and this paragraph appear in all copies.  This software program and
 // documentation are copyrighted by The Regents of the University of
 // California. The software program and documentation are supplied "AS
 // IS", without any accompanying services from The Regents. The Regents
 // does not warrant that the operation of the program will be
 // uninterrupted or error-free. The end-user understands that the program
 // was developed for research purposes and is advised not to rely
-// exclusively on the program for any reason. IN NO EVENT SHALL THE
+// exclusively on the program for any reason.  IN NO EVENT SHALL THE
 // UNIVERSITY OF CALIFORNIA BE LIABLE TO ANY PARTY FOR DIRECT, INDIRECT,
 // SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, INCLUDING LOST PROFITS,
 // ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN IF
@@ -22,37 +21,58 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: FigRealization.java
+// Classes: FigRealization
+// Original Author: agauthie@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.diagram.ui;
 
+import java.awt.*;
+import java.beans.*;
 
-/**
- * Fig for a UML Realization.
- * <p>
- * Implementation has been moved to FigAbstraction for alignment
- * with UML spec and to allow reuse for other abstractions such
- * as Derivation, Refinement, or Trace.
- */
-public class FigRealization extends FigAbstraction {
-    /**
-     * The constructor.
-     *
-     */
-    public FigRealization() {
-        super();
-    }
+import ru.novosoft.uml.foundation.core.*;
 
-    /**
-     * The constructor.
-     *
-     * @param edge the owning UML element
-     */
-    public FigRealization(Object edge) {
-        super(edge);
-    }
-    
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = -5688833795126793130L;
+import org.tigris.gef.base.*;
+import org.tigris.gef.presentation.*;
+
+public class FigRealization extends FigEdgeModelElement {
+
+  ////////////////////////////////////////////////////////////////
+  // constructors
+
+  public FigRealization() {
+    addPathItem(_stereo, new PathConvPercent(this, 50, 10));
+    ArrowHeadTriangle endArrow = new ArrowHeadTriangle();
+    endArrow.setFillColor(Color.white);
+    setDestArrowHead(endArrow);
+    setBetweenNearestPoints(true);
+    _stereo.setText("");
+  }
+
+  public FigRealization(Object edge) {
+    this();
+    setOwner(edge);
+  }
+
+  ////////////////////////////////////////////////////////////////
+  // accessors
+
+  public void setFig(Fig f) {
+    super.setFig(f);
+    _fig.setDashed(true);
+  }
+
+
+  protected boolean canEdit(Fig f) { return false; }
+
+  /** This is called aftern any part of the UML MModelElement has
+   *  changed. This method automatically updates the name FigText.
+   *  Subclasses should override and update other parts. */
+  protected void modelChanged() {
+    // do not set _name
+      //updateStereotypeText();
+  }
+
 } /* end class FigRealization */
 

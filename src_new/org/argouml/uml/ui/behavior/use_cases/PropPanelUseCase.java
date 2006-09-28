@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,95 +21,270 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: PropPanelUseCase.java
+// Classes: PropPanelUseCase
+// Original Author: your email address here
+// $Id$
+
 package org.argouml.uml.ui.behavior.use_cases;
 
+import java.awt.*;
+import java.awt.event.*;
+import java.util.*;
+import java.beans.*;
+import javax.swing.*;
+import javax.swing.event.*;
+import javax.swing.tree.*;
+import javax.swing.text.*;
+import javax.swing.border.*;
+import javax.swing.table.*;
+import javax.swing.plaf.metal.MetalLookAndFeel;
 
-import javax.swing.JList;
-import javax.swing.JScrollPane;
+import ru.novosoft.uml.*;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
+import ru.novosoft.uml.model_management.*;
+import ru.novosoft.uml.behavior.use_cases.*;
 
-import org.argouml.i18n.Translator;
-import org.argouml.ui.targetmanager.TargetManager;
-import org.argouml.uml.ui.ActionNavigateNamespace;
-import org.argouml.uml.ui.UMLLinkedList;
-import org.argouml.uml.ui.UMLMutableLinkedList;
-import org.argouml.uml.ui.foundation.core.PropPanelClassifier;
-import org.argouml.uml.ui.foundation.extension_mechanisms.ActionNewStereotype;
-import org.argouml.util.ConfigLoader;
+import org.argouml.kernel.*;
+import org.argouml.uml.ui.*;
 
-/**
- * Builds the property panel for a use case.<p>
- *
- * This is a type of Classifier, and like other Classifiers can have
- * attributes and operations (some processes use these to define
- * requirements).<p>
- * <em>Note</em>. ArgoUML does not currently support separate
- * compartments on the display for this.<p>
- */
-public class PropPanelUseCase extends PropPanelClassifier {
+/** User interface panel shown at the bottom of the screen that allows
+ *  the user to edit the properties of the selected UML model element.
+ *  Needs-More-Work: cut and paste base class code from
+ *  PropPanelClass. */
 
-    /**
-     * Construct a property panel for a UseCase.
-     */
-    public PropPanelUseCase() {
-        super("UseCase",
-            lookupIcon("UseCase"),
-            ConfigLoader.getTabPropsOrientation());
+public class PropPanelUseCase extends PropPanel {
 
-        addField(Translator.localize("label.name"),
-                getNameTextField());
-    	addField(Translator.localize("label.namespace"),
-                getNamespaceSelector());
+  ////////////////////////////////////////////////////////////////
+  // constants
+  // needs-more-work 
 
-        add(getModifiersPanel());
+  ////////////////////////////////////////////////////////////////
+  // instance vars
+  JLabel _extPtsLabel = new JLabel("Extension Points");
+  TableModelExtensions _tableModel = null;
+  JTable _extPts = new JTable(4, 1);
+  // declare and initialize all widgets
 
-	addSeparator();
+  ////////////////////////////////////////////////////////////////
+  // contructors
+  public PropPanelUseCase() {
+    super("UseCase Properties");
+    GridBagLayout gb = (GridBagLayout) getLayout();
+    GridBagConstraints c = new GridBagConstraints();
+    c.fill = GridBagConstraints.BOTH;
+    c.weightx = 0.0;
+    c.ipadx = 0; c.ipady = 0;
 
-	addField(Translator.localize("label.generalizations"),
-            getGeneralizationScroll());
-	addField(Translator.localize("label.specializations"),
-            getSpecializationScroll());
+    _tableModel = new TableModelExtensions(this);
+    _extPts.setModel(_tableModel);
 
-	JList extendsList = new UMLLinkedList(new UMLUseCaseExtendListModel());
-	addField(Translator.localize("label.extends"),
-		 new JScrollPane(extendsList));
+    Font labelFont = MetalLookAndFeel.getSubTextFont();
+    _extPts.setFont(labelFont);
 
-	JList includesList =
-            new UMLLinkedList(
-                    new UMLUseCaseIncludeListModel());
-	addField(Translator.localize("label.includes"),
-		 new JScrollPane(includesList));
+    _extPts.setIntercellSpacing(new Dimension(0, 1));
+    _extPts.setShowVerticalLines(false);
+    //_extPts.getSelectionModel().addListSelectionListener(this);
+    _extPts.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
 
-	addSeparator();
-
-        addField(Translator.localize("label.attributes"),
-                getAttributeScroll());
-
-        addField(Translator.localize("label.association-ends"),
-                getAssociationEndScroll());
-
-        addField(Translator.localize("label.operations"),
-                getOperationScroll());
-
-	JList extensionPoints =
-	    new UMLMutableLinkedList(
-	            new UMLUseCaseExtensionPointListModel(), null,
-	            ActionNewUseCaseExtensionPoint.SINGLETON);
-        addField(Translator.localize("label.extension-points"),
-            new JScrollPane(extensionPoints));
+    //TableColumn descCol = _extPts.getColumnModel().getColumn(0);
+    //descCol.setMinWidth(50);
 
 
-        addAction(new ActionNavigateNamespace());
-        addAction(new ActionNewUseCase());
-        addAction(new ActionNewExtensionPoint());
-        addAction(TargetManager.getInstance().getAddAttributeAction());
-        addAction(TargetManager.getInstance().getAddOperationAction());
-        addAction(getActionNewReception());
-        addAction(new ActionNewStereotype());
-        addAction(getDeleteAction());
-    }
+//     SpacerPanel spacer1 = new SpacerPanel();
+//     c.gridx = 0;
+//     c.gridy = 11;
+//     c.weighty = 1.0;
+//     gb.setConstraints(spacer1, c);
+//     add(spacer1);
 
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = 8352300400553000518L;
+
+//     SpacerPanel spacer2 = new SpacerPanel();
+//     c.weightx = 0.0;
+//     c.gridx = 2;
+//     c.gridy = 0;
+//     gb.setConstraints(spacer2, c);
+//     add(spacer2);
+
+    // add all widgets and labels
+    JPanel rightPanel = new JPanel();
+    rightPanel.setLayout(new BorderLayout());
+    rightPanel.add(_extPtsLabel, BorderLayout.NORTH);
+
+    c.gridx = 0;
+    c.gridwidth = 2;
+//     c.gridy = 0;
+//     c.weighty = 0.0;
+//     gb.setConstraints(_extPtsLabel, c);
+//     add(_extPtsLabel);
+
+    //c.gridy = 1;
+    c.gridy = 11;
+    c.gridheight = GridBagConstraints.REMAINDER;
+    c.weightx = 0.0;
+    c.weighty = 10.0;
+    JScrollPane scroll = new JScrollPane(_extPts,
+					 JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+					 JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+//     gb.setConstraints(scroll, c);
+//     add(scroll);
+    rightPanel.add(scroll, BorderLayout.CENTER);
+    gb.setConstraints(rightPanel, c);
+    add(rightPanel);
+    _extPts.setTableHeader(null);
+
+    // register interest in change events from all widgets
+  }
+
+  ////////////////////////////////////////////////////////////////
+  // accessors
+
+  /** Set the values to be shown in all widgets based on model */
+  protected void setTargetInternal(Object t) {
+    super.setTargetInternal(t);
+    MUseCase uc = (MUseCase) t;
+    // set the values to be shown in all widgets based on model
+
+    _tableModel.setTarget(uc);
+//     TableColumn descCol = _extPts.getColumnModel().getColumn(0);
+//     descCol.setMinWidth(50);
+    resizeColumns();
+    validate();
+  }
+
+  public void resizeColumns() {
+    _extPts.sizeColumnsToFit(0);
+  }
+
+  ////////////////////////////////////////////////////////////////
+  // event handlers
+
+
+  /** The user typed some text */
+  public void insertUpdate(DocumentEvent e) {
+    //System.out.println(getClass().getName() + " insert");
+    // check if it was one of my text fields
+    super.insertUpdate(e);
+  }
+
+  public void removeUpdate(DocumentEvent e) { insertUpdate(e); }
+
+  public void changedUpdate(DocumentEvent e) {
+    System.out.println(getClass().getName() + " changed");
+    // Apparently, this method is never called.
+  }
+
+  /** The user modified one of the widgets */
+  public void itemStateChanged(ItemEvent e) {
+    Object src = e.getSource();
+    // check for each widget, and update the model with new value
+  }
+
+
 } /* end class PropPanelUseCase */
+
+
+class TableModelExtensions extends AbstractTableModel
+implements VetoableChangeListener, DelayedVChangeListener, MElementListener {
+  ////////////////
+  // instance varables
+  MUseCase _target;
+  PropPanelUseCase _panel;
+
+  ////////////////
+  // constructor
+  public TableModelExtensions(PropPanelUseCase panel) {
+    _panel = panel;
+  }
+
+  ////////////////
+  // accessors
+  public void setTarget(MUseCase uc) {
+    if (_target instanceof MModelElementImpl)
+      ((MModelElementImpl)_target).removeMElementListener(this);
+    _target = uc;
+    if (_target instanceof MElementImpl)
+      ((MModelElementImpl)_target).addMElementListener(this);
+    fireTableStructureChanged();
+  }
+
+  ////////////////
+  // TableModel implemetation
+  public int getColumnCount() { return 1; }
+
+  public String  getColumnName(int c) {
+    if (c == 0) return "Description";
+    return "XXX";
+  }
+
+  public Class getColumnClass(int c) {
+    return String.class;
+  }
+
+  public boolean isCellEditable(int row, int col) {
+    return col == 0;
+  }
+
+  public int getRowCount() {
+    if (_target == null) return 0;
+    Vector extPts = new Vector(_target.getExtensionPoints());
+    if (extPts == null) return 0;
+    return extPts.size() + 1;
+  }
+
+  public Object getValueAt(int row, int col) {
+    Vector extPts = new Vector(_target.getExtensionPoints());
+    if (extPts == null) return "no extension points";
+    if (row == extPts.size()) return ""; // blank line allows adding
+    String ext = (String) extPts.elementAt(row);
+    if (col == 0) return ext;
+    else return "UC-" + row*2+col; // for debugging
+  }
+
+  public void setValueAt(Object aValue, int rowIndex, int columnIndex)  {
+    //System.out.println("setting table value " + rowIndex + ", " + columnIndex);
+    if (columnIndex != 0) return;
+    if (!(aValue instanceof String)) return;
+    String val = (String) aValue;
+    Vector extPts = new Vector(_target.getExtensionPoints());
+    if (rowIndex >= extPts.size()) {
+      extPts.addElement(val);
+      fireTableStructureChanged();
+      _panel.resizeColumns();
+    }
+    else if (val.equals("")) {
+      extPts.removeElementAt(rowIndex);
+      fireTableStructureChanged();
+      _panel.resizeColumns();
+    }
+    else extPts.setElementAt(val, rowIndex);
+  }
+
+	////////////////
+	// event handlers
+	public void propertySet(MElementEvent mee) {
+	}
+	public void listRoleItemSet(MElementEvent mee) {
+	}
+	public void recovered(MElementEvent mee) {
+	}
+	public void removed(MElementEvent mee) {
+	}
+	public void roleAdded(MElementEvent mee) {
+	}
+	public void roleRemoved(MElementEvent mee) {
+	}
+	public void vetoableChange(PropertyChangeEvent pce) {
+		DelayedChangeNotify delayedNotify = new DelayedChangeNotify(this, pce);
+		SwingUtilities.invokeLater(delayedNotify);
+	}
+	
+	public void delayedVetoableChange(PropertyChangeEvent pce) {
+		fireTableStructureChanged();
+		_panel.resizeColumns();
+	}
+	
+	
+} /* end class TableModelExtensions */
+

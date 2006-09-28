@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,165 +23,120 @@
 
 package org.argouml.cognitive.ui;
 
-import java.awt.Insets;
-import java.awt.event.ActionEvent;
+import java.util.*;
+import java.awt.*;
+import java.awt.event.*;
+import javax.swing.*;
+import javax.swing.event.*;
 
-import javax.swing.DefaultListModel;
-import javax.swing.JComboBox;
-import javax.swing.JLabel;
-import javax.swing.JList;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import javax.swing.ListCellRenderer;
+import org.tigris.gef.util.*;
 
-import org.argouml.cognitive.Designer;
-import org.argouml.cognitive.ListSet;
-import org.argouml.cognitive.ToDoItem;
-import org.argouml.cognitive.Translator;
-import org.argouml.ui.ArgoDialog;
-import org.argouml.ui.targetmanager.TargetManager;
-import org.argouml.uml.cognitive.UMLToDoItem;
-import org.tigris.swidgets.Dialog;
-import org.tigris.swidgets.LabelledLayout;
+import org.argouml.cognitive.*;
 
-/**
- * The dialog to enter a new ToDoItem.
- */
-public class AddToDoItemDialog extends ArgoDialog {
+public class AddToDoItemDialog extends JFrame implements ActionListener {
 
-    ////////////////////////////////////////////////////////////////
-    // constants
-    private static final String[] PRIORITIES = {
-        Translator.localize("misc.level.high"),
-        Translator.localize("misc.level.medium"),
-        Translator.localize("misc.level.low"),
-    };
-    private static final int TEXT_ROWS = 8;
-    private static final int TEXT_COLUMNS = 30;
-    /** Insets in pixels  */
-    private static final int INSET_PX = 3;
+  ////////////////////////////////////////////////////////////////
+  // constants
+  public static final String PRIORITIES[] = { "High", "Medium", "Low" };
 
-    ////////////////////////////////////////////////////////////////
-    // instance variables
-    private JTextField headLineTextField;
-    private JComboBox  priorityComboBox;
-    private JTextField moreinfoTextField;
-    private JList offenderList;
-    private JTextArea  descriptionTextArea;
+  ////////////////////////////////////////////////////////////////
+  // instance variables
+  protected JTextField _headline = new JTextField();
+  protected JComboBox  _priority = new JComboBox(PRIORITIES);
+  protected JTextField _moreinfo = new JTextField();
+  protected JTextArea  _description = new JTextArea();
+  protected JButton _addButton = new JButton("Add");
+  protected JButton _cancelButton = new JButton("Cancel");
+
+  ////////////////////////////////////////////////////////////////
+  // constructors
+
+  public AddToDoItemDialog() {
+    super("Add a ToDoItem");
+    JLabel headlineLabel = new JLabel("Headline:");
+    JLabel priorityLabel = new JLabel("Priority:");
+    JLabel moreInfoLabel = new JLabel("MoreInfoURL:");
+
+    _priority.setSelectedItem(PRIORITIES[0]);
+
+    setSize(new Dimension(400, 350));
+    getContentPane().setLayout(new BorderLayout());
+    JPanel top = new JPanel();
+    GridBagLayout gb = new GridBagLayout();
+    top.setLayout(gb);
+    GridBagConstraints c = new GridBagConstraints();
+    c.fill = GridBagConstraints.BOTH;
+    c.weightx = 0.0;
+    c.ipadx = 3; c.ipady = 3;
+
+    c.gridx = 0;
+    c.gridwidth = 1;
+    c.gridy = 0;
+    gb.setConstraints(headlineLabel, c);
+    top.add(headlineLabel);
+    c.gridy = 1;
+    gb.setConstraints(priorityLabel, c);
+    top.add(priorityLabel);
+    c.gridy = 2;
+    gb.setConstraints(moreInfoLabel, c);
+    top.add(moreInfoLabel);
+
+    c.weightx = 1.0;
+    c.gridx = 1;
+    c.gridwidth = GridBagConstraints.REMAINDER;
+    c.gridy = 0;
+    gb.setConstraints(_headline, c);
+    top.add(_headline);
+    c.gridy = 1;
+    gb.setConstraints(_priority, c);
+    top.add(_priority);
+    c.gridy = 2;
+    gb.setConstraints(_moreinfo, c);
+    top.add(_moreinfo);
+
+    JPanel buttonPanel = new JPanel();
+    buttonPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
+    JPanel buttonInner = new JPanel(new GridLayout(1, 2));
+    buttonInner.add(_addButton);
+    buttonInner.add(_cancelButton);
+    buttonPanel.add(buttonInner);
+
+    getContentPane().add(top, BorderLayout.NORTH);
+    getContentPane().add(new JScrollPane(_description), BorderLayout.CENTER);
+    getContentPane().add(buttonPanel, BorderLayout.SOUTH);
+
+    getRootPane().setDefaultButton(_addButton);
+    _addButton.addActionListener(this);
+    _cancelButton.addActionListener(this);
+  }
 
 
-    /**
-     * Create a new AddToDoItemDialog
-     * @param renderer the ListCellRenderer to use in order
-     *                 to display the offenders
-     */
-    public AddToDoItemDialog(ListCellRenderer renderer) {
-        super(Translator.localize("dialog.title.add-todo-item"),
-	      Dialog.OK_CANCEL_OPTION, true);
-
-        headLineTextField = new JTextField(TEXT_COLUMNS);
-        priorityComboBox = new JComboBox(PRIORITIES);
-        moreinfoTextField = new JTextField(TEXT_COLUMNS);
-        descriptionTextArea = new JTextArea(TEXT_ROWS, TEXT_COLUMNS);
-
-        DefaultListModel dlm = new DefaultListModel();
-        Object[] offObj =
-            TargetManager.getInstance().getModelTargets().toArray();
-        for (int i = 0; i < offObj.length; i++) {
-            if (offObj[i] != null) {
-                dlm.addElement(offObj[i]);
-            }
-        }
-
-        offenderList = new JList(dlm);
-        offenderList.setCellRenderer(renderer);
-        JScrollPane offenderScroll = new JScrollPane(offenderList);
-        offenderScroll.setOpaque(true);
-
-        JLabel headlineLabel =
-            new JLabel(Translator.localize("label.headline"));
-        JLabel priorityLabel =
-            new JLabel(Translator.localize("label.priority"));
-        JLabel moreInfoLabel =
-            new JLabel(Translator.localize("label.more-info-url"));
-        JLabel offenderLabel =
-            new JLabel(Translator.localize("label.offenders"));
-        priorityComboBox.setSelectedItem(PRIORITIES[0]);
-
-        JPanel panel = new JPanel(new LabelledLayout(getLabelGap(),
-                getComponentGap()));
-
-        headlineLabel.setLabelFor(headLineTextField);
-        panel.add(headlineLabel);
-        panel.add(headLineTextField);
-
-        priorityLabel.setLabelFor(priorityComboBox);
-        panel.add(priorityLabel);
-        panel.add(priorityComboBox);
-
-        moreInfoLabel.setLabelFor(moreinfoTextField);
-        panel.add(moreInfoLabel);
-        panel.add(moreinfoTextField);
-
-        offenderLabel.setLabelFor(offenderScroll);
-        panel.add(offenderLabel);
-        panel.add(offenderScroll);
-
-        descriptionTextArea.setLineWrap(true);  //MVW - Issue 2422
-        descriptionTextArea.setWrapStyleWord(true);   //MVW - Issue 2422
-        descriptionTextArea.setText(Translator.localize("label.enter-todo-item")
-                	    + "\n");
-        descriptionTextArea.setMargin(new Insets(INSET_PX, INSET_PX,
-                INSET_PX, INSET_PX));
-        JScrollPane descriptionScroller = new JScrollPane(descriptionTextArea);
-        descriptionScroller.setPreferredSize(
-                descriptionTextArea.getPreferredSize());
-        panel.add(descriptionScroller);
-
-        setContent(panel);
+  ////////////////////////////////////////////////////////////////
+  // event handlers
+  public void actionPerformed(ActionEvent e) {
+    if (e.getSource() == _addButton) {
+      Designer dsgr = Designer.TheDesigner;
+      String head = _headline.getText();
+      int pri = ToDoItem.HIGH_PRIORITY;
+      switch (_priority.getSelectedIndex()) {
+      case 0: pri = ToDoItem.HIGH_PRIORITY; break;
+      case 1: pri = ToDoItem.MED_PRIORITY; break;
+      case 2: pri = ToDoItem.LOW_PRIORITY; break;
+      }
+      String desc = _description.getText();
+      String more = _moreinfo.getText();
+      VectorSet offs = new VectorSet();  //? null
+      ToDoItem item = new ToDoItem(dsgr, head, pri, desc, more, offs);
+      dsgr.getToDoList().addElement(item); //? inform()
+      //System.out.println("add an item");
+      setVisible(false);
+      dispose();
     }
-
-    ////////////////////////////////////////////////////////////////
-    // event handlers
-
-    /**
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-     */
-    public void actionPerformed(ActionEvent e) {
-        super.actionPerformed(e);
-        if (e.getSource() == getOkButton()) {
-            doAdd();
-        }
+    if (e.getSource() == _cancelButton) {
+      //System.out.println("cancel");
+      hide();
+      dispose();
     }
+  }
 
-    private void doAdd() {
-        Designer designer = Designer.theDesigner();
-        String headline = headLineTextField.getText();
-        int priority = ToDoItem.HIGH_PRIORITY;
-        switch (priorityComboBox.getSelectedIndex()) {
-	case 0:
-	    priority = ToDoItem.HIGH_PRIORITY;
-	    break;
-	case 1:
-	    priority = ToDoItem.MED_PRIORITY;
-	    break;
-	case 2:
-	    priority = ToDoItem.LOW_PRIORITY;
-	    break;
-        }
-        String desc = descriptionTextArea.getText();
-        String moreInfoURL = moreinfoTextField.getText();
-        ToDoItem item =
-	    new UMLToDoItem(designer, headline, priority, desc, moreInfoURL);
-        ListSet newOffenders = new ListSet();
-        for (int i = 0; i < offenderList.getModel().getSize(); i++) {
-            newOffenders.addElement(offenderList.getModel().getElementAt(i));
-        }
-        item.setOffenders(newOffenders);
-        designer.getToDoList().addElement(item); //? inform()
-        Designer.firePropertyChange(Designer.MODEL_TODOITEM_ADDED, null, item);
-    }
 } /* end class AddToDoItemDialog */
-

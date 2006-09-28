@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,662 +23,338 @@
 
 package org.argouml.uml.generator.ui;
 
-import java.awt.BorderLayout;
-import java.awt.Component;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.io.*;
+import java.util.*;
 import java.util.StringTokenizer;
-import java.util.TreeSet;
-import java.util.Vector;
+import java.awt.*;
+import java.awt.event.*;
+import javax.swing.*;
+import javax.swing.event.*;
+import javax.swing.table.*;
+import javax.swing.plaf.metal.MetalLookAndFeel;
 
-import javax.swing.BorderFactory;
-import javax.swing.JButton;
-import javax.swing.JComboBox;
-import javax.swing.JFileChooser;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTable;
-import javax.swing.table.AbstractTableModel;
-import javax.swing.table.JTableHeader;
-import javax.swing.table.TableColumn;
+import ru.novosoft.uml.foundation.core.*;
 
-import org.apache.log4j.Logger;
-import org.argouml.i18n.Translator;
-import org.argouml.kernel.Project;
-import org.argouml.kernel.ProjectManager;
-import org.argouml.model.Model;
-import org.argouml.notation.Notation;
-import org.argouml.ui.ArgoDialog;
-import org.argouml.uml.generator.CodeGenerator;
-import org.argouml.uml.generator.GeneratorManager;
-import org.argouml.uml.generator.Language;
-import org.tigris.gef.util.Converter;
-import org.tigris.swidgets.Dialog;
+import org.tigris.gef.util.*;
 
-/**
- * The dialog that starts the generation of classes.
- */
-public class ClassGenerationDialog
-    extends ArgoDialog
-    implements ActionListener {
+import org.argouml.kernel.*;
+import org.argouml.ui.*;
+import org.argouml.language.java.generator.*;
 
-    /**
-     * Logger.
-     */
-    private static final Logger LOG =
-        Logger.getLogger(ClassGenerationDialog.class);
+public class ClassGenerationDialog extends JFrame implements ActionListener {
 
-    ////////////////////////////////////////////////////////////////
-    // instance variables
+  ////////////////////////////////////////////////////////////////
+  // constants
+  public static final String PRIORITIES[] = { "High", "Medium", "Low" };
+  public static final int WIDTH = 300;
+  public static final int HEIGHT = 350;
 
-    private TableModelClassChecks classTableModel;
-    private boolean isPathInModel;
-    private List languages;
+  ////////////////////////////////////////////////////////////////
+  // instance variables
+  TableModelClassChecks _tableModel = new TableModelClassChecks();
+  protected JTable _table = new JTable(15, 2);
+//  protected JTextField _dir = new JTextField();
+  protected JComboBox _dir;
+  protected JButton _generateButton = new JButton("Generate");
+  protected JButton _cancelButton = new JButton("Cancel");
 
-    private JTable classTable;
-    private JComboBox outputDirectoryComboBox;
+  ////////////////////////////////////////////////////////////////
+  // constructors
 
-    /**
-     * Used to select the next language column in case
-     * the "Select All" button is pressed.
-     */
-    private int languageHistory;
+  public ClassGenerationDialog(Vector nodes) {
+    super("Generate Classes");
 
-    ////////////////////////////////////////////////////////////////
-    // constructors
-
-    /**
-     * Constructor.
-     *
-     * @param nodes The nodes to generate.
-     */
-    public ClassGenerationDialog(Vector nodes) {
-        this(nodes, false);
+    Vector dirs = getClasspathEntries();
+    if (dirs.size() == 0) { 
+	dispose();
+	return;
     }
+    _dir = new JComboBox(Converter.convert(getClasspathEntries()));
 
-    /**
-     * Constructor.
-     *
-     * @param nodes The nodes to generate.
-     * @param inModel <code>true</code> if the path is in the model.
-     *        TODO: Correct?
-     */
-    public ClassGenerationDialog(Vector nodes, boolean inModel) {
-        super(
-            Translator.localize("dialog.title.generate-classes"),
-            Dialog.OK_CANCEL_OPTION,
-            true);
-        isPathInModel = inModel;
+    JLabel promptLabel = new JLabel("Generate Classes:");
+    JLabel dirLabel = new JLabel("Output Directory:");
 
-        buildLanguages();
+    _tableModel.setTarget(nodes);
+    _table.setModel(_tableModel);
 
-        JPanel contentPanel = new JPanel(new BorderLayout(10, 10));
+    Font labelFont = MetalLookAndFeel.getSubTextFont();
+    _table.setFont(labelFont);
 
-        // Class Table
+    //_table.setRowSelectionAllowed(false);
+    _table.setIntercellSpacing(new Dimension(0, 1));
+    _table.setShowVerticalLines(false);
+//     _table.getSelectionModel().addListSelectionListener(this);
+    _table.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
 
-        classTableModel = new TableModelClassChecks();
-        classTableModel.setTarget(nodes);
-        classTable = new JTable(classTableModel);
-        classTable.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
-        classTable.setShowVerticalLines(false);
-        if (languages.size() <= 1) {
-            classTable.setTableHeader(null);
-        }
-        setClassTableColumnWidths();
-        classTable.setPreferredScrollableViewportSize(new Dimension(300, 300));
+    TableColumn checkCol = _table.getColumnModel().getColumn(0);
+    TableColumn descCol = _table.getColumnModel().getColumn(1);
+    checkCol.setMinWidth(20);
+    checkCol.setWidth(30);
+    descCol.setMinWidth(200);
+    descCol.setWidth(200);
+    _table.setTableHeader(null);
 
-        // Select Buttons
+// Vector nodes = _diagram.getGraphModel().getNodes();
+// _table.setModel();
+// _table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 
-        JButton selectAllButton = new JButton();
-        nameButton(selectAllButton, "button.select-all");
-        selectAllButton.addActionListener(new ActionListener() {
-            /**
-             * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-             */
-            public void actionPerformed(ActionEvent e) {
-                classTableModel.setAllChecks(true);
-                classTable.repaint();
-            }
-        });
-        JButton selectNoneButton = new JButton();
-        nameButton(selectNoneButton, "button.select-none");
-        selectNoneButton.addActionListener(new ActionListener() {
-            /**
-             * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-             */
-            public void actionPerformed(ActionEvent e) {
-                classTableModel.setAllChecks(false);
-                classTable.repaint();
-            }
-        });
+    setSize(new Dimension(WIDTH, HEIGHT));
+    getContentPane().setLayout(new BorderLayout());
+    JPanel top = new JPanel();
+    GridBagLayout gb = new GridBagLayout();
+    top.setLayout(gb);
+    GridBagConstraints c = new GridBagConstraints();
+    c.fill = GridBagConstraints.BOTH;
+    c.weightx = 0.0;
+    c.ipadx = 3; c.ipady = 3;
 
-        JPanel selectPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
-        selectPanel.setBorder(BorderFactory.createEmptyBorder(8, 0, 0, 0));
-        JPanel selectButtons = new JPanel(new BorderLayout(5, 0));
-        selectButtons.add(selectAllButton, BorderLayout.CENTER);
-        selectButtons.add(selectNoneButton, BorderLayout.EAST);
-        selectPanel.add(selectButtons);
 
-        JPanel centerPanel = new JPanel(new BorderLayout(0, 2));
-        centerPanel.add(new JLabel(Translator.localize(
-            "label.available-classes")), BorderLayout.NORTH);
-        centerPanel.add(new JScrollPane(classTable), BorderLayout.CENTER);
-        centerPanel.add(selectPanel, BorderLayout.SOUTH);
-        contentPanel.add(centerPanel, BorderLayout.CENTER);
+    c.gridx = 0;
+    c.gridwidth = 1;
+    c.gridy = 0;
+    gb.setConstraints(promptLabel, c);
+    top.add(promptLabel);
 
-        // Output Directory
+    c.gridy = 1;
+    c.weighty = 1.0;
+    JScrollPane classesSP = new JScrollPane(_table);
+    JPanel hack = new JPanel();
+    hack.setLayout(new BorderLayout());
+    hack.add(classesSP, BorderLayout.CENTER);
+    hack.setPreferredSize(new Dimension(250, 200));
+    hack.setSize(new Dimension(250, 200));
+    gb.setConstraints(hack, c);
+    top.add(hack);
 
-        outputDirectoryComboBox =
-            new JComboBox(Converter.convert(new Vector(getClasspathEntries())));
+    c.weighty = 0.0;
+    c.gridy = 2;
+    gb.setConstraints(dirLabel, c);
+    top.add(dirLabel);
 
-        JButton browseButton = new JButton();
-        nameButton(browseButton, "button.browse");
-        browseButton.setText(browseButton.getText() + "...");
-        browseButton.addActionListener(new ActionListener() {
-            /**
-             * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-             */
-            public void actionPerformed(ActionEvent e) {
-                doBrowse();
-            }
-        });
+    c.weightx = 1.0;
+    c.gridx = 0;
+    c.gridwidth = GridBagConstraints.REMAINDER;
+    c.gridy = 3;
+    gb.setConstraints(_dir, c);
+    top.add(_dir);
 
-        JPanel southPanel = new JPanel(new BorderLayout(0, 2));
+    JPanel buttonPanel = new JPanel();
+    buttonPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
+    JPanel buttonInner = new JPanel(new GridLayout(1, 2));
+    buttonInner.add(_generateButton);
+    buttonInner.add(_cancelButton);
+    buttonPanel.add(buttonInner);
 
-        if (!inModel) {
-            outputDirectoryComboBox.setEditable(true);
-            JPanel outputPanel = new JPanel(new BorderLayout(5, 0));
-            outputPanel.setBorder(
-                BorderFactory.createCompoundBorder(
-                    BorderFactory.createTitledBorder(
-			Translator.localize("label.output-directory")),
-                    BorderFactory.createEmptyBorder(2, 5, 5, 5)));
-            outputPanel.add(outputDirectoryComboBox, BorderLayout.CENTER);
-            outputPanel.add(browseButton, BorderLayout.EAST);
-            southPanel.add(outputPanel, BorderLayout.NORTH);
-        }
+    ProjectBrowser pb = ProjectBrowser.TheInstance;
+    Project p = pb.getProject();
+    //_dir.setText(p.getGenerationPrefs().getOutputDir());
+    _dir.getModel().setSelectedItem(p.getGenerationPrefs().getOutputDir());
 
-        // Compile Checkbox
+    Rectangle pbBox = pb.getBounds();
+    setLocation(pbBox.x + (pbBox.width - WIDTH)/2,
+		pbBox.y + (pbBox.height - HEIGHT)/2);
+    getContentPane().add(top, BorderLayout.NORTH);
+    getContentPane().add(buttonPanel, BorderLayout.SOUTH);
 
-        //_compileCheckBox = new JCheckBox();
-        //nameButton(_compileCheckBox, "checkbox.compile-generated-source");
-        // TODO: Implement the compile feature. For now, disable the checkbox.
-        //_compileCheckBox.setEnabled(false);
-        //southPanel.add(_compileCheckBox, BorderLayout.SOUTH);
+    getRootPane().setDefaultButton(_generateButton);
+    _generateButton.addActionListener(this);
+    _cancelButton.addActionListener(this);
+  }
 
-        contentPanel.add(southPanel, BorderLayout.SOUTH);
+  public final static String pathSep=System.getProperty("path.separator");
 
-        setContent(contentPanel);
+  private static Vector getClasspathEntries() {
+      String classpath=System.getProperty("java.class.path");
+      Vector entries=new Vector();
+      StringTokenizer allEntries=new StringTokenizer(classpath,pathSep);
+      while (allEntries.hasMoreElements()) {
+	  String entry=allEntries.nextToken();
+	  if (!entry.toLowerCase().endsWith(".jar")
+	      && !entry.toLowerCase().endsWith(".zip")) {
+	      entries.addElement(entry);
+	  }
+      }
+      if (entries.size() == 0) {
+	  JOptionPane.showMessageDialog(null, "In order to generate Java files, you need to have\nat least one directory in your CLASSPATH environment variable,\nwhere ArgoUML can store and compile the files.", "Code generation", JOptionPane.ERROR_MESSAGE);
+	  return null;
+      }
+      return entries;
+  }
 
-        Project p = ProjectManager.getManager().getCurrentProject();
-        outputDirectoryComboBox.getModel().setSelectedItem(
-            p.getGenerationPrefs().getOutputDir());
+  public Dimension getMaximumSize() { return new Dimension(WIDTH, HEIGHT); }
+
+
+  ////////////////////////////////////////////////////////////////
+  // event handlers
+  public void actionPerformed(ActionEvent e) {
+    if (e.getSource() == _generateButton) {
+      // String path = _dir.getText().trim();
+      String path = ((String)_dir.getModel().getSelectedItem()).trim();
+
+      ProjectBrowser pb = ProjectBrowser.TheInstance;
+      Project p = pb.getProject();
+      p.getGenerationPrefs().setOutputDir(path);
+      Vector nodes = _tableModel.getChecked();
+      int size = nodes.size();
+      String[] compileCmd=new String[size+1];
+      String compiler=System.getProperty("argo.compiler");
+      if (compiler==null || compiler.length()==0)
+	  compiler="javac";
+      compileCmd[0]=compiler;
+      //compileCmd[0] += " -d "+path+" -classpath "+System.getProperty("java.class.path");
+      for (int i = 0; i <size; i++) {
+	Object node = nodes.elementAt(i);
+	if (node instanceof MClassifier)
+	  compileCmd[i+1] = GeneratorJava.GenerateFile((MClassifier) node, path);
+      }
+
+      String compilerOutput=compile(compileCmd);
+      if (compilerOutput==null) {
+	  		System.out.println("Compilation done.");
+	  		JOptionPane.showMessageDialog(this, "Compilation done.","Code Generation", JOptionPane.INFORMATION_MESSAGE);
+      } else {
+	  // todo: should display errors in a window!
+		  System.out.println("Compiler errors -> System.err");
+		  System.err.println(compilerOutput);
+		  JOptionPane.showMessageDialog(this, "Compiler errors -> System.err\n"+compilerOutput, "Code Generation", JOptionPane.ERROR_MESSAGE);
+
+      }
+
+      setVisible(false);
+      dispose();
     }
-
-    /**
-     * @see org.tigris.swidgets.Dialog#nameButtons()
-     */
-    protected void nameButtons() {
-        super.nameButtons();
-        nameButton(getOkButton(), "button.generate");
+    if (e.getSource() == _cancelButton) {
+      //System.out.println("cancel");
+      setVisible(false);
+      dispose();
     }
+  }
 
-    private void setClassTableColumnWidths() {
-        TableColumn column = null;
-        Component c = null;
-        int width = 0;
+  private String compile(String[] compileCmd) {
+      for (int i=0; i<compileCmd.length; ++i)
+	  System.out.print(compileCmd[i]+" ");
+      System.out.println();
+      StringBuffer allOut=new StringBuffer();
+      int exitState=-1;
+      boolean goon=true;
+      try {
+	  Process compileProc=Runtime.getRuntime().exec(compileCmd);
+	  BufferedReader coutRB=new BufferedReader(new InputStreamReader(compileProc.getInputStream()));;
+	  BufferedReader cerrRB=new BufferedReader(new InputStreamReader(compileProc.getErrorStream()));
+	  int co,ce;
+  	  do {
+	      co=coutRB.read();
+  	      if (co != -1) {
+  		  allOut.append((char)co);
+	      }
+	      ce=cerrRB.read();
+  	      if (ce != -1) {
+  		  allOut.append((char)ce);
+	      }
+	      if (co==-1 && ce==-1){
+		  try {
+		      exitState=compileProc.exitValue();
+		      goon=false;
+		  } catch (IllegalThreadStateException e1) {
+		      // wait until next polling:
+		      try {
+			  Thread.yield();
+			  Thread.sleep(500);
+		      } catch (InterruptedException irr) { }
+		  }
+	      }
+  	  } while (goon || co!=-1 || ce!=-1);
+      } catch (IOException e2) {
+	  System.out.println("Exception while reading compiler output:");
+	  e2.printStackTrace();
+      }
+      String outStr=null;
+      if (exitState!=0) {
+	  // Compiler reported errors, messages are suppressed:
+	  outStr=allOut.toString();
+      }
+      return outStr;
+  }
 
-        for (int i = 0; i < classTable.getColumnCount() - 1; ++i) {
-            column = classTable.getColumnModel().getColumn(i);
-            width = 30;
-
-            JTableHeader header = classTable.getTableHeader();
-            if (header != null) {
-                c =
-		    header.getDefaultRenderer().getTableCellRendererComponent(
-			    classTable,
-			    column.getHeaderValue(),
-			    false,
-			    false,
-			    0,
-			    0);
-                width = Math.max(c.getPreferredSize().width + 8, width);
-            }
-
-            column.setPreferredWidth(width);
-            column.setWidth(width);
-            column.setMinWidth(width);
-            column.setMaxWidth(width);
-        }
-    }
-
-    private void buildLanguages() {
-        Map ll = GeneratorManager.getInstance().getGenerators();
-        languages = new Vector(ll.keySet());
-    }
-
-    private static Collection getClasspathEntries() {
-        String classpath = System.getProperty("java.class.path");
-        Collection entries = new TreeSet();
-
-        Project p = ProjectManager.getManager().getCurrentProject();
-        entries.add(p.getGenerationPrefs().getOutputDir());
-
-        final String pathSep = System.getProperty("path.separator");
-        StringTokenizer allEntries = new StringTokenizer(classpath, pathSep);
-        while (allEntries.hasMoreElements()) {
-            String entry = allEntries.nextToken();
-            if (!entry.toLowerCase().endsWith(".jar")
-                && !entry.toLowerCase().endsWith(".zip")) {
-                entries.add(entry);
-            }
-        }
-        return entries;
-    }
-
-    /**
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-     */
-    public void actionPerformed(ActionEvent e) {
-        super.actionPerformed(e);
-
-        // Generate Button --------------------------------------
-        if (e.getSource() == getOkButton()) {
-            String path =
-                ((String) outputDirectoryComboBox.getModel()
-                        .getSelectedItem()).trim();
-            Project p = ProjectManager.getManager().getCurrentProject();
-            p.getGenerationPrefs().setOutputDir(path);
-            List[] fileNames = new Vector[languages.size()];
-            for (int i = 0; i < languages.size(); i++) {
-                fileNames[i] = new Vector();
-                Language language = (Language) languages.get(i);
-                GeneratorManager genMan = GeneratorManager.getInstance();
-                CodeGenerator generator = genMan.getGenerator(language);
-                Set nodes = classTableModel.getChecked(language);
-
-                if (!isPathInModel) {
-                    Collection files =
-                        generator.generateFiles(nodes, path, false);
-                    for (Iterator fit = files.iterator(); fit.hasNext();) {
-                        fileNames[i].add(path + CodeGenerator.FILE_SEPARATOR
-                                + fit.next());
-                    }
-                } else {
-                    // classify nodes by base path
-                    Map nodesPerPath = new HashMap();
-                    for (Iterator iter = nodes.iterator(); iter.hasNext();) {
-                        Object node = iter.next();
-                        if (!Model.getFacade().isAClassifier(node)) {
-                            continue;
-                        }
-                        path = GeneratorManager.getCodePath(node);
-                        if (path == null) {
-                            Object parent =
-                                Model.getFacade().getNamespace(node);
-                            while (parent != null) {
-                                path = GeneratorManager.getCodePath(parent);
-                                if (path != null) {
-                                    break;
-                                }
-                                parent =
-                                    Model.getFacade().getNamespace(parent);
-                            }
-                        }
-                        if (path != null) {
-                            final String fileSep = CodeGenerator.FILE_SEPARATOR;
-                            if (path.endsWith(fileSep)) { // remove trailing /
-                                path =
-                                    path.substring(0, path.length()
-                                        - fileSep.length());
-                            }
-                            Set np = (Set) nodesPerPath.get(path);
-                            if (np == null) {
-                                np = new HashSet();
-                                nodesPerPath.put(path, np);
-                            }
-                            np.add(node);
-                            // save the selected language in the model
-                            // TODO: no support of multiple checked
-                            // languages
-                            Object taggedValue =
-                                Model.getFacade().getTaggedValue(
-                                        node, "src_lang");
-                            String savedLang = null;
-                            if (taggedValue != null) {
-                                savedLang =
-                                    Model.getFacade().getValueOfTag(
-                                        taggedValue);
-                            }
-                            if (taggedValue == null || !language.getName()
-                                    .equals(savedLang)) {
-                                Model.getCoreHelper().setTaggedValue(node,
-                                        "src_lang", language.getName());
-                            }
-                        }
-                    } // end for (all nodes)
-
-                    // generate the files
-                    Iterator nit = nodesPerPath.keySet().iterator();
-                    while (nit.hasNext()) {
-                        String basepath = (String) nit.next();
-                        Set nodeColl = (Set) nodesPerPath.get(basepath);
-                        // TODO: the last argument (recursive flag) should be a
-                        // selectable option
-                        Collection files =
-                            generator.generateFiles(nodeColl, basepath, false);
-                        for (Iterator fit = files.iterator(); fit.hasNext();) {
-                            fileNames[i].add(basepath
-                                    + CodeGenerator.FILE_SEPARATOR
-                                    + fit.next());
-                        }
-                    }
-                } // end if (!isPathInModel) .. else
-            } // end for (all languages)
-            // TODO: do something with the generated list fileNames,
-            // for example, show it to the user in a dialog box.
-        }
-    }
-
-    private void doBrowse() {
-        try {
-            // Show Filechooser to select OuputDirectory
-            JFileChooser chooser =
-                new JFileChooser(
-                    (String) outputDirectoryComboBox
-                        .getModel()
-                        .getSelectedItem());
-
-            if (chooser == null) {
-                chooser = new JFileChooser();
-            }
-
-            chooser.setFileHidingEnabled(true);
-            chooser.setMultiSelectionEnabled(false);
-            chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-            chooser.setDialogTitle(Translator.localize(
-                    "dialog.generation.chooser.choose-output-dir"));
-            chooser.showDialog(this, Translator.localize(
-                    "dialog.generation.chooser.approve-button-text"));
-
-            if (!"".equals(chooser.getSelectedFile().getPath())) {
-                String path = chooser.getSelectedFile().getPath();
-                outputDirectoryComboBox.addItem(path);
-                outputDirectoryComboBox.getModel().setSelectedItem(path);
-            } // else ignore
-        } catch (Exception userPressedCancel) {
-            // TODO: How does the pressed cancel become a java.lang.Exception?
-            LOG.info("user pressed cancel");
-        }
-    }
-
-    class TableModelClassChecks extends AbstractTableModel {
-        ////////////////
-        // instance varables
-        private List classes;
-        private Set[] checked;
-
-        /**
-         * Constructor.
-         */
-        public TableModelClassChecks() {
-        }
-
-        ////////////////
-        // accessors
-        public void setTarget(List nodes) {
-            classes = nodes;
-            checked = new Set[getLanguagesCount()];
-            for (int j = 0; j < getLanguagesCount(); j++) {
-                // Doesn't really matter what set we use.
-                checked[j] = new HashSet();
-            }
-
-            int size = classes.size();
-            for (int i = 0; i < size; i++) {
-                Object cls = classes.get(i);
-                String name = Model.getFacade().getName(cls);
-                // Jaap B. in older versions of argouml (before
-                // 0.14alpha1) names were not initialized correctly.  this
-                // is a patch for that.
-                if (name == null || name.length() == 0) {
-                    Model.getCoreHelper().setName(cls, "");
-                    // continue;
-                }
-
-                for (int j = 0; j < getLanguagesCount(); j++) {
-                    if (isSupposedToBeGeneratedAsLanguage(
-                            (Language) languages.get(j), cls)) {
-                        checked[j].add(cls);
-                    } else if (((Language) languages.get(j)).getName().equals(
-                            Notation.getConfigueredNotation()
-                                    .getConfigurationValue())) {
-                        checked[j].add(cls);
-                    }
-                }
-            }
-            fireTableStructureChanged();
-
-            getOkButton().setEnabled(classes.size() > 0
-				     && getChecked().size() > 0);
-        }
-
-        private boolean isSupposedToBeGeneratedAsLanguage(
-            Language lang,
-            Object cls) {
-            if (lang == null) {
-                return false;
-            }
-            if (cls == null) {
-                return false;
-            }
-
-            Object taggedValue =
-                Model.getFacade().getTaggedValue(cls, "src_lang");
-            if (taggedValue == null) {
-                return false;
-            }
-            String savedLang = Model.getFacade().getValueOfTag(taggedValue);
-            return (lang.getName().equals(savedLang));
-        }
-
-        private int getLanguagesCount() {
-            if (languages == null) {
-                return 0;
-            }
-            return languages.size();
-        }
-
-        public Set getChecked(Language lang) {
-            int index = languages.indexOf(lang);
-            if (index == -1) {
-                return new HashSet();
-            }
-            return checked[index];
-        }
-
-        /**
-         * All checked classes.
-         *
-         * @return The union of all languages as a {@link Set}.
-         */
-        public Set getChecked() {
-            Set union = new HashSet();
-            for (int i = 0; i < getLanguagesCount(); i++) {
-                union.addAll(checked[i]);
-            }
-            return union;
-        }
-
-        ////////////////
-        // TableModel implemetation
-        /**
-         * @see javax.swing.table.TableModel#getColumnCount()
-         */
-        public int getColumnCount() {
-            return 1 + getLanguagesCount();
-        }
-
-        /**
-         * @see javax.swing.table.TableModel#getColumnName(int)
-         */
-        public String getColumnName(int c) {
-            if (c >= 0 && c < getLanguagesCount()) {
-                return ((Language) languages.get(c)).getName();
-            } else if (c == getLanguagesCount()) {
-                return "Class Name";
-            }
-            return "XXX";
-        }
-
-        /**
-         * @see javax.swing.table.TableModel#getColumnClass(int)
-         */
-        public Class getColumnClass(int c) {
-            if (c >= 0 && c < getLanguagesCount()) {
-                return Boolean.class;
-            } else if (c == getLanguagesCount()) {
-                return String.class;
-            }
-            return String.class;
-        }
-
-        /**
-         * @see javax.swing.table.TableModel#isCellEditable(int, int)
-         */
-        public boolean isCellEditable(int row, int col) {
-            Object cls = classes.get(row);
-            if (col == getLanguagesCount()) {
-                return false;
-            }
-            if (!(Model.getFacade().getName(cls).length() > 0)) {
-                return false;
-            }
-            if (col >= 0 && col < getLanguagesCount()) {
-                return true;
-            }
-            return false;
-        }
-
-        /**
-         * @see javax.swing.table.TableModel#getRowCount()
-         */
-        public int getRowCount() {
-            if (classes == null) {
-                return 0;
-            }
-            return classes.size();
-        }
-
-        /**
-         * @see javax.swing.table.TableModel#getValueAt(int, int)
-         */
-        public Object getValueAt(int row, int col) {
-            Object cls = classes.get(row);
-            if (col == getLanguagesCount()) {
-                String name = Model.getFacade().getName(cls);
-                if (name.length() > 0) {
-                    return name;
-                }
-                return "(anon)";
-            } else if (col >= 0 && col < getLanguagesCount()) {
-                if (checked[col].contains(cls)) {
-                    return Boolean.TRUE;
-                }
-                return Boolean.FALSE;
-            } else {
-                return "CC-r:" + row + " c:" + col;
-            }
-        }
-
-        /**
-         * @see javax.swing.table.TableModel#setValueAt(
-         *          java.lang.Object, int, int)
-         */
-        public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
-            if (columnIndex == getLanguagesCount()) {
-                return;
-	    }
-            if (columnIndex >= getColumnCount()) {
-                return;
-	    }
-            if (!(aValue instanceof Boolean)) {
-                return;
-	    }
-            boolean val = ((Boolean) aValue).booleanValue();
-            Object cls = classes.get(rowIndex);
-
-            if (columnIndex >= 0 && columnIndex < getLanguagesCount()) {
-                if (val) {
-                    checked[columnIndex].add(cls);
-                } else {
-                    checked[columnIndex].remove(cls);
-                }
-            }
-
-            if (val && !getOkButton().isEnabled()) {
-                getOkButton().setEnabled(true);
-            } else if (!val && getOkButton().isEnabled()
-                && getChecked().size() == 0) {
-                getOkButton().setEnabled(false);
-            }
-        }
-
-        /**
-         * Sets or clears all checkmarks for the (next) language for
-         * all classes.
-         *
-         * @param value If false then all checkmarks are cleared for all
-         * languages.
-         * If true then all are cleared, except for one language column,
-         * these are all set.
-         */
-        public void setAllChecks(boolean value) {
-            int rows = getRowCount();
-            int checks = getLanguagesCount();
-
-            if (rows == 0) {
-                return;
-            }
-
-            for (int i = 0; i < rows; ++i) {
-                Object cls = classes.get(i);
-
-                for (int j = 0; j < checks; ++j) {
-                    if (value && (j == languageHistory)) {
-                        checked[j].add(cls);
-                    } else {
-                        checked[j].remove(cls);
-                    }
-                }
-            }
-            if (value) {
-		if (++languageHistory >= checks) {
-		    languageHistory = 0;
-		}
-	    }
-            getOkButton().setEnabled(value);
-        }
-
-        /**
-         * The UID.
-         */
-        private static final long serialVersionUID = 6108214254680694765L;
-    } /* end class TableModelClassChecks */
-
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = -8897965616334156746L;
 } /* end class ClassGenerationDialog */
 
+
+
+
+class TableModelClassChecks extends AbstractTableModel {
+  ////////////////
+  // instance varables
+  Vector _classes;
+  VectorSet _checked = new VectorSet();
+
+  ////////////////
+  // constructor
+  public TableModelClassChecks() {
+  }
+
+  ////////////////
+  // accessors
+  public void setTarget(Vector classes) {
+    _classes = classes;
+    _checked.removeAllElements();
+    int size = _classes.size();
+    for (int i = 0; i < size; i++) {
+      MClassifier cls = (MClassifier) _classes.elementAt(i);
+      String name = cls.getName();
+      if (name.length() > 0) _checked.addElement(cls);
+    }
+    fireTableStructureChanged();
+  }
+
+  public Vector getChecked() { return _checked.asVector(); }
+
+  ////////////////
+  // TableModel implemetation
+  public int getColumnCount() { return 2; }
+
+  public String  getColumnName(int c) {
+    if (c == 0) return "X";
+    if (c == 1) return "Class Name";
+    return "XXX";
+  }
+
+  public Class getColumnClass(int c) {
+    if (c == 0) return Boolean.class;
+    if (c == 1) return String.class;
+    return String.class;
+  }
+
+  public boolean isCellEditable(int row, int col) {
+    MClassifier cls = (MClassifier) _classes.elementAt(row);
+    return col == 0 && cls.getName().length() > 0;
+  }
+
+  public int getRowCount() {
+    if (_classes == null) return 0;
+    return _classes.size();
+  }
+
+  public Object getValueAt(int row, int col) {
+    MClassifier cls = (MClassifier) _classes.elementAt(row);
+    if (col == 0) {
+      return (_checked.contains(cls)) ? Boolean.TRUE : Boolean.FALSE;
+    }
+    else if (col == 1) {
+      String name = cls.getName();
+      return (name.length() > 0) ? name : "(anon)";
+    }
+    else
+      return "CC-" + row*2+col;
+  }
+
+  public void setValueAt(Object aValue, int rowIndex, int columnIndex)  {
+    //System.out.println("setting table value " + rowIndex + ", " + columnIndex);
+    if (columnIndex != 0) return;
+    if (!(aValue instanceof Boolean)) return;
+    boolean val = ((Boolean)aValue).booleanValue();
+    Object cls = _classes.elementAt(rowIndex);
+    if (val) _checked.addElement(cls);
+    else _checked.removeElement(cls);
+  }
+
+} /* end class TableModelClassChecks */

@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,131 +21,62 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+
+// File: CrNWayAgg.java
+// Classes: CrNWayAgg
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.cognitive.critics;
 
-import java.util.Collection;
-import java.util.Iterator;
+import java.util.*;
 
-import org.argouml.cognitive.Designer;
-import org.argouml.cognitive.critics.Critic;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
+import ru.novosoft.uml.behavior.collaborations.*;
 
-/**
- * A critic to check that no end of a 3-way (or more) association is an
- * aggregation.<p>
- *
- * This is the third well-formedness rule for associations in the UML 1.3
- * standard (see section 2.5.3 of the standard).<p>
- *
- * <em>Note</em>. This only applies to 3-way or more
- * associations. There is a separate critic (see {@link
- * org.argouml.uml.cognitive.critics.CrMultipleAgg}) which deals with
- * 2-way assocations. <p>
- *
- * See <a href=
- * "http://argouml.tigris.org/documentation/snapshots/manual/argouml.html/
- * #s2.ref.critics_multiple_agg">
- * ArgoUML User Manual: Two Aggregate ends (roles) in binary
- * Association</a>
- *
- * @author jrobbins
- */
+import org.argouml.cognitive.*;
+import org.argouml.cognitive.critics.*;
+
+/** Well-formedness rule [3] for Associations. See page 27 of UML 1.1
+ *  Semantics. OMG document ad/97-08-04. */
+
 public class CrNWayAgg extends CrUML {
 
-    /**
-     * Constructor for the critic. <p>
-     *
-     * Sets up the resource name, which will allow headline and description
-     * to found for the current locale. Provides a design issue category
-     * (CONTAINMENT), a knowledge type (SEMANTICS) and add triggers for
-     * "connection" and "end_aggregation".
-     */
-    public CrNWayAgg() {
-        setupHeadAndDesc();
-        addSupportedDecision(UMLDecision.CONTAINMENT);
-        setKnowledgeTypes(Critic.KT_SEMANTICS);
+  public CrNWayAgg() {
+    setHeadline("Aggregate Role in N-way MAssociation");
+    sd("Three-way (or more) Associations can not have aggregate ends.\n\n" +
+       "A clear and consistent is-part-of hierarchy is a key to design clarity, \n"+
+       "managable object storage, and the implementation of recursive methods.\n"+
+       "To fix this, use the \"Next>\" button, or manually select the MAssociation \n"+
+       "and set all of its role aggregations to None.");
 
-        // These may not actually make any difference at present (the code
-        // behind addTrigger needs more work).
+    addSupportedDecision(CrUML.decCONTAINMENT);
+    setKnowledgeTypes(Critic.KT_SEMANTICS);
+    addTrigger("connection");
+    addTrigger("end_aggregation");
+  }
 
-        addTrigger("connection");
-        addTrigger("end_aggregation");
+  public boolean predicate2(Object dm, Designer dsgr) {
+    if (!(dm instanceof MAssociation)) return NO_PROBLEM;
+    MAssociation asc = (MAssociation) dm;
+    Collection conns = asc.getConnections();
+    if (asc instanceof MAssociationRole)
+      conns = ((MAssociationRole)asc).getConnections();
+    if (conns == null || conns.size() <= 2) return NO_PROBLEM;
+    int aggCount = 0;
+    Iterator enum = conns.iterator();
+    while (enum.hasNext()) {
+      MAssociationEnd ae = (MAssociationEnd) enum.next();
+      MAggregationKind ak = ae.getAggregation();
+      if (//!MAggregationKind.UNSPEC.equals(ak) &&
+	  !MAggregationKind.NONE.equals(ak))
+	aggCount++;
     }
+    if (aggCount > 0) return PROBLEM_FOUND;
+    else return NO_PROBLEM;
+  }
 
-
-    /**
-     * The trigger for the critic.<p>
-     *
-     * Check that the number of ends more than two, otherwise this should be
-     * handled by the critic for 2-way assocations (see {@link
-     * org.argouml.uml.cognitive.critics.CrMultipleAgg}).<p>
-     *
-     * We do not handle association roles, which are a subclass of
-     * association. An association role should be fine, if its parent is OK,
-     * since it must be more tightly constrained than its parent.<p>
-     *
-     * <em>Note</em>. ArgoUML does not currently have a constructor to check
-     * that an association role is more tightly constrained than its
-     * parent.<p>
-     *
-     * Then loop through the ends, looking for aggregate ends. Note that we
-     * look for aggregation explicitly, rather than just absence of "no
-     * aggregation", so we don't trigger if the aggregation is just
-     * undefined.
-     *
-     * @param  dm    the {@link java.lang.Object Object} to be checked against
-     *               the critic.
-     *
-     * @param  dsgr  the {@link org.argouml.cognitive.Designer Designer}
-     *               creating the model. Not used, this is for future
-     *               development of ArgoUML.
-     *
-     * @return       {@link #PROBLEM_FOUND PROBLEM_FOUND} if the critic is
-     *               triggered, otherwise {@link #NO_PROBLEM NO_PROBLEM}.
-     */
-
-    public boolean predicate2(Object dm, Designer dsgr) {
-
-        // Only work for associatins
-
-        if (!(Model.getFacade().isAAssociation(dm))) {
-            return NO_PROBLEM;
-        }
-
-        // Get the assocations and connections. No problem (there is a separate
-        // critic) if this is a binary association or is an association role.
-
-        Object asc = /*(MAssociation)*/ dm;
-
-        if (Model.getFacade().isAAssociationRole(asc)) {
-            return NO_PROBLEM;
-        }
-
-        Collection conns = Model.getFacade().getConnections(asc);
-
-        if ((conns == null) || (conns.size() <= 2)) {
-            return NO_PROBLEM;
-        }
-
-        // Loop through the associations, looking for one with aggregation
-
-        Iterator assocEnds = conns.iterator();
-        while (assocEnds.hasNext()) {
-            Object ae = /*(MAssociationEnd)*/ assocEnds.next();
-            if (Model.getFacade().isAggregate(ae)
-                    || Model.getFacade().isComposite(ae)) {
-                return PROBLEM_FOUND;
-            }
-        }
-
-        // If drop out, we're OK
-
-        return NO_PROBLEM;
-    }
-
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = 5318978944855930303L;
 } /* end class CrNWayAgg.java */
+

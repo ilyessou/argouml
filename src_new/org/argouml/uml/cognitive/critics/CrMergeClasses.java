@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,71 +23,50 @@
 
 package org.argouml.uml.cognitive.critics;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
-import org.argouml.cognitive.Designer;
-import org.argouml.cognitive.ToDoItem;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
 
-/**
- * A critic to check whether to classes sharing a 1..1 association can or
- * should be combined.
- */
+import org.argouml.cognitive.*;
+
 public class CrMergeClasses extends CrUML {
 
-    /**
-     * The constructor.
-     */
-    public CrMergeClasses() {
-        setupHeadAndDesc();
-	setPriority(ToDoItem.LOW_PRIORITY);
-	addSupportedDecision(UMLDecision.CLASS_SELECTION);
-	addTrigger("associationEnd");
-    }
+  public CrMergeClasses() {
+    setHeadline("Consider Combining Classes");
+    String s = "";
+    s += "The highlighted class, <ocl>self</ocl>, only participates in one association and that ";
+    s += "association is one-to-one with another class.  Since instances of these ";
+    s += "two classes must always be created together and destroyed together, ";
+    s += "combining these classes might simplify your design without loss of any ";
+    s += "representation power.  However, you may find the combined class too large ";
+    s += "and complex, in which case separating them is usually better.\n\n";
+    s += "Organizing classes to manage complexity of the design is always important, ";
+    s += "especially when the design is already complex. \n\n";
+    s += "To fix this, click on the \"Next>\" button, or manually add the attribues and ";
+    s += "operations of the highlighted class to the other class, then remove the ";
+    s += "highlighted class from the project. ";
+
+    setDescription(s);
+    addSupportedDecision(CrUML.decCLASS_SELECTION); //?
+    //no good trigger, should be applied to association instead
+  }
 
 
-    /**
-     * @see org.argouml.uml.cognitive.critics.CrUML#predicate2(
-     * java.lang.Object, org.argouml.cognitive.Designer)
-     */
-    public boolean predicate2(Object dm, Designer dsgr) {
-	if (!(Model.getFacade().isAClass(dm))) {
-	    return NO_PROBLEM;
-	}
-	Object cls = /*(MClass)*/ dm;
-	Collection ends = Model.getFacade().getAssociationEnds(cls);
-	if (ends == null || ends.size() != 1) {
-	    return NO_PROBLEM;
-	}
-	Object myEnd = /*(MAssociationEnd)*/ ends.iterator().next();
-	Object asc = Model.getFacade().getAssociation(myEnd);
-	List conns = new ArrayList(Model.getFacade().getConnections(asc));
-        // Do we have 2 connection ends?
-        if (conns == null || conns.size()!=2) {
-                return NO_PROBLEM;
-        }
-	Object ae0 = /*(MAssociationEnd)*/ conns.get(0);
-	Object ae1 = /*(MAssociationEnd)*/ conns.get(1);
-	// both ends must be classes, otherwise there is nothing to merge
-	if (!(Model.getFacade().isAClass(Model.getFacade().getType(ae0))
-            && Model.getFacade().isAClass(Model.getFacade().getType(ae1)))) {
-	    return NO_PROBLEM;
-	}
-	// both ends must be navigable, otherwise there is nothing to merge
-	if (!(Model.getFacade().isNavigable(ae0)
-            && Model.getFacade().isNavigable(ae1))) {
-	    return NO_PROBLEM;
-	}
-	if (Model.getFacade().getLower(ae0) == 1
-                && Model.getFacade().getUpper(ae0) == 1
-                && Model.getFacade().getLower(ae1) == 1
-                && Model.getFacade().getUpper(ae1) == 1) {
-	    return PROBLEM_FOUND;
-	}
-	return NO_PROBLEM;
-    }
+  public boolean predicate2(Object dm, Designer dsgr) {
+    if (!(dm instanceof MClass)) return NO_PROBLEM;
+    MClass cls = (MClass) dm;
+    Collection ends = cls.getAssociationEnds();
+    if (ends == null || ends.size() != 1) return NO_PROBLEM;
+    MAssociationEnd myEnd = (MAssociationEnd) ends.iterator().next();
+    MAssociation asc = myEnd.getAssociation();
+    List conns = asc.getConnections();
+    MAssociationEnd ae0 = (MAssociationEnd) conns.get(0);
+    MAssociationEnd ae1 = (MAssociationEnd) conns.get(1);
+    if (ae0.getMultiplicity().equals(MMultiplicity.M1_1) &&
+        ae1.getMultiplicity().equals(MMultiplicity.M1_1))
+      return PROBLEM_FOUND;
+    return NO_PROBLEM;
+  }
 
 } /* end class CrMergeClasses */

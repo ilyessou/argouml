@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,235 +21,140 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: FigFinalState.java
+// Classes: FigFinalState
+// Original Author: ics125b spring 98
+// $Id$
+
 package org.argouml.uml.diagram.state.ui;
 
-import java.awt.Color;
-import java.awt.Point;
-import java.awt.event.KeyEvent;
-import java.awt.event.MouseEvent;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Vector;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.*;
+import java.util.Enumeration;
+import java.beans.*;
+import javax.swing.*;
 
-import org.argouml.model.Model;
-import org.argouml.uml.diagram.activity.ui.SelectionActionState;
-import org.tigris.gef.base.Globals;
-import org.tigris.gef.base.Selection;
-import org.tigris.gef.graph.GraphModel;
-import org.tigris.gef.presentation.FigCircle;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.behavior.state_machines.*;
+import ru.novosoft.uml.behavior.activity_graphs.*;
 
-/**
- * Class to display graphics for a UML FinalState in a diagram.
- *
- * @author ics125b spring 98
- */
+import org.tigris.gef.base.*;
+import org.tigris.gef.presentation.*;
+import org.tigris.gef.graph.*;
+
+import org.argouml.uml.diagram.activity.ui.*;
+
+/** Class to display graphics for a UML MState in a diagram. */
+
 public class FigFinalState extends FigStateVertex {
 
-    ////////////////////////////////////////////////////////////////
-    // constants
+  ////////////////////////////////////////////////////////////////
+  // constants
 
-    private static final int X = 10;
-    private static final int Y = 10;
-    private static final int WIDTH = 24;
-    private static final int HEIGHT = 24;
+  public final int MARGIN = 2;
+  public int x = 0;
+  public int y = 0;
+  public int width = 20;
+  public int height = 20;
 
-    ////////////////////////////////////////////////////////////////
-    // instance variables
+  ////////////////////////////////////////////////////////////////
+  // instance variables
 
-    private FigCircle inCircle;
+  FigCircle _bigPort;
+  FigCircle _inCircle;
+  FigCircle _outCircle;
 
-    ////////////////////////////////////////////////////////////////
-    // constructors
+  ////////////////////////////////////////////////////////////////
+  // constructors
 
-    /**
-     * The main constructor.
-     */
-    public FigFinalState() {
-        super();
-        setEditable(false);
-        Color handleColor = Globals.getPrefs().getHandleColor();
-        FigCircle bigPort =
-            new FigCircle(X, Y, WIDTH, HEIGHT, Color.black, Color.white);
-        inCircle =
-            new FigCircle(
-        		  X + 5,
-        		  Y + 5,
-        		  WIDTH - 10,
-        		  HEIGHT - 10,
-        		  handleColor,
-        		  Color.black);
+  public FigFinalState() {
+    Color handleColor = Globals.getPrefs().getHandleColor();
+    _bigPort = new FigCircle(x,y,width,height, handleColor, Color.cyan);
+    _outCircle = new FigCircle(x,y,width,height, Color.black, Color.white);
+    _inCircle = new FigCircle(x+5,y+5,width-10,height-10, handleColor, Color.black);
 
-        bigPort.setLineWidth(1);
-        inCircle.setLineWidth(0);
+    _outCircle.setLineWidth(1);
+    _inCircle.setLineWidth(0);
 
-        addFig(bigPort);
-        addFig(inCircle);
-        setBigPort(bigPort);
+    addFig(_bigPort);
+    addFig(_outCircle);
+    addFig(_inCircle);
 
-        setBlinkPorts(false); //make port invisble unless mouse enters
-    }
+    setBlinkPorts(false); //make port invisble unless mouse enters
+    Rectangle r = getBounds();
+  }
 
-    /**
-     * The constructor that hooks the Fig into the UML element.
-     * @param gm ignored
-     * @param node the UML element
-     */
-    public FigFinalState(GraphModel gm, Object node) {
-    	this();
-    	setOwner(node);
-    }
+  public FigFinalState(GraphModel gm, Object node) {
+    this();
+    setOwner(node);
+  }
 
-    /**
-     * @see java.lang.Object#clone()
-     */
-    public Object clone() {
-        FigFinalState figClone = (FigFinalState) super.clone();
-        Iterator it = figClone.getFigs().iterator();
-        figClone.setBigPort((FigCircle) it.next());
-        figClone.inCircle = (FigCircle) it.next();
+  public Object clone() {
+    FigFinalState figClone = (FigFinalState) super.clone();
+    Vector v = figClone.getFigs();
+    figClone._bigPort = (FigCircle) v.elementAt(0);
+    figClone._outCircle = (FigCircle) v.elementAt(1);
+    figClone._inCircle = (FigCircle) v.elementAt(2);
+    return figClone;
+  }
 
-        return figClone;
-    }
+  ////////////////////////////////////////////////////////////////
+  // Fig accessors
 
-    ////////////////////////////////////////////////////////////////
-    // Fig accessors
+  public Selection makeSelection() {
+      MFinalState pstate = null;
+      Selection sel = null;
+      if (getOwner() != null) {
+	  pstate = (MFinalState)getOwner();
+	  if (pstate.getContainer().getStateMachine() instanceof MActivityGraph) {
+	      sel = new SelectionActionState(this);
+		  ((SelectionActionState)sel).setOutgoingButtonEnabled(false);
+	  }
+	  else {
+	      sel = new SelectionState(this);
+		  ((SelectionState)sel).setOutgoingButtonEnabled(false);
+	  }
+      }
+	  return sel;
+  }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#makeSelection()
-     */
-    public Selection makeSelection() {
-        Object pstate = null;
-        Selection sel = null;
-        if (getOwner() != null) {
-            pstate = getOwner();
-            if (Model.getFacade().isAActivityGraph(
-                            Model.getFacade().getStateMachine(
-                            Model.getFacade().getContainer(pstate)))) {
-                sel = new SelectionActionState(this);
-                ((SelectionActionState) sel).setOutgoingButtonEnabled(false);
-            } else {
-                sel = new SelectionState(this);
-                ((SelectionState) sel).setOutgoingButtonEnabled(false);
-            }
-        }
-        return sel;
-    }
+  public void setOwner(Object node) {
+    super.setOwner(node);
+    bindPort(node, _bigPort);
+    // if it is a UML meta-model object, register interest in any change events
+    if (node instanceof MElementImpl)
+      ((MElementImpl)node).addMElementListener(this);
+  }
 
-    /**
-     * Final states are fixed size.
-     *
-     * @see org.tigris.gef.presentation.Fig#isResizable()
-     */
-    public boolean isResizable() {
-        return false;
-    }
+  /** Final states are fixed size. */
+  public boolean isResizable() { return false; }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#setLineColor(java.awt.Color)
-     */
-    public void setLineColor(Color col) {
-        getBigPort().setLineColor(col);
-    }
+//   public Selection makeSelection() {
+//     return new SelectionMoveClarifiers(this);
+//   }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#getLineColor()
-     */
-    public Color getLineColor() {
-        return getBigPort().getLineColor();
-    }
+  public void setLineColor(Color col) { _outCircle.setLineColor(col); }
+  public Color getLineColor() { return _outCircle.getLineColor(); }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#setFillColor(java.awt.Color)
-     */
-    public void setFillColor(Color col) {
-        inCircle.setFillColor(col);
-    }
+  public void setFillColor(Color col) { _inCircle.setFillColor(col); }
+  public Color getFillColor() { return _inCircle.getFillColor(); }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#getFillColor()
-     */
-    public Color getFillColor() {
-        return inCircle.getFillColor();
-    }
+  public void setFilled(boolean f) { }
+  public boolean getFilled() { return true; }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#setFilled(boolean)
-     */
-    public void setFilled(boolean f) {
-    }
+  public void setLineWidth(int w) { _outCircle.setLineWidth(w); }
+  public int getLineWidth() { return _outCircle.getLineWidth(); }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#getFilled()
-     */
-    public boolean getFilled() {
-        return true;
-    }
+  ////////////////////////////////////////////////////////////////
+  // Event handlers
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#setLineWidth(int)
-     */
-    public void setLineWidth(int w) {
-        getBigPort().setLineWidth(w);
-    }
-
-    /**
-     * @see org.tigris.gef.presentation.Fig#getLineWidth()
-     */
-    public int getLineWidth() {
-	return getBigPort().getLineWidth();
-    }
-
-    ////////////////////////////////////////////////////////////////
-    // Event handlers
-
-    /**
-     * @see java.awt.event.MouseListener#mouseClicked(java.awt.event.MouseEvent)
-     */
-    public void mouseClicked(MouseEvent me) {
-    }
-
-    /**
-     * The UID.
-     */
-    static final long serialVersionUID = -3506578343969467480L;
+  public void mouseClicked(MouseEvent me) { }
+  public void keyPressed(KeyEvent ke) { }
 
 
-    /**
-     * TODO: MVW: I do not see any reason for this. Can we remove it?
-     *
-     * @see org.tigris.gef.presentation.Fig#setBounds(int, int, int, int)
-     */
-    /*public void setBoundsImpl(int boundX, int boundY,
-        int boundW, int boundH) {
-        _x = boundX;
-        _y = boundY;
-        getBigPort().setX(boundX);
-        getBigPort().setY(boundY);
-        inCircle.setX(boundX + 5);
-        inCircle.setY(boundY + 5);
-    }*/
-
-    /**
-     * Makes sure that edges stick to the outer circle and not to the box.
-     *
-     * @see org.tigris.gef.presentation.Fig#getGravityPoints()
-     */
-    public List getGravityPoints() {
-        Vector ret = new Vector();
-        int cx = getBigPort().getCenter().x;
-        int cy = getBigPort().getCenter().y;
-        double radius = getBigPort().getWidth() / 2 + 1;
-        final int maxPoints = 32;
-        Point point = null;
-        final double pi2 = Math.PI * 2;
-        for (int i = 0; i < maxPoints; i++) {
-            int px = (int) (cx + Math.cos(pi2 * i / maxPoints) * radius);
-            int py = (int) (cy + Math.sin(pi2 * i / maxPoints) * radius);
-            point = new Point(px, py);
-            ret.add(point);
-        }
-        return ret;
-
-    }
+  static final long serialVersionUID = -3506578343969467480L;
 
 } /* end class FigFinalState */
+
+

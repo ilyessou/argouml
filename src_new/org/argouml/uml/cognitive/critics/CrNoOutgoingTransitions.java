@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,67 +21,55 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: CrNoOutgoingTransitions.java
+// Classes: CrNoOutgoingTransitions
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.cognitive.critics;
 
-import java.util.Collection;
+import java.util.*;
 
-import org.argouml.cognitive.Designer;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
+import ru.novosoft.uml.behavior.state_machines.*;
 
-/**
- * A critic to detect when a state has no outgoing transitions.
- *
- * @author jrobbins
- */
+import org.argouml.cognitive.*;
+
+/** A critic to detect when a state has no outgoing transitions. */
+
 public class CrNoOutgoingTransitions extends CrUML {
 
-    /**
-     * Constructor.
-     */
-    public CrNoOutgoingTransitions() {
-        setupHeadAndDesc();
-	addSupportedDecision(UMLDecision.STATE_MACHINES);
-	addTrigger("outgoing");
-    }
+  public CrNoOutgoingTransitions() {
+    setHeadline("Add Outgoing Transitions from <ocl>self</ocl>");
+    sd("MState <ocl>self</ocl> has no Outgoing transitions. "+
+       "Normally states have both incoming and outgoing transitions. \n\n"+
+       "Defining complete state transitions is needed to complete the behavioral "+
+       "specification part of your design.  Without outgoing transitions, "+
+       "this state is a \"dead\" state that can naver be exited.\n\n"+
+       "To fix this, press the \"Next>\" button, or add transitions manually "+
+       "by clicking on transition tool in the tool bar and dragging from "+
+       "another state to <ocl>self</ocl>. ");
 
-    /**
-     * This is the decision routine for the critic.
-     *
-     * @param dm is the UML entity that is being checked.
-     * @param dsgr is for future development and can be ignored.
-     *
-     * @return boolean problem found
-     */
-    public boolean predicate2(Object dm, Designer dsgr) {
-	if (!(Model.getFacade().isAStateVertex(dm))) {
-	    return NO_PROBLEM;
-	}
-	Object sv = /*(MStateVertex)*/ dm;
-	if (Model.getFacade().isAState(sv)) {
-	    Object sm = Model.getFacade().getStateMachine(sv);
-	    if (sm != null && Model.getFacade().getTop(sm) == sv) {
-	        return NO_PROBLEM;
-	    }
-	}
-	if (Model.getFacade().isAPseudostate(sv)) {
-	    Object k = Model.getFacade().getPseudostateKind(sv);
-	    if (k.equals(Model.getPseudostateKind().getChoice())) {
-	        return NO_PROBLEM;
-	    }
-	    if (k.equals(Model.getPseudostateKind().getJunction())) {
-	        return NO_PROBLEM;
-	    }
-	}
-	Collection outgoing = Model.getFacade().getOutgoings(sv);
-	boolean needsOutgoing = outgoing == null || outgoing.size() == 0;
-	if (Model.getFacade().isAFinalState(sv)) {
-	    needsOutgoing = false;
-	}
-	if (needsOutgoing) {
-	    return PROBLEM_FOUND;
-	}
-	return NO_PROBLEM;
+    addSupportedDecision(CrUML.decSTATE_MACHINES);
+    addTrigger("outgoing");
+  }
+
+  public boolean predicate2(Object dm, Designer dsgr) {
+    if (!(dm instanceof MStateVertex)) return NO_PROBLEM;
+    MStateVertex sv = (MStateVertex) dm;
+    if (sv instanceof MState) {
+      MStateMachine sm = ((MState)sv).getStateMachine();
+      if (sm != null && sm.getTop() == sv) return NO_PROBLEM;
     }
+    Collection outgoing = sv.getOutgoings();
+    boolean needsOutgoing = outgoing == null || outgoing.size() == 0;
+    if (sv instanceof MFinalState) {
+		needsOutgoing = false;
+    }
+    if (needsOutgoing) return PROBLEM_FOUND;
+    return NO_PROBLEM;
+  }
 
 } /* end class CrNoOutgoingTransitions */
+

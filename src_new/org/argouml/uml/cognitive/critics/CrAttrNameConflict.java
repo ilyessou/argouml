@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,78 +21,72 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+
+// File: CrSignatureConflict.java
+// Classes: CrAttrNameConflict
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.cognitive.critics;
 
-import java.util.Iterator;
-import java.util.Vector;
+import java.util.*;
+import javax.swing.*;
 
-import javax.swing.Icon;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
 
-import org.argouml.cognitive.Designer;
-import org.argouml.cognitive.critics.Critic;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
+import org.argouml.cognitive.*;
+import org.argouml.cognitive.critics.*;
 
-// Using Model through Facade
+/** Well-formedness rule [2] for MClassifier. See page 29 of UML 1.1
+ *  Semantics. OMG document ad/97-08-04. */
 
-/**
- * Check the:
- * Well-formedness rule [2] for MClassifier.
- * See page 29 of UML 1.1, Semantics. OMG document ad/97-08-04.
- * See page 2-49 in UML V1.3<p>
- *
- * In the process of modifying this to use the new Facade object
- * (Jan 2003) this was changed to no longer detect StructuralFeatures
- * with the same name but instead attributes with the same name.
- * This is in fact a more to the letter adherance to the UML
- * well-formedness rule but it is however a change.
- */
 public class CrAttrNameConflict extends CrUML {
 
-    /**
-     * The constructor.
-     *
-     */
-    public CrAttrNameConflict() {
-        setupHeadAndDesc();
-	addSupportedDecision(UMLDecision.INHERITANCE);
-	addSupportedDecision(UMLDecision.STORAGE);
-	addSupportedDecision(UMLDecision.NAMING);
-	setKnowledgeTypes(Critic.KT_SYNTAX);
-	addTrigger("structuralFeature");
-	addTrigger("feature_name");
+  public CrAttrNameConflict() {
+    setHeadline("Revise MAttribute Names to Avoid Conflict");
+    sd("Attributes must have distinct names.  This may because of an inherited "+
+       "attribute. \n\n"+
+       "Clear and unambiguous names are key to code generation and producing an "+
+       "understandable and maintainable design.\n\n"+
+       "To fix this, use the \"Next>\" button, or manually select the one of the "+
+       "conflicting attributes of this class and change its name.");
+
+    addSupportedDecision(CrUML.decINHERITANCE);
+    addSupportedDecision(CrUML.decSTORAGE);
+    addSupportedDecision(CrUML.decNAMING);
+    setKnowledgeTypes(Critic.KT_SYNTAX);
+    addTrigger("structuralFeature");
+    addTrigger("feature_name");
+  }
+
+  public boolean predicate2(Object dm, Designer dsgr) {
+    if (!(dm instanceof MClassifier)) return NO_PROBLEM;
+    MClassifier cls = (MClassifier) dm;
+    Collection str = cls.getFeatures();
+    if (str == null) return NO_PROBLEM;
+    Iterator enum = str.iterator();
+    Vector namesSeen = new Vector();
+    // warn about inheritied name conflicts, different critic?
+    while (enum.hasNext()) {
+      MFeature f = (MFeature) enum.next();
+      if (!(f instanceof MStructuralFeature))
+        continue;
+      MStructuralFeature sf = (MStructuralFeature) f;
+      String sfName = sf.getName();
+      if ("".equals(sfName)) continue;
+      String nameStr = sfName;
+      if (nameStr.length() == 0) continue;
+      if (namesSeen.contains(nameStr)) return PROBLEM_FOUND;
+      namesSeen.addElement(nameStr);
     }
+    return NO_PROBLEM;
+  }
 
-    /**
-     * Examines the classifier and tells if we have two attributes
-     * with the same name. Comparison is done with equals (contains).
-     *
-     * @param dm is the classifier
-     * @param dsgr is not used.
-     * @return true if there are two with the same name.
-     */
-    public boolean predicate2(Object dm, Designer dsgr) {
-	if (!(Model.getFacade().isAClassifier(dm))) return NO_PROBLEM;
-
-	Vector namesSeen = new Vector();
-
-	Iterator attrs = Model.getFacade().getAttributes(dm).iterator();
-	while (attrs.hasNext()) {
-	    String name = Model.getFacade().getName(attrs.next());
-	    if (name == null || name.length() == 0) continue;
-
-	    if (namesSeen.contains(name)) return PROBLEM_FOUND;
-	    namesSeen.addElement(name);
-	}
-	return NO_PROBLEM;
-    }
-
-    /**
-     * @see org.argouml.cognitive.Poster#getClarifier()
-     */
-    public Icon getClarifier() {
-	return ClAttributeCompartment.getTheInstance();
-    }
+  public Icon getClarifier() {
+    return ClAttributeCompartment.TheInstance;
+  }
 
 } /* end class CrAttrNameConflict.java */
 

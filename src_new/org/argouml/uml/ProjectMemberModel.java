@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,70 +23,104 @@
 
 package org.argouml.uml;
 
-import org.argouml.kernel.AbstractProjectMember;
-import org.argouml.kernel.Project;
-import org.argouml.model.Model;
+import java.net.URL;
+import java.io.*;
+import javax.swing.*;
+
+import org.argouml.xml.xmi.XMIParser;
+import ru.novosoft.uml.model_management.MModel;
+import ru.novosoft.uml.foundation.core.MNamespace;
+import ru.novosoft.uml.xmi.*;
+
+import org.tigris.gef.util.Dbg;
+
+import org.argouml.kernel.*;
+import org.argouml.ui.*;
 
 /**
  * @author Piotr Kaminski
  */
-public class ProjectMemberModel extends AbstractProjectMember {
 
-    private static final String MEMBER_TYPE = "xmi";
-    private static final String FILE_EXT = "." + MEMBER_TYPE;
 
-    private Object model;
+/** This file updated by Jim Holt 1/17/00 for nsuml support **/
 
-    /**
-     * The constructor.
-     *
-     * @param m the model
-     * @param p the project
-     */
-    public ProjectMemberModel(Object m, Project p) {
 
-        super(p.getBaseName() + FILE_EXT, p);
+public class ProjectMemberModel extends ProjectMember {
 
-        if (!Model.getFacade().isAModel(m))
-            throw new IllegalArgumentException();
+  ////////////////////////////////////////////////////////////////
+  // constants
 
-        setModel(m);
+  public static final String MEMBER_TYPE = "xmi";
+  public static final String FILE_EXT = "." + MEMBER_TYPE;
+
+  ////////////////////////////////////////////////////////////////
+  // instance variables
+
+  private MModel _model;
+
+  ////////////////////////////////////////////////////////////////
+  // constructors
+
+  public ProjectMemberModel(String name, Project p) { super(name, p); }
+
+  public ProjectMemberModel(MModel m, Project p) {
+    super(p.getBaseName() + FILE_EXT, p);
+    setModel(m);
+  }
+
+  ////////////////////////////////////////////////////////////////
+  // accessors
+
+  public MModel getModel() { return _model; }
+  protected void setModel(MModel model) { _model = model; }
+
+  public String getName() {
+    return _project.getBaseName() + FILE_EXT;
+  }
+  public void setName(String s) { }
+  public String getType() { return MEMBER_TYPE; }
+  public String getFileExtension() { return FILE_EXT; }
+
+
+  ////////////////////////////////////////////////////////////////
+  // actions
+
+  public void load() throws java.io.IOException, org.xml.sax.SAXException {
+    Dbg.log(getClass().getName(), "Reading " + getURL());
+    XMIParser.SINGLETON.readModels(_project,getURL());
+    _model = XMIParser.SINGLETON.getCurModel();
+    _project._UUIDRefs = XMIParser.SINGLETON.getUUIDRefs();
+    Dbg.log(getClass().getName(), "Done reading " + getURL());
+  }
+
+  public void save(String path, boolean overwrite) {
+
+    if (!path.endsWith("/")) path += "/";
+    String fullpath = path + getName();
+
+    try {
+      ProjectBrowser pb = ProjectBrowser.TheInstance;
+      System.out.println("Writing " + fullpath + "...");
+      pb.showStatus("Writing " + fullpath + "...");
+      File f = new File(fullpath);
+      if (f.exists() && !overwrite) {
+	String t = "Overwrite " + fullpath;
+	int response =
+	  JOptionPane.showConfirmDialog(pb, t, t,
+					JOptionPane.YES_NO_OPTION);
+	if (response == JOptionPane.NO_OPTION) return;
+      }
+
+      XMIWriter writer = new XMIWriter(_model,fullpath);
+      writer.gen();
+
+      System.out.println("Wrote " + fullpath);
+      pb.showStatus("Wrote " + fullpath);
     }
+    catch (Exception ex) {
+      ex.printStackTrace();
+    }
+  }
 
-    /**
-     * @return the model
-     */
-    public Object getModel() {
-        return model;
-    }
-
-    /**
-     * @param m the model
-     */
-    protected void setModel(Object m) {
-        model = /*(MModel)*/m;
-    }
-
-    /**
-     * @see org.argouml.kernel.AbstractProjectMember#getType()
-     */
-    public String getType() {
-        return MEMBER_TYPE;
-    }
-    /**
-     * @see org.argouml.kernel.AbstractProjectMember#getZipFileExtension()
-     */
-    public String getZipFileExtension() {
-        return FILE_EXT;
-    }
-    
-    /**
-     * There is not yet any repair task for the UML model but this is open to
-     * implement as and when any problems areas are discovered.
-     * @see org.argouml.kernel.ProjectMember#repair()
-     */
-    public String repair() {
-        return "";
-    }
 
 } /* end class ProjectMemberModel */

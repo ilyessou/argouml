@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,107 +21,71 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+
+// File: CrUnconventionalClassName.java
+// Classes: CrUnconventionalClassName
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.cognitive.critics;
 
-import javax.swing.Icon;
+import java.util.*;
+import javax.swing.*;
 
-import org.argouml.cognitive.Designer;
-import org.argouml.cognitive.ToDoItem;
-import org.argouml.cognitive.critics.Critic;
-import org.argouml.cognitive.ui.Wizard;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
+import ru.novosoft.uml.model_management.*;
 
-/**
- * Critic to detect whether a class name obeys to certain rules.
- */
-public class CrUnconventionalClassName extends AbstractCrUnconventionalName {
+import org.argouml.kernel.*;
+import org.argouml.cognitive.*;
+import org.argouml.cognitive.critics.*;
 
-    /**
-     * The constructor.
-     */
-    public CrUnconventionalClassName() {
-        setupHeadAndDesc();
-	addSupportedDecision(UMLDecision.NAMING);
-	setKnowledgeTypes(Critic.KT_SYNTAX);
-	addTrigger("name");
+public class CrUnconventionalClassName extends CrUML {
+
+  public CrUnconventionalClassName() {
+    setHeadline("Capitalize Class Name <ocl>self</ocl>");
+    sd("Normally classes begin with a capital letter. The name '<ocl>self</ocl>' "+
+       "is unconventional because it does not begin with a capital.\n\n"+
+       "Following good naming conventions help to improve "+
+       "the understandability and maintainability of the design. \n\n"+
+       "To fix this, use the \"Next>\" button, or manually select <ocl>self</ocl> "+
+       "and use the Properties tab to give it a different name.");
+    addSupportedDecision(CrUML.decNAMING);
+    setKnowledgeTypes(Critic.KT_SYNTAX);
+    addTrigger("name");
+  }
+
+  public boolean predicate2(Object dm, Designer dsgr) {
+    if (!(dm instanceof MClass) && !(dm instanceof MInterface))
+      return NO_PROBLEM;
+    MClassifier cls = (MClassifier) dm;
+    String myName = cls.getName();
+    if (myName == null || myName.equals("")) return NO_PROBLEM;
+    String nameStr = myName;
+    if (nameStr == null || nameStr.length() == 0) return NO_PROBLEM;
+    char initialChar = nameStr.charAt(0);
+    if (!Character.isUpperCase(initialChar)) return PROBLEM_FOUND;
+    return NO_PROBLEM;
+  }
+
+  public Icon getClarifier() {
+    return ClClassName.TheInstance;
+  }
+
+  public void initWizard(Wizard w) {
+    if (w instanceof WizMEName) {
+      ToDoItem item = w.getToDoItem();
+      MModelElement me = (MModelElement) item.getOffenders().elementAt(0);
+      String sug = me.getName();
+      sug = sug.substring(0,1).toUpperCase() + sug.substring(1);
+      String ins = "Change the class name to start with an "+
+	"uppercase letter.";
+      ((WizMEName)w).setInstructions(ins);
+      ((WizMEName)w).setSuggestion(sug);
     }
+  }
+  public Class getWizardClass(ToDoItem item) { return WizMEName.class; }
 
-    /**
-     * @see org.argouml.uml.cognitive.critics.CrUML#predicate2(
-     * java.lang.Object, org.argouml.cognitive.Designer)
-     */
-    public boolean predicate2(Object dm, Designer dsgr) {
-	if (!(Model.getFacade().isAClass(dm))
-            && !(Model.getFacade().isAInterface(dm))) {
-	    return NO_PROBLEM;
-	}
-	Object cls = /*(MClassifier)*/ dm;
-	String myName = Model.getFacade().getName(cls);
-	if (myName == null || myName.equals("")) {
-	    return NO_PROBLEM;
-	}
-	String nameStr = myName;
-	if (nameStr == null || nameStr.length() == 0) {
-	    return NO_PROBLEM;
-	}
-	char initialChar = nameStr.charAt(0);
-	if (Character.isDigit(initialChar) 
-                || !Character.isUpperCase(initialChar)) {
-	    return PROBLEM_FOUND;
-	}
-	return NO_PROBLEM;
-    }
-
-    /**
-     * @see org.argouml.cognitive.Poster#getClarifier()
-     */
-    public Icon getClarifier() {
-	return ClClassName.getTheInstance();
-    }
-
-    /**
-     * @see org.argouml.cognitive.critics.Critic#initWizard(
-     *         org.argouml.cognitive.ui.Wizard)
-     */
-    public void initWizard(Wizard w) {
-	if (w instanceof WizMEName) {
-	    ToDoItem item = (ToDoItem) w.getToDoItem();
-	    Object me = /*(MModelElement)*/ item.getOffenders().elementAt(0);
-	    String sug = Model.getFacade().getName(me);
-	    sug = computeSuggestion(sug);
-	    String ins = super.getInstructions();
-	    ((WizMEName) w).setInstructions(ins);
-	    ((WizMEName) w).setSuggestion(sug);
-	}
-    }
-
-    /**
-     * @see org.argouml.uml.cognitive.critics.AbstractCrUnconventionalName#computeSuggestion(java.lang.String)
-     */
-    public String computeSuggestion(String sug) {
-        if (sug == null) {
-            return "";
-        }
-        StringBuffer sb = new StringBuffer(sug);
-        while (sb.length() > 0 && Character.isDigit(sb.charAt(0))) {
-            sb.deleteCharAt(0);
-        }
-        if (sb.length() == 0) {
-            return "";
-        }
-        return sb.replace(0, 1,
-                Character.toString(Character.toUpperCase(sb.charAt(0))))
-                .toString();
-    }
-
-    /**
-     * @see org.argouml.cognitive.critics.Critic#getWizardClass(org.argouml.cognitive.ToDoItem)
-     */
-    public Class getWizardClass(ToDoItem item) { return WizMEName.class; }
-
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = -3341858698991522822L;
 } /* end class CrUnconventionalClassName */
+

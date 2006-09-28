@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,159 +21,68 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: CrNoAssociations.javoa
+// Classes: CrNoAssociations
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.cognitive.critics;
 
-import java.util.Collection;
-import java.util.Iterator;
+import java.util.*;
+import javax.swing.*;
 
-import org.argouml.cognitive.Designer;
-import org.argouml.cognitive.critics.Critic;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
+import ru.novosoft.uml.foundation.extension_mechanisms.*;
 
-/**
- * A critic to detect when a classifier might require
- * associations. It checks for inherited associations as well and
- * keeps silent if it finds any.  For usecases it checks the
- * extend/include relationships as well.
- * If the classifier has dependencies defined, then the critic 
- * remains silent (see issue 1129).
- */
+import org.argouml.cognitive.*;
+import org.argouml.cognitive.critics.*;
+
+/** A critic to detect when a class can never have instances (of
+ *  itself of any subclasses). */
+
 public class CrNoAssociations extends CrUML {
 
-    /**
-     * Constructor.
-     */
-    public CrNoAssociations() {
-        setupHeadAndDesc();
-        addSupportedDecision(UMLDecision.RELATIONSHIPS);
-        setKnowledgeTypes(Critic.KT_COMPLETENESS);
-        addTrigger("associationEnd");
-    }
+  public CrNoAssociations() {
+    setHeadline("Add Associations to <ocl>self</ocl>");
+    sd("You have not yet specified any Associations for <ocl>self</ocl>. "+
+       "Normally classes, actors and use cases are associated with others. \n\n"+
+       "Defining the associations between objects an important "+
+       "part of your design. \n\n"+
+       "To fix this, press the \"Next>\" button, or add associations manually "+
+       "by clicking on the association tool in the tool bar and dragging "+
+       "from <ocl>self</ocl> to another node. ");
 
-    /**
-     * Decide whether the given design material causes a problem.
-     *
-     * @param dm the object to criticize
-     * the designer who decides the design process
-     * @param dsgr the designer
-     * @return <CODE>PROBLEM_FOUND</CODE> if there is a problem,
-     *         otherwise <CODE>NO_PROBLEM</CODE>
-     */
-    public boolean predicate2(Object dm, Designer dsgr) {
-        if (!(Model.getFacade().isAClassifier(dm)))
-            return NO_PROBLEM;
-        if (!(Model.getFacade().isPrimaryObject(dm)))
-            return NO_PROBLEM;
+    addSupportedDecision(CrUML.decRELATIONSHIPS);
+    setKnowledgeTypes(Critic.KT_COMPLETENESS);
+    addTrigger("associationEnd");
+  }
 
-        // If the classifier does not have a name,
-        // then no problem - the model is not finished anyhow.
-        if ((Model.getFacade().getName(dm) == null)
-	    || ("".equals(Model.getFacade().getName(dm)))) {
-            return NO_PROBLEM;
-	}
+  public boolean predicate2(Object dm, Designer dsgr) {
+    if (!(dm instanceof MClassifier)) return NO_PROBLEM;
+    MClassifier cls = (MClassifier) dm;
+    //if (cls.containsStereotype(MStereotype.UTILITY)) return NO_PROBLEM;
+    // stereotype <<record>>?
+    //needs-more-work: different critic or special message for classes
+    //that inherit all ops but define none of their own.
 
-        // Abstract elements do not necessarily require associations
-        if (Model.getFacade().isAGeneralizableElement(dm)
-	    && Model.getFacade().isAbstract(dm)) {
-            return NO_PROBLEM;
-        }
+    Collection asc = getInheritedAssociationEnds(cls);
+    if (asc == null || asc.size() == 0) return PROBLEM_FOUND;
+    return NO_PROBLEM;
+  }
 
-        // Types can probably have associations, but we should not nag at them
-        // not having any.
-        // utility is a namespace collection - also not strictly required
-        // to have associations.
-        if (Model.getFacade().isType(dm))
-            return NO_PROBLEM;
-        if (Model.getFacade().isUtility(dm))
-            return NO_PROBLEM;
-
-        // See issue 1129: If the classifier has dependencies,
-        // then mostly there is no problem. 
-        if (Model.getFacade().getClientDependencies(dm).size() > 0)
-            return NO_PROBLEM;
-        if (Model.getFacade().getSupplierDependencies(dm).size() > 0)
-            return NO_PROBLEM;
-        
-        // special cases for use cases
-        // Extending use cases and use case that are being included are
-        // not required to have associations.
-        if (Model.getFacade().isAUseCase(dm)) {
-            Object usecase = dm;
-            Collection includes = Model.getFacade().getIncludes(usecase);
-            if (includes!=null && includes.size()>=1) {
-                return NO_PROBLEM;
-            }
-            Collection extend = Model.getFacade().getExtends(usecase);
-            if (extend!=null && extend.size()>=1) {
-                return NO_PROBLEM;
-            }
-        }
-        
-        
-
-        //TODO: different critic or special message for classes
-        //that inherit all ops but define none of their own.
-
-        if (findAssociation(dm, 0))
-            return NO_PROBLEM;
-        return PROBLEM_FOUND;
-    }
-
-    /**
-     * @param dm The classifier to examine.
-     * @param depth Number of levels searched.
-     * @return true if an association can be found in this classifier
-     *		or in any of its generalizations.
-     */
-    private boolean findAssociation(Object dm, int depth) {
-        if (Model.getFacade().getAssociationEnds(dm).iterator().hasNext())
-            return true;
-
-        if (depth > 50)
-            return false;
-
-        Iterator iter = Model.getFacade().getGeneralizations(dm).iterator();
-
-        while (iter.hasNext()) {
-            Object parent = Model.getFacade().getParent(iter.next());
-
-            if (parent == dm)
-                continue;
-
-            if (Model.getFacade().isAClassifier(parent))
-                if (findAssociation(parent, depth + 1))
-                    return true;
-        }
-
-        if (Model.getFacade().isAUseCase(dm)) {
-            // for use cases we need to check for extend/includes
-            // actors cannot have them, so no need to check
-            Iterator iter2 = Model.getFacade().getExtends(dm).iterator();
-            while (iter2.hasNext()) {
-                Object parent = Model.getFacade().getExtension(iter2.next());
-
-                if (parent == dm)
-                    continue;
-
-                if (Model.getFacade().isAClassifier(parent))
-                    if (findAssociation(parent, depth + 1))
-                        return true;
-            }
-
-            Iterator iter3 = Model.getFacade().getIncludes(dm).iterator();
-            while (iter3.hasNext()) {
-                Object parent = Model.getFacade().getBase(iter3.next());
-
-                if (parent == dm)
-                    continue;
-
-                if (Model.getFacade().isAClassifier(parent))
-                    if (findAssociation(parent, depth + 1))
-                        return true;
-            }
-        }
-        return false;
-    }
-
+  private Collection getInheritedAssociationEnds(MClassifier cls)
+  {
+     Vector res = new Vector(cls.getAssociationEnds());
+     Collection inh = cls.getGeneralizations();
+     for (Iterator iter = inh.iterator(); iter.hasNext();) {
+       MGeneralization gen = (MGeneralization)iter.next();
+       if (gen.getParent() instanceof MClassifier) {
+         Collection superassocs = getInheritedAssociationEnds((MClassifier)gen.getParent());
+         res.addAll(superassocs);
+       };
+     };
+     return res;
+  };
 } /* end class CrNoAssociations */
+

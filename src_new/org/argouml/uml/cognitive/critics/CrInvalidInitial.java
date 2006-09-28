@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,54 +21,53 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: CrInvalidInitial.java
+// Classes: CrInvalidInitial
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.cognitive.critics;
 
-import java.util.Collection;
+import java.util.*;
 
-import org.argouml.cognitive.Designer;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
+import ru.novosoft.uml.behavior.state_machines.*;
 
+import org.argouml.cognitive.*;
 
-/**
- * A critic to detect when an initial state has more than one
- * outgoing transitions.  Implements a constraint from the UML
- * 1.1 standard: page 10, MPseudostate [1].
- *
- * @author jrobbins
- */
+/** A critic to detect when an initial state has more than one
+ *  outgoing transitions.  Implements a constraint from the UML
+ *  1.1 standard: page 10, MPseudostate [1]. */
+
 public class CrInvalidInitial extends CrUML {
 
-    /**
-     * The constructor.
-     */
-    public CrInvalidInitial() {
-        setupHeadAndDesc();
-	addSupportedDecision(UMLDecision.STATE_MACHINES);
-	addTrigger("outgoing");
-    }
+  public CrInvalidInitial() {
+    setHeadline("Remove Extra Outgoing Transitions");
+    sd("This initial state has more than one outgoing transitions. Normally "+
+       "initial states have exactly one outgoing transition. \n\n"+
+       "Defining correct state transitions is needed to complete the  "+
+       "behavioral specification part of your design.  \n\n"+
+       "To fix this, press the \"Next>\" button, or remove transitions  "+
+       "manually by clicking on transition in the diagram and pressing the "+
+       "Delete key. ");
 
-    /**
-     * @see org.argouml.uml.cognitive.critics.CrUML#predicate2(
-     * java.lang.Object, org.argouml.cognitive.Designer)
-     */
-    public boolean predicate2(Object dm, Designer dsgr) {
-	if (!(Model.getFacade().isAPseudostate(dm))) {
-	    return NO_PROBLEM;
-	}
-	Object k = Model.getFacade().getPseudostateKind(dm);
-	if (!Model.getFacade().equalsPseudostateKind(
-	        k,
-	        Model.getPseudostateKind().getInitial())) {
-	    return NO_PROBLEM;
-	}
-	Collection outgoing = Model.getFacade().getOutgoings(dm);
-	int nOutgoing = outgoing == null ? 0 : outgoing.size();
-	if (nOutgoing > 1) {
-	    return PROBLEM_FOUND;
-	}
-	return NO_PROBLEM;
-    }
+    addSupportedDecision(CrUML.decSTATE_MACHINES);
+    addTrigger("outgoing");
+  }
+
+  public boolean predicate2(Object dm, Designer dsgr) {
+    if (!(dm instanceof MPseudostate)) return NO_PROBLEM;
+    MPseudostate ps = (MPseudostate) dm;
+    MPseudostateKind k = ps.getKind();
+    if (!MPseudostateKind.INITIAL.equals(k)) return NO_PROBLEM;
+    Collection outgoing = ps.getOutgoings();
+    //Vector incoming = ps.getIncoming();
+    int nOutgoing = outgoing == null ? 0 : outgoing.size();
+    //int nIncoming = incoming == null ? 0 : incoming.size();
+    if (nOutgoing > 1) return PROBLEM_FOUND;
+    return NO_PROBLEM;
+  }
 
 } /* end class CrInvalidInitial */
 

@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,131 +23,138 @@
 
 package org.argouml.cognitive.ui;
 
-import java.util.Enumeration;
-import java.util.Vector;
+import java.util.*;
+import javax.swing.*;
+import javax.swing.event.*;
+import javax.swing.tree.*;
 
-import javax.swing.event.TreeModelListener;
-import javax.swing.tree.TreePath;
+import org.argouml.ui.*;
+import org.argouml.cognitive.*;
 
-import org.argouml.cognitive.Designer;
-import org.argouml.cognitive.Goal;
-import org.argouml.cognitive.ToDoItem;
-import org.argouml.cognitive.ToDoList;
+public class GoListToGoalsToItems implements TreeModelPrereqs {
+  
+  ////////////////////////////////////////////////////////////////
+  // TreeModel implementation
+  
+  public Object getRoot() {
+    System.out.println("getRoot should never be called");
+    return null;
+  } 
+  public void setRoot(Object r) { }
 
-
-/**
- * Rule for sorting the ToDo list: Goal -> Item.
- *
- */
-public class GoListToGoalsToItems extends AbstractGoList {
-
-    ////////////////////////////////////////////////////////////////
-    // TreeModel implementation
-
-
-    /**
-     * @see javax.swing.tree.TreeModel#getChild(java.lang.Object, int)
-     */
-    public Object getChild(Object parent, int index) {
-	if (parent instanceof ToDoList) {
-	    return getGoals().elementAt(index);
-	}
-	if (parent instanceof Goal) {
-	    Goal g = (Goal) parent;
-	    Enumeration itemEnum =
-		Designer.theDesigner().getToDoList().elements();
-	    while (itemEnum.hasMoreElements()) {
-		ToDoItem item = (ToDoItem) itemEnum.nextElement();
-		if (item.getPoster().supports(g)) {
-		    if (index == 0) return item;
-		    index--;
-		}
-	    }
-	}
-	throw new IndexOutOfBoundsException("getChild shouldnt get here "
-					    + "GoListToGoalsToItems");
+  public Object getChild(Object parent, int index) {
+    if (parent instanceof ToDoList) {
+      return getGoals().elementAt(index);
     }
-
-    /**
-     * @see javax.swing.tree.TreeModel#getChildCount(java.lang.Object)
-     */
-    public int getChildCount(Object parent) {
-	if (parent instanceof ToDoList) {
-	    return getGoals().size();
-	}
-	if (parent instanceof Goal) {
-	    Goal g = (Goal) parent;
-	    Enumeration itemEnum =
-		Designer.theDesigner().getToDoList().elements();
-	    int count = 0;
-	    while (itemEnum.hasMoreElements()) {
-		ToDoItem item = (ToDoItem) itemEnum.nextElement();
-		if (item.getPoster().supports(g)) count++;
-	    }
-	    return count;
-	}
-	return 0;
+    if (parent instanceof Goal) {
+      // instead of makning a new vector, decrement index, return when
+      // found and index == 0
+      Vector candidates = new Vector();
+      Goal g = (Goal) parent;
+      java.util.Enumeration itemEnum = Designer.TheDesigner.getToDoList().elements();
+      while (itemEnum.hasMoreElements()) {
+	ToDoItem item = (ToDoItem) itemEnum.nextElement();
+	if (item.getPoster().supports(g)) candidates.addElement(item);
+      }
+      return candidates.elementAt(index);
     }
-
-    /**
-     * @see javax.swing.tree.TreeModel#getIndexOfChild(
-     * java.lang.Object, java.lang.Object)
-     */
-    public int getIndexOfChild(Object parent, Object child) {
-	if (parent instanceof ToDoList) {
-	    return getGoals().indexOf(child);
-	}
-	if (parent instanceof Goal) {
-	    // instead of makning a new vector, decrement index, return when
-	    // found and index == 0
-	    Vector candidates = new Vector();
-	    Goal g = (Goal) parent;
-	    Enumeration itemEnum =
-		Designer.theDesigner().getToDoList().elements();
-	    while (itemEnum.hasMoreElements()) {
-		ToDoItem item = (ToDoItem) itemEnum.nextElement();
-		if (item.getPoster().supports(g)) candidates.addElement(item);
-	    }
-	    return candidates.indexOf(child);
-	}
-	return -1;
+    System.out.println("getChild shouldnt get here GoListToGoalsToItems");
+    return null;
+  }
+  
+  public int getChildCount(Object parent) {
+    if (parent instanceof ToDoList) {
+      return getGoals().size();
     }
-
-    /**
-     * @see javax.swing.tree.TreeModel#isLeaf(java.lang.Object)
-     */
-    public boolean isLeaf(Object node) {
-	if (node instanceof ToDoList) return false;
-	if (node instanceof Goal && getChildCount(node) > 0) return false;
-	return true;
+    if (parent instanceof Goal) {
+      // instead of makning a new vector, decrement index, return when
+      // found and index == 0
+      Vector candidates = new Vector();
+      Goal g = (Goal) parent;
+      java.util.Enumeration itemEnum = Designer.TheDesigner.getToDoList().elements();
+      while (itemEnum.hasMoreElements()) {
+	ToDoItem item = (ToDoItem) itemEnum.nextElement();
+	if (item.getPoster().supports(g)) candidates.addElement(item);
+      }
+      return candidates.size();
     }
-
-    /**
-     * @see javax.swing.tree.TreeModel#valueForPathChanged(
-     * javax.swing.tree.TreePath, java.lang.Object)
-     */
-    public void valueForPathChanged(TreePath path, Object newValue) { }
-
-    /**
-     * @see javax.swing.tree.TreeModel#addTreeModelListener(javax.swing.event.TreeModelListener)
-     */
-    public void addTreeModelListener(TreeModelListener l) { }
-
-    /**
-     * @see javax.swing.tree.TreeModel#removeTreeModelListener(javax.swing.event.TreeModelListener)
-     */
-    public void removeTreeModelListener(TreeModelListener l) { }
-
-
-
-    ////////////////////////////////////////////////////////////////
-    // utility methods
-
-    /**
-     * @return the goals
-     */
-    public Vector getGoals() {
-	return Designer.theDesigner().getGoalModel().getGoals();
+    return 0;
+  }
+  
+  public int getIndexOfChild(Object parent, Object child) {
+    if (parent instanceof ToDoList) {
+      return getGoals().indexOf(child);
     }
+    if (parent instanceof Goal) {
+      // instead of makning a new vector, decrement index, return when
+      // found and index == 0
+      Vector candidates = new Vector();
+      Goal g = (Goal) parent;
+      java.util.Enumeration itemEnum = Designer.TheDesigner.getToDoList().elements();
+      while (itemEnum.hasMoreElements()) {
+	ToDoItem item = (ToDoItem) itemEnum.nextElement();
+	if (item.getPoster().supports(g)) candidates.addElement(item);
+      }
+      return candidates.indexOf(child);
+    }
+    return -1;
+  }
 
+  public boolean isLeaf(Object node) {
+    if (node instanceof ToDoList) return false;
+    if (node instanceof Goal && getChildCount(node) > 0) return false;
+    return true;
+  }
+
+  public void valueForPathChanged(TreePath path, Object newValue) { }
+  public void addTreeModelListener(TreeModelListener l) { }
+  public void removeTreeModelListener(TreeModelListener l) { }
+
+
+
+  ////////////////////////////////////////////////////////////////
+  // utility methods
+
+  public Vector getGoals() {
+    return Designer.TheDesigner.getGoalModel().getGoals();
+  }
+  
+  public Vector getPrereqs() {
+    Vector res = new Vector();
+    res.addElement(ToDoList.class);
+    return res;
+  }
+
+  public Vector getProvidedTypes() {
+    Vector pros = new Vector();
+    pros.addElement(Goal.class);
+    pros.addElement(ToDoItem.class);
+    return pros;
+  }
+
+  //     Vector removes = new Vector();
+//     java.util.Enumeration enum = _pseudoNodes.elements();
+//     while (enum.hasMoreElements()) {
+//       ToDoPseudoNode node = (ToDoPseudoNode) enum.nextElement();
+//       if (!isNeeded(node)) removes.addElement(node);
+//     }
+//     enum = removes.elements();
+//     while (enum.hasMoreElements())
+//       _pseudoNodes.removeElement(enum.nextElement());
+//     enum = _root.elements();
+//     while (enum.hasMoreElements()) {
+//       ToDoItem item = (ToDoItem) enum.nextElement();
+//       addNewPseudoNodes(item);
+//     }
+    
+//     Object path[] = new Object[2];
+//     path[0] = _root;
+//     enum = _pseudoNodes.elements();
+//     while (enum.hasMoreElements()) {
+//       ToDoPseudoNode node = (ToDoPseudoNode) enum.nextElement();
+//       path[1] = node;
+//       fireTreeStructureChanged(path);
+//     }
+
+  
 } /* end class GoListToGoalsToItems */

@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,148 +23,98 @@
 
 package org.argouml.cognitive.ui;
 
-import java.awt.Color;
-import java.awt.Component;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.*;
+import javax.swing.*;
+import javax.swing.event.*;
+import javax.swing.tree.*;
+import javax.swing.border.*;
+import javax.swing.plaf.basic.*;
+import javax.swing.plaf.metal.*;
 
-import javax.swing.ImageIcon;
-import javax.swing.JLabel;
-import javax.swing.JTree;
-import javax.swing.plaf.metal.MetalIconFactory;
-import javax.swing.tree.DefaultTreeCellRenderer;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.model_management.*;
+import org.argouml.cognitive.ui.PriorityNode;
+import org.argouml.cognitive.ui.KnowledgeTypeNode;
 
-import org.argouml.application.helpers.ResourceLoaderWrapper;
-import org.argouml.cognitive.Decision;
-import org.argouml.cognitive.Designer;
-import org.argouml.cognitive.Goal;
-import org.argouml.cognitive.Poster;
-import org.argouml.cognitive.ToDoItem;
-import org.argouml.model.Model;
-import org.argouml.uml.ui.UMLTreeCellRenderer;
-import org.tigris.gef.base.Diagram;
-import org.tigris.gef.base.Globals;
-import org.tigris.gef.presentation.Fig;
+import org.tigris.gef.util.Util;
 
+import org.argouml.cognitive.*;
+import org.argouml.uml.ui.*;
 
-/**
- * Displays an entry in the ToDo tree.
- *
- */
 public class ToDoTreeRenderer extends DefaultTreeCellRenderer {
-    ////////////////////////////////////////////////////////////////
-    // class variables
+  ////////////////////////////////////////////////////////////////
+  // class variables
+  public ImageIcon _PostIt0     = Util.loadIconResource("PostIt0");
+  public ImageIcon _PostIt25    = Util.loadIconResource("PostIt25");
+  public ImageIcon _PostIt50    = Util.loadIconResource("PostIt50");
+  public ImageIcon _PostIt75    = Util.loadIconResource("PostIt75");
+  public ImageIcon _PostIt99    = Util.loadIconResource("PostIt99");
+  public ImageIcon _PostIt100   = Util.loadIconResource("PostIt100");
+  //public ImageIcon _MultiPostIt = Util.loadIconResource("MultiPostIt");
 
-    // general icons for poster
-    private final ImageIcon postIt0     = lookupIconResource("PostIt0");
-    private final ImageIcon postIt25    = lookupIconResource("PostIt25");
-    private final ImageIcon postIt50    = lookupIconResource("PostIt50");
-    private final ImageIcon postIt75    = lookupIconResource("PostIt75");
-    private final ImageIcon postIt99    = lookupIconResource("PostIt99");
-    private final ImageIcon postIt100   = lookupIconResource("PostIt100");
+  protected UMLTreeCellRenderer _navRenderer = new UMLTreeCellRenderer();
 
-    // specialised icons for designer
-    private final ImageIcon postItD0    = lookupIconResource("PostItD0");
-    private final ImageIcon postItD25   = lookupIconResource("PostItD25");
-    private final ImageIcon postItD50   = lookupIconResource("PostItD50");
-    private final ImageIcon postItD75   = lookupIconResource("PostItD75");
-    private final ImageIcon postItD99   = lookupIconResource("PostItD99");
-    private final ImageIcon postItD100  = lookupIconResource("PostItD100");
+  ////////////////////////////////////////////////////////////////
+  // TreeCellRenderer implementation
 
-    private UMLTreeCellRenderer treeCellRenderer = new UMLTreeCellRenderer();
+  public Component getTreeCellRendererComponent(JTree tree, Object value,
+						boolean sel,
+						boolean expanded,
+						boolean leaf, int row,
+						boolean hasFocus) {
 
-    private static ImageIcon lookupIconResource(String name) {
-        return ResourceLoaderWrapper.lookupIconResource(name);
+    Component r = super.getTreeCellRendererComponent(tree, value, sel,
+						     expanded, leaf,
+						     row, hasFocus);
+
+    if (r instanceof JLabel) {
+      JLabel lab = (JLabel) r;
+      if (value instanceof ToDoItem) {
+	ToDoItem item = (ToDoItem) value;
+	if (item.getProgress() == 0) lab.setIcon(_PostIt0);
+	else if (item.getProgress() <= 25) lab.setIcon(_PostIt25);
+	else if (item.getProgress() <= 50) lab.setIcon(_PostIt50);
+	else if (item.getProgress() <= 75) lab.setIcon(_PostIt75);
+	else if (item.getProgress() <= 100) lab.setIcon(_PostIt99);
+	else lab.setIcon(_PostIt100);
+      }
+      else if (value instanceof Decision) {
+	lab.setIcon(MetalIconFactory.getTreeFolderIcon());
+      }
+      else if (value instanceof Goal) {
+	lab.setIcon(MetalIconFactory.getTreeFolderIcon());
+      }
+      else if (value instanceof Poster) {
+	lab.setIcon(MetalIconFactory.getTreeFolderIcon());
+      }
+      else if (value instanceof PriorityNode) {
+	lab.setIcon(MetalIconFactory.getTreeFolderIcon());
+      }
+      else if (value instanceof KnowledgeTypeNode) {
+	lab.setIcon(MetalIconFactory.getTreeFolderIcon());
+      }
+      else if (value instanceof MModelElement) {
+	return _navRenderer.getTreeCellRendererComponent(tree, value, sel,
+					      expanded, leaf, row, hasFocus);
+      }
+
+      String tip = lab.getText();
+      lab.setToolTipText(tip + " ");
+      tree.setToolTipText(tip + " ");
+
+      if (!sel)
+	lab.setBackground(getBackgroundNonSelectionColor());
+      else {
+	Color high = org.tigris.gef.base.Globals.getPrefs().getHighlightColor();
+	high = high.brighter().brighter();
+	lab.setBackground(high);
+      }
+      lab.setOpaque(sel);
     }
-
-    ////////////////////////////////////////////////////////////////
-    // TreeCellRenderer implementation
-
-    /**
-     * @see javax.swing.tree.TreeCellRenderer#getTreeCellRendererComponent(
-     * javax.swing.JTree, java.lang.Object, boolean, boolean, boolean, int,
-     * boolean)
-     */
-    public Component getTreeCellRendererComponent(JTree tree, Object value,
-    boolean sel,
-    boolean expanded,
-    boolean leaf, int row,
-    boolean hasFocus) {
-
-        Component r = super.getTreeCellRendererComponent(tree, value, sel,
-							 expanded, leaf,
-							 row, hasFocus);
-
-        if (r instanceof JLabel) {
-            JLabel lab = (JLabel) r;
-            if (value instanceof ToDoItem) {
-                ToDoItem item = (ToDoItem) value;
-                Poster post = item.getPoster();
-                if (post instanceof Designer) {
-                    if (item.getProgress() == 0) lab.setIcon(postItD0);
-                    else if (item.getProgress() <= 25) lab.setIcon(postItD25);
-                    else if (item.getProgress() <= 50) lab.setIcon(postItD50);
-                    else if (item.getProgress() <= 75) lab.setIcon(postItD75);
-                    else if (item.getProgress() <= 100) lab.setIcon(postItD99);
-                    else lab.setIcon(postItD100);
-                } else {
-                    if (item.getProgress() == 0) lab.setIcon(postIt0);
-                    else if (item.getProgress() <= 25) lab.setIcon(postIt25);
-                    else if (item.getProgress() <= 50) lab.setIcon(postIt50);
-                    else if (item.getProgress() <= 75) lab.setIcon(postIt75);
-                    else if (item.getProgress() <= 100) lab.setIcon(postIt99);
-                    else lab.setIcon(postIt100);
-                }
-
-            } else if (value instanceof Decision) {
-                lab.setIcon(MetalIconFactory.getTreeFolderIcon());
-            } else if (value instanceof Goal) {
-                lab.setIcon(MetalIconFactory.getTreeFolderIcon());
-            } else if (value instanceof Poster) {
-                lab.setIcon(MetalIconFactory.getTreeFolderIcon());
-            } else if (value instanceof PriorityNode) {
-                lab.setIcon(MetalIconFactory.getTreeFolderIcon());
-            } else if (value instanceof KnowledgeTypeNode) {
-                lab.setIcon(MetalIconFactory.getTreeFolderIcon());
-            } else if (value instanceof Diagram) {
-                return treeCellRenderer.getTreeCellRendererComponent(tree,
-								 value,
-								 sel,
-								 expanded,
-								 leaf,
-								 row,
-								 hasFocus);
-            } else {
-                Object newValue = value;
-                if (newValue instanceof Fig) {
-                    newValue = ((Fig) value).getOwner();
-                }
-                if (Model.getFacade().isAModelElement(newValue)) {
-                    return treeCellRenderer.getTreeCellRendererComponent(tree,
-								     newValue,
-								     sel,
-								     expanded,
-								     leaf,
-								     row,
-								     hasFocus);
-                }
-            }
-
-
-
-            String tip = lab.getText() + " ";
-            lab.setToolTipText(tip);
-            tree.setToolTipText(tip);
-
-            if (!sel) {
-                lab.setBackground(getBackgroundNonSelectionColor());
-            } else {
-                Color high = Globals.getPrefs().getHighlightColor();
-                high = high.brighter().brighter();
-                lab.setBackground(high);
-            }
-            lab.setOpaque(sel);
-        }
-        return r;
-    }
+    return r;
+  }
 
 
 } /* end class ToDoTreeRenderer */

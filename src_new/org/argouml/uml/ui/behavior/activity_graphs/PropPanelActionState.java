@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,63 +21,263 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+
+// File: PropPanelState.java
+// Classes: PropPanelState
+// Original Author: your email address here
+// $Id$
+
 package org.argouml.uml.ui.behavior.activity_graphs;
 
-import javax.swing.ImageIcon;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.*;
+import java.beans.*;
+import javax.swing.*;
+import javax.swing.event.*;
+import javax.swing.tree.*;
+import javax.swing.text.*;
+import javax.swing.table.*;
+import javax.swing.plaf.metal.*;
+import javax.swing.border.*;
 
-import org.argouml.i18n.Translator;
-import org.tigris.swidgets.Orientation;
-import org.argouml.uml.ui.behavior.state_machines.AbstractPropPanelState;
-import org.argouml.util.ConfigLoader;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.*;
+import ru.novosoft.uml.foundation.data_types.*;
+import ru.novosoft.uml.model_management.*;
+import ru.novosoft.uml.behavior.state_machines.*;
+import ru.novosoft.uml.behavior.common_behavior.*;
+import ru.novosoft.uml.behavior.activity_graphs.*;
 
-/**
- * User interface panel shown at the bottom of the screen that allows the user
- * to edit the properties of the selected UML model element.
- */
-public class PropPanelActionState extends AbstractPropPanelState {
+import org.argouml.kernel.*;
+import org.argouml.ui.*;
+import org.argouml.uml.ui.*;
+import org.argouml.uml.generator.*;
 
-    /**
-     * The serial version.
-     */
-    private static final long serialVersionUID = 4936258091606712050L;
+/** User interface panel shown at the bottom of the screen that allows
+ *  the user to edit the properties of the selected UML model
+ *  element. */
 
-    /**
-     * Construct a default property panel for an Action State.
-     */
-    public PropPanelActionState() {
-        this("Action State", lookupIcon("ActionState"), 
-                ConfigLoader.getTabPropsOrientation());
-    }
+public class PropPanelActionState extends PropPanel {
 
-    /**
-     * Construct a property panel for an Action State with the given params.
-     *
-     * @param name the name of the properties panel
-     * @param icon the icon to be shown next to the name
-     * @param orientation the orientation of the panel
-     */
-    public PropPanelActionState(String name, ImageIcon icon,
-            Orientation orientation) {
+  ////////////////////////////////////////////////////////////////
+  // constants
+  // needs-more-work
 
-        super(name, icon, orientation);
+  ////////////////////////////////////////////////////////////////
+  // instance vars
+  JLabel _entryLabel = new JLabel("Entry: ");
+  JTextField _entryField = new JTextField();
+;
 
-        addField(Translator.localize("label.name"),
-                getNameTextField());
-        addField(Translator.localize("label.container"),
-                getContainerScroll());
-        addField(Translator.localize("label.entry"),
-                getEntryScroll());
+  ////////////////////////////////////////////////////////////////
+  // contructors
+  public PropPanelActionState() {
+    super("Action State Properties");
+    //_tableModel = new ActivityTableModelInternalTrans(this);
+    GridBagLayout gb = (GridBagLayout) getLayout();
+    GridBagConstraints c = new GridBagConstraints();
+    c.fill = GridBagConstraints.BOTH;
+    c.weighty = 0.0;
+    c.weightx = 0.0;
+    c.ipadx = 0; c.ipady = 0;
 
-        addField(Translator.localize("label.deferrable"),
-                getDeferrableEventsScroll());
+    c.gridx = 0;
+    c.gridwidth = 1;
+    c.gridy = 1;
+    gb.setConstraints(_entryLabel, c);
+    add(_entryLabel);
 
-        addSeparator();
 
-        addField(Translator.localize("label.incoming"),
-                getIncomingScroll());
-        addField(Translator.localize("label.outgoing"),
-                getOutgoingScroll());
+    _entryField.setMinimumSize(new Dimension(120, 20));
+    c.weightx = 1.0;
+    c.gridx = 1;
+    c.gridy = 1;
+    gb.setConstraints(_entryField, c);
+    add(_entryField);
 
+    SpacerPanel spacer1 = new SpacerPanel();
+    c.gridx = 0;
+    c.gridy = 11;
+    c.weighty = 1.0;
+    gb.setConstraints(spacer1, c);
+    add(spacer1);
+
+    SpacerPanel spacer2 = new SpacerPanel();
+    c.weightx = 0.0;
+    c.gridx = 2;
+    c.gridy = 0;
+    gb.setConstraints(spacer2, c);
+    add(spacer2);
+
+
+    _entryField.addKeyListener(this);
+    _entryField.addFocusListener(this);
+    _entryField.setFont(_stereoField.getFont());
+
+    resizeColumns();
+  }
+
+  ////////////////////////////////////////////////////////////////
+  // accessors
+
+  /** Set the values to be shown in all widgets based on model */
+  protected void setTargetInternal(Object t) {
+    super.setTargetInternal(t);
+    MActionState st = (MActionState) t;
+
+    _entryField.setText(GeneratorDisplay.Generate(st.getEntry()));
+
+    resizeColumns();
+    validate();
+  }
+
+  public void resizeColumns() {
+    //_internalTable.sizeColumnsToFit(0);
+  }
+
+
+  public void setTargetEntry() {
+    if (_inChange) return;
+    MActionState s = (MActionState) _target;
+    String newText = _entryField.getText();
+	MActionExpression expr = new MActionExpression("Java", newText);
+	MUninterpretedAction action = new MUninterpretedActionImpl();
+	action.setScript(expr);
+	s.setEntry(action);
+  }
+
+
+  ////////////////////////////////////////////////////////////////
+  // event handlers
+
+    public void focusLost(FocusEvent e){
+	super.focusLost(e);
+	if (e.getComponent() == _entryField)
+	    setTargetEntry();
     }
 
 } /* end class PropPanelActionState */
+
+
+class ActivityTableModelInternalTrans extends AbstractTableModel
+implements VetoableChangeListener, DelayedVChangeListener, MElementListener {
+
+  ////////////////
+  // instance varables
+  MActionState _target;
+  PropPanelActionState _panel;
+
+  ////////////////
+  // constructor
+  public ActivityTableModelInternalTrans(PropPanelActionState p) { _panel = p; }
+
+  ////////////////
+  // accessors
+  public void setTarget(MActionState s) {
+    if (_target instanceof MElementImpl)
+      ((MModelElementImpl)_target).removeMElementListener(this);
+    _target = s;
+    if (_target instanceof MElementImpl)
+      ((MModelElementImpl)_target).addMElementListener(this);
+    fireTableStructureChanged();
+    _panel.resizeColumns();
+  }
+
+  ////////////////
+  // TableModel implemetation
+  public int getColumnCount() { return 1; }
+
+  public String  getColumnName(int c) {
+    if (c == 0) return "Description";
+    return "XXX";
+  }
+
+  public Class getColumnClass(int c) {
+    return String.class;
+  }
+
+  public boolean isCellEditable(int row, int col) {
+    return col == 0;
+  }
+
+  public int getRowCount() {
+    if (_target == null) return 0;
+    Vector trans = new Vector(_target.getInternalTransitions());
+    if (trans == null) return 1;
+    return trans.size() + 1;
+  }
+
+  public Object getValueAt(int row, int col) {
+    Vector trans = new Vector(_target.getInternalTransitions());
+    if (trans == null) return "";
+    if (row >= trans.size()) return ""; // blank line allows adding
+    MTransition t = (MTransition) trans.elementAt(row);
+    String tStr = GeneratorDisplay.Generate(t);
+    if (col == 0) return tStr;
+    else return "UC-" + row*2+col; // for debugging
+  }
+
+  public void setValueAt(Object aValue, int rowIndex, int columnIndex)  {
+   //System.out.println("setting table value " + rowIndex + ", " + columnIndex);
+    if (columnIndex != 0) return;
+    if (!(aValue instanceof String)) return;
+    String val = (String) aValue;
+    val = val.trim();
+    Vector trans = new Vector(((MActionState)_target).getInternalTransitions());
+    if (trans == null) trans = new Vector();
+    MTransition newTrans = ParserDisplay.SINGLETON.parseTransition(val);
+    if (newTrans != null) {
+	MActionState st = (MActionState) _target;
+	newTrans.setSource(st);
+	newTrans.setTarget(st);
+	newTrans.setStateMachine(st.getStateMachine());
+	//newTrans.setState(st);
+    }
+    else {
+      System.out.println("newTrans is null!");
+      fireTableStructureChanged();
+      _panel.resizeColumns();
+      return;
+    }
+
+    if (rowIndex == trans.size()) trans.addElement(newTrans);
+    else if (val.equals("")) trans.removeElementAt(rowIndex);
+    else trans.setElementAt(newTrans, rowIndex);
+
+    ((MActionState)_target).setInternalTransitions(trans);
+
+    fireTableStructureChanged();
+    _panel.resizeColumns();
+  }
+
+  ////////////////
+  // event handlers
+
+	public void propertySet(MElementEvent mee) {
+	}
+	public void listRoleItemSet(MElementEvent mee) {
+	}
+	public void recovered(MElementEvent mee) {
+	}
+	public void removed(MElementEvent mee) {
+	}
+	public void roleAdded(MElementEvent mee) {
+	}
+	public void roleRemoved(MElementEvent mee) {
+	}
+
+  public void vetoableChange(PropertyChangeEvent pce) {
+    DelayedChangeNotify delayedNotify = new DelayedChangeNotify(this, pce);
+    SwingUtilities.invokeLater(delayedNotify);
+  }
+
+  public void delayedVetoableChange(PropertyChangeEvent pce) {
+    fireTableStructureChanged();
+    _panel.resizeColumns();
+  }
+
+
+} /* end class TableModelInternalTrans */
+

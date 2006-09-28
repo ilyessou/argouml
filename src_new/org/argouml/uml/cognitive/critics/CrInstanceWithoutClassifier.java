@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,107 +21,90 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: CrClassWithoutComponent.java
+// Classes: CrClassWithoutComponent
+// Original Author: 5eichler@informatik.uni-hamburg.de
+// $Id$
+
 package org.argouml.uml.cognitive.critics;
 
-import java.util.Collection;
-import java.util.Iterator;
+import java.util.*;
 
-import org.argouml.cognitive.Designer;
-import org.argouml.cognitive.ListSet;
-import org.argouml.cognitive.ToDoItem;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
-import org.argouml.uml.cognitive.UMLToDoItem;
-import org.argouml.uml.diagram.deployment.ui.UMLDeploymentDiagram;
-import org.argouml.uml.diagram.ui.FigNodeModelElement;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.behavior.common_behavior.*;
+
+import org.tigris.gef.util.*;
+
+import org.argouml.cognitive.*;
+import org.argouml.uml.diagram.ui.*;
+import org.argouml.uml.diagram.deployment.ui.*;
 
 /**
  * A critic to detect when an object in a deployment-diagram
- * is not inside a component or a component-instance.
- *
- * @author 5eichler
- */
+ * is not inside a component or a component-instance
+ **/
+
 public class CrInstanceWithoutClassifier extends CrUML {
 
-    /**
-     * The constructor.
-     */
-    public CrInstanceWithoutClassifier() {
-        setupHeadAndDesc();
-	addSupportedDecision(UMLDecision.PATTERNS);
-    }
+  public CrInstanceWithoutClassifier() {
+    setHeadline("Set classifier");
+    sd(" Instances have a classifier");
+    addSupportedDecision(CrUML.decPATTERNS);
+  }
 
-    /**
-     * @see org.argouml.uml.cognitive.critics.CrUML#predicate2(
-     * java.lang.Object, org.argouml.cognitive.Designer)
-     */
-    public boolean predicate2(Object dm, Designer dsgr) {
-	if (!(dm instanceof UMLDeploymentDiagram)) return NO_PROBLEM;
-	UMLDeploymentDiagram dd = (UMLDeploymentDiagram) dm;
-	ListSet offs = computeOffenders(dd);
-	if (offs == null) return NO_PROBLEM;
-	return PROBLEM_FOUND;
-    }
+  public boolean predicate2(Object dm, Designer dsgr) {
+    if (!(dm instanceof UMLDeploymentDiagram)) return NO_PROBLEM;
+    UMLDeploymentDiagram dd = (UMLDeploymentDiagram) dm;
+    VectorSet offs = computeOffenders(dd);
+    if (offs == null) return NO_PROBLEM;
+    return PROBLEM_FOUND;
+  }
 
-    /**
-     * @see org.argouml.cognitive.critics.Critic#toDoItem(
-     * java.lang.Object, org.argouml.cognitive.Designer)
-     */
-    public ToDoItem toDoItem(Object dm, Designer dsgr) {
-	UMLDeploymentDiagram dd = (UMLDeploymentDiagram) dm;
-	ListSet offs = computeOffenders(dd);
-	return new UMLToDoItem(this, offs, dsgr);
-    }
+  public ToDoItem toDoItem(Object dm, Designer dsgr) {
+    UMLDeploymentDiagram dd = (UMLDeploymentDiagram) dm;
+    VectorSet offs = computeOffenders(dd);
+    return new ToDoItem(this, offs, dsgr);
+  }
 
-    /**
-     * @see org.argouml.cognitive.Poster#stillValid(
-     * org.argouml.cognitive.ToDoItem, org.argouml.cognitive.Designer)
-     */
-    public boolean stillValid(ToDoItem i, Designer dsgr) {
-	if (!isActive()) return false;
-	ListSet offs = i.getOffenders();
-	UMLDeploymentDiagram dd = (UMLDeploymentDiagram) offs.firstElement();
-	//if (!predicate(dm, dsgr)) return false;
-	ListSet newOffs = computeOffenders(dd);
-	boolean res = offs.equals(newOffs);
-	return res;
-    }
+  public boolean stillValid(ToDoItem i, Designer dsgr) {
+    if (!isActive()) return false;
+    VectorSet offs = i.getOffenders();
+    UMLDeploymentDiagram dd = (UMLDeploymentDiagram) offs.firstElement();
+    //if (!predicate(dm, dsgr)) return false;
+    VectorSet newOffs = computeOffenders(dd);
+    boolean res = offs.equals(newOffs);
+    return res;
+  }
 
-    /**
-     * If there are instances that have no classifiers they belong to
-     * the returned vector-set is not null. Then in the vector-set
-     * are the UMLDeploymentDiagram and all FigObjects, FigComponentInstances
-     * and FigMNodeInstances with no classifier.
-     *
-     * @param dd the diagram to check
-     * @return the set of offenders
-     */
-    public ListSet computeOffenders(UMLDeploymentDiagram dd) {
-	Collection figs = dd.getLayer().getContents();
-	ListSet offs = null;
-        Iterator figIter = figs.iterator();
-	while (figIter.hasNext()) {
-	    Object obj = figIter.next();
-	    if (!(obj instanceof FigNodeModelElement)) continue;
-	    FigNodeModelElement figNodeModelElement = (FigNodeModelElement) obj;
-	    if (figNodeModelElement != null
-                && (Model.getFacade().isAInstance(
-                        figNodeModelElement.getOwner()))) {
-		Object instance = figNodeModelElement.getOwner();
-		if (instance != null) {
-		    Collection col = Model.getFacade().getClassifiers(instance);
-		    if (col.size() > 0) {
-		        continue;
-		    }
-		}
-		if (offs == null) {
-		    offs = new ListSet();
-		    offs.addElement(dd);
-		}
-		offs.addElement(figNodeModelElement);
-	    }
-	}
-	return offs;
+  /**
+   * If there are instances that have no classifiers they belong to
+   * the returned vector-set is not null. Then in the vector-set
+   * are the UMLDeploymentDiagram and all FigObjects, FigComponentInstances
+   * and FigMNodeInstances with no classifier.
+   **/
+  public VectorSet computeOffenders(UMLDeploymentDiagram dd) { 
+    Vector figs = dd.getLayer().getContents();
+    VectorSet offs = null;
+    int size = figs.size();
+    for (int i=0; i<size; i++) {
+      Object obj = figs.elementAt(i);
+      if (!(obj instanceof FigNodeModelElement)) continue;
+      FigNodeModelElement fn = (FigNodeModelElement) obj;
+      if (fn != null && (fn.getOwner() instanceof MInstance)) {
+        MInstance minst = (MInstance) fn.getOwner();
+        if (minst != null) {
+          Collection col = minst.getClassifiers();
+          if (col.size()>0) continue;     
+        }       
+        if (offs == null) {
+          offs = new VectorSet();
+          offs.addElement(dd);
+        }
+        offs.addElement(fn);
+      }
     }
-
+    return offs;
+  } 
+ 
 } /* end class CrInstanceWithoutClassifier.java */
+

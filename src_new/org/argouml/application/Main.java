@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,802 +23,405 @@
 
 package org.argouml.application;
 
-import java.awt.Cursor;
-import java.awt.EventQueue;
-import java.awt.GraphicsEnvironment;
-import java.awt.Rectangle;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.*;
+import java.net.*;
+import java.beans.*;
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.InetAddress;
-import java.net.URL;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Properties;
-import java.util.Vector;
+import javax.swing.*;
+import javax.swing.plaf.metal.MetalLookAndFeel;
 
-import javax.swing.JOptionPane;
-import javax.swing.ToolTipManager;
-import javax.swing.UIDefaults;
-import javax.swing.UIManager;
+import ru.novosoft.uml.model_management.MModel;
+import ru.novosoft.uml.*;
 
-import org.apache.log4j.BasicConfigurator;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
-import org.argouml.application.api.Argo;
-import org.argouml.application.api.CommandLineInterface;
-import org.argouml.application.api.Configuration;
-import org.argouml.application.security.ArgoAwtExceptionHandler;
-import org.argouml.cognitive.AbstractCognitiveTranslator;
-import org.argouml.cognitive.Designer;
-import org.argouml.i18n.Translator;
-import org.argouml.kernel.ProjectManager;
-import org.argouml.model.Model;
-import org.argouml.moduleloader.ModuleLoader2;
-import org.argouml.persistence.PersistenceManager;
-import org.argouml.ui.ArgoFrame;
-import org.argouml.ui.LookAndFeelMgr;
-import org.argouml.ui.ProjectBrowser;
-import org.argouml.ui.SplashScreen;
-import org.argouml.ui.cmd.ActionExit;
-import org.argouml.ui.cmd.PrintManager;
-import org.argouml.util.logging.SimpleTimer;
-import org.tigris.gef.util.Util;
+import org.tigris.gef.util.*;
 
-/**
- * Here it all starts...
- *
- */
+import org.argouml.kernel.*;
+import org.argouml.ui.*;
+import org.argouml.cognitive.*;
+import org.argouml.cognitive.ui.*;
+import org.argouml.uml.cognitive.critics.*;
+import org.argouml.xml.argo.ArgoParser;
+
 public class Main {
+  ////////////////////////////////////////////////////////////////
+  // constants
 
-    /**
-     * Logger.
-     */
-    private static final Logger LOG = Logger.getLogger(Main.class);
+  public static int WIDTH = 1024;
+  public static int HEIGHT = 768;
 
-    ////////////////////////////////////////////////////////////////
-    // constants
+  ////////////////////////////////////////////////////////////////
+  // static variables
 
-    /**
-     * The location of the default logging configuration (.lcf) file.
-     */
-    public static final String DEFAULT_LOGGING_CONFIGURATION =
-        "org/argouml/resource/default.lcf";
+  private static Vector postLoadActions = new Vector();
 
+  ////////////////////////////////////////////////////////////////
+  // main
 
-    ////////////////////////////////////////////////////////////////
-    // static variables
+  public static void main(String args[]) {
+    boolean doSplash = true;
+    boolean useEDEM = true;
+    boolean preload = true;
+    boolean profileLoad = false;
 
-    private static Vector postLoadActions = new Vector();
+    File projectFile = null;
+    Project p = null;
+    String projectName = null;
+    URL urlToOpen = null;
 
-    ////////////////////////////////////////////////////////////////
-    // main
+    long start, phase0, phase1, phase2, phase3, phase4, phase5, now;
+	
+	/* set properties for application behaviour */
+	System.setProperty("gef.imageLocation","/org/argouml/Images");
 
-    /**
-     * The main entry point of ArgoUML.
-     * @param args command line parameters
-     */
-    public static void main(String[] args) {
-	LOG.info("ArgoUML Started.");
-        
-        SimpleTimer st = new SimpleTimer();
-        st.mark("begin");
-        
-        checkJVMVersion();
-        checkHostsFile();
+    /* This is the default */
+    MetalLookAndFeel.setCurrentTheme(new org.argouml.ui.JasonsTheme());
 
-        // Force the configuration to load
-        Configuration.load();
+    //--------------------------------------------
+    // Parse command line args:
+    // The assumption is that all options precede
+    // the name of a project file to load.
+    //--------------------------------------------
 
-        // Synchronize the startup directory
-        String directory = Argo.getDirectory();
-        org.tigris.gef.base.Globals.setLastDirectory(directory);
-
-        // create an anonymous class as a kind of adaptor for the cognitive
-        // System to provide proper translation/i18n.
-        org.argouml.cognitive.Translator.setTranslator(
-            new AbstractCognitiveTranslator() {
-                public String i18nlocalize(String key) {
-                    return Translator.localize(key);
-                }
-
-                public String i18nmessageFormat(String key, Object[] iArgs) {
-                    return Translator.messageFormat(key, iArgs);
-                }
-            });
-
-        // then, print out some version info for debuggers...
-        org.argouml.util.Tools.logVersionInfo();
-
-        st.mark("arguments");
-
-        /* set properties for application behaviour */
-        System.setProperty("gef.imageLocation", "/org/argouml/Images");
-
-        System.setProperty("apple.laf.useScreenMenuBar", "true");
-
-        /* FIX: set the application name for Mac OS X */
-        System.setProperty("com.apple.mrj.application.apple.menu.about.name",
-			   "ArgoUML");
-
-        boolean doSplash = Configuration.getBoolean(Argo.KEY_SPLASH, true);
-	// TODO: document use. Ref. 1/2
-        boolean preload = Configuration.getBoolean(Argo.KEY_PRELOAD, true);
-        boolean reloadRecent =
-            Configuration.getBoolean(Argo.KEY_RELOAD_RECENT_PROJECT, false);
-	boolean batch = false;
-	List commands = new ArrayList();
-
-        String projectName = null;
-
-        // Parse command line args:
-        // The assumption is that all options precede
-        // the name of a project file to load.
-        String theTheme = null;
-        for (int i = 0; i < args.length; i++) {
-            if (args[i].startsWith("-")) {
-		String themeName =
-                    LookAndFeelMgr.getInstance()
-                        .getThemeClassNameFromArg(args[i]);
-                if (themeName != null) {
-		    theTheme = themeName;
-                } else if (
-                    args[i].equalsIgnoreCase("-help")
-                        || args[i].equalsIgnoreCase("-h")
-                        || args[i].equalsIgnoreCase("--help")
-                        || args[i].equalsIgnoreCase("/?")) {
-                    printUsage();
-                    System.exit(0);
-                } else if (args[i].equalsIgnoreCase("-nosplash")) {
-                    doSplash = false;
-                } else if (args[i].equalsIgnoreCase("-nopreload")) {
-                    preload = false;
-                } else if (args[i].equalsIgnoreCase("-norecentfile")) {
-                    reloadRecent = false;
-                } else if (args[i].equalsIgnoreCase("-command")
-			   && i + 1 < args.length) {
-		    commands.add(args[i + 1]);
-		    i++;
-                } else if (args[i].equalsIgnoreCase("-locale")
-                           && i + 1 < args.length) {
-                    Translator.setLocale(args[i + 1]);
-                    i++;
-                } else if (args[i].equalsIgnoreCase("-batch")) {
-                    batch = true;
-                } else if (args[i].equalsIgnoreCase("-open") 
-                        && i + 1 < args.length) {
-                    projectName = args[++i];
-                } else if (args[i].equalsIgnoreCase("-print") 
-                        && i + 1 < args.length) {
-                    // let's load the project
-                    String projectToBePrinted = 
-                        PersistenceManager.getInstance().fixExtension(
-                                args[++i]);
-                    URL urlToBePrinted = projectUrl(projectToBePrinted, null);
-                    ProjectBrowser.getInstance().loadProject(
-                            new File(urlToBePrinted.getFile()), true, null);
-                    // now, let's print it
-                    PrintManager.getInstance().print();
-                    // nothing else to do (?)
-                    System.exit(0);
-                } else {
-                    System.err.println(
-                        "Ignoring unknown/incomplete option '" + args[i] + "'");
-                }
-            } else {
-                if (projectName == null) {
-                    System.out.println(
-                        "Setting projectName to '" + args[i] + "'");
-                    projectName = args[i];
-                }
-            }
-        }
-
-        // We have to do this to set the LAF for the splash screen
-        st.mark("initialize laf");
-        LookAndFeelMgr.getInstance().initializeLookAndFeel();
-        if (theTheme != null) {
-            LookAndFeelMgr.getInstance().setCurrentTheme(theTheme);
-        }
-        
-        // Get the splash screen up as early as possible
-        st.mark("create splash");
-        SplashScreen splash = null;
-        if (doSplash && !batch) {
-            splash = initializeSplash();
-        }
-
-        // Initialize the Model subsystem
-        st.mark("initialize model subsystem");
-        updateProgress(splash, 5, "statusmsg.bar.model-subsystem");
-        if (!Model.isInitiated()) {
-            System.err.println("Model subsystem init failed. See log.");
-            System.exit(1);
-            return;
-        }
-
-	// The reason the gui is initialized before the commands are run
-	// is that some of the commands will use the projectbrowser.
-	st.mark("initialize gui");
-        initializeGUI(splash);
-
-        if (reloadRecent && projectName == null) {
-            // If no project was entered on the command line,
-            // try to reload the most recent project if that option is true
-            String s =
-                Configuration.getString(Argo.KEY_MOST_RECENT_PROJECT_FILE, "");
-            if (!("".equals(s))) {
-                File file = new File(s);
-                if (file.exists()) {
-                    LOG.info("Re-opening project " + s);
-                    projectName = s;
-                } else {
-                    LOG.warn(
-                        "Cannot re-open " + s + " because it does not exist");
-                }
-            }
-        }
-
-        URL urlToOpen = null;
-
-        if (projectName != null) {
-            projectName =
-                PersistenceManager.getInstance().fixExtension(projectName);
-            urlToOpen = projectUrl(projectName, urlToOpen);
-        }
-
-        st.mark("initialize ProjectBrowser");
-	ProjectBrowser pb = ProjectBrowser.getInstance();
-
-        st.mark("perform commands");
-	if (batch) {
-	    performCommands(commands);
-	    commands = null;
-
-	    System.out.println("Exiting because we are running in batch.");
-	    new ActionExit().doCommand(null);
-	    return;
+    for (int i=0; i < args.length; i++) {
+      if (args[i].startsWith("-")) {
+	if (args[i].equalsIgnoreCase("-big")) {
+	  MetalLookAndFeel.setCurrentTheme(new org.argouml.ui.JasonsBigTheme());
+	} else if (args[i].equalsIgnoreCase("-huge")) {
+	  MetalLookAndFeel.setCurrentTheme(new org.argouml.ui.JasonsHugeTheme());
+	} else if (args[i].equalsIgnoreCase("-help") ||
+		   args[i].equalsIgnoreCase("-h")) {
+	  System.err.println("Usage: [options] [project-file]");
+	  System.err.println("Options include: ");
+	  System.err.println("  -big            use big fonts");
+	  System.err.println("  -huge           use huge fonts");
+	  System.err.println("  -nosplash       dont display Argo/UML logo");
+	  System.err.println("  -noedem         dont report usage statistics");
+	  System.err.println("  -nopreload      dont preload common classes");
+	  System.err.println("  -profileload    report on load times");
+	  System.exit(0);
+	} else if (args[i].equalsIgnoreCase("-nosplash")) {
+	  doSplash = false;
+	} else if (args[i].equalsIgnoreCase("-noedem")) {
+	  useEDEM = false;
+	} else if (args[i].equalsIgnoreCase("-nopreload")) {
+	  preload = false;
+	} else if (args[i].equalsIgnoreCase("-profileload")) {
+	  profileLoad = true;
+	} else {
+	  System.err.println("Ingoring unknown option '" + args[i] + "'");
 	}
-
-        if (splash != null) {
-            if (urlToOpen == null) {
-		splash.getStatusBar().showStatus(
-		    Translator.localize("statusmsg.bar.defaultproject"));
-            } else {
-		Object[] msgArgs = {
-		    projectName,
-		};
-		splash.getStatusBar().showStatus(
-		    Translator.messageFormat("statusmsg.bar.readingproject",
-					     msgArgs));
-            }
-
-            splash.getStatusBar().showProgress(40);
-        }
-
-        st.mark("make empty project");
-
-        Designer.disableCritiquing();
-        Designer.clearCritiquing();
-
-        boolean projectLoaded = false;
-        if (urlToOpen != null) {
-            String filename = urlToOpen.getFile();
-            File file = new File(filename);
-            System.err.println("The url of the file to open is " + urlToOpen);
-            System.err.println("The filename is " + filename);
-            System.err.println("The file is " + file);
-            System.err.println("File.exists = " + file.exists());
-            projectLoaded = pb.loadProject(file, true, null);
-        }
-        
-        if (!projectLoaded) {
-            // Although this looks redundant, it's needed to get all
-            // the initialization state set correctly.  
-            // Too many side effects as part of initialization!
-            ProjectManager.getManager().setCurrentProject(
-                    ProjectManager.getManager().getCurrentProject());
-            ProjectManager.getManager().setSaveEnabled(false);
-        }
-
-        st.mark("set project");
-
-        Designer.enableCritiquing();
-
-        st.mark("perspectives");
-
-        if (splash != null) {
-            splash.getStatusBar().showProgress(75);
-        }
-
-        // Initialize the module loader.
-        st.mark("modules");
-
-        ModuleLoader2.doLoad(false);
-        Argo.initializeModules();
-
-        st.mark("open window");
-
-        updateProgress(splash, 95, "statusmsg.bar.open-project-browser");
-
-        ArgoFrame.getInstance().setVisible(true);
-
-        st.mark("close splash");
-        if (splash != null) {
-            splash.setVisible(false);
-            splash.dispose();
-            splash = null;
-        }
-
-        performCommands(commands);
-        commands = null;
-
-        st.mark("start critics");
-        Runnable startCritics = new StartCritics();
-        Main.addPostLoadAction(startCritics);
-
-        st.mark("start preloader");
-        if (preload) {
-            Runnable preloader = new PreloadClasses();
-            Main.addPostLoadAction(preloader);
-        }
-
-        PostLoad pl = new PostLoad(postLoadActions);
-        Thread postLoadThead = new Thread(pl);
-        postLoadThead.start();
-
-        LOG.info("");
-        LOG.info("profile of load time ############");
-        for (Enumeration i = st.result(); i.hasMoreElements();) {
-            LOG.info(i.nextElement());
-        }
-        LOG.info("#################################");
-        LOG.info("");
-
-        st = null;
-        ArgoFrame.getInstance().setCursor(
-                Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-
-        //ToolTipManager.sharedInstance().setInitialDelay(500);
-        ToolTipManager.sharedInstance().setDismissDelay(50000000);
-    }
-    
-    /**
-     * Helper to update progress if we have a splash screen displayed.
-     *
-     * @param splash <code>true</code> if the splash is to be shown
-     * @param percent the new percentage for progress bar
-     * @param message the messae to be shown in the splash
-     */
-    private static void updateProgress(SplashScreen splash, int percent,
-            String message) {
-        if (splash != null) {
-            splash.getStatusBar().showStatus(Translator.localize(message));
-            splash.getStatusBar().showProgress(percent);
-        }
-    }
-
-    /**
-     * Calculates the {@link URL} for the given project name.
-     * If the file does not exist or cannot be converted the default
-     * {@link URL} is returned.
-     *
-     * @param projectName is the file name of the project
-     * @param urlToOpen is the default {@link URL}
-     * @return the new URL.
-     */
-    private static URL projectUrl(final String projectName, URL urlToOpen) {
-        File projectFile = new File(projectName);
-        if (!projectFile.exists()) {
-            System.err.println("Project file '" + projectFile
-			       + "' does not exist.");
-            /* this will cause an empty project to be created */
-        } else {
-            try {
-                urlToOpen = Util.fileToURL(projectFile);
-            } catch (Exception e) {
-                LOG.error("Exception opening project in main()", e);
-            }
-        }
-
-        return urlToOpen;
-    }
-
-    /**
-     * Prints the usage message.
-     */
-    private static void printUsage() {
-        System.err.println("Usage: [options] [project-file]");
-        System.err.println("Options include: ");
-        System.err.println("  -help           display this information");
-        LookAndFeelMgr.getInstance().printThemeArgs();
-        System.err.println("  -nosplash       don't display logo at startup");
-        System.err.println("  -nopreload      don't preload common classes");
-        System.err.println("  -norecentfile   don't reload last saved file");
-        System.err.println("  -command <arg>  command to perform on startup");
-        System.err.println("  -batch          don't start GUI");
-        System.err.println("  -locale <arg>   set the locale (e.g. 'en_GB')");
-        System.err.println("");
-        System.err.println("You can also set java settings which influence "
-			   + "the behaviour of ArgoUML:");
-        System.err.println("  -Xms250M -Xmx500M  [makes ArgoUML reserve "
-			   + "more memory for large projects]");
-        System.err.println("\n\n");
-    }
-
-    /**
-     * Checks tha JVM Version.<p>
-     *
-     * If it is a non supported JVM version we exit immediatly.
-     */
-    private static void checkJVMVersion() {
-        // check if we are using a supported java version
-        String javaVersion = System.getProperty("java.version", "");
-        // exit if unsupported java version.
-        if (javaVersion.startsWith("1.3")
-            || javaVersion.startsWith("1.2")
-            || javaVersion.startsWith("1.1")) {
-
-	    System.err.println("You are using Java " + javaVersion + ", "
-			       + "Please use Java 1.4 or later with ArgoUml");
-	    System.exit(0);
-        }
-    }
-
-    /**
-     * Check that we can get the InetAddress for localhost.
-     * This can fail on Unix if /etc/hosts is not correctly set up.
-     */
-    private static void checkHostsFile() {
-        try {
-            InetAddress.getLocalHost();
-        } catch (UnknownHostException e) {
-            System.err.println("ERROR: unable to get localhost information.");
-            e.printStackTrace(System.err);
-            System.err.println("On Unix systems this usually indicates that"
-                + "your /etc/hosts file is incorrectly setup.");
-            System.err.println("Stopping execution of ArgoUML.");
-            System.exit(0);
-        }
-    }
-
-
-    /**
-     * Add an element to the PostLoadActions list.
-     *
-     * @param r a "Runnable" action
-     */
-    public static void addPostLoadAction(Runnable r) {
-        postLoadActions.addElement(r);
-    }
-
-    /**
-     * Perform a list of commands that were given on the command line.
-     *
-     * This first implementation just has a list of commands that
-     * is possible to give.
-     *
-     * @param list The commands, a list of strings.
-     */
-    public static void performCommands(List list) {
-	Iterator iter = list.iterator();
-
-	while (iter.hasNext()) {
-	    String commandstring = (String) iter.next();
-
-	    int pos = commandstring.indexOf('=');
-
-	    String commandname;
-	    String commandargument;
-
-	    if (pos == -1) {
-		commandname = commandstring;
-		commandargument = null;
-	    } else {
-		commandname = commandstring.substring(0, pos);
-		commandargument = commandstring.substring(pos + 1);
-	    }
-
-	    // Perform one command.
-	    Class c;
-	    try {
-		c = Class.forName(commandname);
-	    } catch (ClassNotFoundException e) {
-		System.out.println("Cannot find the command: " + commandname);
-		continue;
-	    }
-
-	    // Now create a new object.
-	    Object o = null;
-	    try {
-		o = c.newInstance();
-	    } catch (InstantiationException e) {
-		System.out.println(commandname
-				   + " could not be instantiated - skipping"
-				   + " (InstantiationException)");
-		continue;
-	    } catch (IllegalAccessException e) {
-		System.out.println(commandname
-				   + " could not be instantiated - skipping"
-				   + " (IllegalAccessException)");
-		continue;
-	    }
-
-
-	    if (o == null || !(o instanceof CommandLineInterface)) {
-		System.out.println(commandname
-				   + " is not a command - skipping.");
-		continue;
-	    }
-
-	    CommandLineInterface clio = (CommandLineInterface) o;
-
-	    System.out.println("Performing command "
-			       + commandname + "( "
-			       + (commandargument == null
-				  ? "" : commandargument) + " )");
-	    boolean result = clio.doCommand(commandargument);
-	    if (!result) {
-		System.out.println("There was an error executing "
-				   + "the command "
-				   + commandname + "( "
-				   + (commandargument == null
-				      ? "" : commandargument) + " )");
-		System.out.println("Aborting the rest of the commands.");
-		return;
-	    }
+      } else {
+	projectName = args[i];
+	if (!projectName.endsWith(Project.FILE_EXT))
+	  projectName += Project.FILE_EXT;
+	projectFile = new File(projectName);
+	if (!projectFile.exists()) {
+	  System.err.println("Project file '" + projectFile +
+			     "' does not exist.");
+	  /* this will cause an empty project to be created */
+	  p = null;
+	} else {
+	  try { urlToOpen = Util.fileToURL(projectFile); }
+	  catch (Exception e) {
+	    System.out.println("Exception opening project in main()");
+	    e.printStackTrace();
+	  }
 	}
-    }
-
-    /**
-     * Install our security handlers,
-     * and do basic initialization of log4j.
-     *
-     * Log4j initialization must be done as
-     * part of the main class initializer, so that
-     * the log4j initialization is complete
-     * before any other static initializers.
-     *
-     * Also installs a trap to "eat" certain SecurityExceptions.
-     * Refer to {@link java.awt.EventDispatchThread} for details.
-     */
-    static {
-
-        /*  Install the trap to "eat" SecurityExceptions.
-         */
-        System.setProperty(
-            "sun.awt.exception.handler",
-            ArgoAwtExceptionHandler.class.getName());
-
-        /*  The string <code>log4j.configuration</code> is the
-         *  same string found in
-         *  {@link org.apache.log4j.Configuration.DEFAULT_CONFIGURATION_FILE}
-         *  but if we use the reference, then log4j configures itself
-         *  and clears the system property and we never know if it was
-         *  set.
-         *
-         *  If it is set, then we let the static initializer in
-         * {@link Argo} perform the initialization.
-         */
-
-        if (System.getProperty("log4j.configuration") == null) {
-            Properties props = new Properties();
-	    InputStream stream = null;
-            try {
-		stream =
-		    ClassLoader.getSystemResourceAsStream(
-		        DEFAULT_LOGGING_CONFIGURATION);
-
-		if (stream != null) {
-		    props.load(stream);
-		}
-            } catch (IOException io) {
-                io.printStackTrace();
-                System.exit(-1);
-            }
-
-	    PropertyConfigurator.configure(props);
-
-	    if (stream == null) {
-		BasicConfigurator.configure();
-		Logger.getRootLogger().getLoggerRepository()
-		    .setThreshold(Level.OFF);
-	    }
-        }
-
-        // initLogging();
-    }
-
-    /**
-     * Create and display a splash screen.
-     * @return the splash screen
-     */
-    private static SplashScreen initializeSplash() {
-        SplashScreen splash = new SplashScreen();
-        splash.setVisible(true);
-        // On uniprocessors wait until we're sure the splash screen
-        // has been painted so that we aren't competing for resources
-        if (!EventQueue.isDispatchThread()
-                && Runtime.getRuntime().availableProcessors() == 1) {
-            synchronized (splash) {
-                while (!splash.isPaintCalled()) {
-                    try {
-                        splash.wait();
-                    } catch (InterruptedException e) {
-                    }
-                }
-            }
-        }
-        return splash;
-    }
-    
-    /**
-     * Do a part of the initialization that is very much GUI-stuff.
-     *
-     * @param splash the splash screeen
-     */
-    private static void initializeGUI(SplashScreen splash) {
-        // make the projectbrowser
-	ProjectBrowser pb = ProjectBrowser.makeInstance(splash);
-
-	JOptionPane.setRootFrame(pb);
-
-        pb.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-        // Set the screen layout to what the user left it before, or
-        // to reasonable defaults.
-        Rectangle scrSize = GraphicsEnvironment.getLocalGraphicsEnvironment()
-                .getMaximumWindowBounds();
-
-        int configFrameWidth =
-            Configuration.getInteger(Argo.KEY_SCREEN_WIDTH, scrSize.width);
-        int w = Math.min(configFrameWidth, scrSize.width);
-        if (w == 0) {
-            w = 600;
-        }
-        
-        int configFrameHeight =
-            Configuration.getInteger(Argo.KEY_SCREEN_HEIGHT, scrSize.height);
-        int h = Math.min(configFrameHeight, scrSize.height);
-        if (h == 0) {
-            h = 400;
-        }
-        
-        int x = Configuration.getInteger(Argo.KEY_SCREEN_LEFT_X, 0);
-        int y = Configuration.getInteger(Argo.KEY_SCREEN_TOP_Y, 0);
-        pb.setLocation(x, y);
-        pb.setSize(w, h);
-        
-        UIManager.put("Button.focusInputMap", new UIDefaults.LazyInputMap(
-                new Object[] {
-                    "ENTER", "pressed",
-                    "released ENTER", "released",
-                    "SPACE", "pressed",
-                    "released SPACE", "released"
-                })
-        );         
+	/* by our assumption, any following args will be ignored */
+	break;
+      }
     }
 
 
+    start = System.currentTimeMillis();
+    SplashScreen splash = new SplashScreen("Loading Argo/UML...", "Splash");
+    splash.getStatusBar().showStatus("Making Project Browser");
+    splash.getStatusBar().showProgress(10);
+
+    splash.setVisible(doSplash);
+    phase0 = System.currentTimeMillis();
+
+
+	MFactoryImpl.setEventPolicy(MFactoryImpl.EVENT_POLICY_IMMEDIATE);
+    ProjectBrowser pb = new ProjectBrowser("Argo/UML", splash.getStatusBar());
+    phase1 = System.currentTimeMillis();
+
+    JOptionPane.setRootFrame(pb);
+    //pb.setSize(INITIAL_WIDTH, INITIAL_HEIGHT);
+    Dimension scrSize = Toolkit.getDefaultToolkit().getScreenSize();
+    pb.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+    int w = Math.min(WIDTH, scrSize.width);
+    int h = Math.min(HEIGHT, scrSize.height);
+    pb.setLocation(scrSize.width/2 - w/2,
+		       scrSize.height/2 - h/2);
+    pb.setSize(w, h);
+
+    if (splash != null) {
+      if (urlToOpen == null)
+	splash.getStatusBar().showStatus("Making Default Project");
+      else
+	splash.getStatusBar().showStatus("Reading " + projectName);
+
+      splash.getStatusBar().showProgress(40);
+    }
+
+    phase2 = System.currentTimeMillis();
+
+    if (urlToOpen == null) p = Project.makeEmptyProject();
+    else {
+      ArgoParser.SINGLETON.readProject(urlToOpen);
+      p = ArgoParser.SINGLETON.getProject();
+      p.loadAllMembers();
+      p.postLoad();
+    }
+
+    phase3 = System.currentTimeMillis();
+
+    pb.setProject(p);
+    phase4 = System.currentTimeMillis();
+
+    if (urlToOpen == null) pb.setTitle("Untitled");
+
+    if (splash != null) {
+      splash.getStatusBar().showStatus("Setting Perspectives");
+      splash.getStatusBar().showProgress(50);
+    }
+
+
+    pb.setPerspectives(NavPerspective.getRegisteredPerspectives());
+    pb.setToDoPerspectives(ToDoPerspective.getRegisteredPerspectives());
+
+    pb.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+    //pb.validate();
+    //pb.repaint();
+    //pb.requestDefaultFocus();
+
+
+    if (splash != null) {
+      splash.getStatusBar().showStatus("Opening Project Browser");
+      splash.getStatusBar().showProgress(95);
+    }
+
+    pb.setVisible(true);
+    Object model = p.getModels().elementAt(0);
+    Object diag = p.getDiagrams().elementAt(0);
+    //pb.setTarget(diag);
+    pb.getNavPane().setSelection(model, diag);
+    if (splash != null) {
+	splash.setVisible(false);
+	splash.dispose();
+	splash = null;
+    }
+
+    phase5 = System.currentTimeMillis();
+
+    Class c = null;
+    c = org.tigris.gef.base.ModePlace.class;
+    c = org.tigris.gef.base.ModeModify.class;
+    c = org.tigris.gef.base.SelectionResize.class;
+    c = org.tigris.gef.presentation.FigPoly.class;
+    c = org.tigris.gef.base.PathConvPercentPlusConst.class;
+    c = org.tigris.gef.presentation.ArrowHeadNone.class;
+    c = org.tigris.gef.base.Geometry.class;
+
+    c = org.tigris.gef.ui.ColorRenderer.class;
+
+    c = org.tigris.gef.util.EnumerationEmpty.class;
+    c = org.tigris.gef.util.EnumerationSingle.class;
+
+    c = ru.novosoft.uml.foundation.data_types.MScopeKind.class;
+    c = ru.novosoft.uml.foundation.data_types.MChangeableKind.class;
+
+    c = org.argouml.uml.diagram.static_structure.ui.FigClass.class;
+    c = org.argouml.uml.diagram.ui.SelectionNodeClarifiers.class;
+    c = org.argouml.uml.diagram.ui.SelectionWButtons.class;
+    c = org.argouml.uml.diagram.static_structure.ui.SelectionClass.class;
+    c = org.argouml.uml.diagram.ui.ModeCreateEdgeAndNode.class;
+    c = org.argouml.uml.diagram.static_structure.ui.FigPackage.class;
+    c = org.argouml.uml.diagram.static_structure.ui.FigInterface.class;
+
+    c = java.lang.ClassNotFoundException.class;
+    c = org.argouml.kernel.DelayedChangeNotify.class;
+    c = org.tigris.gef.graph.GraphEvent.class;
+    c = org.tigris.gef.graph.presentation.NetEdge.class;
+    c = org.tigris.gef.graph.GraphEdgeHooks.class;
+
+    c = org.argouml.uml.cognitive.critics.WizMEName.class;
+    c = org.argouml.kernel.Wizard.class;
+
+
+    //if (splash != null) {
+    //  splash.getStatusBar().showStatus("Setting up critics");
+    //  splash.getStatusBar().showProgress(70);
+    //}
+
+    Runnable startCritics = new StartCritics();
+    Main.addPostLoadAction(startCritics);
+
+
+    if (preload) {
+      Runnable preloader = new PreloadClasses();
+      Main.addPostLoadAction(preloader);
+    }
+
+    PostLoad pl = new PostLoad(postLoadActions);
+    Thread postLoadThead = new Thread(pl);
+    pl.setThread(postLoadThead);
+    postLoadThead.start();
+
+    now = System.currentTimeMillis();
+
+    if (profileLoad) {
+      System.out.println("");
+      System.out.println("");
+      System.out.println("profile of load time ################");
+      System.out.println("phase 0    " + (phase0 - start));
+      System.out.println("phase 1    " + (phase1 - phase0));
+      System.out.println("phase 2    " + (phase2 - phase1));
+      System.out.println("phase 3    " + (phase3 - phase2));
+      System.out.println("phase 4    " + (phase4 - phase3));
+      System.out.println("phase 5    " + (phase5 - phase4));
+      System.out.println("================");
+      System.out.println("total      " + (now - start));
+      System.out.println("time to show " + (phase5 - start));
+
+      System.out.println("#######################");
+      System.out.println("");
+    }
+
+
+    //ToolTipManager.sharedInstance().setInitialDelay(500);
+    ToolTipManager.sharedInstance().setDismissDelay(50000000);
+  }
+
+
+//   private static void defineMockHistory() {
+//     History h = History.TheHistory;
+//     h.addItem("In the beginning there was Argo");
+//     h.addItem("And then I wrote a bunch of papers");
+//     h.addItem("Now there is ArgoUML!");
+//   }
+
+
+  public static void  addPostLoadAction(Runnable r) {
+    postLoadActions.addElement(r);
+  }
 
 } /* end Class Main */
 
-/**
- * Class to hold a list of actions to be perform and to perform them
- * after the initializations is done.
- */
+
+
+class StartCritics implements Runnable {
+  public void run() {
+    Designer dsgr = Designer.theDesigner();
+    org.argouml.uml.cognitive.critics.Init.init();
+    org.argouml.uml.cognitive.checklist.Init.init();
+    ProjectBrowser pb = ProjectBrowser.TheInstance;
+	Project p = pb.getProject();
+    dsgr.spawnCritiquer(p);
+    dsgr.setChildGenerator(new ChildGenUML());
+	java.util.Enumeration models = (p.getModels()).elements();
+	while (models.hasMoreElements())
+	{
+		((ru.novosoft.uml.model_management.MModel)models.nextElement()).addMElementListener(dsgr);
+	}
+    System.out.println("spawned critiquing thread");
+
+    // should be in logon wizard?
+    dsgr.startConsidering(org.argouml.uml.cognitive.critics.CrUML.decINHERITANCE);
+    dsgr.startConsidering(org.argouml.uml.cognitive.critics.CrUML.decCONTAINMENT);
+    Designer._userWorking = true;
+  }
+
+} /* end class StartCritics */
+
 class PostLoad implements Runnable {
-    /**
-     * Logger.
-     */
-    private static final Logger LOG = Logger.getLogger(PostLoad.class);
-
-    /**
-     * The list of actions to perform.
-     */
-    private Vector postLoadActions;
-
-    /**
-     * Constructor.
-     *
-     * @param v The actions to perform.
-     */
-    public PostLoad(Vector v) {
-        postLoadActions = v;
+  Vector postLoadActions = null;
+  Thread myThread = null;
+  public PostLoad(Vector v) { postLoadActions = v; }
+  public void setThread(Thread t) { myThread = t; }
+  public void run() {
+    try { myThread.sleep(1000); }
+    catch (Exception ex) { System.out.println("post load no sleep"); }
+    int size = postLoadActions.size();
+    for (int i = 0; i < size; i++) {
+      Runnable r = (Runnable) postLoadActions.elementAt(i);
+      r.run();
+      try { myThread.sleep(100); }
+      catch (Exception ex) { System.out.println("post load no sleep2"); }
     }
-
-    /**
-     * @see java.lang.Runnable#run()
-     */
-    public void run() {
-        try {
-            Thread.sleep(1000);
-        } catch (Exception ex) {
-            LOG.error("post load no sleep", ex);
-        }
-        int size = postLoadActions.size();
-        for (int i = 0; i < size; i++) {
-            Runnable r = (Runnable) postLoadActions.elementAt(i);
-            r.run();
-            try {
-                Thread.sleep(100);
-            } catch (Exception ex) {
-                LOG.error("post load no sleep2", ex);
-            }
-        }
-    }
+  }
 } /* end class PostLoad */
 
-/**
- * Class to do preloading of a lot of classes.
- */
+
 class PreloadClasses implements Runnable {
-    /**
-     * Logger.
-     */
-    private static final Logger LOG = Logger.getLogger(PreloadClasses.class);
+  public void run() {
+      //if (splash != null) {
+      //splash.getStatusBar().showStatus("Preloading classes");
+      //splash.getStatusBar().showProgress(90);
+      //}
 
-    /**
-     * @see java.lang.Runnable#run()
-     */
-    public void run() {
 
-        Class c = null;
-        if (c == null) {
-            // otherwise anoying warning
-            LOG.info("preloading...");
-        }
+      Class c = null;
+      System.out.print("preloading...");
+      c = org.tigris.gef.base.CmdSetMode.class;
+      c = org.tigris.gef.base.ModePlace.class;
+      c = org.tigris.gef.base.ModeModify.class;
+      c = org.tigris.gef.base.SelectionResize.class;
+      c = org.tigris.gef.ui.ColorRenderer.class;
+      c = org.tigris.gef.ui.Swatch.class;
+      c = org.tigris.gef.util.EnumerationEmpty.class;
+      c = org.tigris.gef.util.EnumerationSingle.class;
+      c = org.argouml.uml.GenCompositeClasses.class;
+      c = org.argouml.uml.diagram.static_structure.ui.FigClass.class;
+      c = org.argouml.uml.diagram.static_structure.ui.FigPackage.class;
+      c = org.argouml.uml.diagram.static_structure.ui.FigInterface.class;
+      c = org.argouml.uml.diagram.ui.FigAssociation.class;
+      c = org.argouml.uml.diagram.ui.FigGeneralization.class;
+      c = org.argouml.uml.diagram.ui.FigRealization.class;
+      c = org.argouml.uml.diagram.static_structure.ui.PropPanelClass.class;
+      c = org.argouml.uml.diagram.static_structure.ui.PropPanelInterface.class;
+      c = org.argouml.uml.diagram.static_structure.ui.PropPanelAssociation.class;
+      c = org.argouml.ui.StylePanelFig.class;
+      c = org.argouml.uml.diagram.static_structure.ui.StylePanelFigClass.class;
+      c = org.argouml.uml.diagram.ui.SPFigEdgeModelElement.class;
 
-	// Alphabetic order
-        c = org.argouml.kernel.DelayedChangeNotify.class;
-        c = org.argouml.cognitive.ui.Wizard.class;
-        c = org.argouml.ui.Clarifier.class;
-        c = org.argouml.ui.StylePanelFigNodeModelElement.class;
-        c = org.argouml.uml.GenCompositeClasses.class;
-        c = org.argouml.uml.cognitive.critics.ClAttributeCompartment.class;
-        c = org.argouml.uml.cognitive.critics.ClClassName.class;
-        c = org.argouml.uml.cognitive.critics.ClOperationCompartment.class;
-        c = org.argouml.uml.diagram.static_structure.ui.FigClass.class;
-        c = org.argouml.uml.diagram.static_structure.ui.FigInterface.class;
-        c = org.argouml.uml.diagram.static_structure.ui.FigPackage.class;
-        c = org.argouml.uml.diagram.static_structure.ui.SelectionClass.class;
-        c =
-            org.argouml.uml.diagram.static_structure.ui
-	    .StylePanelFigClass.class;
-        c =
-            org.argouml.uml.diagram.static_structure.ui
-	    .StylePanelFigInterface.class;
-        c = org.argouml.uml.diagram.ui.FigAssociation.class;
-        c = org.argouml.uml.diagram.ui.FigGeneralization.class;
-        c = org.argouml.uml.diagram.ui.FigRealization.class;
-        c = org.tigris.gef.base.ModeCreateEdgeAndNode.class;
-        c = org.argouml.uml.diagram.ui.SPFigEdgeModelElement.class;
-        c = org.argouml.uml.diagram.ui.SelectionNodeClarifiers.class;
-        c = org.argouml.uml.ui.foundation.core.PropPanelAssociation.class;
-        c = org.argouml.uml.ui.foundation.core.PropPanelClass.class;
-        c = org.argouml.uml.ui.foundation.core.PropPanelInterface.class;
+      c = java.lang.ClassNotFoundException.class;
+      c = org.argouml.ui.UpdateTreeHack.class;
+      c = org.argouml.kernel.DelayedChangeNotify.class;
+      c = org.tigris.gef.graph.GraphEvent.class;
+      c = org.tigris.gef.graph.presentation.NetEdge.class;
+      c = org.tigris.gef.graph.GraphEdgeHooks.class;
 
-        c = org.tigris.gef.base.CmdSetMode.class;
-        c = org.tigris.gef.base.Geometry.class;
-        c = org.tigris.gef.base.ModeModify.class;
-        c = org.tigris.gef.base.ModePlace.class;
-        c = org.tigris.gef.base.PathConvPercentPlusConst.class;
-        c = org.tigris.gef.base.SelectionResize.class;
-        c = org.tigris.gef.event.ModeChangeEvent.class;
-        c = org.tigris.gef.graph.GraphEdgeHooks.class;
-        c = org.tigris.gef.graph.GraphEvent.class;
-        c = org.tigris.gef.graph.presentation.NetEdge.class;
-        c = org.tigris.gef.presentation.ArrowHeadNone.class;
-        c = org.tigris.gef.presentation.FigPoly.class;
-        c = org.tigris.gef.ui.ColorRenderer.class;
-        c = org.tigris.gef.ui.Swatch.class;
-        c = org.tigris.gef.util.EnumerationEmpty.class;
-        c = org.tigris.gef.util.EnumerationSingle.class;
+      c = org.argouml.uml.cognitive.critics.WizMEName.class;
+      c = org.argouml.kernel.Wizard.class;
 
-        LOG.info(" done preloading");
-    }
+      c = java.beans.Introspector.class;
+      c = java.beans.BeanInfo.class;
+      c = java.beans.BeanDescriptor.class;
+      c = java.beans.FeatureDescriptor.class;
+      c = java.lang.InterruptedException.class;
+      c = java.lang.CloneNotSupportedException.class;
+      c = java.lang.reflect.Modifier.class;
+      c = java.beans.EventSetDescriptor.class;
+      c = java.beans.PropertyDescriptor.class;
+      c = java.lang.Void.class;
+      c = java.beans.MethodDescriptor.class;
+      c = java.beans.SimpleBeanInfo.class;
+      c = java.util.TooManyListenersException.class;
+      c = java.beans.PropertyVetoException.class;
+      c = java.beans.IndexedPropertyDescriptor.class;
+      c = org.argouml.kernel.HistoryItemResolve.class;
+      c = org.tigris.gef.event.ModeChangeEvent.class;
+      c = org.argouml.uml.cognitive.critics.ClClassName.class;
+      c = org.argouml.ui.Clarifier.class;
+      c = org.argouml.uml.cognitive.critics.ClAttributeCompartment.class;
+      c = org.argouml.uml.cognitive.critics.ClOperationCompartment.class;
+      c = java.lang.SecurityException.class;
+      c = java.lang.NullPointerException.class;
 
+      System.out.println(" done preloading");
+  }
 } /* end class PreloadClasses */

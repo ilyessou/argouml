@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,76 +21,62 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: CrNoTransitions.java
+// Classes: CrNoTransitions
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.cognitive.critics;
 
-import java.util.Collection;
+import java.util.*;
 
-import org.argouml.cognitive.Designer;
-import org.argouml.cognitive.critics.Critic;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
+import ru.novosoft.uml.behavior.state_machines.*;
 
-/**
- * A critic to detect when a state has no outgoing transitions.
- *
- * @author jrobbins
- */
+import org.argouml.cognitive.*;
+import org.argouml.cognitive.critics.*;
+
+/** A critic to detect when a state has no outgoing transitions. */
+
 public class CrNoTransitions extends CrUML {
 
-    /**
-     * Constructor.
-     */
-    public CrNoTransitions() {
-        setupHeadAndDesc();
-	addSupportedDecision(UMLDecision.STATE_MACHINES);
-	setKnowledgeTypes(Critic.KT_COMPLETENESS);
-	addTrigger("incoming");
-	addTrigger("outgoing");
-    }
+  public CrNoTransitions() {
+    setHeadline("Add Transitions to <ocl>self</ocl>");
+    sd("MState <ocl>self</ocl> has no Incoming or Outgoing transitions. "+
+       "Normally states have both incoming and outgoing transitions. \n\n"+
+       "Defining complete state transitions is needed to complete the behavioral "+
+       "specification part of your design.  \n\n"+
+       "To fix this, press the \"Next>\" button, or add transitions manually "+
+       "by clicking on transition tool in the tool bar and dragging from "+
+       "another state to <ocl>self</ocl> or from <ocl>self</ocl> to another state. ");
 
-    /**
-     * This is the decision routine for the critic.
-     *
-     * @param dm is the UML entity that is being checked.
-     * @param dsgr is for future development and can be ignored.
-     *
-     * @return boolean problem found
-     */
-    public boolean predicate2(Object dm, Designer dsgr) {
-	if (!(Model.getFacade().isAStateVertex(dm))) {
-	    return NO_PROBLEM;
-	}
-	Object sv = /*(MStateVertex)*/ dm;
-	if (Model.getFacade().isAState(sv)) {
-	    Object sm = Model.getFacade().getStateMachine(sv);
-	    if (sm != null && Model.getFacade().getTop(sm) == sv) {
-	        return NO_PROBLEM;
-	    }
-	}
-	Collection outgoing = Model.getFacade().getOutgoings(sv);
-	Collection incoming = Model.getFacade().getIncomings(sv);
-	boolean needsOutgoing = outgoing == null || outgoing.size() == 0;
-	boolean needsIncoming = incoming == null || incoming.size() == 0;
-	if (Model.getFacade().isAPseudostate(sv)) {
-	    Object k = Model.getFacade().getPseudostateKind(sv);
-	    if (k.equals(Model.getPseudostateKind().getChoice())) {
-	        return NO_PROBLEM;
-	    }
-	    if (k.equals(Model.getPseudostateKind().getJunction())) {
-	        return NO_PROBLEM;
-	    }
-	    if (k.equals(Model.getPseudostateKind().getInitial())) {
-                needsIncoming = false;
-            }
-	}
-	if (Model.getFacade().isAFinalState(sv)) {
-	    needsOutgoing = false;
-	}
+    addSupportedDecision(CrUML.decSTATE_MACHINES);
+    setKnowledgeTypes(Critic.KT_COMPLETENESS);
+    addTrigger("incoming");
+    addTrigger("outgoing");
+  }
 
-	if (needsIncoming && needsOutgoing) {
-	    return PROBLEM_FOUND;
-	}
-	return NO_PROBLEM;
+  public boolean predicate2(Object dm, Designer dsgr) {
+    if (!(dm instanceof MStateVertex)) return NO_PROBLEM;
+    MStateVertex sv = (MStateVertex) dm;
+    if (sv instanceof MState) {
+      MStateMachine sm = ((MState)sv).getStateMachine();
+      if (sm != null && sm.getTop() == sv) return NO_PROBLEM;
     }
+    Collection outgoing = sv.getOutgoings();
+    Collection incoming = sv.getIncomings();
+    boolean needsOutgoing = outgoing == null || outgoing.size() == 0;
+    boolean needsIncoming = incoming == null || incoming.size() == 0;
+    if (sv instanceof MPseudostate) {
+      MPseudostateKind k = ((MPseudostate)sv).getKind();
+      if (k.equals(MPseudostateKind.INITIAL)) needsIncoming = false;
+    }
+	if (sv instanceof MFinalState) needsOutgoing = false;
+    
+    if (needsIncoming && needsOutgoing) return PROBLEM_FOUND;
+    return NO_PROBLEM;
+  }
 
 } /* end class CrNoTransitions */
+

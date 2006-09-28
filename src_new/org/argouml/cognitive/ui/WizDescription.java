@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,144 +23,91 @@
 
 package org.argouml.cognitive.ui;
 
-import java.awt.BorderLayout;
-import java.text.MessageFormat;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.*;
+import javax.swing.*;
+import javax.swing.event.*;
+import javax.swing.tree.*;
 
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
+import ru.novosoft.uml.foundation.core.*;
 
-import org.apache.log4j.Logger;
-import org.argouml.cognitive.Decision;
-import org.argouml.cognitive.Goal;
-import org.argouml.cognitive.ToDoItem;
-import org.argouml.cognitive.Translator;
-import org.argouml.cognitive.critics.Critic;
-import org.argouml.model.Model;
+import org.tigris.gef.ui.ToolBar;
 
+import org.argouml.cognitive.*;
+import org.argouml.cognitive.critics.*;
 
-/**
- * This class represents the first step of the wizard.
- * It contains the description of the
- * wizard in case the selected target is a todo item.
- * An appropriate message is shown in case nothing is selected, or
- * in case the user selected one of the branches (folders) in the
- * tree in the todo panel.
- */
 public class WizDescription extends WizStep {
-    /**
-     * Logger.
-     */
-    private static final Logger LOG = Logger.getLogger(WizDescription.class);
 
-    ////////////////////////////////////////////////////////////////
-    // instance variables
+  ////////////////////////////////////////////////////////////////
+  // instance variables
 
-    private JTextArea description = new JTextArea();
+  JTextArea _description = new JTextArea();
 
 
-    /**
-     * The constructor.
-     *
-     */
-    public WizDescription() {
-	super();
-	LOG.info("making WizDescription");
+  public WizDescription() {
+    super();
+    System.out.println("making WizDescription");
 
-	description.setLineWrap(true);
-	description.setWrapStyleWord(true);
+    _description.setLineWrap(true);
+    _description.setWrapStyleWord(true);
 
-	getMainPanel().setLayout(new BorderLayout());
-	getMainPanel().add(new JScrollPane(description), BorderLayout.CENTER);
+    _mainPanel.setLayout(new BorderLayout());
+    _mainPanel.add(new JScrollPane(_description), BorderLayout.CENTER);
+  }
+
+  public void setTarget(Object item) {
+    super.setTarget(item);
+    if (_target == null) {
+      _description.setText("No ToDoItem selected");
     }
-
-    /**
-     * @see org.argouml.cognitive.ui.WizStep#setTarget(java.lang.Object)
-     */
-    public void setTarget(Object item) {
-	String message = "";
-	super.setTarget(item);
-	Object target = item;
-	if (target == null) {
-	    description.setEditable(false);
-	    description.setText(
-                Translator.localize("message.item.no-item-selected"));
-	} else if (target instanceof ToDoItem) {
-	    ToDoItem tdi = (ToDoItem) target;
-	    description.setEditable(false);
-	    description.setEnabled(true);
-	    description.setText(tdi.getDescription());
-	    description.setCaretPosition(0);
-	} else if (target instanceof PriorityNode) {
-	    message =
-                MessageFormat.format(
-                        Translator.localize("message.item.branch-priority"),
-                        new Object [] {
-                            target.toString(),
-                        });
-	    description.setEditable(false);
-	    description.setText(message);
-
-	    return;
-	} else if (target instanceof Critic) {
-	    message =
-                MessageFormat.format(
-                        Translator.localize("message.item.branch-critic"),
-                        new Object [] {
-                            target.toString(),
-                        });
-	    description.setEditable(false);
-	    description.setText(message);
-
-	    return;
-	} else if (Model.getFacade().isAModelElement(target)) {
-	    message =
-                MessageFormat.format(
-                        Translator.localize("message.item.branch-model"),
-                        new Object [] {
-                            Model.getFacade().toString(target),
-                        });
-	    description.setEditable(false);
-	    description.setText(message);
-
-	    return;
-	} else if (target instanceof Decision) {
-	    message =
-                MessageFormat.format(
-                        Translator.localize("message.item.branch-decision"),
-                        new Object [] {
-                            Model.getFacade().toString(target),
-                        });
-	    description.setText(message);
-
-	    return;
-	} else if (target instanceof Goal) {
-	    message =
-                MessageFormat.format(
-                        Translator.localize("message.item.branch-goal"),
-                        new Object [] {
-                            Model.getFacade().toString(target),
-                        });
-	    description.setText(message);
-
-	    return;
-	} else if (target instanceof KnowledgeTypeNode) {
-	    message =
-                MessageFormat.format(
-                        Translator.localize("message.item.branch-knowledge"),
-                        new Object [] {
-                            Model.getFacade().toString(target),
-                        });
-	    description.setText(message);
-
-	    return;
-	} else {
-	    description.setText("");
-	    return;
-	}
+    else if (_target instanceof ToDoItem) {
+      ToDoItem tdi = (ToDoItem) _target;
+      _description.setEnabled(true);
+      _description.setText(tdi.getDescription());
+      _description.setCaretPosition(0);
     }
+    else if (_target instanceof PriorityNode) {
+      _description.setText("This branch contains " + _target.toString() +
+			   " priority \"to do\" items.");
+      return;
+    }
+    else if (_target instanceof Critic) {
+      _description.setText("This branch contains \"to do\" items "+
+			   "generated by the critic: \n" +
+			   _target.toString() + ".");
+      return;
+    }
+    else if (_target instanceof MModelElement) {
+      _description.setText("This branch contains \"to do\" items "+
+			   "related to the model element: \n" +
+			   _target.toString() + ".");
+      return;
+    }
+    else if (_target instanceof Decision) {
+      _description.setText("This branch contains \"to do\" items "+
+			   "related to the decision: \n" +
+			   _target.toString() + ".");
+      return;
+    }
+    else if (_target instanceof Goal) {
+      _description.setText("This branch contains \"to do\" items "+
+			   "related to the goal: \n" +
+			   _target.toString() + ".");
+      return;
+    }
+    else if (_target instanceof KnowledgeTypeNode) {
+      _description.setText("This branch contains \"to do\" items "+
+			   "that provide " + _target.toString() +
+			   " related knowledge.");
+      return;
+    }
+    else {
+      _description.setText("");
+      return;
+    }
+  }
 
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = 2545592446694112088L;
+
+
 } /* end class WizDescription */

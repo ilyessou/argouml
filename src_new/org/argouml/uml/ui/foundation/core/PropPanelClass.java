@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,68 +23,266 @@
 
 package org.argouml.uml.ui.foundation.core;
 
-import org.argouml.i18n.Translator;
-import org.argouml.ui.targetmanager.TargetManager;
-import org.argouml.uml.ui.ActionNavigateNamespace;
-import org.argouml.uml.ui.foundation.extension_mechanisms.ActionNewStereotype;
-import org.argouml.util.ConfigLoader;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.*;
+import java.beans.*;
+import javax.swing.*;
+import javax.swing.event.*;
+import javax.swing.tree.*;
+import javax.swing.text.*;
+import javax.swing.border.*;
+import javax.swing.plaf.metal.MetalLookAndFeel;
 
-/**
- * The properties panel for a Class.
- */
-public class PropPanelClass extends PropPanelClassifier {
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
+import ru.novosoft.uml.model_management.*;
 
-    /**
-     * The serial version.
-     */
-    private static final long serialVersionUID = -8288739384387629966L;
+import org.argouml.ui.*;
+import org.argouml.uml.ui.*;
 
-    /**
-     * Construct a property panel for UML Class elements.
-     */
-    public PropPanelClass() {
-        super("Class",
-            lookupIcon("Class"),
-            ConfigLoader.getTabPropsOrientation());
+// needs-more-work: list of implemented interfaces
+// needs-more-work: setting base class
 
-        addField(Translator.localize("label.name"),
-                getNameTextField());
-        addField(Translator.localize("label.namespace"),
-                getNamespaceSelector());
-        getModifiersPanel().add(new UMLClassActiveCheckBox());
-        add(getModifiersPanel());
-        add(getNamespaceVisibilityPanel());
+public class PropPanelClass extends PropPanel
+implements ItemListener {
 
-        addSeparator();
+  ////////////////////////////////////////////////////////////////
+  // constants
+  public static final String VISIBILITIES[] = {
+      "", MVisibilityKind.PUBLIC.getName()};// MVisibilityKind.PRIVATE.getName(), MVisibilityKind.PROTECTED.getName() };
+	// what about PACKAGE in nsuml?
 
-        addField(Translator.localize("label.client-dependencies"),
-                getClientDependencyScroll());
-        addField(Translator.localize("label.supplier-dependencies"),
-                getSupplierDependencyScroll());
-        addField(Translator.localize("label.generalizations"),
-                getGeneralizationScroll());
-        addField(Translator.localize("label.specializations"),
-                getSpecializationScroll());
 
-        addSeparator();
+  public static final String CLASSKEYWORDS[] = { "none", "abstract", "final"};
 
-        addField(Translator.localize("label.attributes"),
-                getAttributeScroll());
-        addField(Translator.localize("label.association-ends"),
-                getAssociationEndScroll());
-        addField(Translator.localize("label.operations"),
-                getOperationScroll());
-        addField(Translator.localize("label.owned-elements"),
-                getOwnedElementsScroll());
+  
+  ////////////////////////////////////////////////////////////////
+  // instance vars
+  JLabel _visLabel = new JLabel("Visibility: ");
+  JComboBox _visField = new JComboBox(VISIBILITIES);
+  JLabel _keywordsLabel = new JLabel("Keywords: ");
+  JComboBox _keywordsField = new JComboBox(CLASSKEYWORDS);
+  JLabel _extendsLabel = new JLabel("Extends: ");
+  JComboBox _extendsField = new JComboBox();
+  JLabel _impleLabel = new JLabel("Implements: ");
+  JList _implList = new JList();
+  SpacerPanel _spacer = new SpacerPanel();
 
-        addAction(new ActionNavigateNamespace());
-        addAction(TargetManager.getInstance().getAddAttributeAction());
-        addAction(TargetManager.getInstance().getAddOperationAction());
-        addAction(getActionNewReception());
-        addAction(new ActionNewInnerClass());
-        addAction(new ActionNewClass());
-        addAction(new ActionNewStereotype());
-        addAction(getDeleteAction());
+  ////////////////////////////////////////////////////////////////
+  // contructors
+  public PropPanelClass() {
+    super("Class Properties");
+    GridBagLayout gb = (GridBagLayout) getLayout();    
+    GridBagConstraints c = new GridBagConstraints();
+    c.fill = GridBagConstraints.BOTH;
+    c.ipadx = 0; c.ipady = 0;
+
+
+    //_visField.getEditor().getEditorComponent().setBackground(Color.white);
+    //_keywordsField.getEditor().getEditorComponent().setBackground(Color.white);
+    _extendsField.setEditable(true);
+    _extendsField.getEditor().getEditorComponent().setBackground(Color.white);
+
+    _extendsField.addKeyListener(this);
+    _extendsField.addFocusListener(this);
+    _visField.addItemListener(this);
+    _keywordsField.addItemListener(this);
+    _extendsField.addItemListener(this);
+
+
+    //_extendsField.setRenderer(new ModelElementRenderer());
+
+    //_implList.setBorder(new EtchedBorder(EtchedBorder.LOWERED));
+    Font labelFont = MetalLookAndFeel.getSubTextFont();
+    _implList.setFont(labelFont);
+    _implList.setCellRenderer(new UMLListCellRenderer());
+
+    //_implList.addList...Listener(this);
+
+    c.gridx = 0;
+    c.gridwidth = 1;
+    c.gridy = 1;
+    c.weightx = 0.0;
+    gb.setConstraints(_visLabel, c);
+    add(_visLabel);
+    c.gridy = 2;
+    gb.setConstraints(_keywordsLabel, c);
+    add(_keywordsLabel);
+    c.gridy = 3;
+    gb.setConstraints(_extendsLabel, c);
+    add(_extendsLabel);
+
+
+    
+    c.weightx = 1.0;
+    c.gridx = 1;
+    //c.gridwidth = GridBagConstraints.REMAINDER;
+    c.gridy = 1;
+    gb.setConstraints(_visField, c);
+    add(_visField);
+    c.gridy = 2;
+    gb.setConstraints(_keywordsField, c);
+    add(_keywordsField);
+    c.gridy = 3;
+    gb.setConstraints(_extendsField, c);
+    add(_extendsField);
+
+    c.weightx = 0.0;
+    c.gridx = 2;
+    c.gridy = 0;
+    gb.setConstraints(_spacer, c);
+    add(_spacer);
+    
+
+    c.weightx = 1.0;
+    c.gridwidth = 3;
+    c.gridx = 3;
+    //c.gridwidth = GridBagConstraints.REMAINDER;
+    c.gridy = 0;
+    gb.setConstraints(_impleLabel, c);
+    add(_impleLabel);
+    c.gridy = 1;
+    c.gridheight = 11;
+    JScrollPane implSP = new JScrollPane(_implList);
+    gb.setConstraints(implSP, c);
+    add(implSP);
+
+  }
+
+  ////////////////////////////////////////////////////////////////
+  // accessors
+
+  protected void setTargetInternal(Object t) {
+    super.setTargetInternal(t);
+	//System.out.println("PropPanelClass: setTargetInternal "+t);
+    MClass cls = (MClass) t;
+
+    MVisibilityKind vk = cls.getVisibility();
+    if (vk != null) 
+	_visField.setSelectedItem(vk.getName());
+
+    if (cls.isAbstract())
+      _keywordsField.setSelectedItem("abstract");
+    else if (cls.isLeaf())
+      _keywordsField.setSelectedItem("final");
+    else
+      _keywordsField.setSelectedItem("none");
+
+    Vector gens = new Vector(cls.getGeneralizations());
+    MGeneralization gen = null;
+    JTextField ed = (JTextField) _extendsField.getEditor().getEditorComponent();
+    if (gens != null && gens.size() == 1)
+      gen = (MGeneralization) gens.firstElement();
+    if (gen == null) {
+      //System.out.println("null base class");
+      _extendsField.setSelectedItem(null);
+      ed.setText("");
+    }
+    else {
+      //System.out.println("base class found");
+		MGeneralizableElement parent = gen.getParent();
+      _extendsField.setSelectedItem(parent);
+      if (parent != null)
+		  ed.setText(parent.getName());
+      else
+		  ed.setText("");
+    }
+	/*    Vector interfaces = new Vector();
+		  Vector specs = cls.getSpecification();
+		  int size = specs.size();
+		  for (int i = 0; i < size; i++) {
+		  Realization r = (Realization) specs.elementAt(i);
+		  interfaces.addElement(r.getSupertype());
+		  }
+		  _implList.setListData(interfaces);
+		  _implList.setCellRenderer(new UMLListCellRenderer());
+	*/
+    updateExtendsChoices();
+  }
+
+
+  public void setTargetExtends() {
+    if (_target == null) return;
+    if (_inChange) return;
+    Object base = _extendsField.getSelectedItem();
+    //System.out.println("needs-more-work: baseClass = " + base);
+    // needs-more-work: this could involve changes to the graph model
+  }
+
+  public void setTargetVisibility() {
+    if (_target == null) return;
+    if (_inChange) return;
+    MVisibilityKind vk = MVisibilityKind.forName((String)_visField.getSelectedItem());
+    MClass cls = (MClass) _target;
+	cls.setVisibility(vk);
+  }
+
+  public void setTargetKeywords() {
+    if (_target == null) return;
+    if (_inChange) return;
+    String keys = (String) _keywordsField.getSelectedItem();
+    if (keys == null) {
+      //System.out.println("keywords are null");
+      return;
+    }
+    MClass cls = (MClass) _target;
+	if (keys.equalsIgnoreCase("none")) {
+		cls.setAbstract(false);
+		cls.setLeaf(false);
+	}
+	else if (keys.equalsIgnoreCase("abstract")) {
+		cls.setAbstract(true);
+		cls.setLeaf(false);
+	}
+	else if (keys.equalsIgnoreCase("final")) {
+		cls.setAbstract(false);
+		cls.setLeaf(true);
+	}
+  }
+
+  ////////////////////////////////////////////////////////////////
+  // utility functions
+
+  public void updateExtendsChoices() {
+    // needs-more-work: build a list of existing (non-final) classes
+  }
+
+  
+  ////////////////////////////////////////////////////////////////
+  // event handling
+
+    public void focusLost(FocusEvent e){
+	super.focusLost(e);
+	if (e.getComponent() == _extendsField)
+	    setTargetExtends();
     }
 
+  public void itemStateChanged(ItemEvent e) {
+    Object src = e.getSource();
+    if (src == _keywordsField) {
+      //System.out.println("class keywords now is " +
+      //_keywordsField.getSelectedItem());
+      setTargetKeywords();
+    }
+    else if (src == _visField) {
+      //System.out.println("class MVisibilityKind now is " +
+      //_visField.getSelectedItem());
+      setTargetVisibility();
+    }
+    else if (src == _extendsField) {
+      //System.out.println("class extends now is " +
+      //_extendsField.getSelectedItem());
+      setTargetExtends();
+    } 
+	else if (src == _namespaceField) {
+		// what to do here?
+		//setTargetInternal();
+	}
+	else if (src == _stereoField) {
+		setTargetStereotype();
+	}
+  }
+
+  
 } /* end class PropPanelClass */

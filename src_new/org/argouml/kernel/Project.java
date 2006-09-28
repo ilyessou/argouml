@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,1300 +23,844 @@
 
 package org.argouml.kernel;
 
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyVetoException;
-import java.beans.VetoableChangeListener;
-import java.beans.VetoableChangeSupport;
-import java.io.File;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
-import java.util.Vector;
+import java.io.*;
+import java.util.*;
+import java.beans.*;
+import java.net.*;
 
-import org.apache.log4j.Logger;
-import org.argouml.application.ArgoVersion;
-import org.argouml.application.api.Argo;
-import org.argouml.application.api.Configuration;
-import org.argouml.model.Model;
-import org.argouml.persistence.PersistenceManager;
-import org.argouml.ui.ArgoDiagram;
-import org.argouml.ui.explorer.ExplorerEventAdaptor;
-import org.argouml.ui.targetmanager.TargetEvent;
-import org.argouml.ui.targetmanager.TargetListener;
-import org.argouml.ui.targetmanager.TargetManager;
-import org.argouml.uml.Profile;
-import org.argouml.uml.ProfileException;
-import org.argouml.uml.ProfileJava;
-import org.argouml.uml.ProjectMemberModel;
-import org.argouml.uml.cognitive.ProjectMemberTodoList;
-import org.argouml.uml.diagram.DiagramFactory;
-import org.argouml.uml.diagram.ProjectMemberDiagram;
-import org.argouml.uml.diagram.static_structure.ui.CommentEdge;
-import org.argouml.uml.diagram.static_structure.ui.UMLClassDiagram;
-import org.argouml.uml.diagram.ui.UMLDiagram;
-import org.argouml.uml.generator.GenerationPreferences;
-import org.tigris.gef.base.Diagram;
-import org.tigris.gef.presentation.Fig;
+import ru.novosoft.uml.model_management.*;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.behavior.state_machines.*;
+import ru.novosoft.uml.xmi.*;
 
-/**
- * The Project is a datastructure that represents the designer's
- * current project. It manages the list of diagrams and UML models.
- */
-public class Project implements java.io.Serializable, TargetListener {
+import org.tigris.gef.base.*;
+import org.tigris.gef.presentation.*;
+import org.tigris.gef.util.*;
 
-    /**
-     * Logger.
-     */
-    private static final Logger LOG = Logger.getLogger(Project.class);
+import org.argouml.cognitive.*;
+import org.argouml.cognitive.ui.*;
+import org.argouml.cognitive.critics.*;
+import org.argouml.cognitive.critics.ui.*;
+import org.argouml.cognitive.checklist.*;
+import org.argouml.uml.*;
+import org.argouml.uml.generator.*;
+import org.argouml.uml.diagram.*;
+import org.argouml.uml.diagram.ui.*;
+import org.argouml.uml.diagram.static_structure.ui.*;
+import org.argouml.uml.diagram.use_case.ui.*;
+import org.argouml.language.java.generator.*;
+import org.argouml.ui.*;
+import org.argouml.util.*;
+import org.argouml.xml.argo.*; 
+import org.argouml.xml.pgml.*;
 
-    ////////////////////////////////////////////////////////////////
-    // constants
+/** A datastructure that represents the designer's current project.  A
+ *  Project consists of diagrams and UML models. */
 
-    /**
-     * Default name for a project.
-     */
-    private static final String UNTITLED_FILE = "Untitled";
+public class Project implements java.io.Serializable {
+  ////////////////////////////////////////////////////////////////
+  // constants
+  public static final String SEPARATOR = "/";
+  public final static String FILE_EXT = ".argo";
+  public final static String TEMPLATES = "/org/argouml/templates/";
+  //public final static String EMPTY_PROJ = "EmptyProject" + FILE_EXT;
+  public final static String UNTITLED_FILE = "Untitled";
 
-    ////////////////////////////////////////////////////////////////
-    // static variables
+  ////////////////////////////////////////////////////////////////
+  // instance variables
 
-    /**
-     * The UID.
-     */
-    static final long serialVersionUID = 1399111233978692444L;
+  //public String _pathname = "";
+  //public String _filename = UNTITLED_FILE + FILE_EXT;
 
-    ////////////////////////////////////////////////////////////////
-    // instance variables
+  //needs-more-work should just be the directory to write
+  private URL _url = null;
 
-    /**
-     * TODO: should just be the directory to write.
-     */
-    private URI uri;
+  public String _authorname = "";
+  public String _description = "";
+  public String _version = "";
 
-    /* The preferences with project-scope: */
-    private String authorname;
-    private String authoremail;
-    private String description;
-    /* The ArgoUML version with which this project was last saved: */
-    private String version;
+  public Vector _searchpath = new Vector();
+  public Vector _members = new Vector();
+  public String _historyFile = "";
 
-    private ProjectSettings projectSettings;
+  public Vector _models = new Vector(); //instances of MModel
+  public Vector _diagrams = new Vector(); // instances of LayerDiagram
+  public boolean _needsSave = false;
+  public MNamespace _curModel = null;
+  public Hashtable _definedTypes = new Hashtable(80);
+  public HashMap _UUIDRefs = null;
+  public GenerationPreferences _cgPrefs = new GenerationPreferences();
+  public transient VetoableChangeSupport _vetoSupport = null;
 
-    private Vector searchpath;
+  ////////////////////////////////////////////////////////////////
+  // constructor
 
-    // TODO: break into 3 main member types
-    // model, diagram and other
-    private MemberList members;
+  public Project(File file) throws MalformedURLException, IOException {
+    this(Util.fileToURL(file));
+  }
 
-    private String historyFile;
+  public Project(URL url) {
+    _url = Util.fixURLExtension(url, FILE_EXT);
+  }
 
-    /**
-     * The version number of the persistence format that last
-     * saved this project.
-     */
-    private int persistenceVersion;
+  public Project() { }
 
-    /**
-     * Instances of the uml model.
-     */
-    private Vector models;
+  public Project (MModel model) {
+    System.out.println("making empty project with model: "+model.getName());
 
-    /**
-     * Instances of the uml diagrams.
-     */
-    private Vector diagrams;
-    private Object defaultModel;
-    private Object currentNamespace;
-    private HashMap uuidRefs;
-    private GenerationPreferences cgPrefs;
-    private transient VetoableChangeSupport vetoSupport;
+    defineType(JavaUML.VOID_TYPE);     //J.101
+    defineType(JavaUML.CHAR_TYPE);     //J.102
+    defineType(JavaUML.INT_TYPE);      //J.103
+    defineType(JavaUML.BOOLEAN_TYPE);  //J.104
+    defineType(JavaUML.BYTE_TYPE);     //J.105
+    defineType(JavaUML.LONG_TYPE);     //J.106
+    defineType(JavaUML.FLOAT_TYPE);    //J.107
+    defineType(JavaUML.DOUBLE_TYPE);   //J.108
+    defineType(JavaUML.STRING_CLASS);  //J.109
+    defineType(JavaUML.CHAR_CLASS);    //J.110
+    defineType(JavaUML.INT_CLASS);     //J.111
+    defineType(JavaUML.BOOLEAN_CLASS); //J.112
+    defineType(JavaUML.BYTE_CLASS);    //J.113
+    defineType(JavaUML.LONG_CLASS);    //J.114
+    defineType(JavaUML.FLOAT_CLASS);   //J.115
+    defineType(JavaUML.DOUBLE_CLASS);  //J.116
 
-    private Profile profile;
+    defineType(JavaUML.RECTANGLE_CLASS); //J.201
+    defineType(JavaUML.POINT_CLASS);     //J.202
+    defineType(JavaUML.COLOR_CLASS);     //J.203
 
-    /**
-     * The active diagram, pointer to a diagram in the list with diagrams.
-     */
-    private ArgoDiagram activeDiagram;
+    defineType(JavaUML.VECTOR_CLASS);    //J.301
+    defineType(JavaUML.HASHTABLE_CLASS); //J.302
+    defineType(JavaUML.STACK_CLASS);     //J.303
 
-    /**
-     * Cache for the default model.
-     */
-    private HashMap defaultModelTypeCache;
+    addSearchPath("PROJECT_DIR");
 
-    private Collection trashcan = new ArrayList();
-
-    /**
-     * Constructor.
-     *
-     * @param theProjectUri Uri to read the project from.
-     */
-    public Project(URI theProjectUri) {
-        this();
-        uri = PersistenceManager.getInstance().fixUriExtension(theProjectUri);
+    try {
+      addMember(new UMLClassDiagram(model));
+      addMember(new UMLUseCaseDiagram(model));
+      addMember(model);
+      setNeedsSave(false);
     }
+    catch (PropertyVetoException pve) { }
 
-    /**
-     * Constructor.
-     */
-    public Project() {
-        profile = new ProfileJava();
-        projectSettings = new ProjectSettings();
-        
-        Model.getModelManagementFactory().setRootModel(null);
+    Runnable resetStatsLater = new ResetStatsLater();
+    org.argouml.application.Main.addPostLoadAction(resetStatsLater);
+  }
 
-        authorname = Configuration.getString(Argo.KEY_USER_FULLNAME);
-        authoremail = Configuration.getString(Argo.KEY_USER_EMAIL);
-        description = "";
-        // this should be moved to a ui action.
-        version = ArgoVersion.getVersion();
 
-        searchpath = new Vector();
-        members = new MemberList();
-        historyFile = "";
-        models = new Vector();
-        diagrams = new Vector();
-        cgPrefs = new GenerationPreferences();
-        defaultModelTypeCache = new HashMap();
+  public static Project makeEmptyProject() {
+    System.out.println("making empty project");
+    Project p = new Project();
 
-        LOG.info("making empty project with empty model");
-        try {
-            // Jaap Branderhorst 2002-12-09
-            // load the default model
-            // this is NOT the way how it should be since this makes argo
-            // depend on Java even more.
-            setDefaultModel(profile.getProfileModel());
-        } catch (ProfileException e) {
-            // TODO: how are we going to handle exceptions here?
-            // I think we need a ProjectException.
-            LOG.error("Exception setting the default profile", e);
+    p.defineType(JavaUML.VOID_TYPE);     //J.101
+    p.defineType(JavaUML.CHAR_TYPE);     //J.102
+    p.defineType(JavaUML.INT_TYPE);      //J.103
+    p.defineType(JavaUML.BOOLEAN_TYPE);  //J.104
+    p.defineType(JavaUML.BYTE_TYPE);     //J.105
+    p.defineType(JavaUML.LONG_TYPE);     //J.106
+    p.defineType(JavaUML.FLOAT_TYPE);    //J.107
+    p.defineType(JavaUML.DOUBLE_TYPE);   //J.108
+    p.defineType(JavaUML.STRING_CLASS);  //J.109
+    p.defineType(JavaUML.CHAR_CLASS);    //J.110
+    p.defineType(JavaUML.INT_CLASS);     //J.111
+    p.defineType(JavaUML.BOOLEAN_CLASS); //J.112
+    p.defineType(JavaUML.BYTE_CLASS);    //J.113
+    p.defineType(JavaUML.LONG_CLASS);    //J.114
+    p.defineType(JavaUML.FLOAT_CLASS);   //J.115
+    p.defineType(JavaUML.DOUBLE_CLASS);  //J.116
+
+    p.defineType(JavaUML.RECTANGLE_CLASS); //J.201
+    p.defineType(JavaUML.POINT_CLASS);     //J.202
+    p.defineType(JavaUML.COLOR_CLASS);     //J.203
+
+    p.defineType(JavaUML.VECTOR_CLASS);    //J.301
+    p.defineType(JavaUML.HASHTABLE_CLASS); //J.302
+    p.defineType(JavaUML.STACK_CLASS);     //J.303
+// 	try { p.addMember(JavaUML.javastandards); }
+// 	catch (PropertyVetoException pve) { } 
+	
+    p.addSearchPath("PROJECT_DIR");
+
+// 	try {
+// 		XMIReader reader = new XMIReader();
+// 		MModel model  = reader.parse(new org.xml.sax.InputSource("java.xmi"));
+// 		model.setName("Java standards");
+// 		p.addMember(model);
+// 	} catch (Exception ex) {
+// 		ex.printStackTrace();
+// 	}
+
+    MModel m1 = new MModelImpl();
+    m1.setUUID(UUIDManager.SINGLETON.getNewUUID());
+    m1.setName("untitledModel");
+    
+    try {
+      p.addMember(new UMLClassDiagram(m1));
+      p.addMember(new UMLUseCaseDiagram(m1));
+      p.addMember(m1);
+      p.setNeedsSave(false);
+    }
+    catch (PropertyVetoException pve) { }
+
+    Runnable resetStatsLater = new ResetStatsLater();
+    org.argouml.application.Main.addPostLoadAction(resetStatsLater);
+
+    return p;
+  }
+
+//   /** This method is currently not called.  It is an example of how to
+//    *  support loading template files.  However, makeEmptyProject() is
+//    *  much faster, and that is important since it is done often. */
+//   public static Project loadEmptyProject() {
+//     System.out.println("Reading " + TEMPLATES + EMPTY_PROJ + "...");
+//     URL url = Project.class.getResource(TEMPLATES + EMPTY_PROJ);
+//     Project p = null;
+//     //try {
+//     ArgoParser.SINGLETON.readProject(url);
+//     //     }
+//     //     catch (IOException ignore) {
+//     //       System.out.println("IOException in makeEmptyProject");
+//     //     }
+//     //     catch (org.xml.sax.SAXException ignore) {
+//     //       System.out.println("SAXException in makeEmptyProject");
+//     //     }
+//     p = ArgoParser.SINGLETON.getProject();
+//     //p.initProject();
+//     p.loadAllMembers();
+//     p.postLoad();
+//     return p;
+//   }
+
+  ////////////////////////////////////////////////////////////////
+  // accessors
+  // needs-more-work 
+
+  public String getBaseName() {
+    String n = getName();
+    if (!n.endsWith(FILE_EXT)) return n;
+    return n.substring(0, n.length() - FILE_EXT.length());
+  }
+
+  public String getName() {
+    // needs-more-work: maybe separate name
+    if (_url == null) return UNTITLED_FILE;
+    String name = _url.getFile();
+    int i = name.lastIndexOf('/');
+    return name.substring(i+1);
+  }
+
+  public void setName(String n) throws PropertyVetoException, MalformedURLException {
+    String s = "";
+    if (getURL() != null) s = getURL().toString();
+    s = s.substring(0, s.lastIndexOf("/") + 1) + n;
+    //JH    System.out.println("s = " + s);
+    setURL(new URL(s));
+  }
+
+  public void updateMemberNames() {
+    for (int i = 0 ; i < _members.size(); i++) {
+      ProjectMember pm = (ProjectMember) _members.elementAt(i);
+      pm.updateProjectName();
+    }
+  }
+
+//   public void setName(String n) throws PropertyVetoException {
+//     getVetoSupport().fireVetoableChange("Name", _filename, n);
+//     _filename = n;
+//   }
+
+  public URL getURL() { return _url; }
+
+  public void setURL(URL url) throws PropertyVetoException {
+    url = Util.fixURLExtension(url, FILE_EXT);
+    getVetoSupport().fireVetoableChange("url", _url, url);
+    _url = url;
+    updateMemberNames();
+  }
+
+//   public void setFilename(String path, String name) throws PropertyVetoException {
+//     if (!(name.endsWith(FILE_EXT))) name += FILE_EXT;
+//     if (!(path.endsWith("/"))) path += "/";
+//     URL url = new URL("file://" + path + name);
+//     getVetoSupport().fireVetoableChange("url", _url, url);
+//     _url = url;
+//   }
+
+  public void setFile(File file) throws PropertyVetoException {
+    try {
+      URL url = Util.fileToURL(file);
+      getVetoSupport().fireVetoableChange("url", _url, url);
+      _url = url;
+      updateMemberNames();
+    }
+    catch (MalformedURLException murle) {
+      System.out.println("problem in setFile:" + file);
+      murle.printStackTrace();
+    }
+    catch (IOException ex) {
+      System.out.println("problem in setFile:" + file);
+      ex.printStackTrace();
+    }
+  }
+
+//   public String getFilename() { return _filename; }
+//   public void setFilename(String n) throws PropertyVetoException {
+//     getVetoSupport().fireVetoableChange("Filename", _filename, n);
+//     _filename = n;
+//   }
+
+//   public String getPathname() { return _pathname; }
+//   public void setPathname(String n) throws PropertyVetoException {
+//     if (!n.endsWith(SEPARATOR)) n += SEPARATOR;
+//     getVetoSupport().fireVetoableChange("Pathname", _pathname, n);
+//     _pathname = n;
+//   }
+
+  public Vector getSearchPath() { return _searchpath; }
+  public void addSearchPath(String searchpath) {
+    _searchpath.addElement(searchpath);
+  }
+
+  public URL findMemberURLInSearchPath(String name) {
+    //ignore searchpath, just find it relative to the project file
+    String u = "";
+    if (getURL() != null) u = getURL().toString();
+    u = u.substring(0, u.lastIndexOf("/") + 1);
+    URL url = null;
+    try { url = new URL(u + name); }
+    catch (MalformedURLException murle) {
+      System.out.println("MalformedURLException in findMemberURLInSearchPath:" + u + name);
+      murle.printStackTrace();
+    }
+    return url;
+  }
+
+  public Vector getMembers() { return _members; }
+
+  public void addMember(String name, String type) {
+    //try {
+      URL memberURL = findMemberURLInSearchPath(name);
+      if (memberURL == null) {
+	System.out.println("null memberURL");
+	return;
+      }
+      else System.out.println("memberURL = " + memberURL);
+      ProjectMember pm = findMemberByName(name);
+      if (pm != null) return;
+      if ("pgml".equals(type))
+	pm = new ProjectMemberDiagram(name, this);
+      else if ("xmi".equals(type))
+	pm = new ProjectMemberModel(name, this);
+      else throw new RuntimeException("Unknown member type " + type);
+      _members.addElement(pm);
+      //} catch (java.net.MalformedURLException e) {
+      //throw new UnexpectedException(e);
+      //}
+  }
+
+  public void addMember(Diagram d) throws PropertyVetoException {
+    ProjectMember pm = new ProjectMemberDiagram(d, this);
+    addDiagram(d);
+    // if diagram added successfully, add the member too
+    _members.addElement(pm);
+  }
+
+  public void addMember(MModel m) throws PropertyVetoException {
+    if (_models.contains(m)) return;
+    ProjectMember pm = new ProjectMemberModel(m, this);
+    addModel(m);
+    // got past the veto, add the member
+    _members.addElement(pm);
+  }
+
+  public void addModel(MNamespace m) throws PropertyVetoException {
+    // fire indeterminate change to avoid copying vector
+    getVetoSupport().fireVetoableChange("Models", _models, null);
+    if (! _models.contains(m)) _models.addElement(m);
+    setCurrentNamespace(m);
+    _needsSave = true;
+  }
+
+//   public void removeMember(Diagram d) {
+//     int size = _members.size();
+//     for (int i = 0; i < size; i++) {
+//       ProjectMember pm = (ProjectMember) _members.elementAt(i);
+//       if (pm.member == d) {
+// 	_members.removeElementAt(i);
+// 	try { removeDiagram(d); }
+// 	catch (PropertyVetoException pve) { }
+// 	return;
+//       }
+//     }
+//   }
+
+
+  public void removeMember(Diagram d) throws PropertyVetoException {
+    removeDiagram(d);
+    _members.removeElement(d);
+  }
+
+  public ProjectMember findMemberByName(String name) {
+    for (int i = 0; i < _members.size(); i++) {
+      ProjectMember pm = (ProjectMember) _members.elementAt(i);
+      if (name.equals(pm.getName())) return pm;
+    }
+    return null;
+  }
+
+  public static Project load(URL url) throws IOException, org.xml.sax.SAXException {
+    Dbg.log("org.argouml.kernel.Project", "Reading " + url);
+    ArgoParser.SINGLETON.readProject(url);
+    Project p = ArgoParser.SINGLETON.getProject();
+    p.loadAllMembers();
+    p.postLoad();
+    Dbg.log("org.argouml.kernel.Project", "Done reading " + url);
+    return p;
+  }
+
+//   public void loadAllMembers() {
+//     for (java.util.Enumeration enum = members.elements(); enum.hasMoreElements(); ) {
+//       ((ProjectMember) enum.nextElement()).load();
+//     }
+//   }
+
+//   public static Project loadEmpty() throws IOException, org.xml.sax.SAXException {
+//     URL emptyURL = Project.class.getResource(TEMPLATES + EMPTY_PROJ);
+//     if (emptyURL == null)
+//       throw new IOException("Unable to get empty project resource.");
+//     return load(emptyURL);
+//   }
+
+  public void loadMembersOfType(String type) {
+    if (type == null) return;
+    java.util.Enumeration enum = getMembers().elements();
+    try {
+      while (enum.hasMoreElements()) {
+	ProjectMember pm = (ProjectMember) enum.nextElement();
+	if (type.equalsIgnoreCase(pm.getType())) pm.load();
+      }
+    }
+    catch (IOException ignore) {
+      System.out.println("IOException in makeEmptyProject");
+    }
+    catch (org.xml.sax.SAXException ignore) {
+      System.out.println("SAXException in makeEmptyProject");
+    }
+  }
+
+
+  public void loadAllMembers() {
+    loadMembersOfType("xmi");
+    loadMembersOfType("argo");
+    loadMembersOfType("pgml");
+    loadMembersOfType("text");
+    loadMembersOfType("html");
+  }
+
+//   public void loadMembersOfType(String type) {
+//     int size = _members.size();
+//     for (int i = 0; i < size; i++) {
+//       ProjectMember pm = (ProjectMember) _members.elementAt(i);
+//       if (pm.type != null && pm.type.equalsIgnoreCase(type))
+// 	pm.load();
+//     }
+//   }
+
+  public void saveAllMembers(String path, boolean overwrite) {
+    int size = _members.size();
+    // make sure to save the XMI file first so we get the id references
+    for (int i = 0; i < size; i++) {
+        ProjectMember p = (ProjectMember) _members.elementAt(i);
+        if (p.getType().equalsIgnoreCase("xmi")) {
+        System.out.println("Saving member of type: " + ((ProjectMember)_members.elementAt(i)).getType());
+            p.save(path,overwrite);
         }
-        addSearchPath("PROJECT_DIR");
-        TargetManager.getInstance().addTargetListener(this);
-    }
-
-    /**
-     * Find the base name of this project.<p>
-     *
-     * This is the name minus any valid file extension.
-     *
-     * @return The name (a String).
-     */
-    public String getBaseName() {
-        String n = getName();
-        n = PersistenceManager.getInstance().getBaseName(n);
-        return n;
-    }
-
-    /**
-     * Get the project name. This is just the name part of the full filename.
-     * @return the name of the project
-     */
-    public String getName() {
-        // TODO: maybe separate name
-        if (uri == null) {
-            return UNTITLED_FILE;
-        }
-        return new File(uri).getName();
-    }
-
-    /**
-     * Set the project URI.
-     *
-     * @param n The new URI (as a String).
-     * @throws URISyntaxException if the argument cannot be converted to
-     *         an URI.
-     */
-    public void setName(String n)
-        throws URISyntaxException {
-        String s = "";
-        if (getURI() != null) {
-            s = getURI().toString();
-        }
-        s = s.substring(0, s.lastIndexOf("/") + 1) + n;
-        setURI(new URI(s));
-    }
-
-    /**
-     * Get the URI for this project.
-     *
-     * @return The URI.
-     */
-    public URI getURI() {
-        return uri;
-    }
-
-    /**
-     * Set the URI for this project.
-     *
-     * @param theUri The URI to set.
-     */
-    public void setURI(URI theUri) {
-        if (theUri != null) {
-            theUri = PersistenceManager.getInstance().fixUriExtension(theUri);
-        }
-
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Setting project URI from \"" + uri
-                      + "\" to \"" + theUri + "\".");
-        }
-
-        uri = theUri;
-    }
-
-    /**
-     * Set the project file.
-     *
-     * This only works if it is possible to convert the File to an uri.
-     *
-     * @param file File to set the project to.
-     */
-    public void setFile(File file) {
-        URI theProjectUri = file.toURI();
-
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Setting project file name from \""
-                      + uri
-                      + "\" to \""
-                      + theProjectUri
-                      + "\".");
-        }
-
-        uri = theProjectUri;
-    }
-
-    /**
-     * @return the search path
-     */
-    public Vector getSearchPath() {
-        return searchpath;
-    }
-
-    /**
-     * @param searchPathElement the element to be added to the searchpath
-     */
-    public void addSearchPath(String searchPathElement) {
-        if (!this.searchpath.contains(searchPathElement)) {
-            this.searchpath.addElement(searchPathElement);
+    } 
+    for (int i = 0; i < size; i++) {
+        ProjectMember p = (ProjectMember) _members.elementAt(i);
+        if (!(p.getType().equalsIgnoreCase("xmi"))){
+        System.out.println("Saving member of type: " + ((ProjectMember)_members.elementAt(i)).getType());
+            p.save(path,overwrite);
         }
     }
+    // needs-more-work: check if each file is dirty
+  }
 
-    /**
-     * Get all members of the project.
-     *
-     * @return a Vector with all members.
-     */
-    public MemberList getMembers() {
-        LOG.info("Getting the members there are " + members.size());
-        return members;
+  public String getAuthorname() { return _authorname; }
+  public void setAuthorname(String s) { _authorname = s; }
+
+  public String getVersion() { return _version; }
+  public void setVersion(String s) { _version = s; }
+
+  public String getDescription() { return _description; }
+  public void setDescription(String s) { _description = s; }
+
+  public String getHistoryFile() { return _historyFile; }
+  public void setHistoryFile(String s) { _historyFile = s; }
+
+  public boolean getNeedsSave() { return _needsSave; }
+  public void setNeedsSave(boolean ns) { _needsSave = ns; }
+  public void needsSave() { setNeedsSave(true); }
+
+  public Vector getModels() { return _models; }
+
+	public MNamespace getModel() {
+		if (_models.size() != 1) return null;
+		return (MNamespace)_models.elementAt(0);
+	}
+//   public void addModel(MNamespace m) throws PropertyVetoException {
+//     getVetoSupport().fireVetoableChange("Models", _models, m);
+//     _models.addElement(m);
+//     setCurrentNamespace(m);
+//     _needsSave = true;
+//   }
+
+  public Vector getDefinedTypesVector() { return new Vector(_definedTypes.values()); }
+  public Hashtable getDefinedTypes() { return _definedTypes; }
+  public void setDefinedTypes(Hashtable h) { _definedTypes = h; }
+  public void defineType(MClassifier cls) {
+    //needs-more-work: should take namespaces into account!
+    // this is a hack because names are not always being assigned under argo-nsuml branch - JH
+    String name = cls.getName();
+    if (name == null) name = "anon";
+    _definedTypes.put(name,  cls);
+  }
+  public MClassifier findType(String s) {
+    if (s != null) s = s.trim();
+    if (s == null || s.length()==0) return null;
+    MClassifier cls = null;
+    int numModels = _models.size();
+    for (int i = 0; i < numModels; i++) {
+      cls = findTypeInModel(s, (MNamespace) _models.elementAt(i));
+      if (cls != null) return cls;
     }
+    cls = (MClassifier) _definedTypes.get(s);
+    if (cls == null) {
+		System.out.println("new Type defined!");
+		cls = new MClassImpl();
+		cls.setName(s);
+		_definedTypes.put(s, cls);
+	}
+	if (cls.getNamespace() == null)
+		cls.setNamespace(getCurrentNamespace());
+    return cls;
+  }
 
-    /**
-     * @param d the diagram
-     */
-    private void addDiagramMember(ArgoDiagram d) {
-        ProjectMember pm = new ProjectMemberDiagram(d, this);
-        addDiagram(d);
-        // if diagram added successfully, add the member too
-        members.add(pm);
-    }
+	public MClassifier findTypeInModel(String s, MNamespace ns) {
+		// System.out.println("Looking for type "+s+" in Namespace "+ns.getName());
+		Collection ownedElements = ns.getOwnedElements();
+		Iterator oeIterator = ownedElements.iterator();
 
-    /**
-     * @param pm the member to be added
-     */
-    private void addTodoMember(ProjectMemberTodoList pm) {
-        // Adding a todo member removes any existing one.
-        members.add(pm);
-        LOG.info("Added todo member, there are now " + members.size());
-    }
-
-    /**
-     * @param m the member to be added
-     */
-    public void addMember(Object m) {
-
-        if (m == null) {
-            throw new IllegalArgumentException(
-                    "A model member must be suppleid");
-        } else if (m instanceof ArgoDiagram) {
-            LOG.info("Adding diagram member");
-            addDiagramMember((ArgoDiagram) m);
-        } else if (m instanceof ProjectMemberTodoList) {
-            LOG.info("Adding todo member");
-            addTodoMember((ProjectMemberTodoList) m);
-        } else if (Model.getFacade().isAModel(m)) {
-            LOG.info("Adding model member");
-            addModelMember(m);
-        } else {
-            throw new IllegalArgumentException(
-                    "The member must be a UML model todo member or diagram."
-                    + "It is " + m.getClass().getName());
-        }
-        LOG.info("There are now " + members.size() + " members");
-    }
-
-    /**
-     * @param m the model
-     */
-    private void addModelMember(Object m) {
-
-        boolean memberFound = false;
-        Object currentMember =
-            members.getMember(ProjectMemberModel.class);
-        if (currentMember != null) {
-            Object currentModel =
-                ((ProjectMemberModel) currentMember).getModel();
-            if (currentModel == m) {
-                memberFound = true;
-            }
-        }
-
-        if (!memberFound) {
-            if (!models.contains(m)) {
-                addModel(m);
-            }
-            // got past the veto, add the member
-            ProjectMember pm = new ProjectMemberModel(m, this);
-            LOG.info("Adding model member to start of member list");
-            members.add(pm);
-        } else {
-            LOG.info("Attempted to load 2 models");
-            throw new IllegalArgumentException(
-                    "Attempted to load 2 models");
-        }
-    }
-
-    /**
-     * @param model a namespace
-     */
-    public void addModel(Object model) {
-
-        if (!Model.getFacade().isANamespace(model)) {
-            throw new IllegalArgumentException();
+		while(oeIterator.hasNext()) {
+			MModelElement me = (MModelElement)oeIterator.next();
+			if (me instanceof MClassifier && (me.getName() != null && me.getName().equals(s)))
+				return (MClassifier) me;
+			if (me instanceof MNamespace) {
+				MClassifier res = findTypeInModel(s, (MNamespace) me);
+				if (res != null) return res;
+			}
+		}
+		return null;
 	}
 
-        // fire indeterminate change to avoid copying vector
-        if (!models.contains(model)) {
-            models.addElement(model);
-        }
-        setCurrentNamespace(model);
-        ProjectManager.getManager().setSaveEnabled(true);
+  public void setCurrentNamespace(MNamespace m) { _curModel = m; }
+  public MNamespace getCurrentNamespace() { return _curModel; }
+
+  public Vector getDiagrams() { return _diagrams; }
+  public void addDiagram(Diagram d) throws PropertyVetoException {
+    // send indeterminate new value instead of making copy of vector
+    getVetoSupport().fireVetoableChange("Diagrams", _diagrams, null);
+    _diagrams.addElement(d);
+    _needsSave = true;
+  }
+  public void removeDiagram(Diagram d) throws PropertyVetoException {
+    getVetoSupport().fireVetoableChange("Diagrams", _diagrams, null);
+    _diagrams.removeElement(d);
+    _needsSave = true;
+  }
+
+  public int getPresentationCountFor(MModelElement me) {
+    int presentations = 0;
+    int size = _diagrams.size();
+    for (int i = 0; i < size; i++) {
+      Diagram d = (Diagram) _diagrams.elementAt(i);
+      presentations += d.getLayer().presentationCountFor(me);
     }
-
-    /**
-     * Removes a project member diagram completely from the project.
-     * @param d the ArgoDiagram
-     */
-    protected void removeProjectMemberDiagram(ArgoDiagram d) {
-        if (activeDiagram == d) {
-            ArgoDiagram defaultDiagram;
-            if (diagrams.size() == 1) {
-                // We're deleting the last diagram so lets create a new one
-                // TODO: Once we go MDI we won't need this.
-                Object treeRoot = 
-                    Model.getModelManagementFactory().getRootModel();
-                defaultDiagram =
-                    DiagramFactory.getInstance()
-                        .createDiagram(UMLClassDiagram.class, treeRoot, null);
-                addMember(defaultDiagram);
-            } else {
-                // Make the topmost diagram (that is not the one being deleted)
-                // current.
-                defaultDiagram = (ArgoDiagram) diagrams.get(0);
-                if (defaultDiagram == d) {
-                    defaultDiagram = (ArgoDiagram) diagrams.get(1);
-                }
-            }
-            activeDiagram = defaultDiagram;
-            TargetManager.getInstance().setTarget(defaultDiagram);
-        }
-
-        removeDiagram(d);
-        members.remove(d);
-        d.remove();
-        ProjectManager.getManager().setSaveEnabled(true);
-    }
-
-
-    /**
-     * Get the author name.
-     *
-     * @return The author name.
-     */
-    public String getAuthorname() {
-        return authorname;
-    }
-
-    /**
-     * Set the author name.
-     *
-     * @param s The new author name.
-     */
-    public void setAuthorname(String s) {
-        authorname = s;
-    }
-
-    /**
-     * Get the author name.
-     *
-     * @return The author name.
-     */
-    public String getAuthoremail() {
-        return authoremail;
-    }
-
-    /**
-     * Set the author name.
-     *
-     * @param s The new author name.
-     */
-    public void setAuthoremail(String s) {
-        authoremail = s;
-    }
-
-    /**
-     * Get the version.
-     *
-     * @return the version.
-     */
-    public String getVersion() {
-        return version;
-    }
-
-    /**
-     * Set the new version.
-     * @param s The new version.
-     */
-    public void setVersion(String s) {
-        version = s;
-    }
-
-    /**
-     * Get the description.
-     *
-     * @return the description.
-     */
-    public String getDescription() {
-        return description;
-    }
-
-    /**
-     * Set a new description.
-     *
-     * @param s The new description.
-     */
-    public void setDescription(String s) {
-        description = s;
-    }
-
-    /**
-     * Get the history file.
-     *
-     * @return The history file.
-     */
-    public String getHistoryFile() {
-        return historyFile;
-    }
-
-    /**
-     * Set the history file.
-     *
-     * @param s The new history file.
-     */
-    public void setHistoryFile(String s) {
-        historyFile = s;
-    }
-
-    /**
-     * Returns all models defined by the user. I.e. this does not return the
-     * default model but all other models.
-     *
-     * @return A Vector of all user defined models.
-     */
-    public Vector getUserDefinedModels() {
-        return models;
-    }
-
-    /**
-     * Returns all models, including the default model (default.xmi).
-     *
-     * @return A Collection containing all models.
-     */
-    public Collection getModels() {
-        Set ret = new HashSet();
-        ret.addAll(models);
-        ret.add(defaultModel);
-        return ret;
-    }
-
-    /**
-     * Return the model.<p>
-     *
-     * If there isn't exactly one model, <code>null</code> is returned.
-     *
-     * @return the model.
-     */
-    public Object getModel() {
-        if (models.size() != 1) {
-            return null;
-        }
-        return models.elementAt(0);
-    }
-
-    /**
-     * Searches for a type/classifier with name s. If the type is not found,
-     * a new type is created and added to the current namespace.
-     * @param s the name of the type/classifier to be found
-     * @return MClassifier
-     */
-    public Object findType(String s) {
-        return findType(s, true);
-    }
-
-    /**
-     * Searches for a type/classifier with name s. If defineNew is
-     * true, a new type is defined if the type/classifier is not
-     * found. The newly created type is added to the currentNamespace
-     * and given the name s.
-     * @param s the name of the type/classifier to be found
-     * @param defineNew if true, define a new one
-     * @return MClassifier the found classifier
-     */
-    public Object findType(String s, boolean defineNew) {
-        if (s != null) {
-            s = s.trim();
-        }
-        if (s == null || s.length() == 0) {
-            return null;
-        }
-        Object cls = null;
-        int numModels = models.size();
-        for (int i = 0; i < numModels; i++) {
-            cls = findTypeInModel(s, models.elementAt(i));
-            if (cls != null) {
-                return cls;
-            }
-        }
-        cls = findTypeInModel(s, defaultModel);
-        // hey, now we should move it to the model the user is working in
-        if (cls != null) {
-            cls =
-                Model.getModelManagementHelper()
-                	.getCorrespondingElement(cls, getRoot());
-        }
-        if (cls == null && defineNew) {
-            LOG.debug("new Type defined!");
-            cls =
-                Model.getCoreFactory().buildClass(getCurrentNamespace());
-            Model.getCoreHelper().setName(cls, s);
-        }
-        return cls;
-    }
-
-    /**
-     * Finds all figs on the diagrams for some project member,
-     * including the figs containing the member (so for some
-     * operation, the containing figclass is returned).
-     *
-     * @param member The member we are looking for.
-     *              This can be a model element object but also another object.
-     * @return Collection The collection with the figs.
-     */
-    public Collection findFigsForMember(Object member) {
-        Collection figs = new ArrayList();
-        Iterator it = diagrams.iterator();
-        while (it.hasNext()) {
-            ArgoDiagram diagram = (ArgoDiagram) it.next();
-            Object fig = diagram.getContainingFig(member);
-            if (fig != null) {
-                figs.add(fig);
-            }
-        }
-        return figs;
-    }
-
-    /**
-     * Returns a list with all figs for some UML object on all diagrams.
-     *
-     * @param obj the given UML object
-     * @return List the list of figs
-     */
-    public Collection findAllPresentationsFor(Object obj) {
-        Collection figs = new ArrayList();
-        Iterator it = diagrams.iterator();
-        while (it.hasNext()) {
-            Diagram diagram = (Diagram) it.next();
-            Fig aFig = diagram.presentationFor(obj);
-            if (aFig != null) {
-                figs.add(aFig);
-            }
-        }
-        return figs;
-    }
-
-    /**
-     * Finds a classifier with a certain name.<p>
-     *
-     * Will only return first classifier with the matching name.
-     *
-     * @param s is short name.
-     * @param ns Namespace where we do the search.
-     * @return the found classifier (or <code>null</code> if not found).
-     */
-    public Object findTypeInModel(String s, Object ns) {
-
-        if (!Model.getFacade().isANamespace(ns)) {
-            throw new IllegalArgumentException(
-                    "Looking for the classifier " + s
-                    + " in a non-namespace object of " + ns
-                    + ". A namespace was expected.");
-    	}
-
-        Collection allClassifiers =
-            Model.getModelManagementHelper()
-	        .getAllModelElementsOfKind(ns,
-	                Model.getMetaTypes().getClassifier());
-
-        Object[] classifiers = allClassifiers.toArray();
-        Object classifier = null;
-
-        for (int i = 0; i < classifiers.length; i++) {
-
-            classifier = classifiers[i];
-            if (Model.getFacade().getName(classifier) != null
-            		&& Model.getFacade().getName(classifier).equals(s)) {
-                return classifier;
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * @param m the namespace
-     */
-    public void setCurrentNamespace(Object m) {
-
-        if (m != null && !Model.getFacade().isANamespace(m)) {
-            throw new IllegalArgumentException();
-    	}
-
-        currentNamespace = m;
-    }
-
-    /**
-     * @return the namespace
-     */
-    public Object getCurrentNamespace() {
-        return currentNamespace;
-    }
-
-    /**
-     * @return the diagrams
-     */
-    public Vector getDiagrams() {
-        return diagrams;
-    }
-
-    /**
-     * Get the number of diagrams in this project.
-     * Used by argo2.tee!!
-     * @return the number of diagrams in this project.
-     */
-    public int getDiagramCount() {
-        return diagrams.size();
-    }
-
-    /**
-     * Finds a diagram with a specific name or UID.
-     *
-     * @return the diagram object (if found). Otherwize null.
-     * @param name is the name to search for.
-     */
-    public ArgoDiagram getDiagram(String name) {
-        Iterator it = diagrams.iterator();
-        while (it.hasNext()) {
-            ArgoDiagram ad = (ArgoDiagram) it.next();
-            if (ad.getName() != null && ad.getName().equals(name)) {
-                return ad;
-            }
-            if (ad.getItemUID() != null
-                    && ad.getItemUID().toString().equals(name)) {
-                return ad;
-            }
-        }
-        return null;
-    }
-
-    /**
-     * @param d the diagram to be added
-     */
-    public void addDiagram(ArgoDiagram d) {
-        // send indeterminate new value instead of making copy of vector
-        diagrams.addElement(d);
-        d.addVetoableChangeListener(new Vcl());
-        ProjectManager.getManager().setSaveEnabled(true);
-    }
-
-    /**
-     * Removes a diagram from the list with diagrams.
-     *
-     * Removes (hopefully) the event listeners for this diagram.  Does
-     * not remove the diagram from the project members. This should
-     * not be called directly. Use moveToTrash if you want to remove a
-     * diagram.
-     *
-     * @param d the ArgoDiagram
-     */
-    protected void removeDiagram(ArgoDiagram d) {
-        d.removeVetoableChangeListener(new Vcl());
-        diagrams.removeElement(d);
-        if (d instanceof UMLDiagram) {
-            /* If this is a UML diagram, then remove the dependent
-             * modelelements, such as the statemachine
-             * for a statechartdiagram.
-             */
-            Object o = ((UMLDiagram) d).getDependentElement();
-            if (o != null) {
-                moveToTrash(o);
-            }
-        }
-    }
-
-    /**
-     * Listener to events from the Diagram class. <p>
-     *
-     * Purpose: changing the name of a diagram shall set the need save flag.
-     *
-     * @author mvw@tigris.org
-     */
-    private static class Vcl implements VetoableChangeListener {
-        /**
-         * @see java.beans.VetoableChangeListener#vetoableChange(java.beans.PropertyChangeEvent)
-         */
-        public void vetoableChange(PropertyChangeEvent evt)
-            throws PropertyVetoException {
-            if (evt.getPropertyName().equals("name")) {
-                ProjectManager.getManager().setSaveEnabled(true);
-            }
-        }
-    }
-
-    /**
-     * @param me the given modelelement
-     * @return the total number of presentation
-     *         for the given modelelement in the project
-     */
-    public int getPresentationCountFor(Object me) {
-
-        if (!Model.getFacade().isAModelElement(me)) {
-            throw new IllegalArgumentException();
-    	}
-
-        int presentations = 0;
-        int size = diagrams.size();
-        for (int i = 0; i < size; i++) {
-            Diagram d = (Diagram) diagrams.elementAt(i);
-            presentations += d.getLayer().presentationCountFor(me);
-        }
-        return presentations;
-    }
-
-    /**
-     * @return an initial target, in casu a diagram or a model
-     */
-    public Object getInitialTarget() {
-        if (diagrams.size() > 0) {
-            return diagrams.elementAt(0);
-        }
-        if (models.size() > 0) {
-            return models.elementAt(0);
-        }
-        return null;
-    }
-
-
-    /**
-     * @param cgp the generation preferences
-     */
-    public void setGenerationPrefs(GenerationPreferences cgp) {
-        cgPrefs = cgp;
-    }
-
-    /**
-     * @return the generation preferences
-     */
-    public GenerationPreferences getGenerationPrefs() {
-        return cgPrefs;
-    }
-
-    ////////////////////////////////////////////////////////////////
-    // event handling
-
-    /**
-     * @return the VetoableChangeSupport
-     */
-    public VetoableChangeSupport getVetoSupport() {
-        if (vetoSupport == null) {
-            vetoSupport = new VetoableChangeSupport(this);
-        }
-        return vetoSupport;
-    }
-
-    /**
-     * This is executed before a save.
-     */
-    public void preSave() {
-        for (int i = 0; i < diagrams.size(); i++) {
-            ((Diagram) diagrams.elementAt(i)).preSave();
-        }
-        // TODO: is preSave needed for models?
-    }
-
-    /**
-     * This is execcuted after a save.
-     */
-    public void postSave() {
-        for (int i = 0; i < diagrams.size(); i++) {
-            ((Diagram) diagrams.elementAt(i)).postSave();
-        }
-        // TODO: is postSave needed for models?
-        ProjectManager.getManager().setSaveEnabled(true);
-    }
-
-    /**
-     * This is executed after a load.
-     */
-    public void postLoad() {
-        for (int i = 0; i < diagrams.size(); i++) {
-            ((Diagram) diagrams.elementAt(i)).postLoad();
-        }
-        // issue 1725: the root is not set, which leads to problems
-        // with displaying prop panels
-        Object model = getModel();
-
-        LOG.info("Setting root model to " + model);
-
-        setRoot(model);
-
-        ProjectManager.getManager().setSaveEnabled(true);
-        // we don't need this HashMap anymore so free up the memory
-        uuidRefs = null;
-    }
-
-    ////////////////////////////////////////////////////////////////
-    // trash related methods
-
-    /**
-     * Moves some object to trash, i.e. deletes it completely with all
-     * dependent structures. <p>
-     *
-     * Deleting an object involves: <pre>
-     * - Removing Target history
-     * - Deleting all Fig representations for the object
-     * - Deleting the UML element
-     * - Deleting all dependent UML modelelements
-     * - Deleting CommentEdges (which are not UML elements)
-     * - Move to trash for enclosed objects, i.e. graphically drawn on top of
-     * - Move to trash subdiagrams for the object
-     * - Saveguard that there is always at least 1 diagram left
-     * - If the current diagram has been deleted, select a new one to show
-     * - Trigger the explorer when a diagram is deleted
-     * - Set the needsSave (dirty) flag of the projectmanager
-     * </pre>
-     *
-     * @param obj The object to be deleted
-     * @see org.argouml.kernel.Project#trashInternal(Object)
-     */
-    public void moveToTrash(Object obj) {
-        if (trashcan.contains(obj)) {
-            return;
-        }
-        trashInternal(obj);
-    }
-
-    /**
-     * Removes some object from the project.
-     *
-     * @param obj the object to be thrown away
-     */
-    protected void trashInternal(Object obj) {
-        if (Model.getFacade().isAModel(obj)) {
-            return; //Can not delete the model
-        }
-
-        if (obj != null) {
-            trashcan.add(obj);
-        }
-        if (Model.getFacade().isAModelElement(obj)) {
-
-            Model.getUmlFactory().delete(obj);
-
-            if (obj instanceof ProjectMember
-                    && members.contains(obj)) {
-                // TODO: Bob says - can this condition ever be reached?
-                // Surely obj cannot be both a model element (previous if) and
-                // a ProjectMember (this if)
-                members.remove(obj);
-            }
-
-            // TODO: Presumably this is only relevant if 
-            // obj is actually a Model.
-            // An added test of Model.getFacade.isAModel(obj) would clarify what
-            // is going on here.
-            if (models.contains(obj)) {
-                models.remove(obj);
-            }
-        } else if (obj instanceof ArgoDiagram) {
-            TargetManager.getInstance().removeTarget(obj);
-            TargetManager.getInstance().removeHistoryElement(obj);
-            removeProjectMemberDiagram((ArgoDiagram) obj);
-            // only need to manually delete diagrams because they
-            // don't have a decent event system set up.
-            ExplorerEventAdaptor.getInstance().modelElementRemoved(obj);
-        } else if (obj instanceof Fig) {
-            TargetManager.getInstance().removeTarget(obj);
-            TargetManager.getInstance().removeHistoryElement(obj);
-            ((Fig) obj).deleteFromModel();
-            // TODO: Bob says - I've never seen this appear in the log.
-            // I believe this code is never reached. If we delete a FigEdge
-            // or FigNode we actually call this method with the owner not
-            // the Fig itself.
-            // For Figs with no owner (primitives like circle etc) then they
-            // are not deleted (crtl-Del) they are removed (Del)
-            LOG.error("Request to delete a Fig " + obj.getClass().getName());
-        } else if (obj instanceof CommentEdge) {
-            TargetManager.getInstance().removeTarget(obj);
-            TargetManager.getInstance().removeHistoryElement(obj);
-            CommentEdge ce = (CommentEdge) obj;
-            LOG.info("Removing the link from " + ce.getAnnotatedElement() 
-                    + " to " + ce.getComment());
-            Model.getCoreHelper().removeAnnotatedElement(
-                    ce.getComment(), ce.getAnnotatedElement());
-        }
-    }
-
-    /**
-     * @param obj the object
-     * @return true if the object is trashed
-     */
-    public boolean isInTrash(Object obj) {
-        return trashcan.contains(obj);
-    }
-
-    /**
-     * @param theDefaultModel a uml model
-     */
-    public void setDefaultModel(Object theDefaultModel) {
-
-        if (!Model.getFacade().isAModel(theDefaultModel)) {
-            throw new IllegalArgumentException(
-                    "The default model must be a Model type. Received a "
-                    + theDefaultModel.getClass().getName());
-        }
-
-        defaultModel = theDefaultModel;
-        defaultModelTypeCache = new HashMap();
-    }
-
-    /**
-     * Get the default model.
-     *
-     * @return A model.
-     */
-    public Object getDefaultModel() {
-        return defaultModel;
-    }
-
-    /**
-     * Find a type by name in the default model.
-     *
-     * @param name the name.
-     * @return the type.
-     */
-    public Object findTypeInDefaultModel(String name) {
-        if (defaultModelTypeCache.containsKey(name)) {
-            return defaultModelTypeCache.get(name);
-        }
-
-        Object result = findTypeInModel(name, getDefaultModel());
-        defaultModelTypeCache.put(name, result);
-        return result;
-    }
-
-    /**
-     * Returns the root.
-     * @return MModel
-     */
-    public Object getRoot() {
-        return Model.getModelManagementFactory().getRootModel();
-    }
-
-    /**
-     * Sets the root.
-     * @param root The root to set, a uml model
-     */
-    public void setRoot(Object root) {
-
-        if (root == null) {
-            throw new IllegalArgumentException("A root model element is required");
-        }
-        if (!Model.getFacade().isAModel(root)) {
-            throw new IllegalArgumentException("The root model element must be a model - got " + root.getClass().getName());
-        }
-
-        Object treeRoot = Model.getModelManagementFactory().getRootModel();
-        if (treeRoot != null) {
-            models.remove(treeRoot);
-        }
-        Model.getModelManagementFactory().setRootModel(root);
-        addModel(root);
-    }
-
-    /**
-     * Returns true if the given name is a valid name for a diagram. Valid means
-     * that it does not occur as a name for a diagram yet.
-     * @param name The name to test
-     * @return boolean True if there are no problems with this name, false if
-     * it's not valid.
-     */
-    public boolean isValidDiagramName(String name) {
-        Iterator it = diagrams.iterator();
-        boolean rv = true;
-        while (it.hasNext()) {
-            ArgoDiagram diagram = (ArgoDiagram) it.next();
-            if (diagram.getName().equals(name)) {
-                rv = false;
-                break;
-            }
-        }
-        return rv;
-    }
-
-    /**
-     * Returns the searchpath.
-     * @return Vector
-     */
-    public Vector getSearchpath() {
-        return searchpath;
-    }
-
-    /**
-     * Returns the uri.
-     * @return URI
-     */
-    public URI getUri() {
-        return uri;
-    }
-
-    /**
-     * Returns the uUIDRefs.
-     * @return HashMap
-     */
-    public HashMap getUUIDRefs() {
-        return uuidRefs;
-    }
-
-    /**
-     * Sets the searchpath.
-     * @param theSearchpath The searchpath to set
-     */
-    public void setSearchpath(Vector theSearchpath) {
-        this.searchpath = theSearchpath;
-    }
-
-    /**
-     * Sets the uUIDRefs.
-     * @param uUIDRefs The uUIDRefs to set
-     */
-    public void setUUIDRefs(HashMap uUIDRefs) {
-        uuidRefs = uUIDRefs;
-    }
-
-    /**
-     * Sets the vetoSupport.
-     * @param theVetoSupport The vetoSupport to set
-     */
-    public void setVetoSupport(VetoableChangeSupport theVetoSupport) {
-        this.vetoSupport = theVetoSupport;
-    }
-
-    /**
-     * Get the current viewed diagram.
-     *
-     * @return the current viewed diagram
-     */
-    public ArgoDiagram getActiveDiagram() {
-        return activeDiagram;
-    }
-
-    /**
-     * @param theDiagram the ArgoDiagram
-     */
-    public void setActiveDiagram(ArgoDiagram theDiagram) {
-        activeDiagram = theDiagram;
-    }
-
-    /**
-     * @see TargetListener#targetAdded(TargetEvent)
-     */
-    public void targetAdded(TargetEvent e) {
-    	setTarget(e.getNewTarget());
-    }
-
-    /**
-     * @see TargetListener#targetRemoved(TargetEvent)
-     */
-    public void targetRemoved(TargetEvent e) {
-    	setTarget(e.getNewTarget());
-    }
-
-    /**
-     * @see TargetListener#targetSet(TargetEvent)
-     */
-    public void targetSet(TargetEvent e) {
-    	setTarget(e.getNewTarget());
-    }
-
-    /**
-     * Called to update the current namespace and active diagram after
-     * the target has changed.
-     *
-     * TODO: The parameter is not used. Why?
-     * @param target Not used.
-     */
-    private void setTarget(Object target) {
-        Object theCurrentNamespace = null;
-        target = TargetManager.getInstance().getModelTarget();
-        if (target instanceof UMLDiagram) {
-            theCurrentNamespace = ((UMLDiagram) target).getNamespace();
-        } else if (Model.getFacade().isANamespace(target)) {
-            theCurrentNamespace = target;
-        } else if (Model.getFacade().isAModelElement(target)) {
-            theCurrentNamespace = Model.getFacade().getNamespace(target);
-        } else {
-            theCurrentNamespace = getRoot();
-        }
-        setCurrentNamespace(theCurrentNamespace);
-
-        if (target instanceof ArgoDiagram) {
-            activeDiagram = (ArgoDiagram) target;
-        }
-    }
-
-    /**
-     * Remove the project.
-     */
-    public void remove() {
-
-        if (diagrams != null) {
-            for (Iterator it = diagrams.iterator(); it.hasNext();) {
-                Diagram diagram = (Diagram) it.next();
-                diagram.remove();
-            }
-        }
-        
-        if (members != null) {
-            members.clear();
-        }
-
-        if (models != null) {
-            for (Iterator it = models.iterator(); it.hasNext();) {
-                Object model = it.next();
-                LOG.debug("Deleting project model " 
-                        + Model.getFacade().getName(model));
-                Model.getUmlFactory().delete(model);
-            }
-            models.clear();
-        }
-        
-        if (defaultModel != null) {
-            LOG.debug("Deleting profile model " 
-                    + Model.getFacade().getName(defaultModel));
-            Model.getUmlFactory().delete(defaultModel);
-            defaultModel = null;
-        }
-
-        if (diagrams != null) {
-            diagrams.clear();
-        }
-
-        if (uuidRefs != null) {
-            uuidRefs.clear();
-        }
-
-        if (defaultModelTypeCache != null) {
-            defaultModelTypeCache.clear();
-        }
-
-        members = null;
-        models = null;
-        diagrams = null;
-        uuidRefs = null;
-        defaultModelTypeCache = null;
-
-        uri = null;
-        authorname = null;
-        authoremail = null;
-        description = null;
-        version = null;
-        searchpath = null;
-        historyFile = null;
-        defaultModel = null;
-        currentNamespace = null;
-        cgPrefs = null;
-        vetoSupport = null;
-        activeDiagram = null;
-
-        TargetManager.getInstance().removeTargetListener(this);
-        trashcan.clear();
-    }
-
-    /**
-     * @return Returns the persistenceVersion.
-     */
-    public int getPersistenceVersion() {
-        return persistenceVersion;
-    }
-
-    /**
-     * @param pv The persistenceVersion to set.
-     */
-    public void setPersistenceVersion(int pv) {
-        persistenceVersion = pv;
-    }
-
-    /**
-     * @return Returns the profile.
-     */
-    public Profile getProfile() {
-        return profile;
-    }
+    return presentations;
+  }
+
+  public Object getInitialTarget() {
+    if (_diagrams.size() > 0) return _diagrams.elementAt(0);
+    if (_models.size() > 0) return _models.elementAt(0);
+    return null;
+  }
+
+  public void setGenerationPrefs(GenerationPreferences cgp) { _cgPrefs = cgp; }
+  public GenerationPreferences getGenerationPrefs() { return _cgPrefs; }
+
+  ////////////////////////////////////////////////////////////////
+  // event handling
+
+  public void addVetoableChangeListener(VetoableChangeListener l) {
+    getVetoSupport().removeVetoableChangeListener(l);
+    getVetoSupport().addVetoableChangeListener(l);
+  }
+
+  public void removeVetoableChangeListener(VetoableChangeListener l) {
+    getVetoSupport().removeVetoableChangeListener(l);
+  }
+
+  public VetoableChangeSupport getVetoSupport() {
+    if (_vetoSupport == null) _vetoSupport = new VetoableChangeSupport(this);
+    return _vetoSupport;
+  }
+
+  public void preSave() {
+    for (int i = 0; i < _diagrams.size(); i++)
+      ((Diagram)_diagrams.elementAt(i)).preSave();
+    // needs-more-work: is preSave needed for models?
+  }
+
+  public void postSave() {
+    for (int i = 0; i < _diagrams.size(); i++)
+      ((Diagram)_diagrams.elementAt(i)).postSave();
+    // needs-more-work: is postSave needed for models?
+    _needsSave = false;
+  }
+
+  public void postLoad() {
+    for (int i = 0; i < _diagrams.size(); i++)
+      ((Diagram)_diagrams.elementAt(i)).postLoad();
+    // needs-more-work: is postLoad needed for models?
+    _needsSave = false;
+    // we don't need this HashMap anymore so free up the memory
+    _UUIDRefs = null;
+  }
+
+  ////////////////////////////////////////////////////////////////
+  // trash related methos
+
+  // Attention: whole Trash mechanism should be rethought concerning nsuml
+  public void moveToTrash(Object obj) {
+	  if (Trash.SINGLETON.contains(obj)) return;
+	  trashInternal(obj);
+
+	/* old version
+	  if (Trash.SINGLETON.contains(obj)) return;
+	  Vector alsoTrash = null;
+	  if (obj instanceof MModelElementImpl)
+      alsoTrash = ((MModelElementImpl)obj).alsoTrash();
+	  trashInternal(obj);
+	  if (alsoTrash != null) {
+      int numTrash = alsoTrash.size();
+      for (int i = 0; i < numTrash; i++)
+	  moveToTrash(alsoTrash.elementAt(i));
+	  }
+	*/
+
+	
+  }
+
+  // Attention: whole Trash mechanism should be rethought concerning nsuml
+  protected void trashInternal(Object obj) {
+	  if (obj instanceof MClassifier) {
+		  // System.out.println("trashInternal: "+obj);
+		  MClassifier me = (MClassifier) obj;
+		  // me.remove();
+		  MMUtil.SINGLETON.remove(me);
+	  }  	
+	  if (obj instanceof MStateVertex) {
+		  // System.out.println("trashInternal: "+obj);
+		  MStateVertex me = (MStateVertex) obj;
+		  // me.remove();
+		  MMUtil.SINGLETON.remove(me);
+	  }
+	  else if (obj instanceof MModelElement) {
+		  //System.out.println("trashInternal: "+obj);
+		  MModelElement me = (MModelElement) obj;
+		  me.remove();
+	  }
+	  
+	  /* old version
+		 if (obj instanceof MModelElement) {
+		 MModelElement me = (MModelElement) obj;
+		 Vector places = new Vector();
+		 java.util.Enumeration diagramEnum = _diagrams.elements();
+		 while (diagramEnum.hasMoreElements()) {
+		 Diagram d = (Diagram) diagramEnum.nextElement();
+		 Fig f = d.getLayer().presentationFor(me);
+		 while (f != null) {
+		 f.delete();
+		 if (!places.contains(f)) places.addElement(f);
+		 f = d.getLayer().presentationFor(me);
+		 } // end while 
+		 } // end while 
+		 Trash.SINGLETON.addItemFrom(obj, places);
+		 if (obj instanceof MNamespace) trashDiagramsOn((MNamespace)obj);
+		 }
+		 // needs-more-work: trash diagrams
+		 
+		 }
+		 
+		 protected void trashDiagramsOn(MNamespace ns) {
+		 //System.out.println("trashDiagramsOn: " + ns);
+		 int size = _diagrams.size();
+		 Vector removes = new Vector();
+		 for (int i = 0; i < size; i++) {
+		 Object obj = _diagrams.elementAt(i);
+		 if (!(obj instanceof UMLDiagram)) continue;
+		 if (ns == ((UMLDiagram)obj).getNamespace()) {
+		 //System.out.println("found diagram to remove");
+		 removes.addElement(obj);
+		 }
+		 }
+		 int numRemoves = removes.size();
+		 for (int i = 0; i < numRemoves; i++) {
+		 Diagram d = (Diagram) removes.elementAt(i);
+		 try { removeMember(d); }
+		 catch (PropertyVetoException pve) { }
+		 }
+		 
+	  */
+  }
+	
+  public void moveFromTrash(Object obj) {
+    System.out.println("needs-more-work: not restoring " + obj);
+  }
+
+  public boolean isInTrash(Object dm) {
+    return Trash.SINGLETON.contains(dm);
+  }
+
+  ////////////////////////////////////////////////////////////////
+  // usage statistics
+
+  public static void resetStats() {
+    ToDoPane._clicksInToDoPane = 0;
+    ToDoPane._dblClicksInToDoPane = 0;
+    ToDoList._longestToDoList = 0;
+    Designer._longestAdd = 0;
+    Designer._longestHot = 0;
+    Critic._numCriticsFired = 0;
+    ToDoList._numNotValid = 0;
+    Agency._numCriticsApplied = 0;
+    ToDoPane._toDoPerspectivesChanged = 0;
+
+    NavigatorPane._navPerspectivesChanged = 0;
+    NavigatorPane._clicksInNavPane = 0;
+    FindDialog._numFinds = 0;
+    TabResults._numJumpToRelated = 0;
+    DesignIssuesDialog._numDecisionModel = 0;
+    GoalsDialog._numGoalsModel = 0;
+
+    CriticBrowserDialog._numCriticBrowser = 0;
+    NavigatorConfigDialog._numNavConfig = 0;
+    TabToDo._numHushes = 0;
+    ChecklistStatus._numChecks = 0;
+    SelectionWButtons.Num_Button_Clicks = 0;
+    ModeCreateEdgeAndNode.Drags_To_New = 0;
+    ModeCreateEdgeAndNode.Drags_To_Existing = 0;
+  }
+
+  public static void setStat(String n, int v) {
+    //     String n = us.name;
+    //     int v = us.value;
+    System.out.println("setStat: " + n + " = " + v);
+    if (n.equals("clicksInToDoPane"))
+      ToDoPane._clicksInToDoPane = v;
+    else if (n.equals("dblClicksInToDoPane"))
+      ToDoPane._dblClicksInToDoPane = v;
+    else if (n.equals("longestToDoList"))
+      ToDoList._longestToDoList = v;
+    else if (n.equals("longestAdd"))
+      Designer._longestAdd = v;
+    else if (n.equals("longestHot"))
+      Designer._longestHot = v;
+    else if (n.equals("numCriticsFired"))
+      Critic._numCriticsFired = v;
+    else if (n.equals("numNotValid"))
+      ToDoList._numNotValid = v;
+    else if (n.equals("numCriticsApplied"))
+      Agency._numCriticsApplied = v;
+    else if (n.equals("toDoPerspectivesChanged"))
+      ToDoPane._toDoPerspectivesChanged = v;
+
+    else if (n.equals("navPerspectivesChanged"))
+      NavigatorPane._navPerspectivesChanged = v;
+    else if (n.equals("clicksInNavPane"))
+      NavigatorPane._clicksInNavPane = v;
+    else if (n.equals("numFinds"))
+      FindDialog._numFinds = v;
+    else if (n.equals("numJumpToRelated"))
+      TabResults._numJumpToRelated = v;
+    else if (n.equals("numDecisionModel"))
+      DesignIssuesDialog._numDecisionModel = v;
+    else if (n.equals("numGoalsModel"))
+      GoalsDialog._numGoalsModel = v;
+
+    else if (n.equals("numCriticBrowser"))
+      CriticBrowserDialog._numCriticBrowser = v;
+    else if (n.equals("numNavConfig"))
+      NavigatorConfigDialog._numNavConfig = v;
+    else if (n.equals("numHushes"))
+      TabToDo._numHushes = v;
+    else if (n.equals("numChecks"))
+      ChecklistStatus._numChecks = v;
+
+    else if (n.equals("Num_Button_Clicks"))
+      SelectionWButtons.Num_Button_Clicks = v;
+    else if (n.equals("Drags_To_New"))
+      ModeCreateEdgeAndNode.Drags_To_New = v;
+    else if (n.equals("Drags_To_Existing"))
+      ModeCreateEdgeAndNode.Drags_To_Existing = v;
     
-    /**
-     * Repair all parts of the project before a save takes place.
-     * @return a report of any fixes
-     */
-    public String repair() {
-        String report = "";
-        Iterator it = members.iterator();
-        while (it.hasNext()) {
-            ProjectMember member = (ProjectMember) it.next();
-            report += member.repair();
-        }
-        return report;
+    else {
+      System.out.println("unknown UsageStatistic: " + n);
     }
+  }
 
-    /**
-     * @return the settings of this project
-     */
-    public ProjectSettings getProjectSettings() {
-        return projectSettings;
-    }
+  public static Vector getStats() {
+    Vector s = new Vector();
+    addStat(s, "clicksInToDoPane", ToDoPane._clicksInToDoPane);
+    addStat(s, "dblClicksInToDoPane", ToDoPane._dblClicksInToDoPane);
+    addStat(s, "longestToDoList", ToDoList._longestToDoList);
+    addStat(s, "longestAdd", Designer._longestAdd);
+    addStat(s, "longestHot", Designer._longestHot);
+    addStat(s, "numCriticsFired", Critic._numCriticsFired);
+    addStat(s, "numNotValid", ToDoList._numNotValid);
+    addStat(s, "numCriticsApplied", Agency._numCriticsApplied);
+    addStat(s, "toDoPerspectivesChanged", ToDoPane._toDoPerspectivesChanged);
+
+    addStat(s, "navPerspectivesChanged",
+	    NavigatorPane._navPerspectivesChanged);
+    addStat(s, "clicksInNavPane", NavigatorPane._clicksInNavPane);
+    addStat(s, "numFinds", FindDialog._numFinds);
+    addStat(s, "numJumpToRelated", TabResults._numJumpToRelated);
+    addStat(s, "numDecisionModel", DesignIssuesDialog._numDecisionModel);
+    addStat(s, "numGoalsModel", GoalsDialog._numGoalsModel);
+    addStat(s, "numCriticBrowser", CriticBrowserDialog._numCriticBrowser);
+    addStat(s, "numNavConfig", NavigatorConfigDialog._numNavConfig);
+    addStat(s, "numHushes", TabToDo._numHushes);
+    addStat(s, "numChecks", ChecklistStatus._numChecks);
+
+    addStat(s, "Num_Button_Clicks", SelectionWButtons.Num_Button_Clicks);
+    addStat(s, "Drags_To_New", ModeCreateEdgeAndNode.Drags_To_New);
+    addStat(s, "Drags_To_Existing", ModeCreateEdgeAndNode.Drags_To_Existing);
+
+    return s;
+  }
+
+  public static void addStat(Vector stats, String name, int value) {
+    stats.addElement(new UsageStatistic(name, value));
+  }
+
+  static final long serialVersionUID = 1399111233978692444L;
 
 } /* end class Project */
+
+
+class ResetStatsLater implements Runnable {
+  public void run() {
+    Project.resetStats();
+  }
+} /* end class ResetStatsLater */

@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,99 +21,72 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+
+// File: FigCompartment.java
+// Classes: FigCompartment
+// Original Author: Eric Lefevre
+// NOT RELEVANT:
+// $Id$
+
 package org.argouml.uml.diagram.ui;
 
-import java.awt.Color;
-import java.awt.Dimension;
-import java.util.Iterator;
+import java.awt.*;
+import java.awt.event.*;
 
-import org.tigris.gef.presentation.Fig;
-import org.tigris.gef.presentation.FigGroup;
-import org.tigris.gef.presentation.FigRect;
+import org.tigris.gef.presentation.*;
 
-/**
- * @author Bob Tarling
- */
-public abstract class FigCompartment extends FigGroup {
+/** A compartment is a FigText that has the capacity to be
+ *  displayed or not. A compartment is typically containing informations
+ *  on the current figure (see the attributes compartment for FigClass). <BR>
+ *  need-more-work: maybe we should have it inheriting Fig. 
+ *  need-more-work: it is really necessary to have a separate class for that?
+ *                  after all, it only contains a boolean. */
 
-    private Fig bigPort;
+public class FigCompartment extends FigText {
+  ////////////////////////////////////////////////////////////////
+  // instance variables
 
-    /**
-     * The constructor.
-     *
-     * @param x x
-     * @param y y
-     * @param w width
-     * @param h height
-     */
-    public FigCompartment(int x, int y, int w, int h) {
-        bigPort = new FigRect(x, y, w, h, Color.black, Color.white);
-        bigPort.setFilled(true);
-        setFilled(true);
+  protected boolean _displayed = true;
 
-        bigPort.setLineWidth(0);
-        setLineWidth(0);
-        addFig(bigPort);
-    }
+  /** Construct a new FigCompartment with the given position, size, and attributes. */
+  public FigCompartment(int x, int y, int w, int h ) {
+    super(x, y, w, h);
+  }
 
-    /**
-     * @return the bigport
-     */
-    public Fig getBigPort() {
-        return bigPort;
-    }
+  /** Construct a new FigCompartment with the given position, size, color,
+   *  string, font, and font size. Text string is initially empty and
+   *  centered. */
+  public FigCompartment(int x, int y, int w, int h,
+		 Color textColor, String familyName, int fontSize) {
+    super(x, y, w, h, textColor, familyName, fontSize);
+  }
+  ////////////////////////////////////////////////////////////////
+  // accessors
 
-    /**
-     * The minimum width is the minimum width of the child with the widest
-     * miniumum width.
-     * The minimum height is the total minimum height of all child figs plus a
-     * 2 pixel padding.
-     * @return the minimum width
-     */
-    public Dimension getMinimumSize() {
-        int minWidth = 0;
-        int minHeight = 0;
-        //set new bounds for all included figs
-        Iterator figs = iterator();
-        Fig fig;
-        while (figs.hasNext()) {
-            fig = (Fig) figs.next();
-            if (fig.isVisible() && fig != getBigPort()) {
-                int fw = fig.getMinimumSize().width;
-                if (fw > minWidth) {
-                    minWidth = fw;
-                }
-                minHeight += fig.getMinimumSize().height;
-            }
-        }
+   /** Returns true if it is to be displayed. */
+   public boolean isDisplayed() { return _displayed; }
 
-        minHeight += 2; // 2 Pixel padding after compartment
-        return new Dimension(minWidth, minHeight);
-    }
+   /** Returns true if it is to be displayed. */
+   public void setDisplayed(boolean isDisplayed) { _displayed = isDisplayed; }
 
-    /**
-     * @see org.tigris.gef.presentation.Fig#setBoundsImpl(int, int, int, int)
-     */
-    protected void setBoundsImpl(int x, int y, int w, int h) {
-        int newW = w;
-        int newH = h;
+   
+  ////////////////////////////////////////////////////////////////
+  // painting methods
 
-        Iterator figs = iterator();
-        Fig fig;
-        int fw;
-        int yy = y;
-        while (figs.hasNext()) {
-            fig = (Fig) figs.next();
-            if (fig.isVisible() && fig != getBigPort()) {
-                fw = fig.getMinimumSize().width;
-                fig.setBounds(x + 1, yy + 1, fw, fig.getMinimumSize().height);
-                if (newW < fw + 2) {
-                    newW = fw + 2;
-                }
-                yy += fig.getMinimumSize().height;
-            }
-        }
-        getBigPort().setBounds(x, y, newW, newH);
-        calcBounds();
-    }
-}
+  /** Check if it should be displayed. If yes, call super.paint. Otherwise, does nothing. */
+  public void paint(Graphics g) {
+    if ( _displayed ) super.paint(g);
+  }
+
+  ////////////////////////////////////////////////////////////////
+  // event handlers
+
+
+
+  public void mouseClicked(MouseEvent me) {
+    if (isDisplayed()) super.mouseClicked(me);
+    //do not process events if not displayed
+  }
+
+} /* end class FigCompartment */

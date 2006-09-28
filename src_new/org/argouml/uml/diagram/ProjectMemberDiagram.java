@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,75 +23,112 @@
 
 package org.argouml.uml.diagram;
 
-
-import org.argouml.kernel.Project;
-import org.argouml.kernel.AbstractProjectMember;
-import org.argouml.ui.ArgoDiagram;
-import org.tigris.gef.util.Util;
-
 /**
  * @author Piotr Kaminski
  */
-public class ProjectMemberDiagram extends AbstractProjectMember {
 
-    private static final String MEMBER_TYPE = "pgml";
-    private static final String FILE_EXT = ".pgml";
+import java.net.URL;
+import java.util.*;
+import java.beans.*;
+import java.io.*;
 
-    ////////////////////////////////////////////////////////////////
-    // instance variables
+import javax.swing.*;
 
-    private ArgoDiagram diagram;
+import org.argouml.xml.pgml.PGMLParser;
 
-    ////////////////////////////////////////////////////////////////
-    // constructors
+import org.tigris.gef.base.*;
+import org.tigris.gef.util.*;
 
-    /**
-     * The constructor.
-     *
-     * @param d the diagram
-     * @param p the project
-     */
-    public ProjectMemberDiagram(ArgoDiagram d, Project p) {
-        super(null, p);
-        String s = Util.stripJunk(d.getName());
-        makeUniqueName(s);
-        setDiagram(d);
+import org.argouml.ocl.*;
+import org.argouml.kernel.*;
+import org.argouml.ui.*;
+
+public class ProjectMemberDiagram extends ProjectMember {
+
+  ////////////////////////////////////////////////////////////////
+  // constants
+
+  public static final String MEMBER_TYPE = "pgml";
+  public static final String FILE_EXT = "." + MEMBER_TYPE;
+  public static final String PGML_TEE = "/org/argouml/xml/dtd/PGML.tee";
+
+
+  ////////////////////////////////////////////////////////////////
+  // static variables
+
+  public static OCLExpander expander = null;
+
+  ////////////////////////////////////////////////////////////////
+  // instance variables
+
+  private Diagram _diagram;
+
+  ////////////////////////////////////////////////////////////////
+  // constructors
+
+  public ProjectMemberDiagram(String name, Project p) { super(name, p); }
+
+  public ProjectMemberDiagram(Diagram d, Project p) {
+    super(null, p);
+    String s = Util.stripJunk(d.getName());
+    //if (!(s.startsWith(_project.getBaseName() + "_")))
+    //  s = _project.getBaseName() + "_" + s;
+    setName(s);
+    setDiagram(d);
+  }
+
+  ////////////////////////////////////////////////////////////////
+  // accessors
+
+  public Diagram getDiagram() { return _diagram; }
+  public String getType() { return MEMBER_TYPE; }
+  public String getFileExtension() { return FILE_EXT; }
+
+  public void load() {
+    Dbg.log(getClass().getName(), "Reading " + getURL());
+    PGMLParser.SINGLETON.setUUIDRefs(getProject()._UUIDRefs);
+    Diagram d = PGMLParser.SINGLETON.readDiagram(getURL());
+    setDiagram(d);
+    try { getProject().addDiagram(d); }
+    catch (PropertyVetoException pve) { }
+  }
+
+  public void save(String path, boolean overwrite) {
+    if (expander == null)
+      expander = new OCLExpander(TemplateReader.readFile(PGML_TEE));
+
+    if (!path.endsWith("/")) path += "/";
+    String fullpath = path + getName();
+    try {
+      System.out.println("Writing " + fullpath + "...");
+      Globals.showStatus("Writing " + fullpath + "...");
+      File f = new File(fullpath);
+      if (f.exists() && !overwrite) {
+	String t = "Overwrite " + fullpath;
+	ProjectBrowser pb = ProjectBrowser.TheInstance;
+	int response =
+	  JOptionPane.showConfirmDialog(pb, t, t,
+					JOptionPane.YES_NO_OPTION);
+	if (response == JOptionPane.NO_OPTION) return;
+      }
+      FileWriter fw = new FileWriter(f);
+      expander.expand(fw, _diagram, "", "");
+      System.out.println("Wrote " + fullpath);
+      Globals.showStatus("Wrote " + fullpath);
+      // needs-more-work: progress bar in ProjectBrowser
+      fw.close();
     }
+    catch (FileNotFoundException ignore) {
+      System.out.println("got an FileNotFoundException");
+    }
+    catch (IOException ignore) {
+      System.out.println("got an IOException");
+      ignore.printStackTrace();
+    }
+  }
 
-    ////////////////////////////////////////////////////////////////
-    // accessors
-
-    /**
-     * @return the diagram
-     */
-    public ArgoDiagram getDiagram() {
-        return diagram;
-    }
-    /**
-     * @see org.argouml.kernel.AbstractProjectMember#getType()
-     */
-    public String getType() {
-        return MEMBER_TYPE;
-    }
-    /**
-     * @see org.argouml.kernel.AbstractProjectMember#getZipFileExtension()
-     */
-    public String getZipFileExtension() {
-        return FILE_EXT;
-    }
-
-    /**
-     * @param d the diagram
-     */
-    protected void setDiagram(ArgoDiagram d) {
-        diagram = d;
-    }
-    
-    /**
-     * @see org.argouml.kernel.ProjectMember#repair()
-     */
-    public String repair() {
-        return diagram.repair();
-    }
+  protected void setDiagram(Diagram diagram) {
+    _diagram = diagram;
+  }
 
 } /* end class ProjectMemberDiagram */

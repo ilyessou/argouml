@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,135 +21,67 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+
+// File: CrNavFromInterface.java
+// Classes: CrNavFromInterface.java
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.cognitive.critics;
 
-import java.util.Iterator;
+import java.util.*;
 
-import org.argouml.cognitive.Designer;
-import org.argouml.cognitive.critics.Critic;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
+import ru.novosoft.uml.behavior.collaborations.*;
 
-/**
- * A critic to detect navigation from an Interface to a Class in an
- * Association.  This is not permitted in UML, since it would require
- * the Interface to hold state to represent the association
- * reference.<p>
- *
- * The critic will trigger whenever an association between an
- * interface and a class is navigable <em>from</em> the interface.<p>
- *
- * See <a href=
- * "http://argouml.tigris.org/documentation/printablehtml/manual/argouml.html/
- * #s2.ref.critics_nav_from_interface">
- * ArgoUML User Manual: N</a>
- * @author jrobbins@ics.uci.edu
- */
+import org.argouml.cognitive.*;
+import org.argouml.cognitive.critics.*;
+
 public class CrNavFromInterface extends CrUML {
 
-    /**
-     * Constructor for the critic.<p>
-     *
-     * Sets up the resource name, which will allow headline and description
-     * to found for the current locale (replaces deprecated setHeadline and sd
-     * methods). Provides a design issue category (RELATIONSHIPS) and knowledge
-     * type (SYNTAX). Adds trigger "end_navigable".<p>
-     */
-    public CrNavFromInterface() {
-        setupHeadAndDesc();
+  public CrNavFromInterface() {
+    setHeadline("Remove Navigation from MInterface <ocl>self</ocl>");
+    sd("Associations involving an MInterface can be not be naviagable in "+
+       "the direction from the MInterface.  This is because interfaces do "+
+       "contain only operation declarations and cannot hold pointers to "+
+       "other objects.\n\n" +
+       "This part of the design should be changed before you can generate "+
+       "code from this design.  If you do generate code before fixing this "+
+       "problem, the code will not match the design.\n\n"+
+       "To fix this, select the MAssociation and use the \"Properties\" "+
+       "tab to uncheck Navigable for the end touching the MInterface.  "+
+       "The MAssociation should then appear with an stick arrowhead pointed "+
+       "away from the MInterface.");
+    addSupportedDecision(CrUML.decRELATIONSHIPS);
+    setKnowledgeTypes(Critic.KT_SYNTAX);
+    addTrigger("end_navigable");
+  }
 
-        // Specify design issue category and knowledge type
-
-        addSupportedDecision(UMLDecision.RELATIONSHIPS);
-        setKnowledgeTypes(Critic.KT_SYNTAX);
-
-        // This may not actually make any difference at present (the code
-        // behind addTrigger needs more work).
-
-        addTrigger("end_navigable");
+  /** Applies to Associations only, not AssociationClasses. */
+  public boolean predicate2(Object dm, Designer dsgr) {
+    if (!(dm instanceof MAssociation)) return NO_PROBLEM;
+    MAssociation asc = (MAssociation) dm;
+    Collection conns = asc.getConnections();
+    if (asc instanceof MAssociationRole)
+      conns = ((MAssociationRole)asc).getConnections();
+    int aggCount = 0;
+    Iterator enum = conns.iterator();
+    while (enum.hasNext()) {
+      MAssociationEnd ae = (MAssociationEnd) enum.next();
+      if (!ae.isNavigable()) continue;
+      if (ae.getType() instanceof MInterface) return PROBLEM_FOUND;
+      if (ae.getType() instanceof MClassifierRole) {
+        Collection bases = ((MClassifierRole)ae.getType()).getBases();
+        for (Iterator iter = bases.iterator(); iter.hasNext();) {
+          if (iter.next() instanceof MInterface)
+            return PROBLEM_FOUND;
+        };
+      };
     }
+    return NO_PROBLEM;
+  }
 
-    /**
-     * The trigger for the critic.<p>
-     *
-     * Applies to Associations only, not AssociationRoles. The reason is
-     * that an AssociationRole cannot have greater navigability than the
-     * Association it specializes, so if the critic has addressed the
-     * Association, the AssociationRole will effectively be addressed. There
-     * may of course be a need for a critic to check that Association Roles do
-     * match their parents in this respect!<p>
-     *
-     * As a consequence, we also don't need to check for associations with
-     * ClassifierRoles.<p>
-     *
-     * Iterate over all the AssociationEnds. We only have a problem if:<p>
-     * <ol>
-     *   <li>There is an end connected to an Interface; and
-     *   <li>An end other than that end is navigable.
-     * </ol>
-     *
-     * @param  dm    the object to be checked against the critic
-     * @param  dsgr  the designer creating the model. Not used, this is for
-     *               future development of ArgoUML
-     * @return       {@link #PROBLEM_FOUND PROBLEM_FOUND} if the critic is
-     *               triggered, otherwise {@link #NO_PROBLEM NO_PROBLEM}.
-     */
-    public boolean predicate2(Object dm, Designer dsgr) {
-
-        // Only look at Associations
-
-        if (!(Model.getFacade().isAAssociation(dm))) {
-            return NO_PROBLEM;
-        }
-
-        if (Model.getFacade().isAAssociationRole(dm)) {
-            return NO_PROBLEM;
-        }
-
-        // Iterate over all the AssociationEnds. We only have a problem if 1)
-        // there is an end connected to an Interface and 2) an end other than
-        // that end is navigable.
-
-        Iterator assocEnds = Model.getFacade().getConnections(dm).iterator();
-
-        boolean haveInterfaceEnd  = false;  // End at an Interface?
-        boolean otherEndNavigable = false;  // Navigable other end?
-
-        while (assocEnds.hasNext()) {
-
-            // The next AssociationEnd
-
-            Object ae = assocEnds.next();
-
-            // If its an interface we have an interface end, otherwise its
-            // something else and we should see if it is navigable. We don't
-            // check that the end is a Classifier, rather than its child
-            // ClassifierRole, since we have effectively eliminated that
-            // possiblity in rejecting AssociationRoles above.
-
-	    Object type = Model.getFacade().getType(ae);
-
-            if (Model.getFacade().isAInterface(type)) {
-                haveInterfaceEnd = true;
-            } else if (Model.getFacade().isNavigable(ae)) {
-                otherEndNavigable = true;
-            }
-
-            // We can give up looking if we've hit both criteria
-
-            if (haveInterfaceEnd && otherEndNavigable) {
-                return PROBLEM_FOUND;
-            }
-        }
-
-        // If we drop out we didn't meet both criteria, and all is well.
-
-        return NO_PROBLEM;
-    }
-
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = 2660051106458704056L;
 } /* end class CrNavFromInterface */
 

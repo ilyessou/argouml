@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,64 +23,33 @@
 
 package org.argouml.cognitive.critics;
 
-import java.util.Enumeration;
-import java.util.Vector;
-import org.argouml.cognitive.Designer;
+import java.util.*;
 
-/**
- * The standard Control Mech. It extends an ANDControlMech with the individual
- * cm's
- * <ul>
- * <li>EnabledCM
- * <li>NotSnoozedCM
- * <li>DesignGoalsCM
- * <li>CurDecisionCM
- * </ul>
- *
- * implying that a critic is relevant if and if only it is enabled, not snoozed,
- * applicable to the current goals and relevant decisions to be supported.
- *
- */
+import org.argouml.cognitive.*;
+
 public class StandardCM extends AndCM {
-
-    /**
-     * The constructor.
-     *
-     */
-    public StandardCM() {
-        addMech(new EnabledCM());
-        addMech(new NotSnoozedCM());
-        addMech(new DesignGoalsCM());
-        addMech(new CurDecisionCM());
-    }
+  public StandardCM() {
+    addMech(new EnabledCM());
+    addMech(new NotSnoozedCM());
+    addMech(new DesignGoalsCM());
+    addMech(new CurDecisionCM());
+  }
 } /* end class StandardCM */
 
 
-class EnabledCM implements ControlMech {
-    /**
-     * @see org.argouml.cognitive.critics.ControlMech#isRelevant(org.argouml.cognitive.critics.Critic, org.argouml.cognitive.Designer)
-     */
-    public boolean isRelevant(Critic c, Designer d) {
-        return c.isEnabled();
-    }
-} // end class EnabledCM
 
-class NotSnoozedCM implements ControlMech {
-    /**
-     * @see org.argouml.cognitive.critics.ControlMech#isRelevant(org.argouml.cognitive.critics.Critic, org.argouml.cognitive.Designer)
-     */
-    public boolean isRelevant(Critic c, Designer d) {
-        return !c.snoozeOrder().getSnoozed();
-    }
+class NotSnoozedCM extends ControlMech {
+  public boolean isRelevant(Critic c, Designer d) {
+    return !c.snoozeOrder().getSnoozed();
+  }
 } // end class NotSnoozedCM
 
-class DesignGoalsCM implements ControlMech {
-    /**
-     * @see org.argouml.cognitive.critics.ControlMech#isRelevant(org.argouml.cognitive.critics.Critic, org.argouml.cognitive.Designer)
-     */
-    public boolean isRelevant(Critic c, Designer d) {
-        return c.isRelevantToGoals(d);
-    }
+
+
+class DesignGoalsCM extends ControlMech {
+  public boolean isRelevant(Critic c, Designer d) {
+    return c.isRelevantToGoals(d);
+  }
 } // end class DesignGoalsCM
 
 // How much control should critics have over when they are relavant?
@@ -89,62 +57,43 @@ class DesignGoalsCM implements ControlMech {
 // How does using more semantically rich method calls impact
 // componentization?
 
-class CurDecisionCM implements ControlMech {
-    /**
-     * @see org.argouml.cognitive.critics.ControlMech#isRelevant(org.argouml.cognitive.critics.Critic, org.argouml.cognitive.Designer)
-     */
-    public boolean isRelevant(Critic c, Designer d) {
-        return c.isRelevantToDecisions(d);
-    }
+class CurDecisionCM extends ControlMech {
+  public boolean isRelevant(Critic c, Designer d) {
+    return c.isRelevantToDecisions(d);
+  }
 } // end class CurDecisionCM
 
-abstract class CompositeCM implements ControlMech {
-    private Vector mechs = new Vector();
 
-    /**
-     * @return Returns the _mechs.
-     */
-    protected Vector getMechs() {
-        return mechs;
-    }
 
-    /**
-     * @param cm
-     *            the ControlMech
-     */
-    public void addMech(ControlMech cm) {
-        mechs.addElement(cm);
-    }
+class CompositeCM extends ControlMech {
+  protected Vector _mechs = new Vector();
+  public void addMech(ControlMech cm) {
+    _mechs.addElement(cm);
+  }
 } // end class CompositeCM
 
+
+
 class AndCM extends CompositeCM {
-    /**
-     * @see org.argouml.cognitive.critics.ControlMech#isRelevant(org.argouml.cognitive.critics.Critic, org.argouml.cognitive.Designer)
-     */
-    public boolean isRelevant(Critic c, Designer d) {
-        Enumeration cur = getMechs().elements();
-        while (cur.hasMoreElements()) {
-            ControlMech cm = (ControlMech) cur.nextElement();
-            if (!cm.isRelevant(c, d)) {
-                return false;
-            }
-        }
-        return true;
+  public boolean isRelevant(Critic c, Designer d) {
+    Enumeration cur = _mechs.elements();
+    while (cur.hasMoreElements()) {
+      ControlMech cm = (ControlMech)cur.nextElement();
+      if (!cm.isRelevant(c, d)) return false;
     }
+    return true;
+  }
 } // end class AndCM
 
+
+
 class OrCM extends CompositeCM {
-    /**
-     * @see org.argouml.cognitive.critics.ControlMech#isRelevant(org.argouml.cognitive.critics.Critic, org.argouml.cognitive.Designer)
-     */
-    public boolean isRelevant(Critic c, Designer d) {
-        Enumeration cur = getMechs().elements();
-        while (cur.hasMoreElements()) {
-            ControlMech cm = (ControlMech) cur.nextElement();
-            if (cm.isRelevant(c, d)) {
-                return true;
-            }
-        }
-        return false;
+  public boolean isRelevant(Critic c, Designer d) {
+    Enumeration cur = _mechs.elements();
+    while (cur.hasMoreElements()) {
+      ControlMech cm = (ControlMech)cur.nextElement();
+      if (cm.isRelevant(c, d)) return true;
     }
+    return false;
+  }
 } // end class OrCM

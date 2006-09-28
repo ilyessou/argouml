@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,36 +23,21 @@
 
 package org.argouml.uml.diagram.state;
 
-import org.argouml.model.Model;
-import org.tigris.gef.util.Predicate;
+import ru.novosoft.uml.behavior.state_machines.*;
+import ru.novosoft.uml.foundation.data_types.*;
 
-/**
- * Predicate to test if this is a start state.
- *
- */
+import org.tigris.gef.util.*;
+
 public class PredIsStartState implements Predicate {
 
-    /**
-     * theInstance is the singleton.
-     */
-    private static PredIsStartState theInstance = new PredIsStartState();
+  public static PredIsStartState TheInstance = new PredIsStartState();
 
-    private PredIsStartState() { }
+  private PredIsStartState() { }
 
-    /**
-     * @see org.tigris.gef.util.Predicate#predicate(java.lang.Object)
-     */
-    public boolean predicate(Object obj) {
-	return (Model.getFacade().isAPseudostate(obj))
-	    && (Model.getPseudostateKind().getInitial().equals(
-                Model.getFacade().getKind(obj)));
-    }
+  public boolean predicate(Object obj) {
+    return (obj instanceof MPseudostate) &&
+      (MPseudostateKind.INITIAL.equals(((MPseudostate)obj).getKind()));
+  }
+  
+} /* end class PredIsStartState */
 
-    /**
-     * @return the instance
-     */
-    public static PredIsStartState getTheInstance() {
-        return theInstance;
-    }
-
-} /* end class PredIsStartpackage */

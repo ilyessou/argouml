@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,727 +23,398 @@
 
 package org.argouml.uml.ui;
 
-import java.awt.BorderLayout;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.beans.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.*;
+import javax.swing.*;
+import javax.swing.event.*;
+import javax.swing.tree.*;
+import javax.swing.text.*;
+import javax.swing.table.*;
+import javax.swing.border.*;
+import javax.swing.plaf.metal.MetalLookAndFeel;
 
-import javax.swing.JOptionPane;
-import javax.swing.JToolBar;
-import javax.swing.event.EventListenerList;
+import ru.novosoft.uml.*;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
+import ru.novosoft.uml.behavior.state_machines.*;
+import ru.novosoft.uml.behavior.use_cases.*;
+import ru.novosoft.uml.model_management.*;
 
-import org.apache.log4j.Logger;
-import org.argouml.model.Model;
-import org.argouml.ocl.ArgoFacade;
-import org.argouml.ocl.OCLUtil;
-import org.argouml.ui.AbstractArgoJPanel;
-import org.argouml.ui.targetmanager.TargetEvent;
-import org.tigris.gef.presentation.Fig;
-import org.tigris.toolbar.ToolBarManager;
+import tudresden.ocl.*;
 
-import tudresden.ocl.OclException;
-import tudresden.ocl.OclTree;
-import tudresden.ocl.check.OclTypeException;
-import tudresden.ocl.gui.ConstraintRepresentation;
-import tudresden.ocl.gui.EditingUtilities;
-import tudresden.ocl.gui.OCLEditor;
-import tudresden.ocl.gui.OCLEditorModel;
-import tudresden.ocl.gui.events.ConstraintChangeEvent;
-import tudresden.ocl.gui.events.ConstraintChangeListener;
-import tudresden.ocl.parser.OclParserException;
-import tudresden.ocl.parser.analysis.DepthFirstAdapter;
-import tudresden.ocl.parser.node.AConstraintBody;
-import tudresden.ocl.parser.node.TName;
+import org.argouml.kernel.*;
+import org.argouml.ui.*;
+import org.argouml.ocl.ui.*;
 
-/**
-  * Tab for OCL constraint editing.
-  *
-  * @author v1.0: Falk Finger
-  * @author v2.0: Steffen Zschaler
-  */
-public class TabConstraints extends AbstractArgoJPanel
-    implements TabModelTarget {
+public class TabConstraints extends TabSpawnable
+	implements TabModelTarget, DocumentListener, ActionListener,
+	ListSelectionListener
+{
+	////////////////////////////////////////////////////////////////
+	// instance variables
+	private MModelElement _target;
+	private boolean _shouldBeEnabled = false;
+	private boolean _updating = false;
+	private TableModelConstraints _tableModel = new TableModelConstraints();
+	private JTable _table = new JTable(4, 1);
+	private JTextArea _expr = new JTextArea();
+	private JSplitPane _splitter;
 
-    private static final Logger LOG = Logger.getLogger(TabConstraints.class);
+	private JButton _addButton = new JButton("Add");
+	private JButton _removeButton = new JButton("Remove");
 
-    /**
-     * The actual editor pane.
-     */
-    private OCLEditor mOcleEditor;
+//   private JButton _ltButton = new JButton("<");
+//   private JButton _leButton = new JButton("<=");
+//   private JButton _gtButton = new JButton(">");
+//   private JButton _geButton = new JButton(">=");
+//   private JButton _eqButton = new JButton("=");
+//   private JButton _sizeButton = new JButton("->size");
+//   private JButton _asSetButton = new JButton("->asSet");
+//   private JButton _forAllButton = new JButton("->forAll");
+//   private JButton _existsButton = new JButton("->exists");
+  // more...  allow user to select terms from lists
 
-    /**
-     * The current target element.
-     */
-    private Object/*MModelElement*/ mMmeiTarget;
+  ////////////////////////////////////////////////////////////////
+  // constructor
+	public TabConstraints() {
+		super("Constraints");
 
-    /**
-     * The constructor.
-     */
-    public TabConstraints() {
-        super("tab.constraints");
+		_table.setModel(_tableModel);
+		Font labelFont = MetalLookAndFeel.getSubTextFont();
+		_table.setFont(labelFont);
 
-        setLayout(new BorderLayout(0, 0));
+		_table.setIntercellSpacing(new Dimension(0, 1));
+		_table.setShowVerticalLines(false);
+		_table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		//_table.getSelectionModel().addListSelectionListener(this);
+		_table.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
 
-        mOcleEditor = new OCLEditor();
-        mOcleEditor.setOptionMask(OCLEditor.OPTIONMASK_TYPECHECK
-                   /*|  //removed to workaround problems with autosplit
-                     OCLEditor.OPTIONMASK_AUTOSPLIT*/);
-        mOcleEditor.setDoAutoSplit(false);
-        setToolbarRollover(true);
-        setToolbarFloatable(false);
+		//TableColumn descCol = _table.getColumnModel().getColumn(0);
+		//descCol.setMinWidth(100);
+		//descCol.setWidth(190);
+		//_table.setTableHeader(null);
 
-        add(mOcleEditor);
+		JPanel listButtons = new JPanel();
+		listButtons.setLayout(new GridLayout(1, 2));
+		listButtons.add(_addButton);
+		listButtons.add(_removeButton);
+
+		JPanel listPane = new JPanel();
+		listPane.setLayout(new BorderLayout());
+		listPane.add(new JScrollPane(_table), BorderLayout.CENTER);
+		listPane.add(listButtons, BorderLayout.SOUTH);
+		listPane.setMinimumSize(new Dimension(100, 100));
+		listPane.setPreferredSize(new Dimension(200, 100));
+
+		JPanel exprButtons = new JPanel();
+		exprButtons.setBorder(new EtchedBorder());
+		exprButtons.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
+		//     exprButtons.add(new JLabel("  Insert: "));
+		//     exprButtons.add(_gtButton);
+		//     _gtButton.setMargin(new Insets(0, 0, 0, 0));
+		//     exprButtons.add(_geButton);
+		//     _geButton.setMargin(new Insets(0, 0, 0, 0));
+		//     exprButtons.add(_ltButton);
+		//     _ltButton.setMargin(new Insets(0, 0, 0, 0));
+		//     exprButtons.add(_leButton);
+		//     _leButton.setMargin(new Insets(0, 0, 0, 0));
+		//     exprButtons.add(_eqButton);
+		//     _eqButton.setMargin(new Insets(0, 0, 0, 0));
+		//     exprButtons.add(new SpacerPanel());
+		//     exprButtons.add(_sizeButton);
+		//     _sizeButton.setMargin(new Insets(0, 0, 0, 0));
+		//     exprButtons.add(_asSetButton);
+		//     _asSetButton.setMargin(new Insets(0, 0, 0, 0));
+		//     exprButtons.add(_forAllButton);
+		//     _forAllButton.setMargin(new Insets(0, 0, 0, 0));
+		//     exprButtons.add(_existsButton);
+		//     _existsButton.setMargin(new Insets(0, 0, 0, 0));
+
+		JPanel exprPane = new JPanel();
+		exprPane.setLayout(new BorderLayout());
+		exprPane.add(_expr, BorderLayout.CENTER);
+		exprPane.add(exprButtons, BorderLayout.SOUTH);
+		_expr.setLineWrap(true);
+		_expr.setWrapStyleWord(true);
+		_expr.setEditable(false);
+
+		setLayout(new BorderLayout());
+		_splitter = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,
+								   listPane, exprPane);
+		_splitter.setDividerSize(2);
+		_splitter.setDividerLocation(200);
+		add(_splitter, BorderLayout.CENTER);
+		setFont(new Font("Dialog", Font.PLAIN, 10));
+
+		_table.getSelectionModel().addListSelectionListener(this);
+		_expr.getDocument().addDocumentListener(this);
+
+		//     _gtButton.addActionListener(this);
+		//     _geButton.addActionListener(this);
+		//     _ltButton.addActionListener(this);
+		//     _leButton.addActionListener(this);
+		//     _eqButton.addActionListener(this);
+		//     _sizeButton.addActionListener(this);
+		//     _asSetButton.addActionListener(this);
+		//     _forAllButton.addActionListener(this);
+		//     _existsButton.addActionListener(this);
+
+		_addButton.addActionListener(this);
+		_removeButton.addActionListener(this);
+
+		updateEnabled(null);
+	}
+
+	////////////////////////////////////////////////////////////////
+	// accessors
+	public void setTarget(Object t) {
+		if (!(t instanceof MModelElementImpl)) {
+			_target = null;
+			_shouldBeEnabled = false;
+			return;
+		}
+		_target = (MModelElementImpl) t;
+		_shouldBeEnabled = true;
+
+		Vector constraints = new Vector(_target.getConstraints());
+		_tableModel.setTarget(_target);
+		//TableColumn descCol = _table.getColumnModel().getColumn(0);
+		//descCol.setMinWidth(100);
+		//descCol.setWidth(190);
+		_table.sizeColumnsToFit(0);
+		_splitter.setDividerLocation(200);
+		updateEnabled(null);
+		validate();
+	}
+	public Object getTarget() { return _target; }
+
+	public void refresh() { setTarget(_target); }
+
+	public boolean shouldBeEnabled() { return _shouldBeEnabled; }
+
+	////////////////////////////////////////////////////////////////
+	// utility methods
+
+	/** Enable/disable buttons based on the current selection */
+	protected void updateEnabled(MConstraint selectedConstraint) {
+		_addButton.setEnabled(_target != null);
+		_removeButton.setEnabled(selectedConstraint != null);
+
+		_expr.setEnabled(selectedConstraint != null);
+
+		//     _gtButton.setEnabled(selectedConstraint != null);
+		//     _geButton.setEnabled(selectedConstraint != null);
+		//     _ltButton.setEnabled(selectedConstraint != null);
+		//     _leButton.setEnabled(selectedConstraint != null);
+		//     _eqButton.setEnabled(selectedConstraint != null);
+		//     _sizeButton.setEnabled(selectedConstraint != null);
+		//     _asSetButton.setEnabled(selectedConstraint != null);
+		//     _forAllButton.setEnabled(selectedConstraint != null);
+		//     _existsButton.setEnabled(selectedConstraint != null);
+	}
+
+	////////////////////////////////////////////////////////////////
+	// event handling
+
+	public void insertUpdate(DocumentEvent e) {
+		if (_updating) return;
+		//System.out.println(getClass().getName() + " insert");
+		if (e.getDocument() == _expr.getDocument()) {
+			Vector cs = new Vector(_target.getConstraints());
+			//int row = _table.getSelectionModel().getMinSelectionIndex();
+			int row = _table.getSelectedRow();
+			if (row != -1 && row < cs.size()) {
+				//System.out.println("setting constraint body: " + row);
+				MConstraint c = (MConstraint) cs.elementAt(row);
+				c.setBody(new MBooleanExpression("OCL",_expr.getText()));
+				//System.out.println("text=" + _expr.getText());
+			}
+		}
+	}
+
+	public void removeUpdate(DocumentEvent e) { insertUpdate(e); }
+
+	public void changedUpdate(DocumentEvent e) {
+		System.out.println(getClass().getName() + " changed");
+		// Apparently, this method is never called.
+	}
+
+	/** Called when a button is pressed */
+	public void actionPerformed(ActionEvent ae) {
+		Object src = ae.getSource();
+		if (src == _addButton) {
+			DialogConstraint dialog = new DialogConstraint(_target, ProjectBrowser.TheInstance);
+			dialog.setVisible(true); 
+			String result = dialog.getResultingExpression();
+			if (result != null) {
+				Vector cs = new Vector(_target.getConstraints());
+				MConstraint c = new MConstraintImpl();
+				c.setName("Constraint "+cs.size());
+				c.setBody(new MBooleanExpression("OCL", result));
+				_target.addConstraint(c);
+				_target.getNamespace().addOwnedElement(c);
+				_table.tableChanged(null);
+				_table.sizeColumnsToFit(1);
+			}
+			return;
+		}
+		if (src == _removeButton) {
+			int row = _table.getSelectedRow();
+			Vector cs = new Vector(_target.getConstraints());
+			if (row > -1 && row < cs.size()) {
+				MConstraint c = (MConstraint)cs.elementAt(row);
+				_target.removeConstraint(c);
+				_table.tableChanged(null);
+				_table.sizeColumnsToFit(0);
+			}
+			else System.out.println("invalid row to remove");
+			return;
+		}
+		if (src instanceof JButton) {
+			String text = ((JButton)src).getText();
+			boolean anyLetters = false;
+			if (text == null || text.length() == 0) return;
+			for (int i = 0; i < text.length(); i++)
+				if (Character.isLetter(text.charAt(i)))
+					anyLetters = true;
+			if (!anyLetters) text = " " + text + " ";
+			_expr.append(text);
+			_expr.requestFocus();
+		}
+	}
+
+	/** Called whenever the constraint selection changes. */
+	public void valueChanged(ListSelectionEvent lse) {
+		if (lse.getValueIsAdjusting()) return;
+		if (lse.getSource() == _table.getSelectionModel()) {
+			Vector cs = new Vector(_target.getConstraints());
+			MConstraint c;
+			//int row = lse.getFirstIndex();
+			int row = _table.getSelectedRow();
+			if (row != -1 && row < cs.size()) c = (MConstraint) cs.elementAt(row);
+			else c = null;
+			//System.out.println("user selected " + row + " = " + c);
+			String bodyText = " ";
+			if (c != null && c.getBody() != null)
+				bodyText = c.getBody().getBody();
+			//System.out.println("bodytext=" + bodyText);
+			_updating = true;
+			try {
+				_expr.setText(bodyText);
+				_expr.setCaretPosition(0);
+			}
+			finally { _updating = false; }
+			updateEnabled(c);
+		}
+	}
+
+} /* end class TabConstraints */
+
+
+
+
+class TableModelConstraints extends AbstractTableModel
+implements VetoableChangeListener, DelayedVChangeListener, MElementListener {
+  ////////////////
+  // instance varables
+  MModelElement _target;
+
+  ////////////////
+  // constructor
+  public TableModelConstraints() { }
+
+  ////////////////
+  // accessors
+  public void setTarget(MModelElement me) {
+    if (_target instanceof MElementImpl)
+      ((MModelElementImpl)_target).removeMElementListener(this);
+    _target = me;
+    if (_target instanceof MElementImpl)
+      ((MModelElementImpl)_target).addMElementListener(this);
+    fireTableStructureChanged(); //?
+  }
+
+  ////////////////
+  // TableModel implemetation
+  public int getColumnCount() { return 1; }
+
+  public String  getColumnName(int c) {
+    if (c == 0) return "Constraint names";
+    return "XXX";
+  }
+
+  public Class getColumnClass(int c) {
+    return String.class;
+  }
+
+  public boolean isCellEditable(int row, int col) {
+    return col == 0;
+  }
+
+  public int getRowCount() {
+    if (_target == null) return 0;
+    Collection cs = _target.getConstraints();
+    if (cs == null) return 0;
+    return cs.size();
+  }
+
+  public Object getValueAt(int row, int col) {
+    Vector cs = new Vector(_target.getConstraints());
+    if (cs == null) return "null constraints";
+    //if (row == cs.size()) return ""; // allows adding new constraint
+    MConstraint c = (MConstraint) cs.elementAt(row);
+    if (col == 0) return c.getName();
+    else return "C-" + row+","+col; // for debugging
+  }
+
+  public void setValueAt(Object aValue, int rowIndex, int columnIndex)  {
+    //System.out.println("setting table value " + rowIndex + ", " + columnIndex);
+    if (columnIndex != 0) return;
+    if (!(aValue instanceof String)) return;
+    String val = (String) aValue;
+    Vector cs = new Vector(_target.getConstraints());
+    //     if (rowIndex >= cs.size()) {
+    //       cs.addElement(new MConstraint(val, "expr"));
+    //       //fireTableStructureChanged();//?
+    //     } else
+    if (val.equals("")) {
+      cs.removeElementAt(rowIndex);
+      //fireTableStructureChanged();//?
     }
-
-    /**
-     * Set the toolbar rollover style.
-     *
-     * @param enable If true then button borders do not become visible
-     * until mouse rolls over button.
-     */
-    private void setToolbarRollover(boolean enable) {
-        if (!ToolBarManager.alwaysUseStandardRollover()) {
-            getOclToolbar().putClientProperty("JToolBar.isRollover", Boolean.TRUE);
-        }
+    else {
+      MConstraint c = (MConstraint) cs.elementAt(rowIndex);
+      c.setName(val);
+      fireTableRowsUpdated(rowIndex, rowIndex);
     }
+  }
+
+  ////////////////
+  // event handlers
+	public void propertySet(MElementEvent mee) {
+	}
+	public void listRoleItemSet(MElementEvent mee) {
+	}
+	public void recovered(MElementEvent mee) {
+	}
+	public void removed(MElementEvent mee) {
+	}
+	public void roleAdded(MElementEvent mee) {
+	}
+	public void roleRemoved(MElementEvent mee) {
+	}
+
+
+  public void vetoableChange(PropertyChangeEvent pce) {
+    DelayedChangeNotify delayedNotify = new DelayedChangeNotify(this, pce);
+    SwingUtilities.invokeLater(delayedNotify);
+  }
+
+  public void delayedVetoableChange(PropertyChangeEvent pce) {
+    fireTableStructureChanged();
+  }
+
+
+} /* end class TableModelConstraints */
 
-    /**
-     * Set the toolbar floating style.
-     *
-     * @param enable If true then the toolbar can be floated and docked
-     */
-    private void setToolbarFloatable(boolean enable) {
-        getOclToolbar().setFloatable(false);
-    }
-
-    /**
-     * Get a reference to the toolbar object contained in the
-     * OCLEditor component.  This is currently a nasty hack. We really
-     * require an interface method on OCLEditor (Bob Tarling 8 Feb
-     * 2003).
-     *
-     * @return The toolbar
-     */
-    private JToolBar getOclToolbar() {
-        return (JToolBar) mOcleEditor.getComponent(0);
-    }
-
-    //TabModelTarget interface methods
-
-    /**
-     * Should this tab be activated for the current target element?<p>
-     *
-     * Argo only supports constraints for Classes and Features
-     * (eg. Attributes and Operations) currently.
-     *
-     * @see org.argouml.ui.TabTarget#shouldBeEnabled(java.lang.Object)
-     */
-    public boolean shouldBeEnabled(Object target) {
-        target = (target instanceof Fig) ? ((Fig) target).getOwner() : target;
-        return (Model.getFacade().isAClass(target)
-                || Model.getFacade().isAFeature(target));
-    }
-
-    /**
-     * Get the target element whose properties this tab presents.
-     *
-     * @see org.argouml.ui.TabTarget#getTarget()
-     */
-    public Object getTarget() {
-        return mMmeiTarget;
-    }
-
-    /**
-     * Refresh the tab because the target has changed.
-     */
-    public void refresh() {
-        setTarget(mMmeiTarget);
-    }
-
-    /**
-     * Set the target element to be displayed in this tab. Only model elements
-     * will be accepted by the constraint tab.
-     *
-     * @see org.argouml.ui.TabTarget#setTarget(java.lang.Object)
-     */
-    public void setTarget(Object oTarget) {
-        oTarget =
-	    (oTarget instanceof Fig) ? ((Fig) oTarget).getOwner() : oTarget;
-        if (!(Model.getFacade().isAModelElement(oTarget))) {
-            mMmeiTarget = null;
-            return;
-        }
-
-        mMmeiTarget = /*(MModelElement)*/oTarget;
-
-        // Set editor's model
-        mOcleEditor.setModel(new ConstraintModel(mMmeiTarget));
-    }
-
-    /**
-     * Adapter to provide information and a manipulation interface for a
-     * target element's set of constraints to the constraint editor.
-     */
-    private static class ConstraintModel implements OCLEditorModel {
-
-        /**
-         * The target element being edited.
-         */
-        private Object/*MModelElement*/ theMMmeiTarget;
-
-        /**
-         * A list of all the constraints in m_nmeiTarget. This is necessary to
-         * induce a consistent order on the constraints.
-         */
-        private ArrayList theMAlConstraints;
-
-        /**
-         * List of listeners.
-         */
-        private EventListenerList theMEllListeners = new EventListenerList();
-
-        /**
-         * Construct a new ConstraintModel.
-         */
-        public ConstraintModel(Object/*MModelElement*/ mmeiTarget) {
-            super();
-
-            theMMmeiTarget = mmeiTarget;
-
-            theMAlConstraints =
-		new ArrayList(Model.getFacade().getConstraints(theMMmeiTarget));
-        }
-
-        /**
-         * Return the number of constraints in this model.
-         */
-        public int getConstraintCount() {
-            return theMAlConstraints.size();
-        }
-
-        /**
-         * Return the constraint with the specified index.
-         *
-         * @param nIdx the index of the constraint to be returned.
-         *             0 <= nIdx < {@link #getConstraintCount}
-         */
-        public ConstraintRepresentation getConstraintAt(int nIdx) {
-            return representationFor(nIdx);
-        }
-
-        /**
-         * Remove the specified constraint from the model.
-         *
-         * @param nIdx the index of the constraint to be removed.
-         *             0 <= nIdx < {@link #getConstraintCount}
-         */
-        public void removeConstraintAt(int nIdx) {
-            if ((nIdx < 0) || (nIdx > theMAlConstraints.size())) {
-                return;
-            }
-
-            Object/*MConstraint*/ mc =
-		/*(MConstraint)*/theMAlConstraints.remove(nIdx);
-
-            if (mc != null) {
-                Model.getCoreHelper().removeConstraint(theMMmeiTarget, mc);
-            }
-
-            fireConstraintRemoved(mc, nIdx);
-        }
-
-        /**
-         * Add a fresh constraint to the model.<p>
-         *
-         * There are 2 restrictions on what can be parsed, given
-         * the current OCL grammar:
-         * <ol>
-         *   <li>Class names must have a capital first letter.
-         *   <li>Feature name must have a lower case first letter.
-         * </ol>
-         */
-        public void addConstraint() {
-
-            // check ocl parsing constraints
-            Object mmeContext = OCLUtil
-                    .getInnerMostEnclosingNamespace(theMMmeiTarget);
-            String contextName = Model.getFacade().getName(mmeContext);
-            String targetName = Model.getFacade().getName(theMMmeiTarget);
-            if ((contextName == null
-		 || contextName.equals (""))
-		||  // this is to fix issue #2056
-                (targetName == null
-		 || targetName.equals (""))
-		||   // this is to fix issue #2056
-                !Character.isUpperCase(contextName.charAt(0))
-		|| (Model.getFacade().isAClass (theMMmeiTarget)
-		    && !Character.isUpperCase(targetName.charAt(0)))
-		|| (Model.getFacade().isAFeature(theMMmeiTarget)
-		    && !Character.isLowerCase(targetName.charAt(0)))) {
-                // TODO: I18n
-                JOptionPane.showMessageDialog(
-		    null,
-                    "The OCL Toolkit requires that:\n\n"
-		    + "Class names have a capital first letter and\n"
-		    + "Attribute or Operation names have "
-		    + "a lower case first letter.",
-                    "Require Correct name convention:",
-                    JOptionPane.ERROR_MESSAGE);
-                // do not create a constraint:
-                return;
-            }
-
-            // null elements represent new constraints, which will be
-            // added to the target the first time any actual editing
-            // takes place.  This is done to ensure syntactical
-            // correctness of constraints stored with the target.
-            theMAlConstraints.add(null);
-
-            fireConstraintAdded();
-        }
-
-        // TODO: - please add some javadoc - ugly classname also
-        private class CR implements ConstraintRepresentation {
-            /**
-             * The constraint being represented.
-             */
-            private Object/*MConstraint*/ theMMcConstraint;
-
-            /**
-             * The constraint's index in the list of
-             * constraints. Necessary only for new constraints, where
-             * m_mcConstraint is still <tt>null</tt>.
-             */
-            private int theMNIdx = -1;
-
-            public CR(Object/*MConstraint*/ mcConstraint, int nIdx) {
-                super();
-
-                theMMcConstraint = mcConstraint;
-                theMNIdx = nIdx;
-            }
-
-            public CR(int nIdx) {
-                this(null, nIdx);
-            }
-
-            /**
-             * Get the name of the constraint.
-             */
-            public String getName() {
-                if (theMMcConstraint == null) {
-                    return "newConstraint";
-                }
-                return Model.getFacade().getName(theMMcConstraint);
-            }
-
-            /**
-             * Get the constraint's body.
-             */
-            public String getData() {
-                if (theMMcConstraint == null) {
-                    return OCLUtil.getContextString(theMMmeiTarget);
-                }
-                return (String) Model.getFacade().getBody(
-                        Model.getFacade().getBody(theMMcConstraint));
-            }
-
-            /**
-             * Set the constraint's body text. For the exceptions the
-             * detailed message must be human readable.
-             *
-             * @param sData the new body of the constraint
-             *
-             * @exception IllegalStateException if the constraint is
-             *            not in a state to accept body changes.
-             * @exception OclParserException if the specified constraint is not
-             *     syntactically correct.
-             * @exception OclTypeException if the specified constraint
-             *            does not adhere by OCL type rules.
-             */
-            public void setData(String sData, EditingUtilities euHelper)
-		throws OclParserException, OclTypeException {
-                // Parse and check specified constraint.
-                OclTree tree = null;
-
-                try {
-                    Object mmeContext = OCLUtil
-                            .getInnerMostEnclosingNamespace(theMMmeiTarget);
-
-                    try {
-                        tree =
-			    euHelper.parseAndCheckConstraint(
-				sData,
-				new ArgoFacade(mmeContext));
-                    } catch (IOException ioe) {
-                        // Ignored: Highly unlikely, and what would we
-                        // do anyway?  log it
-                        LOG.error("problem parsing And Checking Constraints",
-				   ioe);
-                        return;
-                    }
-
-                    // Split constraint body, if user wants us to
-                    if (euHelper.getDoAutoSplit()) {
-                        List lConstraints = euHelper.splitConstraint(tree);
-
-                        if (lConstraints.size() > 0) {
-                            removeConstraintAt(theMNIdx);
-
-                            for (Iterator i = lConstraints.iterator();
-				 i.hasNext();) {
-                                OclTree ocltCurrent = (OclTree) i.next();
-
-                                Object/*MConstraint*/ mc =
-                                    Model.getCoreFactory()
-				        .createConstraint();
-                                Model.getCoreHelper().setName(mc, ocltCurrent
-                                    .getConstraintName());
-                                Model.getCoreHelper().setBody(mc,
-                                        Model.getDataTypesFactory()
-                                        	.createBooleanExpression(
-                                        	        "OCL",
-                                        	        ocltCurrent
-                                        	        .getExpression()));
-                                Model.getCoreHelper().addConstraint(
-                                        theMMmeiTarget,
-                                        mc);
-
-                                // the constraint _must_ be owned by a namespace
-                                if (Model.getFacade().getNamespace(
-                                        theMMmeiTarget)
-                                        != null) {
-                                    Model.getCoreHelper().addOwnedElement(
-                                            Model.getFacade().getNamespace(
-                                                    theMMmeiTarget),
-                                            mc);
-                                } else if (Model.getFacade().getNamespace(
-                                        mmeContext) != null) {
-                                    Model.getCoreHelper().addOwnedElement(
-                                            Model.getFacade().getNamespace(
-                                                    mmeContext),
-                                            theMMcConstraint);
-                                }
-
-                                theMAlConstraints.add(mc);
-                                fireConstraintAdded();
-                            }
-
-                            return;
-                        }
-                    }
-
-                    // Store constraint body
-                    Object/*MConstraint*/ mcOld = null;
-
-                    if (theMMcConstraint == null) {
-                        // New constraint, first time setData is called
-                        theMMcConstraint =
-                            Model.getCoreFactory().createConstraint();
-
-                        Model.getCoreHelper().setName(
-                                theMMcConstraint,
-                                "newConstraint");
-                        Model.getCoreHelper().setBody(
-                                theMMcConstraint,
-                                Model.getDataTypesFactory()
-                                	.createBooleanExpression("OCL", sData));
-
-                        Model.getCoreHelper().addConstraint(theMMmeiTarget,
-                                theMMcConstraint);
-
-                        // the constraint _must_ be owned by a namespace
-                        Object targetNamespace =
-                            Model.getFacade().getNamespace(theMMmeiTarget);
-                        Object contextNamespace =
-                            Model.getFacade().getNamespace(mmeContext);
-                        if (targetNamespace != null) {
-                            Model.getCoreHelper().addOwnedElement(
-                                    targetNamespace,
-                                    theMMcConstraint);
-                        } else if (contextNamespace != null) {
-                            Model.getCoreHelper().addOwnedElement(
-                                    contextNamespace,
-                                    theMMcConstraint);
-                        }
-
-                        theMAlConstraints.set(theMNIdx, theMMcConstraint);
-                    } else {
-                        mcOld = Model.getCoreFactory().createConstraint();
-                        Model.getCoreHelper().setName(
-                                mcOld,
-                                Model.getFacade().getName(theMMcConstraint));
-                        Model.getCoreHelper().setBody(
-                                mcOld,
-                                Model.getDataTypesFactory()
-                                	.createBooleanExpression("OCL",
-                                	        (String) Model.getFacade()
-                                	        	.getBody(
-                                                Model.getFacade().getBody(
-                                                        theMMcConstraint))));
-                        Model.getCoreHelper().setBody(theMMcConstraint,
-                                Model.getDataTypesFactory()
-                                	.createBooleanExpression("OCL", sData));
-                    }
-
-                    fireConstraintDataChanged(theMNIdx, mcOld,
-                            theMMcConstraint);
-
-                } catch (OclTypeException pe) {
-                    LOG.warn("There was some sort of OCL Type problem", pe);
-                    throw pe;
-                } catch (OclParserException pe1) {
-                    LOG.warn("Could not parse the constraint", pe1);
-                    throw pe1;
-                } catch (OclException oclExc) {
-                    // a runtime exception that occurs when some
-                    // internal test fails
-                    LOG.warn("There was some unidentified problem");
-                    throw oclExc;
-                }
-            }
-
-            /**
-             * Set the constraint's name.
-             */
-            public void setName(
-                final String sName,
-                final EditingUtilities euHelper) {
-                if (theMMcConstraint != null) {
-                    // Check name for consistency with spec
-                    if (!euHelper.isValidConstraintName(sName)) {
-                        throw new IllegalArgumentException(
-                                "Please specify a valid name.");
-                    }
-
-                    // Set name
-                    Object/*MConstraint*/ mcOld =
-                        Model.getCoreFactory().createConstraint();
-                    Model.getCoreHelper().setName(mcOld,
-                            Model.getFacade().getName(theMMcConstraint));
-                    Object constraintBody =
-                        Model.getFacade().getBody(theMMcConstraint);
-                    Model.getCoreHelper().setBody(mcOld,
-                            Model.getDataTypesFactory()
-                                .createBooleanExpression(
-                                        "OCL",
-                                        (String) Model.getFacade().getBody(
-                                                constraintBody)));
-
-                    Model.getCoreHelper().setName(theMMcConstraint, sName);
-
-                    fireConstraintNameChanged(theMNIdx, mcOld,
-                            theMMcConstraint);
-
-                    // Also set name in constraint body -- Added 03/14/2001
-                    try {
-                        OclTree tree = null;
-                        Object mmeContext = OCLUtil
-                                .getInnerMostEnclosingNamespace(theMMmeiTarget);
-
-                        constraintBody =
-                            Model.getFacade().getBody(theMMcConstraint);
-                        tree =
-                            euHelper.parseAndCheckConstraint(
-                                (String) Model.getFacade().getBody(
-                                        constraintBody),
-                                new ArgoFacade(mmeContext));
-
-                        if (tree != null) {
-                            tree.apply(new DepthFirstAdapter() {
-                                private int nameID = 0;
-                                public void caseAConstraintBody(
-                                        AConstraintBody node) {
-                                    // replace name
-                                    if (nameID == 0) {
-                                        node.setName(new TName(sName));
-                                    } else {
-                                        node.setName(new TName(
-                                                sName + "_" + nameID));
-                                    }
-                                    nameID++;
-				}
-                            });
-
-                            setData(tree.getExpression(), euHelper);
-                        }
-                    } catch (Throwable t) {
-                        // OK, so that didn't work out... Just ignore
-                        // any problems and don't set the name in the
-                        // constraint body better had log it.
-                        LOG.error("some unidentified problem", t);
-                    }
-                } else {
-                    throw new IllegalStateException(
-                        "Please define and submit a constraint body first.");
-                }
-            }
-        }
-
-        /**
-         * Create a representation adapter for the given constraint.
-         */
-        private CR representationFor(int nIdx) {
-            if ((nIdx < 0) || (nIdx >= theMAlConstraints.size())) {
-                return null;
-            }
-
-            Object/*MConstraint*/ mc = theMAlConstraints.get(nIdx);
-
-            if (mc != null) {
-                return new CR(mc, nIdx);
-            }
-            return new CR(nIdx);
-        }
-
-        /**
-         * Add a listener to be informed of changes in the model.
-         *
-         * @param ccl the new listener
-         */
-        public void addConstraintChangeListener(ConstraintChangeListener ccl) {
-            theMEllListeners.add(ConstraintChangeListener.class, ccl);
-        }
-
-        /**
-         * Remove a listener to be informed of changes in the model.
-         *
-         * @param ccl the listener to be removed
-         */
-        public void removeConstraintChangeListener(
-                ConstraintChangeListener ccl) {
-            theMEllListeners.remove(ConstraintChangeListener.class, ccl);
-        }
-
-        protected void fireConstraintRemoved(
-                Object/*MConstraint*/ mc, int nIdx) {
-            // Guaranteed to return a non-null array
-            Object[] listeners = theMEllListeners.getListenerList();
-
-            ConstraintChangeEvent cce = null;
-
-            // Process the listeners last to first, notifying
-            // those that are interested in this event
-            for (int i = listeners.length - 2; i >= 0; i -= 2) {
-                if (listeners[i] == ConstraintChangeListener.class) {
-                    // Lazily create the event:
-                    if (cce == null) {
-                        cce = new ConstraintChangeEvent(
-                            this,
-                            nIdx,
-                            new CR(mc, nIdx),
-                            null);
-                    }
-                    ((ConstraintChangeListener) listeners[i + 1])
-                        .constraintRemoved(cce);
-                }
-            }
-        }
-
-        protected void fireConstraintAdded() {
-            // Guaranteed to return a non-null array
-            Object[] listeners = theMEllListeners.getListenerList();
-
-            ConstraintChangeEvent cce = null;
-
-            // Process the listeners last to first, notifying
-            // those that are interested in this event
-            for (int i = listeners.length - 2; i >= 0; i -= 2) {
-                if (listeners[i] == ConstraintChangeListener.class) {
-                    // Lazily create the event:
-                    if (cce == null) {
-                        int nIdx = theMAlConstraints.size() - 1;
-                        cce =
-                            new ConstraintChangeEvent(
-                              this,
-                              nIdx,
-                              null,
-                              representationFor(nIdx));
-                    }
-                    ((ConstraintChangeListener) listeners[i + 1])
-                        .constraintAdded(cce);
-                }
-            }
-        }
-
-        protected void fireConstraintDataChanged(
-                         int nIdx,
-                         Object/*MConstraint*/ mcOld,
-                         Object/*MConstraint*/ mcNew) {
-            // Guaranteed to return a non-null array
-            Object[] listeners = theMEllListeners.getListenerList();
-
-            ConstraintChangeEvent cce = null;
-
-            // Process the listeners last to first, notifying
-            // those that are interested in this event
-            for (int i = listeners.length - 2; i >= 0; i -= 2) {
-                if (listeners[i] == ConstraintChangeListener.class) {
-                    // Lazily create the event:
-                    if (cce == null) {
-                        cce = new ConstraintChangeEvent(
-                            this,
-                            nIdx,
-                            new CR(mcOld, nIdx),
-                            new CR(mcNew, nIdx));
-                    }
-
-                    ((ConstraintChangeListener) listeners[i + 1])
-                        .constraintDataChanged(cce);
-                }
-            }
-        }
-
-        protected void fireConstraintNameChanged(
-                         int nIdx,
-                         Object/*MConstraint*/ mcOld,
-                         Object/*MConstraint*/ mcNew) {
-            // Guaranteed to return a non-null array
-            Object[] listeners = theMEllListeners.getListenerList();
-
-            ConstraintChangeEvent cce = null;
-
-            // Process the listeners last to first, notifying
-            // those that are interested in this event
-            for (int i = listeners.length - 2; i >= 0; i -= 2) {
-                if (listeners[i] == ConstraintChangeListener.class) {
-                    // Lazily create the event:
-                    if (cce == null) {
-                        cce = new ConstraintChangeEvent(
-                            this,
-                            nIdx,
-                            new CR(mcOld, nIdx),
-                            new CR(mcNew, nIdx));
-                    }
-
-                    ((ConstraintChangeListener) listeners[i + 1])
-                        .constraintNameChanged(cce);
-                }
-            }
-        }
-    }
-
-    /**
-     * @see org.argouml.ui.targetmanager.TargetListener#targetAdded(
-     *         org.argouml.ui.targetmanager.TargetEvent)
-     */
-    public void targetAdded(TargetEvent e) {
-    }
-
-    /**
-     * @see org.argouml.ui.targetmanager.TargetListener#targetRemoved(
-     *         org.argouml.ui.targetmanager.TargetEvent)
-     */
-    public void targetRemoved(TargetEvent e) {
-        setTarget(e.getNewTarget());
-    }
-
-    /**
-     * @see org.argouml.ui.targetmanager.TargetListener#targetSet(
-     *         org.argouml.ui.targetmanager.TargetEvent)
-     */
-    public void targetSet(TargetEvent e) {
-        setTarget(e.getNewTarget());
-    }
-}

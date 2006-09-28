@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,791 +21,330 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: FigClass.java
+// Classes: FigClass
+// Original Author: abonner
+// $Id$
+
 package org.argouml.uml.diagram.static_structure.ui;
 
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Rectangle;
-import java.awt.event.MouseEvent;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyVetoException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.Vector;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.*;
+import java.beans.*;
+import javax.swing.*;
+import javax.swing.plaf.metal.MetalLookAndFeel;
 
-import javax.swing.Action;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
+import ru.novosoft.uml.model_management.*;
 
-import org.argouml.model.AssociationChangeEvent;
-import org.argouml.model.AttributeChangeEvent;
-import org.argouml.model.Model;
-import org.argouml.ui.ArgoJMenu;
-import org.argouml.ui.targetmanager.TargetManager;
-import org.argouml.uml.diagram.ui.ActionAddNote;
-import org.argouml.uml.diagram.ui.ActionCompartmentDisplay;
-import org.argouml.uml.diagram.ui.ActionEdgesDisplay;
-import org.argouml.uml.diagram.ui.AttributesCompartmentContainer;
-import org.argouml.uml.diagram.ui.CompartmentFigText;
-import org.argouml.uml.diagram.ui.FigAttributesCompartment;
-import org.argouml.uml.diagram.ui.FigStereotypesCompartment;
-import org.tigris.gef.base.Editor;
-import org.tigris.gef.base.Globals;
-import org.tigris.gef.base.Selection;
-import org.tigris.gef.graph.GraphModel;
-import org.tigris.gef.presentation.Fig;
-import org.tigris.gef.presentation.FigGroup;
-import org.tigris.gef.presentation.FigRect;
-import org.tigris.gef.presentation.FigText;
+import org.tigris.gef.base.*;
+import org.tigris.gef.presentation.*;
+import org.tigris.gef.graph.*;
 
-/**
- * Class to display graphics for a UML Class in a diagram.<p>
- */
-public class FigClass extends FigClassifierBox
-        implements AttributesCompartmentContainer {
+import org.argouml.uml.*;
+import org.argouml.uml.generator.*;
+import org.argouml.uml.diagram.ui.*;
+import org.argouml.ui.*;
 
-    /**
-     * Logger.
-     */
-    //private static final Logger LOG = Logger.getLogger(FigClass.class);
+/** Class to display graphics for a UML Class in a diagram. */
 
-    private FigAttributesCompartment attributesFigCompartment;
+public class FigClass extends FigNodeWithCompartments {
 
-    /**
-     * Manages residency of a class within a component on a deployment
-     * diagram.
-     * TODO: This belongs in ModelElement, not Class - tfm
-     */
-    private Object resident =
-            Model.getCoreFactory().createElementResidence();
+  ////////////////////////////////////////////////////////////////
+  // instance variables
 
-    ////////////////////////////////////////////////////////////////
-    // constructors
+  protected FigCompartment _attr;
+  protected FigCompartment _oper;
+  protected FigRect _bigPort;
+  public MElementResidence resident = new MElementResidenceImpl();
 
-    /**
-     * Constructor for a {@link FigClass} during file load.<p>
-     *
-     * Parent {@link org.argouml.uml.diagram.ui.FigNodeModelElement}
-     * will have created the main box {@link #getBigPort()} and its
-     * name {@link #getNameFig()} and stereotype
-     * (@link #getStereotypeFig()}. This constructor
-     * creates a box for the attributes and operations.<p>
-     *
-     * The properties of all these graphic elements are adjusted
-     * appropriately. The main boxes are all filled and have
-     * outlines.<p>
-     *
-     * <em>Warning</em>. Much of the graphics positioning is hard
-     * coded. The overall figure is placed at location (10,10). The
-     * name compartment (in the parent
-     * {@link org.argouml.uml.diagram.ui.FigNodeModelElement} is
-     * 21 pixels high. The stereotype compartment is created 15 pixels
-     * high in the parent, but we change it to 19 pixels, 1 more than
-     * ({@link #STEREOHEIGHT} here. The attribute and operations boxes
-     * are created at 19 pixels, 2 more than {@link #ROWHEIGHT}.<p>
-     */
-    public FigClass(Object modelElement, int x, int y, int w, int h) {
-        this(null, modelElement);
-        setBounds(x, y, w, h);
+  ////////////////////////////////////////////////////////////////
+  // constructors
+
+  public FigClass() {
+    _bigPort = new FigRect(10, 10, 90, 60, Color.cyan, Color.cyan);
+
+    _attr = new FigCompartment(10, 30, 90, 21);
+    _attr.setFont(LABEL_FONT);
+    _attr.setExpandOnly(true);
+    _attr.setTextColor(Color.black);
+    _attr.setJustification(FigText.JUSTIFY_LEFT);
+
+    _oper = new FigCompartment(10, 50, 90, 21);
+    _oper.setFont(LABEL_FONT);
+    _oper.setExpandOnly(true);
+    _oper.setTextColor(Color.black);
+    _oper.setJustification(FigText.JUSTIFY_LEFT);
+
+    setPort(_bigPort);
+    addFig(_name);
+    addCompartment(_attr);
+    addCompartment(_oper);
+
+    Rectangle r = getBounds();
+    setBounds(r.x, r.y, r.width, r.height);
+  }
+
+  public FigClass(GraphModel gm, Object node) {
+    this();
+    setOwner(node);
+    if (node instanceof MClassifier && (((MClassifier)node).getName() != null))
+	_name.setText(((MModelElement)node).getName());
+  }
+
+  public String placeString() { return "new Class"; }
+
+  public Object clone() {
+	  FigClass figClone = (FigClass) super.clone();
+	  Vector v = figClone.getFigs();
+	  figClone._bigPort = (FigRect) v.elementAt(0);
+	  figClone._name = (FigText) v.elementAt(1);
+	  figClone._attr = (FigCompartment) v.elementAt(2);
+	  figClone._oper = (FigCompartment) v.elementAt(3);
+	  return figClone;
+  }
+
+  ////////////////////////////////////////////////////////////////
+  // accessors
+
+  public Selection makeSelection() {
+    return new SelectionClass(this);
+  }
+
+  public Vector getPopUpActions(MouseEvent me) {
+    Vector popUpActions = super.getPopUpActions(me);
+    JMenu addMenu = new JMenu("Add");
+    addMenu.add(Actions.AddAttribute);
+    addMenu.add(Actions.AddOperation);
+    popUpActions.insertElementAt(addMenu,
+				 popUpActions.size() - 1);
+    JMenu showMenu = new JMenu("Show");
+    if(_attr.isDisplayed() && _oper.isDisplayed())
+      showMenu.add(Actions.HideAllCompartments);
+    else if(!_attr.isDisplayed() && !_oper.isDisplayed())
+      showMenu.add(Actions.ShowAllCompartments);
+
+    if (_attr.isDisplayed())
+      showMenu.add(Actions.HideAttrCompartment);
+    else
+      showMenu.add(Actions.ShowAttrCompartment);
+
+    if (_oper.isDisplayed())
+      showMenu.add(Actions.HideOperCompartment);
+    else
+      showMenu.add(Actions.ShowOperCompartment);
+
+    popUpActions.insertElementAt(showMenu, popUpActions.size() - 1);
+    return popUpActions;
+  }
+
+  public void setOwner(Object node) {
+    super.setOwner(node);
+    Object onlyPort = node; //this kngl should be in the GraphModel
+    bindPort(onlyPort, _bigPort);
+  }
+
+  public FigText getOperationFig() { return _oper; }
+  public FigText getAttributeFig() { return _attr; }
+
+  /**
+   * Returns the status of the operation field.
+   * @return true if the operations are visible, false otherwise
+   */
+  // created by Eric Lefevre 13 Mar 1999
+  public boolean isOperationVisible() { return _oper.isDisplayed(); }
+
+  /**
+   * Returns the status of the attribute field.
+   * @return true if the attributes are visible, false otherwise
+   */
+  // created by Eric Lefevre 13 Mar 1999
+  public boolean isAttributeVisible() {  return _attr.isDisplayed(); }
+
+  // created by Eric Lefevre 13 Mar 1999
+  public void setAttributeVisible(boolean isVisible) {
+    Rectangle rect = getBounds();
+    if ( _attr.isDisplayed() ) {
+      if ( !isVisible ) {
+        damage();
+        int h = _attr.getBounds().height;
+        _attr.setDisplayed(false);
+        setBounds(rect.x, rect.y, rect.width, rect.height - h -1);
+      }
+    }
+    else {
+      if ( isVisible ) {
+        int h = _attr.getBounds().height;
+        _attr.setDisplayed(true);
+        setBounds(rect.x, rect.y, rect.width, rect.height + h);
+        damage();
+      }
+    }
+  }
+
+  // created by Eric Lefevre 13 Mar 1999
+  public void setOperationVisible(boolean isVisible) {
+    Rectangle rect = getBounds();
+    if ( _oper.isDisplayed() ) {
+      if ( !isVisible ) {
+        damage();
+        int h = _oper.getBounds().height;
+        _oper.setDisplayed(false);
+        setBounds(rect.x, rect.y, rect.width, rect.height - h -1);
+      }
+    }
+    else {
+      if ( isVisible ) {
+        int h = _oper.getBounds().height;
+        _oper.setDisplayed(true);
+        setBounds(rect.x, rect.y, rect.width, rect.height + h);
+        damage();
+      }
+    }
+  }
+
+  // modified by Eric Lefevre 13 Mar 1999
+  public Dimension getMinimumSize() {
+    Dimension nameMin = _name.getMinimumSize();
+    Dimension attrMin;
+    if ( _attr.isDisplayed() )
+      attrMin = _attr.getMinimumSize();
+    else
+      attrMin = new Dimension();
+    Dimension operMin;
+    if ( _oper.isDisplayed() )
+      operMin = _oper.getMinimumSize();
+    else
+      operMin = new Dimension();
+
+    int h = nameMin.height;
+    int w = nameMin.width;
+    if ( _attr.isDisplayed() ) {
+      h += attrMin.height;
+      w = Math.max(w, attrMin.width);
+    }
+    if ( _oper.isDisplayed() ) {
+      h += operMin.height;
+      w = Math.max(w, operMin.width);
+    }
+    //    if ( int w = Math.max(Math.max(nameMin.width, attrMin.width), operMin.width);
+    return new Dimension(w, h);
+  }
+
+  public void translate(int dx, int dy) {
+    super.translate(dx, dy);
+    Editor ce = Globals.curEditor();
+    Selection sel = ce.getSelectionManager().findSelectionFor(this);
+    if (sel instanceof SelectionClass)
+      ((SelectionClass)sel).hideButtons();
+  }
+
+
+  ////////////////////////////////////////////////////////////////
+  // user interaction methods
+
+  public void mousePressed(MouseEvent me) {
+    super.mousePressed(me);
+    Editor ce = Globals.curEditor();
+    Selection sel = ce.getSelectionManager().findSelectionFor(this);
+    if (sel instanceof SelectionClass)
+      ((SelectionClass)sel).hideButtons();
+  }
+
+  public void setEnclosingFig(Fig encloser) {
+    super.setEnclosingFig(encloser);
+    if (!(getOwner() instanceof MModelElement)) return;
+    MModelElement me = (MModelElement) getOwner();
+    MNamespace m = null;
+    ProjectBrowser pb = ProjectBrowser.TheInstance;
+    if ((encloser == null && me.getNamespace() == null )
+    ||  (encloser != null && encloser.getOwner() instanceof MPackage)) {
+      if (encloser != null && (encloser.getOwner() instanceof MPackage)) {
+        m = (MNamespace) encloser.getOwner();
+      } else if ( pb.getTarget() instanceof UMLDiagram ) {
+	m = (MNamespace) ((UMLDiagram)pb.getTarget()).getNamespace();
+      }
+      try {
+        me.setNamespace(m);
+      } catch (Exception e) {
+        System.out.println("could not set package");
+      }
     }
 
-    /**
-     * Constructor for a {@link FigClass} by diagram interaction.<p>
-     *
-     * Parent {@link org.argouml.uml.diagram.ui.FigNodeModelElement}
-     * will have created the main box {@link #getBigPort()} and its
-     * name {@link #getNameFig()} and stereotype
-     * (@link #getStereotypeFig()}. This constructor
-     * creates a box for the attributes and operations.<p>
-     *
-     * The properties of all these graphic elements are adjusted
-     * appropriately. The main boxes are all filled and have
-     * outlines.<p>
-     *
-     * <em>Warning</em>. Much of the graphics positioning is hard
-     * coded. The overall figure is placed at location (10,10). The
-     * name compartment (in the parent
-     * {@link org.argouml.uml.diagram.ui.FigNodeModelElement} is
-     * 21 pixels high. The stereotype compartment is created 15 pixels
-     * high in the parent, but we change it to 19 pixels, 1 more than
-     * ({@link #STEREOHEIGHT} here. The attribute and operations boxes
-     * are created at 19 pixels, 2 more than {@link #ROWHEIGHT}.<p>
-     *
-     * @param gm   Not actually used in the current implementation
-     *
-     * @param node The UML object being placed.
-     */
-    public FigClass(GraphModel gm, Object node) {
-        super();
-        attributesFigCompartment =
-            new FigAttributesCompartment(10, 30, 60, ROWHEIGHT + 2);
-        addFig(getBigPort());
-        addFig(getStereotypeFig());
-        addFig(getNameFig());
-        addFig(operationsFig);
-        addFig(attributesFigCompartment);
-        addFig(borderFig);
-        setOwner(node);
+    // The next if-clause is important for the Deployment-diagram
+    // it detects if the enclosing fig is a component, in this case
+    // the ImplementationLocation will be set for the owning MClass
+    if (encloser != null && (encloser.getOwner() instanceof MComponentImpl)) {
+      MComponent component = (MComponent) encloser.getOwner();
+      MClass cl = (MClass) getOwner();
+      resident.setImplementationLocation(component);
+      resident.setResident(cl);
+    }
+    else {
+      resident.setImplementationLocation(null);
+      resident.setResident(null);
+    }     
+
+  }
+
+
+  ////////////////////////////////////////////////////////////////
+  // internal methods
+
+  protected void textEdited(FigText ft) throws PropertyVetoException {
+    super.textEdited(ft);
+    MClassifier cls = (MClassifier) getOwner();
+    if (cls == null) return;
+    if (ft == _attr) {
+      //System.out.println("\n\n\n Edited Attr");
+      String s = ft.getText();
+      ParserDisplay.SINGLETON.parseAttributeCompartment(cls, s);
+    }
+    if (ft == _oper) {
+      String s = ft.getText();
+      ParserDisplay.SINGLETON.parseOperationCompartment(cls, s);
+    }
+  }
+ 
+  protected void modelChanged() {
+    super.modelChanged();
+    MClassifier cls = (MClassifier) getOwner();
+    if (cls == null) return;
+    // String clsNameStr = GeneratorDisplay.Generate(cls.getName());
+    Collection strs = MMUtil.SINGLETON.getAttributes(cls);
+    String attrStr = "";
+    if (strs != null) {
+	Iterator iter = strs.iterator();
+      while (iter.hasNext()) {
+	    MStructuralFeature sf = (MStructuralFeature) iter.next();
+	    // sf.addMElementListener(this);
+	    attrStr += GeneratorDisplay.Generate(sf);
+	    if (iter.hasNext())
+	      attrStr += "\n";
+      }
+    }
+    Collection behs = MMUtil.SINGLETON.getOperations(cls);
+    behs.removeAll(strs);
+    String operStr = "";
+    if (behs != null) {
+	Iterator iter = behs.iterator();
+      while (iter.hasNext()) {
+	    MBehavioralFeature bf = (MBehavioralFeature) iter.next();
+	    // bf.addMElementListener(this);
+	    operStr += GeneratorDisplay.Generate(bf);
+	    if (iter.hasNext())
+	      operStr += "\n";
+      }
     }
 
-    /**
-     * @see java.lang.Object#clone()
-     */
-    public Object clone() {
-        FigClass figClone = (FigClass) super.clone();
-        Iterator thisIter = this.getFigs().iterator();
-        Iterator cloneIter = figClone.getFigs().iterator();
-        while (thisIter.hasNext()) {
-            Fig thisFig = (Fig) thisIter.next();
-            Fig cloneFig = (Fig) cloneIter.next();
-            if (thisFig == borderFig) {
-                figClone.borderFig = (FigRect) thisFig;
-            }
-        }
-        return figClone;
-    }
+    _attr.setText(attrStr);
+    _oper.setText(operStr);
 
+    if (cls.isAbstract()) _name.setFont(ITALIC_LABEL_FONT);
+    else _name.setFont(LABEL_FONT);
 
-    ////////////////////////////////////////////////////////////////
-    // accessors
-
-    /**
-     * @see org.tigris.gef.presentation.Fig#makeSelection()
-     */
-    public Selection makeSelection() {
-        return new SelectionClass(this);
-    }
-
-    /**
-     * Build a collection of menu items relevant for a right-click
-     * popup menu on a Class.
-     *
-     * @param     me     a mouse event
-     * @return           a collection of menu items
-     *
-     * @see org.tigris.gef.ui.PopupGenerator#getPopUpActions(java.awt.event.MouseEvent)
-     */
-    public Vector getPopUpActions(MouseEvent me) {
-        Vector popUpActions = super.getPopUpActions(me);
-
-        // Add...
-        ArgoJMenu addMenu = new ArgoJMenu("menu.popup.add");
-        addMenu.add(TargetManager.getInstance().getAddAttributeAction());
-        addMenu.add(TargetManager.getInstance().getAddOperationAction());
-        addMenu.add(new ActionAddNote());
-        addMenu.add(ActionEdgesDisplay.getShowEdges());
-        addMenu.add(ActionEdgesDisplay.getHideEdges());
-        popUpActions.insertElementAt(addMenu,
-            popUpActions.size() - getPopupAddOffset());
-
-        // Show ...
-        ArgoJMenu showMenu = new ArgoJMenu("menu.popup.show");
-        Iterator i = ActionCompartmentDisplay.getActions().iterator();
-        while (i.hasNext()) {
-            showMenu.add((Action) i.next());
-        }
-        popUpActions.insertElementAt(showMenu,
-            popUpActions.size() - getPopupAddOffset());
-
-        // Modifiers ...
-        popUpActions.insertElementAt(
-                buildModifierPopUp(ABSTRACT | LEAF | ROOT | ACTIVE),
-                popUpActions.size() - getPopupAddOffset());
-
-        // Visibility ...
-        popUpActions.insertElementAt(buildVisibilityPopUp(),
-                popUpActions.size() - getPopupAddOffset());
-
-        return popUpActions;
-    }
-
-    /**
-     * @return The bounds of the attributes compartment.
-     */
-    public Rectangle getAttributesBounds() {
-        return attributesFigCompartment.getBounds();
-    }
-
-    /**
-     * @return The vector of graphics for operations (if any).
-     * First one is the rectangle for the entire operations box.
-     */
-    private FigAttributesCompartment getAttributesFig() {
-        return attributesFigCompartment;
-    }
-
-    /**
-     * Returns the status of the attribute field.
-     * @return true if the attributes are visible, false otherwise
-     *
-     * @see org.argouml.uml.diagram.ui.AttributesCompartmentContainer#isAttributesVisible()
-     */
-    public boolean isAttributesVisible() {
-        return getAttributesFig().isVisible();
-    }
-
-    /**
-     * @param isVisible true if the attribute compartment is visible
-     *
-     * @see org.argouml.uml.diagram.ui.AttributesCompartmentContainer#setAttributesVisible(boolean)
-     */
-    public void setAttributesVisible(boolean isVisible) {
-        Rectangle rect = getBounds();
-        if (getAttributesFig().isVisible()) {
-            if (!isVisible) {  // hide compartment
-                damage();
-                Iterator it = getAttributesFig().getFigs().iterator();
-                while (it.hasNext()) {
-                    ((Fig) (it.next())).setVisible(false);
-                }
-                getAttributesFig().setVisible(false);
-                Dimension aSize = this.getMinimumSize();
-                setBounds(rect.x, rect.y,
-			  (int) aSize.getWidth(), (int) aSize.getHeight());
-            }
-        } else {
-            if (isVisible) { // show compartement
-                Iterator it = getAttributesFig().getFigs().iterator();
-                while (it.hasNext()) {
-                    ((Fig) (it.next())).setVisible(true);
-                }
-                getAttributesFig().setVisible(true);
-                Dimension aSize = this.getMinimumSize();
-                setBounds(rect.x, rect.y,
-			  (int) aSize.getWidth(), (int) aSize.getHeight());
-                damage();
-            }
-        }
-    }
-
-    /**
-     * @param isVisible true if the operation compartment is visible
-     *
-     * @see org.argouml.uml.diagram.ui.OperationsCompartmentContainer#setOperationsVisible(boolean)
-     */
-    public void setOperationsVisible(boolean isVisible) {
-        Rectangle rect = getBounds();
-        if (isOperationsVisible()) { // if displayed
-            if (!isVisible) {
-                damage();
-                Iterator it = getOperationsFig().getFigs().iterator();
-                while (it.hasNext()) {
-                    ((Fig) (it.next())).setVisible(false);
-                }
-                getOperationsFig().setVisible(false);
-                Dimension aSize = this.getMinimumSize();
-                setBounds(rect.x, rect.y,
-			  (int) aSize.getWidth(), (int) aSize.getHeight());
-            }
-        } else {
-            if (isVisible) {
-                Iterator it = getOperationsFig().getFigs().iterator();
-                while (it.hasNext()) {
-                    ((Fig) (it.next())).setVisible(true);
-                }
-                getOperationsFig().setVisible(true);
-                Dimension aSize = this.getMinimumSize();
-                setBounds(rect.x, rect.y,
-                    (int) aSize.getWidth(), (int) aSize.getHeight());
-                damage();
-            }
-        }
-    }
-
-    /**
-     * @see org.tigris.gef.presentation.Fig#setLineWidth(int)
-     */
-    public void setLineWidth(int w) {
-        borderFig.setLineWidth(w);
-    }
-
-    /**
-     * @see org.tigris.gef.presentation.Fig#getLineWidth()
-     */
-    public int getLineWidth() {
-        return borderFig.getLineWidth();
-    }
-
-    /**
-     * USED BY PGML.tee.
-     * @return the class name and bounds together with compartment
-     * visibility.
-     */
-    public String classNameAndBounds() {
-        return super.classNameAndBounds()
-            + "operationsVisible=" + isOperationsVisible() + ";"
-            + "attributesVisible=" + isAttributesVisible();
-    }
-
-    /**
-     * Gets the minimum size permitted for a class on the diagram.<p>
-     *
-     * Parts of this are hardcoded, notably the fact that the name
-     * compartment has a minimum height of 21 pixels.<p>
-     *
-     * @return  the size of the minimum bounding box.
-     */
-    public Dimension getMinimumSize() {
-        // Use "aSize" to build up the minimum size. Start with the size of the
-        // name compartment and build up.
-
-        Dimension aSize = getNameFig().getMinimumSize();
-
-        // If we have a stereotype displayed, then allow some space for that
-        // (width and height)
-
-        if (getStereotypeFig().isVisible()) {
-            Dimension stereoMin = getStereotypeFig().getMinimumSize();
-            aSize.width = Math.max(aSize.width, stereoMin.width);
-            aSize.height += stereoMin.height;
-        }
-
-        // Allow space for each of the attributes we have
-
-        if (getAttributesFig().isVisible()) {
-            Dimension attrMin = getAttributesFig().getMinimumSize();
-            aSize.width = Math.max(aSize.width, attrMin.width);
-            aSize.height += attrMin.height;
-        }
-
-        // Allow space for each of the operations we have
-
-        if (isOperationsVisible()) {
-            Dimension operMin = getOperationsFig().getMinimumSize();
-            aSize.width = Math.max(aSize.width, operMin.width);
-            aSize.height += operMin.height;
-        }
-
-        // we want to maintain a minimum width for the class
-        aSize.width = Math.max(60, aSize.width);
-
-        // And now aSize has the answer
-
-        return aSize;
-    }
-
-    /**
-     * @see org.tigris.gef.presentation.Fig#translate(int, int)
-     */
-    public void translate(int dx, int dy) {
-        super.translate(dx, dy);
-        Editor ce = Globals.curEditor();
-        Selection sel = ce.getSelectionManager().findSelectionFor(this);
-        if (sel instanceof SelectionClass) {
-            ((SelectionClass) sel).hideButtons();
-        }
-    }
-
-    ////////////////////////////////////////////////////////////////
-    // internal methods
-
-    /**
-     * @see org.argouml.uml.diagram.ui.FigNodeModelElement#textEdited(org.tigris.gef.presentation.FigText)
-     */
-    protected void textEdited(FigText ft) throws PropertyVetoException {
-        super.textEdited(ft);
-        Object classifier = getOwner();
-        if (classifier == null) {
-            return;
-        }
-        int i = new Vector(getAttributesFig().getFigs()).indexOf(ft);
-        if (i != -1) {
-            highlightedFigText = (CompartmentFigText) ft;
-            highlightedFigText.setHighlighted(true);
-
-            highlightedFigText.getNotationProvider()
-                .parse(highlightedFigText.getOwner(), ft.getText());
-            ft.setText(highlightedFigText.getNotationProvider().toString(
-                    highlightedFigText.getOwner(), null));
-            return;
-        }
-        i = new Vector(getOperationsFig().getFigs()).indexOf(ft);
-        if (i != -1) {
-            highlightedFigText = (CompartmentFigText) ft;
-            highlightedFigText.setHighlighted(true);
-
-            highlightedFigText.getNotationProvider()
-                .parse(highlightedFigText.getOwner(), ft.getText());
-            ft.setText(highlightedFigText.getNotationProvider().toString(
-                highlightedFigText.getOwner(), null));
-            return;
-        }
-    }
-
-    /**
-     * @see org.argouml.uml.diagram.ui.FigNodeModelElement#textEditStarted(org.tigris.gef.presentation.FigText)
-     */
-    protected void textEditStarted(FigText ft) {
-        super.textEditStarted(ft);
-        if (getAttributesFig().getFigs().contains(ft)) {
-            showHelp(((CompartmentFigText) ft)
-                    .getNotationProvider().getParsingHelp());
-        }
-        if (getOperationsFig().getFigs().contains(ft)) {
-            showHelp(((CompartmentFigText) ft)
-                    .getNotationProvider().getParsingHelp());
-        }
-    }
-
-    /**
-     * @param fgVec the FigGroup
-     * @param ft    the Figtext
-     * @param i     get the fig before fig i
-     * @return the FigText
-     */
-    protected FigText getPreviousVisibleFeature(FigGroup fgVec,
-						FigText ft, int i) {
-        if (fgVec == null || i < 1) {
-            return null;
-        }
-        FigText ft2 = null;
-        // TODO: come GEF V 0.12 use getFigs returning an array
-        Vector v = new Vector(fgVec.getFigs());
-        if (i >= v.size() || !((FigText) v.elementAt(i)).isVisible()) {
-            return null;
-        }
-        do {
-            i--;
-            while (i < 1) {
-                if (fgVec == getAttributesFig()) {
-                    fgVec = getOperationsFig();
-                } else {
-                    fgVec = getAttributesFig();
-                }
-                v = new Vector(fgVec.getFigs());
-                i = v.size() - 1;
-            }
-            ft2 = (FigText) v.elementAt(i);
-            if (!ft2.isVisible()) {
-                ft2 = null;
-            }
-        } while (ft2 == null);
-        return ft2;
-    }
-
-    /**
-     * @param fgVec the FigGroup
-     * @param ft    the Figtext
-     * @param i     get the fig after fig i
-     * @return the FigText
-     */
-    protected FigText getNextVisibleFeature(FigGroup fgVec, FigText ft, int i) {
-        if (fgVec == null || i < 1) {
-            return null;
-        }
-        FigText ft2 = null;
-        // TODO: come GEF V 0.12 use getFigs returning an array
-        Vector v = new Vector(fgVec.getFigs());
-        if (i >= v.size() || !((FigText) v.elementAt(i)).isVisible()) {
-            return null;
-        }
-        do {
-            i++;
-            while (i >= v.size()) {
-                if (fgVec == getAttributesFig()) {
-                    fgVec = getOperationsFig();
-                } else {
-                    fgVec = getAttributesFig();
-                }
-                v = new Vector(fgVec.getFigs());
-                i = 1;
-            }
-            ft2 = (FigText) v.elementAt(i);
-            if (!ft2.isVisible()) {
-                ft2 = null;
-            }
-        } while (ft2 == null);
-        return ft2;
-    }
-
-    /**
-     * @see org.argouml.uml.diagram.ui.FigNodeModelElement#renderingChanged()
-     */
-    public void renderingChanged() {
-        if (getOwner() != null) {
-            updateAttributes();
-            updateOperations();
-            updateAbstract();
-        }
-        super.renderingChanged();
-    }
-    
-    /**
-     * Handles changes to the model. Takes into account the event that
-     * occurred. If you need to update the whole fig, consider using
-     * renderingChanged.
-     *
-     * @see org.argouml.uml.diagram.ui.FigNodeModelElement#modelChanged(java.beans.PropertyChangeEvent)
-     */
-    protected void modelChanged(PropertyChangeEvent mee) {
-        // Let our superclass sort itself out first
-        super.modelChanged(mee);
-        if (mee instanceof AssociationChangeEvent 
-                || mee instanceof AttributeChangeEvent) {
-            renderingChanged();
-            updateListeners(getOwner(), getOwner());
-        }
-    }
-
-    /**
-     * @see org.argouml.uml.diagram.ui.FigNodeModelElement#updateStereotypeText()
-     * TODO: Refactor into FigClassifierBox
-     */
-    protected void updateStereotypeText() {
-
-        Rectangle rect = getBounds();
-
-        int stereotypeHeight = 0;
-        if (getStereotypeFig().isVisible()) {
-            stereotypeHeight = getStereotypeFig().getHeight();
-        }
-        int heightWithoutStereo = getHeight() - stereotypeHeight;
-
-        getStereotypeFig().setOwner(getOwner());
-        ((FigStereotypesCompartment) getStereotypeFig()).populate();
-
-        stereotypeHeight = 0;
-        if (getStereotypeFig().isVisible()) {
-            stereotypeHeight = getStereotypeFig().getHeight();
-        }
-
-        int minWidth = this.getMinimumSize().width;
-        if (minWidth > rect.width) {
-            rect.width = minWidth;
-        }
-
-        setBounds(
-                rect.x,
-                rect.y,
-                rect.width,
-                heightWithoutStereo + stereotypeHeight);
-        calcBounds();
-    }
-
-    /**
-     * @see org.tigris.gef.presentation.Fig#setEnclosingFig(org.tigris.gef.presentation.Fig)
-     */
-    public void setEnclosingFig(Fig encloser) {
-        if (encloser == getEncloser()) {
-            return;
-        }
-        if (encloser == null
-                || (encloser != null
-                && !Model.getFacade().isAInstance(encloser.getOwner()))) {
-            super.setEnclosingFig(encloser);
-        }
-        if (!(Model.getFacade().isAModelElement(getOwner()))) {
-            return;
-        }
-        if (encloser != null
-                && (Model.getFacade().isAComponent(encloser.getOwner()))) {
-            Object component = encloser.getOwner();
-            Object anInterface = getOwner();
-            Model.getCoreHelper().setContainer(resident, component);
-            Model.getCoreHelper().setResident(resident, anInterface);
-        } else {
-            Model.getCoreHelper().setContainer(resident, null);
-            Model.getCoreHelper().setResident(resident, null);
-        }
-
-    }
-
-    /**
-     * Sets the bounds, but the size will be at least the one returned by
-     * {@link #getMinimumSize()}, unless checking of size is disabled.<p>
-     *
-     * If the required height is bigger, then the additional height is
-     * equally distributed among all figs (i.e. compartments), such that the
-     * cumulated height of all visible figs equals the demanded height<p>.
-     *
-     * Some of this has "magic numbers" hardcoded in. In particular there is
-     * a knowledge that the minimum height of a name compartment is 21
-     * pixels.<p>
-     *
-     * @param x  Desired X coordinate of upper left corner
-     *
-     * @param y  Desired Y coordinate of upper left corner
-     *
-     * @param w  Desired width of the FigClass
-     *
-     * @param h  Desired height of the FigClass
-     * 
-     * @see org.tigris.gef.presentation.Fig#setBoundsImpl(int, int, int, int)
-     */
-    protected void setBoundsImpl(final int x, final int y,
-            final int w, final int h) {
-        Rectangle oldBounds = getBounds();
-
-        // set bounds of big box
-        getBigPort().setBounds(x, y, w, h);
-        borderFig.setBounds(x, y, w, h);
-
-        // Save our old boundaries (needed later), and get minimum size
-        // info. "whitespace" will be used to maintain a running calculation
-        // of our size at various points.
-
-        final int whitespace = h - getMinimumSize().height;
-
-        getNameFig().setLineWidth(0);
-        getNameFig().setLineColor(Color.red);
-        int currentHeight = 0;
-
-        if (getStereotypeFig().isVisible()) {
-            int stereotypeHeight = getStereotypeFig().getMinimumSize().height;
-            getStereotypeFig().setBounds(
-                    x,
-                    y,
-                    w,
-                    stereotypeHeight);
-            currentHeight = stereotypeHeight;
-        }
-
-        int nameHeight = getNameFig().getMinimumSize().height;
-        getNameFig().setBounds(x, y + currentHeight, w, nameHeight);
-        currentHeight += nameHeight;
-
-        if (isAttributesVisible()) {
-            int attributesHeight = getAttributesFig().getMinimumSize().height;
-            if (isOperationsVisible()) {
-                attributesHeight += whitespace / 2;
-            }
-            getAttributesFig().setBounds(
-                    x,
-                    y + currentHeight,
-                    w,
-                    attributesHeight);
-            currentHeight += attributesHeight;
-        }
-
-        if (isOperationsVisible()) {
-            int operationsY = y + currentHeight;
-            int operationsHeight = (h + y) - operationsY - 1;
-            if (operationsHeight < getOperationsFig().getMinimumSize().height) {
-                operationsHeight = getOperationsFig().getMinimumSize().height;
-            }
-            getOperationsFig().setBounds(
-                    x,
-                    operationsY,
-                    w,
-                    operationsHeight);
-        }
-
-        // Now force calculation of the bounds of the figure, update the edges
-        // and trigger anyone who's listening to see if the "bounds" property
-        // has changed.
-
-        calcBounds();
-        updateEdges();
-        firePropChange("bounds", oldBounds, getBounds());
-    }
-
-    /**
-     * Updates the attributes in the fig. Called from modelchanged if there is
-     * a modelevent effecting the attributes and from renderingChanged in all
-     * cases.
-     */
-    protected void updateAttributes() {
-        if (!isAttributesVisible()) {
-            return;
-        }
-        attributesFigCompartment.populate();
-
-        Rectangle rect = getBounds();
-        // ouch ugly but that's for a next refactoring
-        // TODO: make setBounds, calcBounds and updateBounds consistent
-        setBounds(rect.x, rect.y, rect.width, rect.height);
-    }
-
-    /**
-     * Updates the operations box. Called from modelchanged if there is
-     * a modelevent effecting the attributes and from renderingChanged in all
-     * cases.
-     */
-    protected void updateOperations() {
-        if (!isOperationsVisible()) {
-            return;
-        }
-        operationsFig.populate();
-
-        Rectangle rect = getBounds();
-        // ouch ugly but that's for a next refactoring
-        // TODO: make setBounds, calcBounds and updateBounds consistent
-        setBounds(rect.x, rect.y, rect.width, rect.height);
-    }
-
-
-
-    /**
-     * @see org.argouml.uml.diagram.ui.FigNodeModelElement#updateNameText()
-     */
-    protected void updateNameText() {
-        super.updateNameText();
-        calcBounds();
-        setBounds(getBounds());
-    }
-
-    /**
-     * Updates the name if modelchanged receives an "isAbstract" event.
-     * TODO: Move up to ClassifierBox (should be GeneralizableElement)
-     */
-    protected void updateAbstract() {
-        Rectangle rect = getBounds();
-        if (getOwner() == null) {
-            return;
-        }
-        Object cls = /*(MClass)*/ getOwner();
-        if (Model.getFacade().isAbstract(cls)) {
-            getNameFig().setFont(getItalicLabelFont());
-	} else {
-            getNameFig().setFont(getLabelFont());
-	}
-        super.updateNameText();
-        setBounds(rect.x, rect.y, rect.width, rect.height);
-    }
-
-    /**
-     * @see org.argouml.uml.diagram.ui.FigNodeModelElement#updateListeners(java.lang.Object, java.lang.Object)
-     */
-    protected void updateListeners(Object oldOwner, Object newOwner) {
-        if (oldOwner != null) {
-            removeAllElementListeners();
-        }
-        if (newOwner != null) {
-            // add the listeners to the newOwner
-            addElementListener(newOwner);
-            // and its stereotypes
-            Collection c = new ArrayList(
-                    Model.getFacade().getStereotypes(newOwner));
-            // and its features
-            Iterator it = Model.getFacade().getFeatures(newOwner).iterator();
-            while (it.hasNext()) {
-                Object feat = it.next();
-                c.add(feat);
-                // and the stereotypes of its features
-                c.addAll(new ArrayList(Model.getFacade().getStereotypes(feat)));
-                // and the parameter of its operations
-                if (Model.getFacade().isAOperation(feat)) {
-                    c.addAll(Model.getFacade().getParameters(feat));
-                }
-            }
-            Iterator it2 = c.iterator();
-            while (it2.hasNext()) {
-                addElementListener(it2.next());
-            }
-            if (isPathVisible()) {
-                c = Model.getModelManagementHelper()
-                    .getAllSurroundingNamespaces(newOwner);
-                Iterator itpv = c.iterator();
-                while (itpv.hasNext()) {
-                    addElementListener(itpv.next(), 
-                            new String[] {"name", "namespace", "ownedElement"});
-                }
-            }
-        }
-    }
-
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = 3415118710864626882L;
+  }
 
 } /* end class FigClass */

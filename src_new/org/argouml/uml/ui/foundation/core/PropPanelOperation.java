@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,231 +23,296 @@
 
 package org.argouml.uml.ui.foundation.core;
 
-import java.awt.event.ActionEvent;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.*;
+import java.beans.*;
+import javax.swing.*;
+import javax.swing.event.*;
+import javax.swing.table.*;
+import javax.swing.tree.*;
+import javax.swing.text.*;
+import javax.swing.border.*;
 
-import javax.swing.Action;
-import javax.swing.Icon;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
+import ru.novosoft.uml.model_management.*;
 
-import org.apache.log4j.Logger;
-import org.argouml.application.helpers.ResourceLoaderWrapper;
-import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
-import org.argouml.ui.targetmanager.TargetManager;
-import org.argouml.uml.ui.AbstractActionNewModelElement;
-import org.argouml.uml.ui.ActionNavigateOwner;
-import org.argouml.uml.ui.UMLLinkedList;
-import org.argouml.uml.ui.UMLTextArea2;
-import org.argouml.uml.ui.foundation.extension_mechanisms.ActionNewStereotype;
-import org.argouml.util.ConfigLoader;
+import org.tigris.gef.util.*;
 
-/**
- * A property panel for operations.
- */
-public class PropPanelOperation extends PropPanelFeature {
+import org.argouml.kernel.*;
+import org.argouml.ui.*;
+import org.argouml.uml.ui.*;
+import org.argouml.uml.MMUtil;
 
-    /**
-     * The serial version.
-     */
-    private static final long serialVersionUID = -8231585002039922761L;
+public class PropPanelOperation extends PropPanel
+implements ItemListener {
+
+  ////////////////////////////////////////////////////////////////
+  // constants
+  public static final String VISIBILITIES[] = {
+    MVisibilityKind.PUBLIC.getName(), MVisibilityKind.PRIVATE.getName(),
+    MVisibilityKind.PROTECTED.getName() };
+
+	//PACKAGE in nsuml???
+  public static final String ATTRKEYWORDS[] = {
+    "None", "static", "final", "static final", "synchronized",
+    "static synchronized", "final synchronized", "static final synchronized"
+  };
+
+  
+  ////////////////////////////////////////////////////////////////
+  // instance vars
+  JLabel _visLabel = new JLabel("Visibility: ");
+  JComboBox _visField = new JComboBox(VISIBILITIES);
+  JLabel _keywordsLabel = new JLabel("Keywords: ");
+  JComboBox _keywordsField = new JComboBox(ATTRKEYWORDS);
+  JLabel _typeLabel = new JLabel("Return Type: ");
+  JComboBox _typeField = new JComboBox();
+  JLabel _argsLabel = new JLabel("Arguments: ");
+  JTable _argsTable = new JTable();
+  SpacerPanel _spacer = new SpacerPanel();
+
+  ////////////////////////////////////////////////////////////////
+  // contructors
+  public PropPanelOperation() {
+    super("Operation Properties");
+    GridBagLayout gb = (GridBagLayout) getLayout();
+    GridBagConstraints c = new GridBagConstraints();
+    c.fill = GridBagConstraints.BOTH;
+    c.weightx = 0.0;
+    c.ipadx = 0; c.ipady = 0;
+
+
+    //_visField.getEditor().getEditorComponent().setBackground(Color.white);
+    //_keywordsField.getEditor().getEditorComponent().setBackground(Color.white);
+    _typeField.setEditable(true);
+    _typeField.getEditor().getEditorComponent().setBackground(Color.white);    
+
+    c.gridx = 0;
+    c.gridwidth = 1;
+    c.gridy = 1;
+    gb.setConstraints(_visLabel, c);
+    add(_visLabel);
+    c.gridy = 2;
+    gb.setConstraints(_keywordsLabel, c);
+    add(_keywordsLabel);
+    c.gridy = 3;
+    gb.setConstraints(_typeLabel, c);
+    add(_typeLabel);
+
     
-    /**
-     * The logger.
-     */
-    private static final Logger LOG = 
-        Logger.getLogger(PropPanelOperation.class);
+    c.weightx = 1.0;
+    c.gridx = 1;
+    //c.gridwidth = GridBagConstraints.REMAINDER;
+    c.gridy = 1;
+    gb.setConstraints(_visField, c);
+    add(_visField);
+    c.gridy = 2;
+    gb.setConstraints(_keywordsField, c);
+    add(_keywordsField);
+    c.gridy = 3;
+    gb.setConstraints(_typeField, c);
+    add(_typeField);
+
+    c.weightx = 0.0;
+    c.gridx = 2;
+    c.gridy = 0;
+    gb.setConstraints(_spacer, c);
+    add(_spacer);
+    
+
+    c.weightx = 1.0;
+    c.gridwidth = 3;
+    c.gridx = 3;
+    //c.gridwidth = GridBagConstraints.REMAINDER;
+    c.gridy = 0;
+    gb.setConstraints(_argsLabel, c);
+    add(_argsLabel);
+    c.gridy = 1;
+    c.gridheight = GridBagConstraints.REMAINDER;
+    gb.setConstraints(_argsTable, c);
+    add(_argsTable);
+
+    _visField.addItemListener(this);
+    _keywordsField.addItemListener(this);
+    _typeField.addItemListener(this);
+
+    remove(_namespaceLabel);
+    remove(_namespaceField);
+  }
 
 
-    /**
-     * The constructor.
-     */
-    public PropPanelOperation() {
-        super("Operation", lookupIcon("Operation"), ConfigLoader
-                .getTabPropsOrientation());
+  
+  ////////////////////////////////////////////////////////////////
+  // accessors
 
-        addField(Translator.localize("label.name"),
-                getNameTextField());
-        addField(Translator.localize("label.owner"),
-                getOwnerScroll());
-        addField(Translator.localize("label.parameters"),
-                new JScrollPane(new UMLLinkedList(
-                        new UMLClassifierParameterListModel())));
+  protected void setTargetInternal(Object t) {
+    super.setTargetInternal(t);
+    MOperation oper = (MOperation) _target;
 
-        addSeparator();
+    Vector offeredTypes = getOfferedTypes();
+    if (offeredTypes != null)
+      _typeField.setModel(new DefaultComboBoxModel(Converter.convert(offeredTypes)));
 
-        add(getVisibilityPanel());
+    MVisibilityKind vk = oper.getVisibility();
+	if (vk != null)
+		_visField.setSelectedItem(vk.getName());
 
-        JPanel modifiersPanel = createBorderPanel(Translator.localize(
-                "label.modifiers"));
-        modifiersPanel.add(new UMLGeneralizableElementAbstractCheckBox());
-        modifiersPanel.add(new UMLGeneralizableElementLeafCheckBox());
-        modifiersPanel.add(new UMLGeneralizableElementRootCheckBox());
-        modifiersPanel.add(new UMLBehavioralFeatureQueryCheckBox());
-        modifiersPanel.add(new UMLFeatureOwnerScopeCheckBox());
-        add(modifiersPanel);
-
-        add(new UMLOperationConcurrencyRadioButtonPanel(
-                Translator.localize("label.concurrency"), true));
-
-        addSeparator();
-
-        addField(Translator.localize("label.raisedsignals"),
-               new JScrollPane(new UMLLinkedList(
-                       new UMLOperationRaisedSignalsListModel())));
-
-        addField(Translator.localize("label.methods"),
-               new JScrollPane(new UMLLinkedList(
-                       new UMLOperationMethodsListModel())));
-
-        UMLTextArea2 osta = new UMLTextArea2(
-                new UMLOperationSpecificationDocument());
-        osta.setRows(3); // make the field multiline by default
-        addField(Translator.localize("label.specification"), 
-                new JScrollPane(osta));
-
-        addAction(new ActionNavigateOwner());
-        addAction(TargetManager.getInstance().getAddOperationAction());
-        addAction(new ActionNewParameter());
-        addAction(new ActionNewRaisedSignal());
-        addAction(new ActionNewMethod());
-        addAction(new ActionAddDataType());
-        addAction(new ActionAddEnumeration());
-        addAction(new ActionNewStereotype());
-        addAction(getDeleteAction());
+    MScopeKind sk = oper.getOwnerScope();
+    MCallConcurrencyKind ck = oper.getConcurrency();
+    // needs-more-work: concurrency
+    // needs-more-work: final methods?
+    if (MScopeKind.CLASSIFIER.equals(sk)) {
+      if (MCallConcurrencyKind.GUARDED.equals(ck))
+	_keywordsField.setSelectedItem("static synchronized");
+      else
+	_keywordsField.setSelectedItem("static");
+    }
+    else {
+      if (MCallConcurrencyKind.GUARDED.equals(ck))
+	_keywordsField.setSelectedItem("synchronized");
+      else
+	_keywordsField.setSelectedItem("None");
     }
 
+	Vector parameters = new Vector(oper.getParameters());
 
-    /**
-     * Add a new RaisedSignal to the current target.
-     */
-    public void addRaisedSignal() {
-        Object target = getTarget();
-        if (Model.getFacade().isAOperation(target)) {
-            Object oper = /* (MOperation) */target;
-            Object newSignal = Model.getCommonBehaviorFactory()
-                    .createSignal();
-                    //((MOperation)oper).getFactory().createSignal();
+	MParameter returnParameter = MMUtil.SINGLETON.getReturnParameter(oper);
+	if (returnParameter != null && returnParameter.getType() != null && returnParameter.getType().getName() != null)
+		_typeField.setSelectedItem(returnParameter.getType().getName());
 
-            Model.getCoreHelper().addOwnedElement(
-                    Model.getFacade().getNamespace(
-                            Model.getFacade().getOwner(oper)),
-                    newSignal);
-            Model.getCoreHelper().addRaisedSignal(oper, newSignal);
-            TargetManager.getInstance().setTarget(newSignal);
-        }
+	DefaultTableModel _argsModel = new DefaultTableModel(0,2);
+	parameters.remove(returnParameter);
+
+	for (int i = 0; i<parameters.size();i++) {
+		MParameter p = (MParameter)parameters.elementAt(i);
+		String[] row = {p.getName(), p.getType().getName()};
+		_argsModel.addRow(row);
+	}
+	_argsTable.setModel(_argsModel);
+  }
+
+
+
+  public void setTargetVisibility() {
+    if (_target == null) return;
+    if (_inChange) return;
+    MVisibilityKind vk = MVisibilityKind.forName((String)_visField.getSelectedItem());
+    MOperation oper = (MOperation) _target;
+	oper.setVisibility(vk);
+  }
+
+  // needs-more-work: how to model abstract methods?
+  // needs-more-work: how to model final methods?
+  
+  public void setTargetKeywords() {
+    if (_target == null) return;
+    if (_inChange) return;
+    String keys = (String) _keywordsField.getSelectedItem();
+    if (keys == null) {
+      //System.out.println("keywords are null");
+      return;
     }
+    MOperation oper = (MOperation) _target;
+	if (keys.equals("None")) {
+		oper.setOwnerScope(MScopeKind.INSTANCE);
+		oper.setConcurrency(MCallConcurrencyKind.CONCURRENT);
+	}
+	else if (keys.equals("static")) {
+		oper.setOwnerScope(MScopeKind.CLASSIFIER);
+		oper.setConcurrency(MCallConcurrencyKind.CONCURRENT);
+	}
+	else if (keys.equals("final")) {
+		oper.setOwnerScope(MScopeKind.INSTANCE);
+		oper.setConcurrency(MCallConcurrencyKind.CONCURRENT);
+	}
+	else if (keys.equals("static final")) {
+		oper.setOwnerScope(MScopeKind.INSTANCE);
+		oper.setConcurrency(MCallConcurrencyKind.CONCURRENT);
+	}
+	else if (keys.equals("synchronized")) {
+		oper.setOwnerScope(MScopeKind.INSTANCE);
+		oper.setConcurrency(MCallConcurrencyKind.GUARDED);
+	}
+	else if (keys.equals("static synchronized")) {
+		oper.setOwnerScope(MScopeKind.CLASSIFIER);
+		oper.setConcurrency(MCallConcurrencyKind.GUARDED);
+	}
+	else if (keys.equals("final synchronized")) {
+		oper.setOwnerScope(MScopeKind.INSTANCE);
+		oper.setConcurrency(MCallConcurrencyKind.GUARDED);
+	}
+	else if (keys.equals("static final synchronized")) {
+		oper.setOwnerScope(MScopeKind.CLASSIFIER);
+		oper.setConcurrency(MCallConcurrencyKind.GUARDED);
+	}
+  }
 
-    /**
-     * Add a Method to the current target.
-     */
-    public void addMethod() {
-        Object target = getTarget();
-        if (Model.getFacade().isAOperation(target)) {
-            Object oper = /* (MOperation) */target;
-            String name = Model.getFacade().getName(oper);
-            Object newMethod = Model.getCoreFactory().buildMethod(name);
-            Model.getCoreHelper().addMethod(oper, newMethod);
-            Model.getCoreHelper().addFeature(Model.getFacade().getOwner(oper),
-                newMethod);
-            TargetManager.getInstance().setTarget(newMethod);
-        }
+  public void setTargetType() {
+    if (_target == null) return;
+    if (_inChange) return;
+    MOperation op = (MOperation) _target;
+    Object rtObj = _typeField.getSelectedItem();
+    MClassifier rt = null;
+    if (rtObj instanceof String) {
+      String rtStr = (String) _typeField.getSelectedItem();
+      ProjectBrowser pb = ProjectBrowser.TheInstance;
+      Project p = pb.getProject();
+      rt = p.findType(rtStr);
     }
-
-    private class ActionNewRaisedSignal extends AbstractActionNewModelElement {
-
-        /**
-         * The serial version.
-         */
-        private static final long serialVersionUID = -2380798799656866520L;
-
-        /**
-         * Construct an action to create a new RaisedSignal.
-         */
-        public ActionNewRaisedSignal() {
-            super("button.new-raised-signal");
-            putValue(Action.NAME,
-                    Translator.localize("button.new-raised-signal"));
-            Icon icon = ResourceLoaderWrapper.lookupIcon("SignalSending");
-            putValue(Action.SMALL_ICON, icon);
-        }
-
-        /**
-         * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-         */
-        public void actionPerformed(ActionEvent e) {
-            Object target = TargetManager.getInstance().getModelTarget();
-            if (Model.getFacade().isAOperation(target)) {
-                addRaisedSignal();
-                super.actionPerformed(e);
-            }
-        }
+    else if (rtObj instanceof MClassifier) {
+      rt = (MClassifier) rtObj;
     }
-
-
-    private class ActionNewMethod extends AbstractActionNewModelElement {
-
-        /**
-         * The serial version.
-         */
-        private static final long serialVersionUID = 1605755146025527381L;
-
-        /**
-         * Construct an action to create a new Method.
-         */
-        public ActionNewMethod() {
-            super("button.new-method");
-            putValue(Action.NAME,
-                    Translator.localize("button.new-method"));
-            Icon icon = ResourceLoaderWrapper.lookupIcon("Method");
-            putValue(Action.SMALL_ICON, icon);
-        }
-        
-        /**
-         * @see org.tigris.gef.undo.UndoableAction#isEnabled()
-         */
-        public boolean isEnabled() {
-            Object target = TargetManager.getInstance().getModelTarget();
-            boolean result = true;
-            if (Model.getFacade().isAOperation(target)) {
-                Object owner = Model.getFacade().getOwner(target);
-                if (owner == null || Model.getFacade().isAInterface(owner)) {
-                    result = false;
-                }
-            }
-            return super.isEnabled() && result;
-        }
-
-        /**
-         * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-         */
-        public void actionPerformed(ActionEvent e) {
-            super.actionPerformed(e);
-            Object target = TargetManager.getInstance().getModelTarget();
-            if (Model.getFacade().isAOperation(target)) {
-                addMethod();
-            }
-        }
+    else {
+      // watch out for null rtObj
+//       System.out.println("selected return type was a " + rtObj.getClass());
+//       System.out.println("selected return type is " + rtObj);
+      // needs-more-work: selected predefined class
     }
-
-
-    /**
-     * Appropriate namespace is the namespace of our class,
-     * not the class itself.
-     *
-     * @see org.argouml.uml.ui.PropPanel#getDisplayNamespace()
-     */
-    protected Object getDisplayNamespace() {
-        Object namespace = null;
-        Object target = getTarget();
-        if (Model.getFacade().isAAttribute(target)) {
-            if (Model.getFacade().getOwner(target) != null) {
-                namespace =
-                    Model.getFacade().getNamespace(
-                            Model.getFacade().getOwner(target));
-            }
-        }
-        return namespace;
+    if (rt != null) {
+	//System.out.println("Props setting return type: " + rt);
+		MParameter p = new MParameterImpl();
+		p.setType(rt);
+		MMUtil.SINGLETON.setReturnParameter(op,p);
     }
+  }
 
+
+  public static Vector getOfferedTypes() {
+    // needs-more-work: should update when project changes
+    Project p = ProjectBrowser.TheInstance.getProject();
+    Vector types = p.getDefinedTypesVector();
+    Vector res = new Vector();
+    for (int i = 0; i<types.size();i++) {
+	res.add(((MClassifier)types.get(i)).getName());
+    }
+    return res;
+  }
+
+  ////////////////////////////////////////////////////////////////
+  // event handlers
+
+  public void itemStateChanged(ItemEvent e) {
+	  if (e.getStateChange() == ItemEvent.SELECTED) {
+		  Object src = e.getSource();
+		  if (src == _keywordsField) {
+			  //       System.out.println("attr keywords now is " +
+			  // 			 _keywordsField.getSelectedItem());
+			  setTargetKeywords();
+		  }
+		  else if (src == _visField) {
+			  //       System.out.println("attr MVisibilityKind now is " +
+			  // 			 _visField.getSelectedItem());
+			  setTargetVisibility();
+		  }
+		  else if (src == _typeField) {
+			  //       System.out.println("attr type now is " +
+			  // 			 _typeField.getSelectedItem());
+			  setTargetType();
+		  }
+	  }
+  }
+
+  
 } /* end class PropPanelOperation */

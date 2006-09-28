@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,74 +21,77 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+
+// File: CrMultipleInheritance.java.java
+// Classes: CrMultipleInheritance.java
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.language.java.cognitive.critics;
 
-import java.util.Collection;
+import java.util.*;
 
-import org.argouml.cognitive.Designer;
-import org.argouml.cognitive.ToDoItem;
-import org.argouml.cognitive.ui.Wizard;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
-import org.argouml.uml.cognitive.critics.CrUML;
-import org.argouml.uml.cognitive.critics.WizCueCards;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
 
-/**
- * Well-formedness rule [2] for MAssociationEnd. See page 28 of UML 1.1
- * Semantics. OMG document ad/97-08-04.
- */
+import org.argouml.kernel.*;
+import org.argouml.cognitive.*;
+import org.argouml.uml.cognitive.critics.*;
+
+/** Well-formedness rule [2] for MAssociationEnd. See page 28 of UML 1.1
+ *  Semantics. OMG document ad/97-08-04. */
+
 public class CrMultipleInheritance extends CrUML {
 
-    /**
-     * The constructor.
-     */
-    public CrMultipleInheritance() {
-        setupHeadAndDesc();;
-	addSupportedDecision(UMLDecision.INHERITANCE);
-	addSupportedDecision(UMLDecision.CODE_GEN);
-	addTrigger("generalization");
-    }
+  public CrMultipleInheritance() {
+    setHeadline("Change Multiple Inheritance to Interfaces");
+    sd("<ocl>self</ocl> has multiple base classes, but Java does not support "+
+       "multiple inheritance.  You must use interfaces instead. \n\n"+
+       "This change is required before you can generate Java code.\n\n"+
+       "To fix this, use the \"Next>\" button, or manually (1) remove one of "+
+       "the base classes and then (2) optionally define a new interface "+
+       "with the same method declarations and (3) add it as an "+
+       "interface of <ocl>self</ocl>, and (4) move the method bodies from the "+
+       "old base class down into <ocl>self</ocl>.");
 
-    /**
-     * @see org.argouml.uml.cognitive.critics.CrUML#predicate2(
-     * java.lang.Object, org.argouml.cognitive.Designer)
-     */
-    public boolean predicate2(Object designMaterial, Designer dsgr) {
-	if (!(Model.getFacade().isAClassifier(designMaterial))) {
-	    return NO_PROBLEM;
-	}
-	Object cls = /*(MClassifier)*/ designMaterial;
-	Collection gen = Model.getFacade().getGeneralizations(cls);
-	if (gen != null && gen.size() > 1) {
-	    return PROBLEM_FOUND;
-	}
-        return NO_PROBLEM;
-    }
+    addSupportedDecision(CrUML.decINHERITANCE);
+    addSupportedDecision(CrUML.decCODE_GEN);
+    addTrigger("generalization");
+  }
 
-    /**
-     * @see org.argouml.cognitive.critics.Critic#initWizard(
-     *         org.argouml.cognitive.ui.Wizard)
-     */
-    public void initWizard(Wizard w) {
-	if (w instanceof WizCueCards) {
-	    WizCueCards wcc = (WizCueCards) w;
-	    wcc.addCue("Remove the generalization arrow to one of the base "
-		   + "classes of {name}.");
-	    wcc.addCue("Optionally, use the MInterface tool to create a new "
-		   + "MInterface for {name} to implement.");
-	    wcc.addCue("Use the Realization tool to add a dashed arrow from "
-		   + "{name} to the new MInterface.");
-	    wcc.addCue("Move method declarations from the unused base class "
-		   + "to the new MInterface and move method bodies down into "
-		   + "{name}.");
-	    wcc.addCue("If the unused base class is not used by anything else "
-		   + "then it can be removed.");
-	}
-    }
+  protected void sd(String s) { setDescription(s); }
 
-    /**
-     * @see org.argouml.cognitive.critics.Critic#getWizardClass(org.argouml.cognitive.ToDoItem)
-     */
-    public Class getWizardClass(ToDoItem item) { return WizCueCards.class; }
+  public boolean predicate2(Object dm, Designer dsgr) {
+    if (!(dm instanceof MClassifier)) return NO_PROBLEM;
+    MClassifier cls = (MClassifier) dm;
+    Collection gen = cls.getGeneralizations();
+    if (gen != null && gen.size() > 1)
+      return PROBLEM_FOUND;
+    else
+      return NO_PROBLEM;
+  }
+
+  public void initWizard(Wizard w) {
+    if (w instanceof WizCueCards) {
+      WizCueCards wcc = (WizCueCards) w;
+      ToDoItem item = w.getToDoItem();
+      MModelElement me = (MModelElement) item.getOffenders().elementAt(0);
+      String nameStr = me.getName();
+      wcc.addCue("Remove the generalization arrow to one of the base "+
+		 "classes of {name}.");
+      wcc.addCue("Optionally, use the MInterface tool to create a new "+
+		 "MInterface for {name} to implement.");
+      wcc.addCue("Use the Realization tool to add a dashed arrow from "+
+		 "{name} to the new MInterface.");
+      wcc.addCue("Move method declarations from the unused base class "+
+		 "to the new MInterface and move method bodies down into "+
+		 "{name}.");
+      wcc.addCue("If the unused base class is not used by anything else "+
+		 "then it can be removed.");
+    }
+  }
+  public Class getWizardClass(ToDoItem item) { return WizCueCards.class; }
 
 } /* end class CrMultipleInheritance.java */
+

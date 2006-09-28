@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,145 +21,102 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+
+// File: CrConsiderSingleton.java
+// Classes: CrConsiderSingleton
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.pattern.cognitive.critics;
 
-import java.util.Iterator;
+import java.util.*;
 
-import org.argouml.cognitive.Designer;
-import org.argouml.cognitive.ToDoItem;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
-import org.argouml.uml.cognitive.critics.CrUML;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
+import ru.novosoft.uml.foundation.extension_mechanisms.*;
 
-/**
- * A critic to detect when a class can never have more than one instance (of
- * itself of any subclasses), and thus whether it is suitable for declaration
- * as a Singleton (with stereotype &laquo;Singleton&raquo;.<p>
- *
- * @see <a
- * href="http://argouml.tigris.org/documentation/snapshots/manual/argouml.html/#
- * s2.ref.critics_singleton_violated">
- * ArgoUML User Manual: Singleton Violated</a>
- *
- * @author jrobbins
- */
+import org.argouml.cognitive.*;
+import org.argouml.uml.*;
+import org.argouml.uml.cognitive.critics.*;
+
+/** A critic to detect when a class can never have instances (of
+ *  itself of any subclasses). */
+
 public class CrConsiderSingleton extends CrUML {
 
-    /**
-     * Constructor for the critic.<p>
-     *
-     * Sets up the resource name, which will allow headline and description
-     * to be found for the current locale. Provides a design issue category
-     * (PATTERNS), sets a priority for any to-do items (LOW) and adds triggers
-     * for metaclasses "stereotype", "structuralFeature" and
-     * "associationEnd".
-     */
-    public CrConsiderSingleton() {
-        setupHeadAndDesc();
-        addSupportedDecision(UMLDecision.PATTERNS);
-        setPriority(ToDoItem.LOW_PRIORITY);
+  public CrConsiderSingleton() {
+    setHeadline("Consider using Singleton Pattern");
+    sd("This class has no attributes or associations that are "+
+       "navigable away from instances of this class.  This means that every "+
+       "instance of this class will be equal() to every other instance, "+
+       "since there will be no instance variables to differentiate them. "+
+       "If this not your intent, you should define some attributes or "+
+       "associations that will represent differences bewteen instances. "+
+       "If there are no attributes or associations that differentiate "+
+       "instances, the you shoudld consider having exatly one instance "+
+       "of this class, as in the Singleton Pattern.\n"+
+       "\n"+
+       "Defining the multiplicity of instances is needed to complete the "+
+       "information representation part of your design.  Using the Singleton "+
+       "Pattern can save time and memory space.\n"+
+       "\n"+
+       "To automatically apply the Singleton Pattern, press the \"Next>\" button; "+
+       "or manually (1) mark the class with the Singlton stereotype, (2) add "+
+       "a static variable that holds one instance of this class, (3) and "+
+       "make all constructors private.\n"+
+       "\n"+
+       "To learn more about the Singleton Pattern, press the MoreInfo icon.");
 
-        // These may not actually make any difference at present (the code
-        // behind addTrigger needs more work).
+    addSupportedDecision(CrUML.decPATTERNS);
+    setPriority(ToDoItem.LOW_PRIORITY);
+    addTrigger("stereotype");
+    addTrigger("structuralFeature");
+    addTrigger("associationEnd");
+  }
 
-        addTrigger("stereotype");
-        addTrigger("structuralFeature");
-        addTrigger("associationEnd");
+  protected void sd(String s) { setDescription(s); }
+
+  public boolean predicate2(Object dm, Designer dsgr) {
+    if (!(dm instanceof MClass)) return NO_PROBLEM;
+    MClass cls = (MClass) dm;
+    Vector str = new Vector(MMUtil.SINGLETON.getAttributes(cls));
+    Vector ends = new Vector(cls.getAssociationEnds());
+
+    //if it is already a Singleton, nevermind
+    MStereotype st = cls.getStereotype();
+    if (st != null) {
+ 	if (st.getName().equals("Singleton")) return NO_PROBLEM;
+     
     }
 
-
-    /**
-     * The trigger for the critic.<p>
-     *
-     * First check we are already a Singleton.<p>
-     *
-     * Otherwise plausible candidates for the Singleton design pattern are
-     * classes with no instance variables (i.e. non-static attributes) and no
-     * outgoing associations.<p>
-     *
-     * @param  dm    the {@link java.lang.Object Object} to be checked against
-     *               the critic.
-     *
-     * @param  dsgr  the {@link org.argouml.cognitive.Designer Designer}
-     *               creating the model. Not used, this is for future
-     *               development of ArgoUML.
-     *
-     * @return       {@link #PROBLEM_FOUND PROBLEM_FOUND} if the critic is
-     *               triggered, otherwise {@link #NO_PROBLEM NO_PROBLEM}.
-     */
-
-    public boolean predicate2(Object dm, Designer dsgr) {
-
-        // Only look at classes...
-
-        if (!(Model.getFacade().isAClass(dm))) {
-            return NO_PROBLEM;
-        }
-
-        // and not association classes
-        if (Model.getFacade().isAAssociationClass(dm)) {
-            return NO_PROBLEM;
-        }
-
-        // with a name...
-        if (Model.getFacade().getName(dm) == null
-                || "".equals(Model.getFacade().getName(dm))) {
-            return NO_PROBLEM;
-        }
-
-        // ... and not incompletely imported
-        if (!(Model.getFacade().isPrimaryObject(dm))) {
-            return NO_PROBLEM;
-        }
-
-        	// abstract classes are hardly ever singletons
-        if (Model.getFacade().isAbstract(dm)) {
-            return NO_PROBLEM;
-        }
-
-        // Check for Singleton stereotype, uninitialised instance variables and
-        // outgoing associations, as per JavaDoc above.
-
-        if (Model.getFacade().isSingleton(dm)) {
-            return NO_PROBLEM;
-        }
-
-	if (Model.getFacade().isUtility(dm)) {
-	    return NO_PROBLEM;
-	}
-
-	// If there is an attribute with instance scope => no problem
-	Iterator iter = Model.getFacade().getAttributes(dm).iterator();
-
-	while (iter.hasNext()) {
-	    if (Model.getFacade().isInstanceScope(iter.next())) {
-	        return NO_PROBLEM;
-	    }
-	}
-
-
-	// If there is an outgoing association => no problem
-	Iterator ends = Model.getFacade().getAssociationEnds(dm).iterator();
-
-	while (ends.hasNext()) {
-	    Iterator otherends =
-		Model.getFacade()
-			.getOtherAssociationEnds(ends.next()).iterator();
-
-	    while (otherends.hasNext()) {
-		if (Model.getFacade().isNavigable(otherends.next())) {
-		    return NO_PROBLEM;
-		}
-	    }
-	}
-
-	return PROBLEM_FOUND;
+    // if it has instance vars, no specific reason for Singleton
+    if (str != null) {
+      java.util.Enumeration strEnum = str.elements();
+      while (strEnum.hasMoreElements()) {
+	MStructuralFeature sf = (MStructuralFeature) strEnum.nextElement();
+	if (MScopeKind.INSTANCE.equals(sf.getTargetScope())) return NO_PROBLEM;
+      }
     }
 
+    // if it has outgoing assocs, no specific reason for Singleton
+    if (ends != null) {
+      java.util.Enumeration endEnum = ends.elements();
+      while (endEnum.hasMoreElements()) {
+	MAssociationEnd ae = (MAssociationEnd) endEnum.nextElement();
+	MAssociation a = ae.getAssociation();
+	Vector connections = new Vector(a.getConnections());
+	java.util.Enumeration connEnum = connections.elements();
+	while (connEnum.hasMoreElements()) {
+	  MAssociationEnd ae2 = (MAssociationEnd) connEnum.nextElement();
+	  if (ae2 == ae) continue;
+	  if (ae2.isNavigable()) return NO_PROBLEM;
+	}
+      }
+    }
+    // if it has no ivars, suggest the designer consider the Singleton Pattern
+    return PROBLEM_FOUND;
+  }
 
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = -178026888698499288L;
 } /* end class CrConsiderSingleton */
 

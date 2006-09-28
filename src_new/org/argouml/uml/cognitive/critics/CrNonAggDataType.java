@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,39 +21,48 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+
+// File: CrNonAggDataType.java
+// Classes: CrNonAggDataType
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.cognitive.critics;
 
-import org.argouml.cognitive.Designer;
-import org.argouml.cognitive.critics.Critic;
-import org.argouml.uml.cognitive.UMLDecision;
+import java.util.*;
 
-/**
- * Well-formedness rule [1] for MDataType. See page 28 of UML 1.1
- * Semantics. OMG document ad/97-08-04.
- *
- * @author jrobbins
- */
+import ru.novosoft.uml.foundation.core.*;
+
+import org.argouml.cognitive.*;
+import org.argouml.cognitive.critics.*;
+
+/** Well-formedness rule [1] for MDataType. See page 28 of UML 1.1
+ *  Semantics. OMG document ad/97-08-04. */
+
 public class CrNonAggDataType extends CrUML {
 
-    /**
-     * The constructor.
-     *
-     */
-    public CrNonAggDataType() {
-        setupHeadAndDesc();
-	addSupportedDecision(UMLDecision.CONTAINMENT);
-	addSupportedDecision(UMLDecision.CLASS_SELECTION);
-	setKnowledgeTypes(Critic.KT_SYNTAX);
-    }
+  public CrNonAggDataType() {
+    setHeadline("Wrap MDataType");
+    sd("DataTypes are not full classes and cannot be associated with "+
+       "classes, unless the MDataType is part of a composite (black diamond) "+
+       "aggregation. \n\n"+
+       "Good OO design depends on careful choices about which entities to "+
+       "represent as full objects and which to represent as attributes of "+
+       "objects.\n\n"+
+       "To fix this, use the \"Next>\" button, or manually replace the MDataType "+
+       "with a full class or change the association aggregation to containment"+
+       "by a full class.\n\n");
 
-    /**
-     * @see org.argouml.uml.cognitive.critics.CrUML#predicate2(
-     * java.lang.Object, org.argouml.cognitive.Designer)
-     */
-    public boolean predicate2(Object dm, Designer dsgr) {
-	// TODO: not implemented
-	return NO_PROBLEM;
-    }
+    addSupportedDecision(CrUML.decCONTAINMENT);
+    addSupportedDecision(CrUML.decCLASS_SELECTION);
+    setKnowledgeTypes(Critic.KT_SYNTAX);
+  }
+
+  public boolean predicate2(Object dm, Designer dsgr) {
+    // needs-more-work: not implemented
+    return NO_PROBLEM;
+  }
 
 } /* end class CrNonAggDataType.java */
 

@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,133 +21,92 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: CrMultipleInitialStates.java
+// Classes: CrMultipleInitialStates
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.cognitive.critics;
 
-import java.util.Collection;
-import java.util.Iterator;
+import java.util.*;
 
-import org.apache.log4j.Logger;
-import org.argouml.cognitive.Designer;
-import org.argouml.cognitive.ListSet;
-import org.argouml.cognitive.ToDoItem;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
-import org.argouml.uml.cognitive.UMLToDoItem;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
+import ru.novosoft.uml.behavior.state_machines.*;
 
-/**
- * A critic to detect when a state has no outgoing transitions.
- *
- * @author jrobbins
- */
+import org.tigris.gef.util.*;
+
+import org.argouml.cognitive.*;
+
+/** A critic to detect when a state has no outgoing transitions. */
+
 public class CrMultipleInitialStates extends CrUML {
-    /**
-     * Logger.
-     */
-    private static final Logger LOG =
-        Logger.getLogger(CrMultipleInitialStates.class);
 
-    /**
-     * The constructor.
-     */
-    public CrMultipleInitialStates() {
-        setupHeadAndDesc();
-        addSupportedDecision(UMLDecision.STATE_MACHINES);
-        addTrigger("parent");
-        addTrigger("kind");
+  public CrMultipleInitialStates() {
+    setHeadline("Remove Extra Initial States");
+    sd("There are multiple, ambiguous initial states in this machine. "+
+       "Normally each state machine or composite state has one initial state. \n\n"+
+       "Defining unabiguous states is needed to complete the behavioral "+
+       "specification part of your design.\n\n"+
+       "To fix this, press the \"Next>\" button, or add manually select "+
+       "one of the extra initial states and remove it. ");
+
+    addSupportedDecision(CrUML.decSTATE_MACHINES);
+    addTrigger("parent");
+    addTrigger("kind");
+  }
+
+  public boolean predicate2(Object dm, Designer dsgr) {
+    if (!(dm instanceof MPseudostate)) return NO_PROBLEM;
+    MPseudostate ps = (MPseudostate) dm;
+    if (ps.getKind() != MPseudostateKind.INITIAL) return NO_PROBLEM;
+    MCompositeState cs = ps.getContainer();
+    if (cs == null) { System.out.println("null parent state"); return NO_PROBLEM; }
+    Collection peers = cs.getSubvertices();
+    int initialStateCount = 0;
+    int size = peers.size();
+    for (Iterator iter = peers.iterator(); iter.hasNext();) {
+      Object sv = iter.next();
+      if (sv instanceof MPseudostate &&
+	  (MPseudostateKind.INITIAL.equals(((MPseudostate)sv).getKind())))
+	initialStateCount++;
     }
+    if (initialStateCount > 1) return PROBLEM_FOUND;
+    return NO_PROBLEM;
+  }
 
-    /**
-     * @see org.argouml.uml.cognitive.critics.CrUML#predicate2(
-     * java.lang.Object, org.argouml.cognitive.Designer)
-     */
-    public boolean predicate2(Object dm, Designer dsgr) {
-        if (!(Model.getFacade().isAPseudostate(dm))) {
-            return NO_PROBLEM;
-        }
-        Object k = Model.getFacade().getPseudostateKind(dm);
-        if (!Model.getFacade().equalsPseudostateKind(
-                k,
-                Model.getPseudostateKind().getInitial())) {
-	    return NO_PROBLEM;
-        }
+  public ToDoItem toDoItem(Object dm, Designer dsgr) {
+    MPseudostate ps = (MPseudostate) dm;
+    VectorSet offs = computeOffenders(ps);
+    return new ToDoItem(this, offs, dsgr);
+  }
 
-        // container state / composite state
-        Object cs = Model.getFacade().getContainer(dm);
-        if (cs == null) {
-            LOG.debug("null parent state");
-            return NO_PROBLEM;
-        }
-        Collection peers = Model.getFacade().getSubvertices(cs);
-        int initialStateCount = 0;
-        for (Iterator iter = peers.iterator(); iter.hasNext();) {
-            Object sv = iter.next();
-            if (Model.getFacade().isAPseudostate(sv)
-                && Model.getFacade().
-                	equalsPseudostateKind(
-                	        Model.getFacade().getPseudostateKind(sv),
-                	        Model.getPseudostateKind().getInitial())) {
-                initialStateCount++;
-            }
-        }
-        if (initialStateCount > 1) {
-            return PROBLEM_FOUND;
-        }
-        return NO_PROBLEM;
+  protected VectorSet computeOffenders(MPseudostate ps) {
+    VectorSet offs = new VectorSet(ps);
+    MCompositeState cs = ps.getContainer();
+    if (cs == null) { System.out.println("null parent in still valid"); return offs; }
+    Collection peers = cs.getSubvertices();
+    for (Iterator iter = peers.iterator(); iter.hasNext();) {
+      Object sv = iter.next();
+      if (sv instanceof MPseudostate &&
+	  ((MPseudostate)sv).getKind().equals(MPseudostateKind.INITIAL))
+	offs.addElement(sv);
     }
+    return offs;
+  }
 
-    /**
-     * @see org.argouml.cognitive.critics.Critic#toDoItem(
-     * java.lang.Object, org.argouml.cognitive.Designer)
-     */
-    public ToDoItem toDoItem(Object dm, Designer dsgr) {
-        ListSet offs = computeOffenders(dm);
-        return new UMLToDoItem(this, offs, dsgr);
-    }
+  public boolean stillValid(ToDoItem i, Designer dsgr) {
+    if (!isActive()) return false;
+    VectorSet offs = i.getOffenders();
+    MPseudostate dm = (MPseudostate) offs.firstElement();
+    //if (!predicate(dm, dsgr)) return false;
+    VectorSet newOffs = computeOffenders(dm);
+    boolean res = offs.equals(newOffs);
+//      System.out.println("offs="+ offs.toString() +
+//  		       " newOffs="+ newOffs.toString() +
+//  		       " res = " + res);
+    return res;
+  }
 
-    /**
-     * @param ps the object to check
-     * @return the list of offenders
-     */
-    protected ListSet computeOffenders(Object ps) {
-        ListSet offs = new ListSet(ps);
-        Object cs = Model.getFacade().getContainer(ps);
-        if (cs == null) {
-            LOG.debug("null parent in still valid");
-            return offs;
-	}
-        Collection peers = Model.getFacade().getSubvertices(cs);
-
-        for (Iterator iter = peers.iterator(); iter.hasNext();) {
-            Object sv = iter.next();
-            if (Model.getFacade().isAPseudostate(sv)
-                && Model.getFacade().equalsPseudostateKind(
-                        Model.getFacade().getPseudostateKind(sv),
-                        Model.getPseudostateKind().getInitial())) {
-                offs.addElement(sv);
-	    }
-        }
-
-        return offs;
-    }
-
-    /**
-     * @see org.argouml.cognitive.Poster#stillValid(
-     * org.argouml.cognitive.ToDoItem, org.argouml.cognitive.Designer)
-     */
-    public boolean stillValid(ToDoItem i, Designer dsgr) {
-        if (!isActive()) {
-            return false;
-        }
-        ListSet offs = i.getOffenders();
-        Object dm = offs.firstElement();
-        ListSet newOffs = computeOffenders(dm);
-        boolean res = offs.equals(newOffs);
-        return res;
-    }
-
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = 4151051235876065649L;
 } /* end class CrMultipleInitialStates */
 

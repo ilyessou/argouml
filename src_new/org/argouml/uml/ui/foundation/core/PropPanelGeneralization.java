@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,96 +23,57 @@
 
 package org.argouml.uml.ui.foundation.core;
 
-import javax.swing.JList;
-import javax.swing.JScrollPane;
-import javax.swing.JTextField;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.*;
+import java.beans.*;
+import javax.swing.*;
+import javax.swing.event.*;
+import javax.swing.tree.*;
+import javax.swing.text.*;
 
-import org.argouml.i18n.Translator;
-import org.argouml.model.Model;
-import org.argouml.ui.targetmanager.TargetManager;
-import org.argouml.uml.ui.ActionNavigateContainerElement;
-import org.argouml.uml.ui.UMLComboBox2;
-import org.argouml.uml.ui.UMLLinkedList;
-import org.argouml.uml.ui.UMLTextField2;
-import org.argouml.uml.ui.foundation.extension_mechanisms.ActionNewStereotype;
-import org.argouml.util.ConfigLoader;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
+import ru.novosoft.uml.foundation.extension_mechanisms.*;
+import ru.novosoft.uml.model_management.*;
 
-/**
- * The properties panel for a Generalization.
- */
-public class PropPanelGeneralization extends PropPanelModelElement {
+import org.argouml.uml.diagram.ui.*;
 
-    /**
-     * The serial version.
-     */
-    private static final long serialVersionUID = 2577361208291292256L;
+public class PropPanelGeneralization extends PropPanelTwoEnds {
 
-    private JTextField discriminatorTextField;
+  ////////////////////////////////////////////////////////////////
+  // constructors
 
-    private static UMLDiscriminatorNameDocument discriminatorDocument =
-        new UMLDiscriminatorNameDocument();
+  public PropPanelGeneralization() {
+    super("Generalization");
 
-    /**
-     * Construct a property panel for Generalization elements.
-     */
-    public PropPanelGeneralization() {
-        super("Generalization",
-            lookupIcon("Generalization"),
-            ConfigLoader.getTabPropsOrientation());
+    remove(_nameField);
+    remove(_nameLabel);    
+  }
 
-        addField(Translator.localize("label.name"),
-                getNameTextField());
-        addField(Translator.localize("label.discriminator"),
-                getDiscriminatorTextField());
-        addField(Translator.localize("label.namespace"),
-                getNamespaceSelector());
+  public String getSourceLabel() {
+    if (!(_target instanceof MGeneralization)) return "non gen";
+    return "Superclass:";
+  }
+  public String getSourceValue() {
+    if (!(_target instanceof MGeneralization)) return "non gen";
+    MGeneralization g = (MGeneralization) _target;
+    MGeneralizableElement sup = g.getParent();
+    if (sup == null) return "null";
+    return sup.getName();
+  }
+  public String getDestLabel() {
+    if (!(_target instanceof MGeneralization)) return "non gen";
+    return "Subclass:";
+  }
+  public String getDestValue() {
+    if (!(_target instanceof MGeneralization)) return "non gen";
+    MGeneralization g = (MGeneralization) _target;
+    MGeneralizableElement sub = g.getChild();
+    if (sub == null) return "null";
+    return sub.getName();
+  }
+  
 
-        addSeparator();
-
-        UMLGeneralizationParentListModel parentListModel =
-            new UMLGeneralizationParentListModel();
-        JList parentList = new UMLLinkedList(parentListModel);
-        parentList.setVisibleRowCount(1);
-        addField(Translator.localize("label.parent"), 
-                new JScrollPane(parentList));
-
-        UMLGeneralizationChildListModel childListModel =
-            new UMLGeneralizationChildListModel();
-        JList childList = new UMLLinkedList(childListModel);
-        childList.setVisibleRowCount(1);
-        addField(Translator.localize("label.child"),
-                new JScrollPane(childList));
-
-        addField(Translator.localize("label.powertype"),
-                new UMLComboBox2(new UMLGeneralizationPowertypeComboBoxModel(),
-                        ActionSetGeneralizationPowertype.getInstance()));
-
-        addAction(new ActionNavigateContainerElement());
-        addAction(new ActionNewStereotype());
-        addAction(getDeleteAction());
-    }
-
-    /**
-     * @see org.argouml.uml.ui.foundation.core.PropPanelModelElement#navigateUp()
-     */
-    public void navigateUp() {
-        Object target = getTarget();
-        if (Model.getFacade().isAModelElement(target)) {
-            Object namespace = Model.getFacade().getNamespace(target);
-            if (namespace != null) {
-                TargetManager.getInstance().setTarget(namespace);
-            }
-        }
-    }
-
-    /**
-     * @return the discriminator textfield
-     */
-    protected JTextField getDiscriminatorTextField() {
-        if (discriminatorTextField == null) {
-            discriminatorTextField = new UMLTextField2(discriminatorDocument);
-        }
-        return discriminatorTextField;
-    }
-
+  
 } /* end class PropPanelGeneralization */

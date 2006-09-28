@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,151 +21,100 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+
+
+
+
+// File: CrConstructorNeeded.java
+// Classes: CrConstructorNeeded
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.cognitive.critics;
 
-import java.util.Collection;
-import java.util.Iterator;
+import java.util.*;
 
-import org.argouml.cognitive.Designer;
-import org.argouml.cognitive.ToDoItem;
-import org.argouml.cognitive.critics.Critic;
-import org.argouml.cognitive.ui.Wizard;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
+import ru.novosoft.uml.foundation.extension_mechanisms.*;
 
-/**
- * A critic to detect when a class requires a constructor.<p>
- *
- * The critic will trigger whenever a class has instance variables that are
- * uninitialised and there is no constructor. It will not trigger for
- * certain stereotyped classes.<p>
- *
- * This critic is part of a compound critic.<p>
- *
- * See <a href=
- * "http://argouml.tigris.org/documentation/snapshots/manual/argouml.html/
- * #s2.ref.critics_constructor_needed">
- * ArgoUML User Manual: Constructor Needed</a>
- */
+import org.argouml.cognitive.*;
+
+/** A critic to detect when a class can never have instances (of
+ *  itself of any subclasses). */
+
 public class CrConstructorNeeded extends CrUML {
 
-    /**
-     * Constructor for the critic.<p>
-     *
-     * Sets up the resource name, which will allow headline and description
-     * to found for the current locale. Provides a design issue category
-     * (STORAGE) and adds triggers for metaclasses "behaviouralFeature" and
-     * "structuralFeature".
-     */
-    public CrConstructorNeeded() {
-        setupHeadAndDesc();
-        addSupportedDecision(UMLDecision.STORAGE);
-        addKnowledgeType(Critic.KT_CORRECTNESS);
+  public CrConstructorNeeded() {
+    setHeadline("Add Constructor to <ocl>self</ocl>");
+    sd("You have not yet defined a constructor for class <ocl>self</ocl>. "+
+       "Constructors initialize new instances such that their "+
+       "attributes have valid values.  This class probably needs a constructor "+
+       "because not all of its attributes have initial values. \n\n"+
+       "Defining good constructors is key to establishing class invariants, and "+
+       "class invariants are a powerful aid in writing solid code. \n\n"+
+       "To fix this, press the \"Next>\" button, or add a constructor manually "+
+       "by clicking on <ocl>self</ocl> in the navigator pane and "+
+       "using the Create menu to make a new constructor. ");
 
-        // These may not actually make any difference at present (the code
-        // behind addTrigger needs more work).
+    addSupportedDecision(CrUML.decSTORAGE);
+    addTrigger("behavioralFeature");
+    addTrigger("structuralFeature");
+  }
 
-        addTrigger("behavioralFeature");
-        addTrigger("structuralFeature");
+  public boolean predicate2(Object dm, Designer dsgr) {
+    if (!(dm instanceof MClass)) return NO_PROBLEM;
+    MClass cls = (MClass) dm;
+
+    boolean uninitializedIVar = false;
+    Collection str = cls.getFeatures();
+    if (str == null) return NO_PROBLEM;
+    Iterator enum = str.iterator();
+    while (enum.hasNext()) {
+      Object feature = enum.next();
+      if (!(feature instanceof MAttribute))
+        continue;
+      MAttribute attr = (MAttribute) feature;
+      MScopeKind sk = attr.getOwnerScope();
+      //MChangeableKind ck = attr.getChangeability();
+      MExpression init = attr.getInitialValue();
+      if (MScopeKind.INSTANCE.equals(sk))
+	if (init == null || init.getBody() == null ||
+	    init.getBody() == null ||
+	    init.getBody().trim().length() == 0)
+	  uninitializedIVar = true;
     }
 
-    /**
-     * The trigger for the critic.<p>
-     *
-     * First see if we have any instance variables that are not
-     * initialised. If not there is no problem. If there are any uninitialised
-     * instance variables, then look for a constructor.<p>
-     *
-     * @param  dm    the {@link java.lang.Object Object} to be checked against
-     *               the critic.
-     *
-     * @param  dsgr  the {@link org.argouml.cognitive.Designer Designer}
-     *               creating the model. Not used, this is for future
-     *               development of ArgoUML.
-     *
-     * @return       {@link #PROBLEM_FOUND PROBLEM_FOUND} if the critic is
-     *               triggered, otherwise {@link #NO_PROBLEM NO_PROBLEM}.
-     */
+    if (!uninitializedIVar) return NO_PROBLEM;
 
-    public boolean predicate2(Object dm, Designer dsgr) {
-
-        // Only look at classes
-        if (!(Model.getFacade().isAClass(dm))) {
-            return NO_PROBLEM;
-        }
-
-
-	// We don't consider secondary stuff.
-	if (!(Model.getFacade().isPrimaryObject(dm)))
-	    return NO_PROBLEM;
-
-        // Types don't need a constructor.
-        if (Model.getFacade().isType(dm)) {
-            return NO_PROBLEM;
-        }
-
-        // Utilities usually do not require a constructor either
-        if (Model.getFacade().isUtility(dm)) {
-            return NO_PROBLEM;
-        }
-
-        // Check for uninitialised instance variables and
-        // constructor.
-        Collection operations = Model.getFacade().getOperations(dm);
-
-        Iterator opers = operations.iterator();
-
-        while (opers.hasNext()) {
-            if (Model.getFacade().isConstructor(opers.next())) {
-                // There is a constructor.
-                return NO_PROBLEM;
-            }
-        }
-
-        Iterator attrs = Model.getFacade().getAttributes(dm).iterator();
-
-        while (attrs.hasNext()) {
-            Object attr = attrs.next();
-
-            if (!Model.getFacade().isInstanceScope(attr))
-                continue;
-
-            if (Model.getFacade().isInitialized(attr))
-                continue;
-
-            // We have found one with instance scope that is not initialized.
-            return PROBLEM_FOUND;
-        }
-
-        // yeah right...we don't have an operation (and thus no
-        return NO_PROBLEM;
+    Collection beh = cls.getFeatures();
+    String className = cls.getName();
+    if (beh == null) return PROBLEM_FOUND;
+    enum = beh.iterator();
+    while (enum.hasNext()) {
+      Object feature = enum.next();
+      if (!(feature instanceof MBehavioralFeature))
+        continue;
+      MBehavioralFeature bf = (MBehavioralFeature) feature;
+      String operName = bf.getName();
+      if (getReturnType(bf) != null) continue;
+      if (!operName.equals(className)) continue;
+      MScopeKind sk = bf.getOwnerScope();
+      if (!MScopeKind.INSTANCE.equals(sk)) continue;
+      if (getReturnType(bf) == null) return NO_PROBLEM;
     }
+    return PROBLEM_FOUND;
+  }
+  private MParameter getReturnType(MBehavioralFeature bf)
+  {
+    Collection parameters = bf.getParameters();
+    for (Iterator iter = parameters.iterator(); iter.hasNext();) {
+      MParameter param = (MParameter)iter.next();
+      if (param.getKind()==MParameterDirectionKind.RETURN)
+        return param;
+    };
+    return null;
+  };
 
-
-    /**
-     * @see org.argouml.cognitive.critics.Critic#initWizard(
-     *         org.argouml.cognitive.ui.Wizard)
-     */
-    public void initWizard(Wizard w) {
-	if (w instanceof WizAddConstructor) {
-	    ToDoItem item = (ToDoItem) w.getToDoItem();
-	    Object me = /*(MModelElement)*/ item.getOffenders().elementAt(0);
-	    String ins = super.getInstructions();
-	    String sug = null;
-	    if (me != null)
-		sug = Model.getFacade().getName(me);
-	    if ("".equals(sug)) {
-		sug = super.getDefaultSuggestion();
-            }
-	    ((WizAddConstructor) w).setInstructions(ins);
-	    ((WizAddConstructor) w).setSuggestion(sug);
-	}
-    }
-
-    /**
-     * @see org.argouml.cognitive.critics.Critic#getWizardClass(org.argouml.cognitive.ToDoItem)
-     */
-    public Class getWizardClass(ToDoItem item) {
-	return WizAddConstructor.class;
-    }
 } /* end class CrConstructorNeeded */
+

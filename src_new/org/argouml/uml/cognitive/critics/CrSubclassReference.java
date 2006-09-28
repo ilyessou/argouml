@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,116 +21,105 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: CrSubclassReference.javoa
+// Classes: CrSubclassReference
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.cognitive.critics;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
-import org.argouml.cognitive.Designer;
-import org.argouml.cognitive.ListSet;
-import org.argouml.cognitive.ToDoItem;
-import org.argouml.cognitive.critics.Critic;
-import org.argouml.model.Model;
+import ru.novosoft.uml.foundation.core.*;
+
+import org.tigris.gef.util.*;
+
+import org.argouml.cognitive.*;
+import org.argouml.cognitive.critics.*;
 import org.argouml.uml.GenDescendantClasses;
-import org.argouml.uml.cognitive.UMLDecision;
-import org.argouml.uml.cognitive.UMLToDoItem;
 
-/**
- * A critic to detect when a class can never have instances (of
- * itself of any subclasses).
- *
- * @author jrobbins
- */
+/** A critic to detect when a class can never have instances (of
+ *  itself of any subclasses). */
+
 public class CrSubclassReference extends CrUML {
 
-    /**
-     * The constructor.
-     */
-    public CrSubclassReference() {
-        setupHeadAndDesc();
-	addSupportedDecision(UMLDecision.RELATIONSHIPS);
-	addSupportedDecision(UMLDecision.PLANNED_EXTENSIONS);
-	setKnowledgeTypes(Critic.KT_SEMANTICS);
-	addTrigger("specialization");
-	addTrigger("associationEnd");
-    }
+  public CrSubclassReference() {
+    setHeadline("Remove Reference to Specific Subclass");
+    sd("Class <ocl>self</ocl> has a reference to one of it's subclasses. "+
+       "Normally all subclasses should be treated \"equally\" by "+
+       "the superclass.  This allows for addition of new subclasses "+
+       "without modification to the superclass. \n\n"+
+       "Defining the associations between objects is an important "+
+       "part of your design.  Some patterns of associations are easier to "+
+       "maintain than others, depending on the natre of future changes. \n\n"+
+       "To fix this, press the \"Next>\" button, or remove the association "+
+       " manually by clicking on it in the diagram and pressing Delete. ");
 
-    /**
-     * @see org.argouml.uml.cognitive.critics.CrUML#predicate2(
-     * java.lang.Object, org.argouml.cognitive.Designer)
-     */
-    public boolean predicate2(Object dm, Designer dsgr) {
-	if (!(Model.getFacade().isAClass(dm))) return NO_PROBLEM;
-	Object cls = /*(MClass)*/ dm;
-	ListSet offs = computeOffenders(cls);
-	if (offs != null) return PROBLEM_FOUND;
-	return NO_PROBLEM;
-    }
+    addSupportedDecision(CrUML.decRELATIONSHIPS);
+    addSupportedDecision(CrUML.decPLANNED_EXTENSIONS);
+    setKnowledgeTypes(Critic.KT_SEMANTICS);
+    addTrigger("specialization");
+    addTrigger("associationEnd");
+  }
 
-    /**
-     * @see org.argouml.cognitive.critics.Critic#toDoItem(java.lang.Object,
-     * org.argouml.cognitive.Designer)
-     */
-    public ToDoItem toDoItem(Object dm, Designer dsgr) {
-	Object cls = /*(MClassifier)*/ dm;
-	ListSet offs = computeOffenders(cls);
-	return new UMLToDoItem(this, offs, dsgr);
-    }
+  public boolean predicate2(Object dm, Designer dsgr) {
+    if (!(dm instanceof MClass)) return NO_PROBLEM;
+    MClass cls = (MClass) dm;
+    VectorSet offs = computeOffenders(cls);
+    if (offs != null) return PROBLEM_FOUND;
+    return NO_PROBLEM;
+  }
 
-    /**
-     * @see org.argouml.cognitive.Poster#stillValid(
-     * org.argouml.cognitive.ToDoItem, org.argouml.cognitive.Designer)
-     */
-    public boolean stillValid(ToDoItem i, Designer dsgr) {
-	if (!isActive()) return false;
-	ListSet offs = i.getOffenders();
-	Object dm = /*(MClassifier)*/ offs.firstElement();
-	//if (!predicate(dm, dsgr)) return false;
-	ListSet newOffs = computeOffenders(dm);
-	boolean res = offs.equals(newOffs);
-	return res;
-    }
+  public ToDoItem toDoItem(Object dm, Designer dsgr) {
+    MClassifier cls = (MClassifier) dm;
+    VectorSet offs = computeOffenders(cls);
+    return new ToDoItem(this, offs, dsgr);
+  }
 
-    /**
-     * @param cls is the UML entity that is being checked.
-     * @return the list of offenders
-     */
-    public ListSet computeOffenders(Object/*MClassifier*/ cls) {
-	Collection asc = Model.getFacade().getAssociationEnds(cls);
-	if (asc == null || asc.size() == 0) return null;
+  public boolean stillValid(ToDoItem i, Designer dsgr) {
+    if (!isActive()) return false;
+    VectorSet offs = i.getOffenders();
+    MClassifier dm = (MClassifier) offs.firstElement();
+    //if (!predicate(dm, dsgr)) return false;
+    VectorSet newOffs = computeOffenders(dm);
+    boolean res = offs.equals(newOffs);
+    return res;
+  }
 
-	Enumeration descendEnum =
-	    GenDescendantClasses.getSINGLETON().gen(cls);
-	if (!descendEnum.hasMoreElements()) return null;
-	ListSet descendants = new ListSet();
-	while (descendEnum.hasMoreElements())
-	    descendants.addElement(descendEnum.nextElement());
+  public VectorSet computeOffenders(MClassifier cls) {
+    Collection asc = cls.getAssociationEnds();
+    if (asc == null || asc.size() == 0) return null;
 
-	//TODO: GenNavigableClasses?
-	ListSet offs = null;
-	for (Iterator iter = asc.iterator(); iter.hasNext();) {
-	    Object ae = /*(MAssociationEnd)*/ iter.next();
-	    Object a = Model.getFacade().getAssociation(ae);
-	    List conn = new ArrayList(Model.getFacade().getConnections(a));
-	    if (conn.size() != 2) continue;
-	    Object otherEnd = /*(MAssociationEnd)*/ conn.get(0);
-	    if (ae == conn.get(0))
-		otherEnd = /*(MAssociationEnd)*/ conn.get(1);
-	    if (!Model.getFacade().isNavigable(otherEnd)) continue;
-	    Object otherCls = Model.getFacade().getType(otherEnd);
-	    if (descendants.contains(otherCls)) {
-		if (offs == null) {
-		    offs = new ListSet();
-		    offs.addElement(cls);
-		}
-		offs.addElement(a);
-		offs.addElement(otherCls);
-	    }
+    java.util.Enumeration descendEnum = GenDescendantClasses.SINGLETON.gen(cls);
+    if (!descendEnum.hasMoreElements()) return null;
+    VectorSet descendants = new VectorSet();
+    while (descendEnum.hasMoreElements())
+      descendants.addElement(descendEnum.nextElement());
+
+    //needs-more-work: GenNavigableClasses?
+    int nAsc = asc.size();
+    VectorSet offs = null;
+    for (Iterator iter = asc.iterator(); iter.hasNext();) {
+      MAssociationEnd ae = (MAssociationEnd) iter.next();
+      MAssociation a = ae.getAssociation();
+      List conn = a.getConnections();
+      if (conn.size() != 2) continue;
+      MAssociationEnd otherEnd = (MAssociationEnd) conn.get(0);
+      if (ae == conn.get(0))
+	otherEnd = (MAssociationEnd) conn.get(1);
+      if (!otherEnd.isNavigable()) continue;
+      MClassifier otherCls = otherEnd.getType();
+      if (descendants.contains(otherCls)) {
+	if (offs == null) {
+	  offs = new VectorSet();
+	  offs.addElement(cls);
 	}
-	return offs;
+	offs.addElement(a);
+	offs.addElement(otherCls);
+      }
     }
+    return offs;
+  }
 
 } /* end class CrSubclassReference */
+

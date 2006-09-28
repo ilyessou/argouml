@@ -1,5 +1,4 @@
-// $Id$
-// Copyright (c) 1996-2006 The Regents of the University of California. All
+// Copyright (c) 1996-99 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -22,66 +21,67 @@
 // CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
+// File: CrTooManyOper.java
+// Classes: CrTooManyOper
+// Original Author: jrobbins@ics.uci.edu
+// $Id$
+
 package org.argouml.uml.cognitive.critics;
 
-import java.util.Collection;
-import java.util.Iterator;
+import java.util.*;
+import javax.swing.*;
 
-import org.argouml.cognitive.Designer;
-import org.argouml.model.Model;
-import org.argouml.uml.cognitive.UMLDecision;
+import ru.novosoft.uml.foundation.core.*;
+import ru.novosoft.uml.foundation.data_types.*;
+import ru.novosoft.uml.foundation.extension_mechanisms.*;
 
-/**
- * A critic to detect when a classifier has to many operations). <p>
- *
- * TODO: exclude getter and setter operations from count
- */
-public class CrTooManyOper extends AbstractCrTooMany {
+import org.argouml.cognitive.*;
 
-    /**
-     * The initial threshold.
-     */
-    private static final int OPERATIONS_THRESHOLD = 20;
+/** A critic to detect when a class can never have instances (of
+ *  itself of any subclasses). */
 
-    /**
-     * The constructor.
-     */
-    public CrTooManyOper() {
-        setupHeadAndDesc();
-	addSupportedDecision(UMLDecision.METHODS);
-	setThreshold(OPERATIONS_THRESHOLD);
-	addTrigger("behavioralFeature");
-    }
+public class CrTooManyOper extends CrUML {
 
-    /**
-     * @see org.argouml.uml.cognitive.critics.CrUML#predicate2(
-     * java.lang.Object, org.argouml.cognitive.Designer)
-     */
-    public boolean predicate2(Object dm, Designer dsgr) {
-	if (!(Model.getFacade().isAClassifier(dm))) {
-            return NO_PROBLEM;
-        }
+  ////////////////////////////////////////////////////////////////
+  // constants
+  public static String THRESHOLD = "Threshold";
 
-	// TODO: consider inherited attributes?
-	Collection str = Model.getFacade().getFeatures(dm);
-	if (str == null) {
-            return NO_PROBLEM;
-        }
-	int n = 0;
-	for (Iterator iter = str.iterator(); iter.hasNext();) {
-	    if (Model.getFacade().isABehavioralFeature(iter.next())) {
-		n++;
-            }
-	}
-	if (n <= getThreshold()) {
-            return NO_PROBLEM;
-        }
-	return PROBLEM_FOUND;
-    }
+  ////////////////////////////////////////////////////////////////
+  // constructor
+  public CrTooManyOper() {
+    setHeadline("Reduce Operations on <ocl>self</ocl>");
+    sd("There are too many Operations on class <ocl>self</ocl>.  Whenever one class "+
+       "becomes too central to the design it may become a maintenance "+
+       "bottleneck that must be updated frequently. \n\n"+
+       "Defining the operations of objects is an important "+
+       "part of your design. \n\n"+
+       "To fix this, press the \"Next>\" button, or remove attributes manually "+
+       "by double-clicking on the operation compartment of the  "+
+       "highlighted class in the diagram and removing the line of text "+
+       "for an operation. ");
 
-    /**
-     * The UID.
-     */
-    private static final long serialVersionUID = 3221965323817473947L;
+    addSupportedDecision(CrUML.decMETHODS);
+    setArg(THRESHOLD, new Integer(20));
+    addTrigger("behavioralFeature");
+  }
+
+  ////////////////////////////////////////////////////////////////
+  // critiquing API
+  public boolean predicate2(Object dm, Designer dsgr) {
+    if (!(dm instanceof MClassifier)) return NO_PROBLEM;
+    MClassifier cls = (MClassifier) dm;
+    // needs-more-work: consider inherited attributes?
+    int threshold = ((Integer)getArg(THRESHOLD)).intValue();
+    Collection str = cls.getFeatures();
+    if (str == null) return NO_PROBLEM;
+    int n=0;
+    for (Iterator iter = str.iterator(); iter.hasNext();) {
+      if (iter.next() instanceof MBehavioralFeature)
+        n++;
+    };
+    if (n <= threshold) return NO_PROBLEM;
+    return PROBLEM_FOUND;
+  }
 
 } /* end class CrTooManyOper */
+
