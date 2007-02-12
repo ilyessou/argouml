@@ -1,0 +1,16 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: %pluginName
+Bundle-SymbolicName: org.argouml.core.model.mdr
+Bundle-Version: 0.23.1
+Bundle-Localization: plugin
+Export-Package: org.argouml.model.mdr
+Bundle-Vendor: %pluginProvider
+Require-Bundle: org.argouml.core.model,
+ org.eclipse.core.runtime
+Bundle-ClassPath: lib/jmi.jar,
+ lib/jmiutils.jar,
+ lib/mdrapi.jar,
+ lib/mof.jar,
+ lib/nbmdr.jar,
+ lib/openide-util.jar
