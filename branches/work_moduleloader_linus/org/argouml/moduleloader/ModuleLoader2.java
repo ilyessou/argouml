@@ -71,6 +71,11 @@ public final class ModuleLoader2 {
     private static final Logger LOG = Logger.getLogger(ModuleLoader2.class);
 
     /**
+     * The required label for ArgoUML modules.
+     */
+    private static String LABEL = "ArgoUML-Module";
+
+    /**
      * The list of not yet loaded modules.
      */
     private static String[][] notYetLoadeds;
@@ -578,7 +583,7 @@ public final class ModuleLoader2 {
     }
 
     /**
-     * Check the manifest of a jar file for an extension.<p>
+     * Load all modules from a jar file.<p>
      *
      * If there isn't a manifest or it isn't readable, we fail silently.
      *
@@ -616,11 +621,18 @@ public final class ModuleLoader2 {
 
 	Map entries = manifest.getEntries();
 
-	Iterator iMap = entries.keySet().iterator();
+        Iterator pairIter = entries.entrySet().iterator();
 
-	while (iMap.hasNext()) {
-	    // Look for our specification
-	    String cname = (String) iMap.next();
+	while (pairIter.hasNext()) {
+            Map.Entry entry = (Map.Entry) pairIter.next();
+
+            // Look for our specification
+            Map attr = (Map) entry.getValue();
+            if (!attr.containsKey(LABEL)) {
+                continue;
+            }
+            
+	    String cname = (String) entry.getKey();
 	    if (cname.endsWith(CLASS_SUFFIX)) {
 		int classNamelen = cname.length() - CLASS_SUFFIX.length();
 		String className = cname.substring(0, classNamelen);
