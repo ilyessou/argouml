@@ -57,10 +57,10 @@ Building this requires:
       <fileset dir="lib">
         <include name="*.jar"/>
       </fileset>
-      <fileset dir="../infra/build/">
+      <fileset dir="../argouml-core-infra/build/">
         <include name="*.jar"/>
       </fileset>
-      <fileset dir="../model/build/">
+      <fileset dir="../argouml-core-model/build/">
         <include name="*.jar"/>
       </fileset>
     </path>
@@ -340,6 +340,7 @@ Building this requires:
 
     <copy file="src/README.txt" tofile="${build.dir}/README.txt"/>
     <copy file="src/bin/argouml.sh" todir="${build.dir}"/>
+    <copy file="src/bin/ArgoUML.ico" todir="${build.dir}"/>
     <copy file="src/bin/argouml.bat" todir="${build.dir}"/>
 
   </target>

@@ -1,5 +1,5 @@
 #! /bin/sh
-# $Id: build.sh 9943 2006-03-04 18:15:38Z rastaman $
+# $Id$
 #
 
 # OS specific support.
@@ -30,7 +30,24 @@ fi
 #
 # build.sh always calls the version of ant distributed with ArgoUML
 #
-ANT_HOME=../../tools/ant-1.7.0
+
+# todo, add 'if exist' here ... to take care of the two possible tool locations.
+if [ -e `pwd`/../argouml-core-tools ] ; then
+	ANT_HOME=`pwd`/../argouml-core-tools/apache-ant-1.7.0
+elif [ -e `pwd`/../../tools ] ; then
+	ANT_HOME=`pwd`/../../tools/apache-ant-1.7.0
+else
+        echo "***************************************************************"
+	echo "  ERROR: tools directory not found."
+	echo ""
+	echo "  Please check-out the argouml tools directory to"
+	echo ""
+	echo " `pwd`/../../tools"
+	echo "    or"
+	echo " `pwd`/../argouml-core-tools"
+	echo "***************************************************************"
+	exit 1
+fi
 
 echo ANT_HOME is: $ANT_HOME
 echo
