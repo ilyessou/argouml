@@ -308,15 +308,15 @@ Property files to be searched:
   <!-- Run tests in all subdirectories.                                    -->
   <!-- Order is important.                                                 -->
   <!-- =================================================================== -->
-  <target name="tests"
+  <target name="tests" depends="package"
           description="Run tests.">
 
     <!-- Build the subdirs in order. -->
     <!-- infra doesn't have tests. -->
     <!-- model doesn't have tests. -->
-    <ant dir="model-mdr" inheritAll="false"       target="tests"/>
+    <ant dir="argouml-core-model-mdr" inheritAll="false"   target="tests"/>
 <!--    <ant dir="model-euml" inheritAll="false"      target="tests"/> -->
-    <ant dir="app" inheritAll="false"             target="tests"/>
+    <ant dir="argouml-app" inheritAll="false"              target="tests"/>
 
     <ant target="tests-reports"/>
   </target>  
@@ -382,9 +382,9 @@ Property files to be searched:
              use="${javadoc.use}"
              windowtitle="ArgoUML Javadoc for internal use">
       <sourcepath>
-        <pathelement location="app/src"/>
-        <pathelement location="model/src"/>
-        <pathelement location="model-mdr/src"/>
+        <pathelement location="argouml-app/src"/>
+        <pathelement location="argouml-core-model/src"/>
+        <pathelement location="argouml-core-model-mdr/src"/>
       </sourcepath>
 
       <classpath>

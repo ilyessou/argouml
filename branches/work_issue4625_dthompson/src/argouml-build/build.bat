@@ -29,6 +29,7 @@ popd
 
 call "%ANT_HOME%\bin\ant" %1 %2 %3 %4 %5 %6 %7 %8 %9
 
+if ERRORLEVEL 1 goto endfail
 endlocal
 
 goto EOF
@@ -37,5 +38,6 @@ goto EOF
 echo.
 echo Build failed
 pause
+endlocal
 
 :EOF
