@@ -19,7 +19,7 @@ This is designed to work in two different environments:
     <tstamp/>
 
     <!-- argo.root.dir should be passed in to make sure it is correct -->
-    <property name="argo.root.dir" value="../.."/>
+    <property name="argo.root.dir" value=".."/>
     <property name="argo.build.dir" value="${argo.root.dir}/build"/>
 
     <property name="build.dir" value="build"/>
