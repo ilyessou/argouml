@@ -72,25 +72,25 @@ Building this requires:
       <path refid="src.compile.classpath"/>
       <!-- only one of the following will be used at a time -->
       <!-- we put them together because there's little risk of crosstalk -->
-      <fileset dir="../model-mdr/build/">
+      <fileset dir="../argouml-core-model-mdr/build/">
         <include name="*.jar"/>
       </fileset>
-      <fileset dir="../model-euml/build/">
+      <fileset dir="../argouml-core-model-euml/build/">
         <include name="*.jar"/>
       </fileset>
     </path>
 
     <path id="tests.compile.classpath">
       <pathelement location="${build.classes}"/>
-      <pathelement location="../../tools/junit-3.8.2/junit.jar"/>
-      <pathelement location="../../tools/lib/easymock12.jar"/>
-      <pathelement location="../../tools/jdepend-2.9/lib/jdepend-2.9.jar"/>
+      <pathelement location="../argouml-core-tools/junit-3.8.2/junit.jar"/>
+      <pathelement location="../argouml-core-tools/lib/easymock12.jar"/>
+      <pathelement location="../argouml-core-tools/jdepend-2.9/lib/jdepend-2.9.jar"/>
       <path refid="src.compile.classpath"/>
     </path>
 
     <path id="tests.run.classpath">
       <path refid="tests.compile.classpath"/>
-      <fileset dir="../model-mdr/build/">
+      <fileset dir="../argouml-core-model-mdr/build/">
         <include name="*.jar"/>
       </fileset>
     </path>
@@ -463,8 +463,8 @@ Building this requires:
            fork="yes" dir="${basedir}" forkmode="perTest"
            haltonfailure="false"
            maxmemory="48M" printsummary="${junit.printsummary}">
-      <sysproperty key="test.model.uml" 
-            value="../model-mdr/src/org/argouml/model/mdr/mof/01-02-15.xml"/>
+      <sysproperty key="test.model.uml"
+            value="../argouml-core-model-mdr/src/org/argouml/model/mdr/mof/01-02-15.xml"/>
       <sysproperty key="argouml.model.implementation" 
             value="${test.model.implementation}"/>
       <sysproperty key="log4j.configuration" value="org/argouml/resource/default.lcf"/>
