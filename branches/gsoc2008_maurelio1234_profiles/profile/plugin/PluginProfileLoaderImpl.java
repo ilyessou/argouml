@@ -12,6 +12,8 @@ import java.util.List;
 
 import javax.swing.ImageIcon;
 
+import org.apache.log4j.Logger;
+import org.argouml.cognitive.Agency;
 import org.argouml.model.Model;
 import org.argouml.profile.FigNodeStrategy;
 import org.argouml.profile.Profile;
@@ -21,6 +23,8 @@ import org.argouml.profile.ProfileManager;
 import org.argouml.profile.ProfileModelLoader;
 import org.argouml.profile.ProfileReference;
 import org.argouml.profile.ResourceModelLoader;
+import org.argouml.uml.cognitive.critics.CrProfile;
+import org.argouml.uml.cognitive.critics.CrUML;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -36,6 +40,10 @@ import org.xml.sax.helpers.XMLReaderFactory;
  */
 public class PluginProfileLoaderImpl extends DefaultHandler implements
         PluginProfileLoader {
+    /**
+     * Logger.
+     */
+    private static final Logger LOG = Logger.getLogger(PluginProfileImpl.class);
 
     PluginProfileImpl plugin = null;
 
@@ -94,6 +102,15 @@ public class PluginProfileLoaderImpl extends DefaultHandler implements
         }
     }
 
+    private class JavaCriticDescriptor {
+        String crClassName;
+        String dmClassName;
+        
+        public boolean isValid() {
+            return crClassName != null && dmClassName != null;
+        }
+    }
+    
     private Class referenceClass;
 
     private interface Tags {
@@ -104,6 +121,9 @@ public class PluginProfileLoaderImpl extends DefaultHandler implements
         static final String DEPENDENCY = "dependency";
 
         static final String FIGNODE = "fignode";
+
+        static final String CRITIC = "critic";
+
     }
 
     private interface Atts {
@@ -126,6 +146,13 @@ public class PluginProfileLoaderImpl extends DefaultHandler implements
         static final String FIGNODE_IMAGE = "image";
 
         static final String FIGNODE_LENGTH = "length";
+
+        static final String CRITIC_LANGUAGE = "language";
+    
+        static final String CRITIC_JAVA_CLASS_NAME = "crClassName";
+
+        static final String CRITIC_JAVA_MATERIAL_NAME = "dmClassName";
+        
     }
 
     public PluginProfile loadProfile(Class cl) throws ErrorLoadingProfile {
@@ -157,9 +184,14 @@ public class PluginProfileLoaderImpl extends DefaultHandler implements
             Attributes atts) {
 
         FigNodeDescriptor desc = null;
-
+        JavaCriticDescriptor cdesc = null;
+        
         if (name.equalsIgnoreCase(Tags.FIGNODE)) {
             desc = new FigNodeDescriptor();
+        }
+
+        if (name.equalsIgnoreCase(Tags.CRITIC)) {
+            cdesc = new JavaCriticDescriptor();
         }
 
         for (int i = 0; i < atts.getLength(); ++i) {
@@ -207,12 +239,36 @@ public class PluginProfileLoaderImpl extends DefaultHandler implements
                         Atts.FIGNODE_LENGTH)) {
                     desc.length = Integer.parseInt(atts.getValue(i));
                 }
+            } else if (name.equalsIgnoreCase(Tags.CRITIC)) {
+                if (atts.getLocalName(i).equalsIgnoreCase(
+                        Atts.CRITIC_LANGUAGE)) {
+                    
+                } else if (atts.getLocalName(i).equalsIgnoreCase(
+                        Atts.CRITIC_JAVA_CLASS_NAME)) {
+                    cdesc.crClassName = atts.getValue(i); 
+                } else if (atts.getLocalName(i).equalsIgnoreCase(
+                        Atts.CRITIC_JAVA_MATERIAL_NAME)) {
+                    cdesc.dmClassName = atts.getValue(i); 
+                }
             }
         }
 
         if (desc != null && desc.isValid()) {
             loadImage(desc);
             profile.figNodeStrat.addDesrciptor(desc);
+        }
+        
+        if (cdesc != null && cdesc.isValid()) {
+            Class criticClass;
+            try {
+                criticClass = referenceClass.getClassLoader().loadClass(cdesc.crClassName);
+                CrProfile criticObject = (CrProfile) criticClass.newInstance();
+                Class dmClass = Class.forName(cdesc.dmClassName);
+                
+                Agency.register(criticObject, dmClass);
+            } catch (Exception e) {
+                LOG.error("Exception", e);                
+            }
         }
     }
 
