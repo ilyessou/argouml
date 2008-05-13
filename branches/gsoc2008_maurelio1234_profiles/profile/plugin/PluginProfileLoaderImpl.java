@@ -24,7 +24,6 @@ import org.argouml.profile.ProfileModelLoader;
 import org.argouml.profile.ProfileReference;
 import org.argouml.profile.ResourceModelLoader;
 import org.argouml.uml.cognitive.critics.CrProfile;
-import org.argouml.uml.cognitive.critics.CrUML;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -155,7 +154,17 @@ public class PluginProfileLoaderImpl extends DefaultHandler implements
         
     }
 
-    public PluginProfile loadProfile(Class cl) throws ErrorLoadingProfile {
+    /**
+     * Reads the profile plugin from an XML file <code>profile.xml</code> 
+     * in the root directory (relatively to <code>cl</code> 
+     * 
+     * @param cl the class
+     * @return the plugin profile
+     * @throws ErrorLoadingPluginProfile error reading XML
+     * 
+     * @see org.argouml.profile.plugin.PluginProfileLoader#loadProfile(java.lang.Class)
+     */
+    public PluginProfile loadProfile(Class cl) throws ErrorLoadingPluginProfile {
         try {
             this.referenceClass = cl;
 
@@ -168,18 +177,24 @@ public class PluginProfileLoaderImpl extends DefaultHandler implements
                     .getResourceAsStream("profile.xml"))));
 
         } catch (SAXException e) {
-            throw new ErrorLoadingProfile(e);
+            throw new ErrorLoadingPluginProfile(e);
         } catch (IOException e) {
-            throw new ErrorLoadingProfile(e);
+            throw new ErrorLoadingPluginProfile(e);
         }
 
         return plugin;
     }
 
+    /**
+     * @see org.xml.sax.helpers.DefaultHandler#startDocument()
+     */
     public void startDocument() {
         plugin = new PluginProfileImpl();
     }
 
+    /**
+     * @see org.xml.sax.helpers.DefaultHandler#startElement(java.lang.String, java.lang.String, java.lang.String, org.xml.sax.Attributes)
+     */
     public void startElement(String uri, String name, String qName,
             Attributes atts) {
 
@@ -317,6 +332,9 @@ public class PluginProfileLoaderImpl extends DefaultHandler implements
         }
     }
 
+    /**
+     * @see org.xml.sax.helpers.DefaultHandler#endElement(java.lang.String, java.lang.String, java.lang.String)
+     */
     public void endElement(String uri, String name, String qName) {
         if (name.equalsIgnoreCase(Tags.PROFILE)) {
             plugin.setProfile(profile);
@@ -325,6 +343,9 @@ public class PluginProfileLoaderImpl extends DefaultHandler implements
 
     private static PluginProfileLoaderImpl instance = null;
 
+    /**
+     * @return the unique instance for this loader
+     */
     public static PluginProfileLoader getInstance() {
         if (instance == null) {
             instance = new PluginProfileLoaderImpl();

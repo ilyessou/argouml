@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 2007 The Regents of the University of California. All
+// Copyright (c) 2007-2008 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -26,10 +26,7 @@ package org.argouml.profile;
 
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
-
-import org.argouml.model.Model;
 
 
 /**
@@ -37,14 +34,9 @@ import org.argouml.model.Model;
  * presentation characteristics that can be tailored to various modeling
  * environments.
  * 
- * @author Marcos Aurélio
+ * @author Marcos Aurï¿½lio
  */
 public abstract class Profile {
-    
-    /**
-     * Base directory/resource path to use for searching for profiles
-     */
-    public static final String PROFILE_DIR = "/org/argouml/profile/profiles/";
     
     private Set<Profile> importedProfiles  = new HashSet<Profile>();
     private Set<Profile> importingProfiles = new HashSet<Profile>();
@@ -86,25 +78,6 @@ public abstract class Profile {
     public abstract String getDisplayName();
     
     /**
-     * @return the UML Model that contains the profile model
-     * @deprecated by maurelio1234. Use {@link #getProfilePackages()} instead.
-     */
-    @Deprecated
-    public Object getModel() {
-        Collection c = null;
-        try {
-            c = getProfilePackages();
-        } catch (ProfileException e) {
-        }
-        
-        if (c != null) {
-            return c.iterator().next();
-        } else {
-            return null;
-        }
-    }
-
-    /**
      * @return the formating strategy offered by this profile, if any. Returns
      *         <code>null</code> if this profile has no formating strategy.
      */
@@ -129,108 +102,12 @@ public abstract class Profile {
     }
     
     /**
-     * This method produces a string that represents the specific model element
-     * in the context of the specified namespace.
-     * 
-     * @param element
-     *                element to represent.
-     * @param namespace
-     *                context namespace (may be null).
-     * @return a string representing the model element
-     * 
-     * @deprecated for 0.25.4 by maurelio1234. Use
-     *             {@link #getFormatingStrategy()} instead.
-     */
-    @Deprecated
-    public String formatElement(Object element,
-                                         Object namespace) {
-        FormatingStrategy fs = getFormatingStrategy(); 
-        if (fs != null) {
-            return fs.formatElement(element, namespace);
-        } else {
-            return null;
-        }
-    }
-    
-    /**
-     * This method produces a string the represents the collection of model
-     * elements in the context of the specified namespace.
-     * 
-     * @param iter
-     *                iterator over collection
-     * @param namespace
-     *                context namespace (may be null).
-     * @return a string representing the collection
-     * 
-     * @deprecated for 0.25.4 by maurelio1234. Use
-     *             {@link #getFormatingStrategy()} instead.
-     */
-    @Deprecated
-    public String formatCollection(Iterator iter,
-                                            Object namespace) {
-        FormatingStrategy fs = getFormatingStrategy(); 
-        if (fs != null) {
-            return fs.formatCollection(iter, namespace);
-        } else {
-            return null;
-        }        
-    }
-    /**
-     * @return the UML Model that contains the profile model
-     * @throws ProfileException if failed to get profile.
-     * @deprecated for 0.25.4 by tfmorris.  Use {@link #getProfilePackages()}.
-     */
-    @Deprecated
-    public Object getProfileModel() throws ProfileException {
-        if (getModel() == null) {
-            Object profileModel = null;
-            for (Object pkg : getProfilePackages()) {
-                if (Model.getFacade().isAPackage(pkg)) {
-                    profileModel = pkg;
-                    return profileModel;
-                }
-            }
-            profileModel = getProfilePackages().iterator().next();
-
-            return profileModel;
-        } else {
-            return getModel();
-        }
-    }
-    
-    /**
      * @return a collection of the top level UML Packages containing the
      *         profile.
      * @throws ProfileException
      *                 if failed to get profile.
      */
     public abstract Collection getProfilePackages() throws ProfileException;
-    
-    /**
-     * Set the filename to load the profile model from.  This will be
-     * remembered and used as the file for all future loads.
-     * @param filename file name of XMI file containing model to use as profile
-     * 
-     * @throws ProfileException if the given file isn't a valid profile
-     * @deprecated by maurelio1234
-     */
-    @SuppressWarnings("unused")
-    @Deprecated
-    public void setProfileModelFilename(String filename)
-        throws ProfileException {
-        
-    }
-    
-    /**
-     * Return the filename that was or will be used to load the profile/default
-     * model.
-     * @return the filename
-     * @deprecated by maurelio1234
-     */
-    @Deprecated
-    public String getProfileModelFilename() {
-        return "";
-    }
     
     /**
      * @return the display name

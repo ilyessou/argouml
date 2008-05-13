@@ -12,7 +12,7 @@ public interface PluginProfileLoader {
 	 * 
 	 * @param cl the reference class (used in order to find the needed resources) 
 	 * @return the profile descriptor
-	 * @throws ErrorLoadingProfile
+	 * @throws ErrorLoadingPluginProfile
 	 */
-	PluginProfile loadProfile(Class cl) throws ErrorLoadingProfile;
+	PluginProfile loadProfile(Class cl) throws ErrorLoadingPluginProfile;
 }

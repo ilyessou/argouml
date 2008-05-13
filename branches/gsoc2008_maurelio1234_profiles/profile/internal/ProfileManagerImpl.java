@@ -43,7 +43,7 @@ import org.argouml.profile.UserDefinedProfile;
 /**
  * Default <code>ProfileManager</code> implementation
  *
- * @author Marcos Aurélio
+ * @author Marcos Aurï¿½lio
  */
 public class ProfileManagerImpl implements ProfileManager {
     
@@ -282,6 +282,8 @@ public class ProfileManagerImpl implements ProfileManager {
                                 registerProfile(udp);
                             } catch (ProfileException e) {
                                 // if an exception is raised file is unusable
+                                LOG.warn("Failed to load user defined profile "
+                                    + file.getAbsolutePath() + ".", e);
                             }
                         }
                     }

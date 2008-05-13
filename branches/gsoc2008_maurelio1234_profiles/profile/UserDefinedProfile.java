@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 2007 The Regents of the University of California. All
+// Copyright (c) 2007-2008 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -32,7 +32,7 @@ import java.util.Collection;
 /**
  * Represents a profile defined by the user
  *
- * @author Marcos Aurélio
+ * @author Marcos Aurï¿½lio
  */
 public class UserDefinedProfile extends Profile {
 

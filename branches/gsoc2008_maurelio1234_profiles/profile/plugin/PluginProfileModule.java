@@ -28,26 +28,35 @@ public abstract class PluginProfileModule extends UndoableAction implements Modu
 		registerProfile(this.getClass());
 	}
 
-	protected void registerProfile(Class cl) {
+	private void registerProfile(Class cl) {
 		try {
 			PluginProfileLoader loader = PluginProfileLoaderImpl.getInstance();
 
 			profile = loader.loadProfile(cl);
-		} catch (ErrorLoadingProfile e) {
+		} catch (ErrorLoadingPluginProfile e) {
 			LOG.error("Error loading profile", e);
 		}
 	}
 	
+	/**
+	 * @see org.argouml.moduleloader.ModuleInterface#disable()
+	 */
 	public boolean disable() {
 		ProfileFacade.getManager().removeProfile(profile.getProfile());
 		return true;
 	}
 
+	/**
+	 * @see org.argouml.moduleloader.ModuleInterface#enable()
+	 */
 	public boolean enable() {		
 		ProfileFacade.getManager().registerProfile(profile.getProfile());
 		return true;
 	}
 
+	/**
+	 * @see org.argouml.moduleloader.ModuleInterface#getInfo(int)
+	 */
 	public String getInfo(int type) {
 		if (profile == null) {
 			LOG.debug("Empty Plugin Profile detected!");
@@ -69,6 +78,9 @@ public abstract class PluginProfileModule extends UndoableAction implements Modu
 		}
 	}
 
+	/**
+	 * @see org.argouml.moduleloader.ModuleInterface#getName()
+	 */
 	public String getName() {
 		String ret = null;
 		if (profile == null) {

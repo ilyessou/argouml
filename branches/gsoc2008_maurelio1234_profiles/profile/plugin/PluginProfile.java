@@ -36,6 +36,9 @@ public interface PluginProfile {
 	 */
 	String getName();
 	
+	/**
+	 * @return the profile object
+	 */
 	Profile getProfile();
 
 }
