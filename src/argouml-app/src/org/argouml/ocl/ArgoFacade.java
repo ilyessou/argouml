@@ -32,11 +32,15 @@ import org.argouml.kernel.Project;
 import org.argouml.kernel.ProjectManager;
 import org.argouml.model.Model;
 
-import tudresden.ocl.check.OclTypeException;
-import tudresden.ocl.check.types.Any;
-import tudresden.ocl.check.types.Basic;
-import tudresden.ocl.check.types.Type;
-import tudresden.ocl.check.types.Type2;
+import tudresden.ocl20.core.lib.OclAny;
+
+//import tudresden.ocl.check.OclTypeException;
+//import tudresden.ocl.check.types.Any;
+//import tudresden.ocl.check.types.Basic;
+//import tudresden.ocl.check.types.Type;
+//import tudresden.ocl.check.types.Type2;
+
+
 
 /**
  * Provides a facade of the ArgoUml uml model for the OCL compiler.<p>
@@ -48,7 +52,8 @@ import tudresden.ocl.check.types.Type2;
  * import java.util.Collection;
  * import tudresden.ocl.check.types.Collection;
  */
-public class ArgoFacade implements tudresden.ocl.check.types.ModelFacade {
+//public class ArgoFacade implements tudresden.ocl20.check.types.ModelFacade {
+public class ArgoFacade {
 
     /**
      * The target that this instance is connected to.
@@ -56,7 +61,7 @@ public class ArgoFacade implements tudresden.ocl.check.types.ModelFacade {
     private Object target;
 
     /**
-     * Construtor.
+     * Constructor.
      *
      * @param t The target to create this facade for.
      */
@@ -92,7 +97,9 @@ public class ArgoFacade implements tudresden.ocl.check.types.ModelFacade {
 /**
  * A class that is the wrapper for any type.
  */
-class ArgoAny implements Any, Type2 {
+//ocl2 below
+class ArgoAny {
+//class ArgoAny implements Any, Type2 {
     /**
      * Logger for the ArgoAny class.
      */
@@ -178,10 +185,10 @@ class ArgoAny implements Any, Type2 {
                            == -1)) {
 		    if (Model.getExtensionMechanismsHelper().hasStereotype(ae, 
 		            "ordered")) {
-                        isSequence = true;
-                    } else {
-                        isSet = true;
-                    }
+			isSequence = true;
+		    } else {
+			isSet = true;
+		    }
 		}
 	    }
 	}

@@ -41,10 +41,10 @@ public class OCLExpander extends org.tigris.gef.ocl.OCLExpander {
         super(templates);
     }
 
-    /**
+    /*
      * Create the specialist OCLEvaluator for ArgoUML
      */
-    protected void createEvaluator() {
-        evaluator = new OCLEvaluator();
-    }
+//    protected void createEvaluator() {
+//        evaluator = new OCLEvaluator();
+//    }
 } /* end class OCLExpander */

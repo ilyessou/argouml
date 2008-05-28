@@ -49,7 +49,7 @@ import org.argouml.application.helpers.ResourceLoaderWrapper;
 import org.argouml.configuration.Configuration;
 import org.argouml.model.Model;
 import org.argouml.moduleloader.ModuleInterface;
-import org.argouml.ocl.ArgoFacade;
+//import org.argouml.ocl.ArgoFacade;
 import org.argouml.uml.DocumentationManager;
 import org.argouml.uml.generator.CodeGenerator;
 import org.argouml.uml.generator.GeneratorHelper;
@@ -58,9 +58,9 @@ import org.argouml.uml.generator.Language;
 import org.argouml.uml.generator.TempFileUtils;
 import org.argouml.uml.reveng.ImportInterface;
 
-import tudresden.ocl.OclTree;
-import tudresden.ocl.parser.analysis.DepthFirstAdapter;
-import tudresden.ocl.parser.node.AConstraintBody;
+//import tudresden.ocl20.OclTree;
+import tudresden.ocl20.core.parser.sablecc.analysis.DepthFirstAdapter;
+//import tudresden.ocl20.core.parser.sablecc.node.AConstraintBody;
 import antlr.ANTLRException;
 
 /**
@@ -1266,88 +1266,89 @@ public class GeneratorJava implements CodeGenerator, ModuleInterface {
 
         // Add each constraint
 
-        class TagExtractor extends DepthFirstAdapter {
-            private LinkedList<String> llsTags = new LinkedList<String>();
-            private String constraintName;
-            private int constraintID;
-
-            /**
-             * Constructor.
-             *
-             * @param sConstraintName The constraint name.
-             */
-            public TagExtractor(String sConstraintName) {
-                super();
-
-                constraintName = sConstraintName;
-            }
-
-            public Iterator getTags() {
-                return llsTags.iterator();
-            }
-            
-            /*
-             * @see tudresden.ocl.parser.analysis.Analysis#caseAConstraintBody(tudresden.ocl.parser.node.AConstraintBody)
-             */
-            @Override
-            public void caseAConstraintBody(AConstraintBody node) {
-                // We don't care for anything below this node, so we
-                // do not use apply anymore.
-                String sKind =
-                    (node.getStereotype() != null)
-		    ? (node.getStereotype().toString())
-		    : (null);
-                String sExpression =
-                    (node.getExpression() != null)
-		    ? (node.getExpression().toString())
-		    : (null);
-                String sName =
-                    (node.getName() != null)
-		    ? (node.getName().getText())
-		    : (constraintName + "_" + (constraintID++));
-
-                if ((sKind == null) || (sExpression == null)) {
-                    return;
-                }
-
-                String sTag;
-                if (sKind.equals("inv ")) {
-                    sTag = "@invariant ";
-                } else if (sKind.equals("post ")) {
-                    sTag = "@postcondition ";
-                } else if (sKind.equals("pre ")) {
-                    sTag = "@precondition ";
-                } else {
-                    return;
-                }
-
-                sTag += sName + ": " + sExpression;
-                llsTags.addLast(sTag);
-            }
-        }
-
-        tudresden.ocl.check.types.ModelFacade mf = new ArgoFacade(me);
-        for (Object constraint : cConstraints) {
-            try {
-		String body =
-		    (String) Model.getFacade().getBody(
-		            Model.getFacade().getBody(constraint));
-                OclTree otParsed = OclTree.createTree(body, mf);
-
-                TagExtractor te =
-		    new TagExtractor(Model.getFacade().getName(constraint));
-                otParsed.apply(te);
-
-                for (Iterator j = te.getTags(); j.hasNext();) {
-                    sDocComment.append(' ').append(j.next());
-		    sDocComment.append(LINE_SEPARATOR);
-		    sDocComment.append(INDENT).append(" *");
-                }
-            } catch (IOException ioe) {
-                // Nothing to be done, should not happen anyway ;-)
-            }
-        }
-
+//        class TagExtractor extends tudresden.ocl20.core.parser.sablecc.analysis.DepthFirstAdapter {
+//            private LinkedList<String> llsTags = new LinkedList<String>();
+//            private String constraintName;
+//            private int constraintID;
+//
+//            /**
+//             * Constructor.
+//             *
+//             * @param sConstraintName The constraint name.
+//             */
+//            public TagExtractor(String sConstraintName) {
+//                super();
+//
+//                constraintName = sConstraintName;
+//            }
+//
+//            public Iterator getTags() {
+//                return llsTags.iterator();
+//            }
+//            
+//            /*
+//             * @see tudresden.ocl.parser.analysis.Analysis#caseAConstraintBody(tudresden.ocl.parser.node.AConstraintBody)
+//             */
+//            @Override
+//            public void caseAConstraintBody(AConstraintBody node) {
+//                // We don't care for anything below this node, so we
+//                // do not use apply anymore.
+//                String sKind =
+//                    (node.getStereotype() != null)
+//		    ? (node.getStereotype().toString())
+//		    : (null);
+//                String sExpression =
+//                    (node.getExpression() != null)
+//		    ? (node.getExpression().toString())
+//		    : (null);
+//                String sName =
+//                    (node.getName() != null)
+//		    ? (node.getName().getText())
+//		    : (constraintName + "_" + (constraintID++));
+//
+//                if ((sKind == null) || (sExpression == null)) {
+//                    return;
+//                }
+//
+//                String sTag;
+//                if (sKind.equals("inv ")) {
+//                    sTag = "@invariant ";
+//                } else if (sKind.equals("post ")) {
+//                    sTag = "@postcondition ";
+//                } else if (sKind.equals("pre ")) {
+//                    sTag = "@precondition ";
+//                } else {
+//                    return;
+//                }
+//
+//                sTag += sName + ": " + sExpression;
+//                llsTags.addLast(sTag);
+//            }
+//        }
+//
+////        tudresden.ocl.check.types.ModelFacade mf = new ArgoFacade(me);
+//        ArgoFacade mf = new ArgoFacade(me);
+//        for (Object constraint : cConstraints) {
+//            try {
+//		String body =
+//		    (String) Model.getFacade().getBody(
+//		            Model.getFacade().getBody(constraint));
+//                OclTree otParsed = OclTree.createTree(body, mf);
+//
+//                TagExtractor te =
+//		    new TagExtractor(Model.getFacade().getName(constraint));
+//                otParsed.apply(te);
+//
+//                for (Iterator j = te.getTags(); j.hasNext();) {
+//                    sDocComment.append(' ').append(j.next());
+//		    sDocComment.append(LINE_SEPARATOR);
+//		    sDocComment.append(INDENT).append(" *");
+//                }
+//            } catch (IOException ioe) {
+//                // Nothing to be done, should not happen anyway ;-)
+//            }
+//        }
+//
         sDocComment.append("/").append(LINE_SEPARATOR);
 
         return sDocComment.toString();
