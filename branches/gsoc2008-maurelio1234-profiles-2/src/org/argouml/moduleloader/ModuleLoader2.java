@@ -27,7 +27,6 @@ package org.argouml.moduleloader;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -55,8 +54,6 @@ import org.argouml.i18n.Translator;
 import org.argouml.profile.ProfileException;
 import org.argouml.profile.ProfileFacade;
 import org.argouml.profile.UserDefinedProfile;
-import org.argouml.profile.internal.ProfileManagerImpl;
-import org.argouml.ui.ProjectBrowser;
 
 /**
  * This is the module loader that loads modules implementing the
@@ -624,13 +621,18 @@ public final class ModuleLoader2 {
      */
     private void loadProfilesFromJarFile(JarFile jarfile, File file) {       
         Enumeration<JarEntry> entries = jarfile.entries();
-        for(JarEntry entry = entries.nextElement(); entries.hasMoreElements(); entry = entries.nextElement()) {
+        for(JarEntry entry = entries.nextElement(); 
+                entries.hasMoreElements(); 
+                    entry = entries.nextElement()) {
             if (entry.getName().toLowerCase().endsWith(".xmi")) {
                 try {
-                    UserDefinedProfile udp = new UserDefinedProfile(new URL("jar:file:"+file.getCanonicalPath()+"!/"+entry.getName()));
+                    UserDefinedProfile udp = new UserDefinedProfile(new URL(
+                            "jar:file:" + file.getCanonicalPath() + "!/"
+                                    + entry.getName()));
                     ProfileFacade.getManager().registerProfile(udp);
-                    
-                    LOG.debug("Registered Profile: " + udp.getDisplayName()+"...");
+
+                    LOG.debug("Registered Profile: " + udp.getDisplayName()
+                            + "...");
                 } catch (ProfileException e) {
                     LOG.error("Exception", e);
                 } catch (IOException e) {

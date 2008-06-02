@@ -39,23 +39,27 @@ import java.util.StringTokenizer;
 
 import javax.swing.ImageIcon;
 
+import org.argouml.i18n.Translator;
 import org.argouml.model.Model;
-
 
 /**
  * Represents a profile defined by the user
- *
+ * 
  * @author maurelio1234
  */
 public class UserDefinedProfile extends Profile {
 
     private String displayName;
+
     private File modelFile;
+
     private Collection model;
+
     private boolean fromZargo;
 
-    private UserDefinedFigNodeStrategy figNodeStrategy = new UserDefinedFigNodeStrategy();
-    
+    private UserDefinedFigNodeStrategy figNodeStrategy 
+                                    = new UserDefinedFigNodeStrategy();
+
     private class UserDefinedFigNodeStrategy implements FigNodeStrategy {
 
         private HashMap<String, Image> images = new HashMap<String, Image>();
@@ -94,7 +98,7 @@ public class UserDefinedProfile extends Profile {
     /**
      * The default constructor for this class
      * 
-     * @param file the file from where the model should be read  
+     * @param file the file from where the model should be read
      * @throws ProfileException if the profile could not be loaded
      */
     public UserDefinedProfile(File file) throws ProfileException {
@@ -105,25 +109,24 @@ public class UserDefinedProfile extends Profile {
             reference = new UserProfileReference(file.getPath());
         } catch (MalformedURLException e) {
             throw new ProfileException(
-                "Failed to create the ProfileReference.", e);
+                    "Failed to create the ProfileReference.", e);
         }
         model = new FileModelLoader().loadModel(reference);
         fromZargo = false;
         finishLoading();
     }
 
-    
     /**
-     * A constructor that takes a file name and a reader, being the reader the 
+     * A constructor that takes a file name and a reader, being the reader the
      * input method to get the profile model.
      * 
      * @param fileName name of the profile model file.
-     * @param reader a reader opened from where the profile model will be 
-     * loaded. 
-     * @throws ProfileException if something goes wrong in initializing the 
-     * profile.
+     * @param reader a reader opened from where the profile model will be
+     *            loaded.
+     * @throws ProfileException if something goes wrong in initializing the
+     *             profile.
      */
-    public UserDefinedProfile(String fileName, Reader reader) 
+    public UserDefinedProfile(String fileName, Reader reader)
         throws ProfileException {
         displayName = fileName;
         ProfileReference reference = null;
@@ -131,13 +134,12 @@ public class UserDefinedProfile extends Profile {
             reference = new UserProfileReference(fileName);
         } catch (MalformedURLException e) {
             throw new ProfileException(
-                "Failed to create the ProfileReference.", e);
+                    "Failed to create the ProfileReference.", e);
         }
         model = new ReaderModelLoader(reader).loadModel(reference);
         fromZargo = true;
         finishLoading();
     }
-
 
     /**
      * A constructor that reads a file from an URL
@@ -152,14 +154,13 @@ public class UserDefinedProfile extends Profile {
         fromZargo = false;
 
         finishLoading();
-     }
-
+    }
 
     /**
      * Reads the informations defined as TaggedValues
      */
     private void finishLoading() {
-        
+
         for (Object obj : model) {
             if (Model.getExtensionMechanismsHelper().hasStereotype(obj,
                     "profile")) {
@@ -169,40 +170,44 @@ public class UserDefinedProfile extends Profile {
                 if (name != null) {
                     displayName = name;
                 } else {
-                    displayName = "Untitled";
+                    displayName = Translator.localize("misc.profile.unnamed");
                 }
-                                
+
                 // load profile dependencies
-                String dep = Model.getFacade().getTaggedValueValue(obj, "Dependency");
-                StringTokenizer st = new StringTokenizer(dep, " ,;:");
-                
-                String prof = null;
-                
+                String dependencyListStr = Model.getFacade().getTaggedValueValue(obj,
+                        "Dependency");
+                StringTokenizer st = new StringTokenizer(dependencyListStr, " ,;:");
+
+                String profile = null;
+
                 do {
-                    prof = st.nextToken();
-                    if (prof != null) {
-                        this.addProfileDependency(lookForRegisteredProfile(prof));
+                    profile = st.nextToken();
+                    if (profile != null) {
+                      this.
+                        addProfileDependency(lookForRegisteredProfile(profile));
                     }
-                } while(st.hasMoreTokens());
-                
+                } while (st.hasMoreTokens());
+
             }
         }
 
         // load fig nodes
-        Collection col = Model.getExtensionMechanismsHelper().getStereotypes(model);
-        for (Object mel : col) {
-            Collection tags = Model.getFacade().getTaggedValuesCollection(mel);
-            
+        Collection allStereotypes = Model.getExtensionMechanismsHelper().getStereotypes(
+                model);
+        for (Object stereotype : allStereotypes) {
+            Collection tags = Model.getFacade().getTaggedValuesCollection(stereotype);
+
             for (Object tag : tags) {
-                if (Model.getFacade().getTag(tag).toLowerCase().equals("figure")) {
+                if (Model.getFacade().getTag(tag).toLowerCase()
+                        .equals("figure")) {
                     String value = Model.getFacade().getValueOfTag(tag);
                     File f = new File(value);
                     FigNodeDescriptor fnd = null;
                     try {
-                        fnd = loadImage(Model.getFacade().getName(mel).toString(), f);
+                        fnd = loadImage(Model.getFacade().getName(stereotype)
+                                .toString(), f);
                         figNodeStrategy.addDesrciptor(fnd);
                     } catch (IOException e) {
-                        //LOG.error("Exception", e);
                     }
                 }
             }
@@ -210,17 +215,17 @@ public class UserDefinedProfile extends Profile {
     }
 
     private Profile lookForRegisteredProfile(String value) {
-        ProfileManager man = ProfileFacade.getManager();
-        List<Profile> regs = man.getRegisteredProfiles();
+        ProfileManager manager = ProfileFacade.getManager();
+        List<Profile> registeredProfiles = manager.getRegisteredProfiles();
 
-        for (Profile profile : regs) {
+        for (Profile profile : registeredProfiles) {
             if (profile.getDisplayName().equalsIgnoreCase(value)) {
                 return profile;
             }
         }
         return null;
     }
-    
+
     /**
      * @return the string that should represent this profile in the GUI. An
      *         start (*) is placed on it if it comes from the currently opened
@@ -230,9 +235,9 @@ public class UserDefinedProfile extends Profile {
         return displayName + (fromZargo ? "*" : "");
     }
 
-
     /**
-     * Returns null.  This profile has no formatting strategy.
+     * Returns null. This profile has no formatting strategy.
+     * 
      * @return null.
      */
     @Override
@@ -241,7 +246,8 @@ public class UserDefinedProfile extends Profile {
     }
 
     /**
-     * Returns null.  This profile has no figure strategy.
+     * Returns null. This profile has no figure strategy.
+     * 
      * @return null.
      */
     @Override
@@ -261,7 +267,6 @@ public class UserDefinedProfile extends Profile {
      */
     @Override
     public String toString() {
-        // TODO: I18N
         return super.toString() + " [" + getModelFile() + "]";
     }
 
@@ -269,26 +274,26 @@ public class UserDefinedProfile extends Profile {
     public Collection getProfilePackages() {
         return model;
     }
-    
-    private FigNodeDescriptor loadImage(String stereotype, File f) throws IOException {
-        FigNodeDescriptor desc = new FigNodeDescriptor();
-        desc.length = (int) f.length();
-        desc.src    = f.getPath();
-        desc.stereotype = stereotype;
-        
-        BufferedInputStream bis = new BufferedInputStream(new FileInputStream(f)); 
-        //new BufferedInputStream(this.referenceClass.getResourceAsStream(desc.src));
 
-        byte[] buf = new byte[desc.length];
+    private FigNodeDescriptor loadImage(String stereotype, File f)
+        throws IOException {
+        FigNodeDescriptor descriptor = new FigNodeDescriptor();
+        descriptor.length = (int) f.length();
+        descriptor.src = f.getPath();
+        descriptor.stereotype = stereotype;
+
+        BufferedInputStream bis = new BufferedInputStream(
+                new FileInputStream(f));
+
+        byte[] buf = new byte[descriptor.length];
         try {
             bis.read(buf);
         } catch (IOException e) {
             e.printStackTrace();
         }
-        
-        // LOG.info("IMAGE READ: " + fileName);
-        desc.img = new ImageIcon(buf).getImage();// Toolkit.getDefaultToolkit().createImage(buf);
 
-        return desc;
-    }    
+        descriptor.img = new ImageIcon(buf).getImage();
+
+        return descriptor;
+    }
 }
