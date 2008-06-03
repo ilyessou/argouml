@@ -39,8 +39,10 @@ import java.util.StringTokenizer;
 
 import javax.swing.ImageIcon;
 
+import org.apache.log4j.Logger;
 import org.argouml.i18n.Translator;
 import org.argouml.model.Model;
+import org.argouml.moduleloader.ModuleLoader2;
 
 /**
  * Represents a profile defined by the user
@@ -48,6 +50,11 @@ import org.argouml.model.Model;
  * @author maurelio1234
  */
 public class UserDefinedProfile extends Profile {
+
+    /**
+     * Logger.
+     */
+    private static final Logger LOG = Logger.getLogger(UserDefinedProfile.class);
 
     private String displayName;
 
@@ -102,6 +109,7 @@ public class UserDefinedProfile extends Profile {
      * @throws ProfileException if the profile could not be loaded
      */
     public UserDefinedProfile(File file) throws ProfileException {
+        LOG.info("load " + file);
         displayName = file.getName();
         modelFile = file;
         ProfileReference reference = null;
@@ -128,6 +136,7 @@ public class UserDefinedProfile extends Profile {
      */
     public UserDefinedProfile(String fileName, Reader reader)
         throws ProfileException {
+        LOG.info("load " + fileName);
         displayName = fileName;
         ProfileReference reference = null;
         try {
@@ -148,6 +157,8 @@ public class UserDefinedProfile extends Profile {
      * @throws ProfileException
      */
     public UserDefinedProfile(URL url) throws ProfileException {
+        LOG.info("load " + url);
+        
         ProfileReference reference = null;
         reference = new UserProfileReference(url.getPath(), url);
         model = new URLModelLoader().loadModel(reference);
@@ -161,9 +172,10 @@ public class UserDefinedProfile extends Profile {
      */
     private void finishLoading() {
 
-        for (Object obj : model) {
+        for (Object obj : model) {            
             if (Model.getExtensionMechanismsHelper().hasStereotype(obj,
                     "profile")) {
+
 
                 // load profile name
                 String name = Model.getFacade().getName(obj);
@@ -172,6 +184,7 @@ public class UserDefinedProfile extends Profile {
                 } else {
                     displayName = Translator.localize("misc.profile.unnamed");
                 }
+                LOG.info("profile " + displayName);
 
                 // load profile dependencies
                 String dependencyListStr = Model.getFacade().getTaggedValueValue(obj,
@@ -183,6 +196,7 @@ public class UserDefinedProfile extends Profile {
                 do {
                     profile = st.nextToken();
                     if (profile != null) {
+                      LOG.debug("AddingDependency " + profile);
                       this.
                         addProfileDependency(lookForRegisteredProfile(profile));
                     }
@@ -200,6 +214,8 @@ public class UserDefinedProfile extends Profile {
             for (Object tag : tags) {
                 if (Model.getFacade().getTag(tag).toLowerCase()
                         .equals("figure")) {
+                    LOG.debug("AddFigNode " + Model.getFacade().getName(stereotype));
+                    
                     String value = Model.getFacade().getValueOfTag(tag);
                     File f = new File(value);
                     FigNodeDescriptor fnd = null;
@@ -208,6 +224,7 @@ public class UserDefinedProfile extends Profile {
                                 .toString(), f);
                         figNodeStrategy.addDesrciptor(fnd);
                     } catch (IOException e) {
+                        LOG.error("Error loading FigNode", e);
                     }
                 }
             }

@@ -25,6 +25,7 @@
 package org.argouml.uml.cognitive.critics;
 
 import org.argouml.cognitive.Translator;
+import org.argouml.model.Model;
 
 /**
  * "Abstract" Critic subclass that captures commonalities among all
@@ -72,4 +73,12 @@ public class CrProfile extends CrUML {
      * The UID.
      */
     private static final long serialVersionUID = 1785043010468681602L;
+
+    /**
+     * @return the metatype to be criticized by this critic, the Class
+     * metatype is assumed by default.
+     */
+    public Object getCriticizedMetatype() {
+        return Model.getMetaTypes().getUMLClass();
+    }
 }
