@@ -46,6 +46,7 @@ import org.argouml.profile.FormatingStrategy;
 import org.argouml.profile.Profile;
 import org.argouml.profile.ProfileException;
 import org.argouml.profile.ProfileFacade;
+import org.argouml.uml.cognitive.critics.CrProfile;
 
 /**
  *   This class captures represents the unique access point for the 
@@ -192,7 +193,12 @@ public class ProfileConfiguration extends AbstractProjectMember {
                 addProfile(dependency);
             }
 
+            for (CrProfile critic : p.getCritics()) {
+                critic.setEnabled(true);
+            }
+            
             updateStrategies();
+            
             ArgoEventPump.fireEvent(new ArgoProfileEvent(
                     ArgoEventTypes.PROFILE_ADDED, new PropertyChangeEvent(this,
                             "profile", null, p)));
@@ -213,6 +219,11 @@ public class ProfileConfiguration extends AbstractProjectMember {
      */
     public void removeProfile(Profile p) {
         profiles.remove(p);
+
+        for (CrProfile critic : p.getCritics()) {
+            critic.setEnabled(false);
+        }
+
         try {
             profileModels.removeAll(p.getProfilePackages());
         } catch (ProfileException e) {

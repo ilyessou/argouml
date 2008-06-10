@@ -41,6 +41,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
@@ -50,7 +51,6 @@ import java.util.jar.Manifest;
 import org.apache.log4j.Logger;
 import org.argouml.application.api.AbstractArgoJPanel;
 import org.argouml.application.api.Argo;
-import org.argouml.cognitive.Agency;
 import org.argouml.i18n.Translator;
 import org.argouml.profile.ProfileException;
 import org.argouml.profile.ProfileFacade;
@@ -584,18 +584,9 @@ public final class ModuleLoader2 {
 
         LOG.info("Reading profiles...");
         try {
-            loadProfilesFromJarFile(jarfile, file);
+            loadProfilesFromJarFile(jarfile, file, classloader);
         } catch (IOException e) {
-            // TODO: Auto-generated catch block
-            LOG.error("Exception", e);
-        }
-
-        LOG.info("Reading critics...");
-        try {
-            loadCriticsFromJarFile(jarfile, classloader);
-        } catch (IOException e) {
-            // TODO: Auto-generated catch block
-            LOG.error("Exception", e);
+            LOG.error("Unable to read profiles of " + file, e);
         }
         
         boolean loadedClass = false;
@@ -626,55 +617,36 @@ public final class ModuleLoader2 {
         }
     }
 
-    private void loadCriticsFromJarFile(JarFile jarfile, ClassLoader classloader) throws IOException {
-        Manifest manifest = jarfile.getManifest();
-        Attributes att = manifest.getMainAttributes();
-
-        String value = att.getValue("Java-Critics");
-        if (value != null) {
-            StringTokenizer st = new StringTokenizer(value, ",");
-
-            while(st.hasMoreElements()) {
-                String entry = st.nextToken().trim();
-                
-                try {
-                    Class cl = classloader.loadClass(entry);
-                    CrProfile critic = (CrProfile) cl.newInstance();
-                    Agency.register(critic, critic.getCriticizedMetatype());                    
-                } catch (ClassNotFoundException e) {
-                    LOG.error("Error loading class: " + entry, e);
-                } catch (InstantiationException e) {
-                    LOG.error("Error instantianting class: " + entry, e);
-                } catch (IllegalAccessException e) {
-                    LOG.error("Exception", e);
-                }                
-            }            
-        }        
-    }
 
     /**
      * Searches for Profiles models (*.xmi) files in the directory "
      * 
      * @param jarfile the jarfile
      * @param file 
+     * @param classloader 
      * @throws IOException 
      */
-    private void loadProfilesFromJarFile(JarFile jarfile, File file) throws IOException {       
+    private void loadProfilesFromJarFile(JarFile jarfile, File file, ClassLoader classloader) throws IOException {       
         Manifest manifest = jarfile.getManifest();
-        Attributes att = manifest.getMainAttributes();
-
-        String value = att.getValue("Profile-Models");
-        if (value != null) {
-            StringTokenizer st = new StringTokenizer(value, ",");
-
-            while (st.hasMoreElements()) {
-                String entry = st.nextToken().trim();
-                try {
-                    UserDefinedProfile udp = new UserDefinedProfile(
-                            new URL("jar:file:" + file.getCanonicalPath() + "!"
-                                    + entry));
+        Map<String, Attributes> entries = manifest.getEntries();
+        boolean classLoaderAlreadyLoaded = false;
+        
+        for (String entryName : entries.keySet()) {
+            Attributes attr = entries.get(entryName);
+            if (new Boolean(attr.getValue("Profile")+"").booleanValue()) {
+                try {          
+                    if (!classLoaderAlreadyLoaded) {
+                        Translator.addClassLoader(classloader);
+                        classLoaderAlreadyLoaded = true;
+                    }
+                    Set<CrProfile> profiles = loadCritiquesForProfile(attr, classloader);
+                    String modelPath = attr.getValue("Model");
+                    
+                    UserDefinedProfile udp = new UserDefinedProfile(new URL(
+                            "jar:file:" + file.getCanonicalPath() + "!"
+                                    + modelPath), profiles);
+                    
                     ProfileFacade.getManager().registerProfile(udp);
-
                     LOG.debug("Registered Profile: " + udp.getDisplayName()
                             + "...");
                 } catch (ProfileException e) {
@@ -684,6 +656,31 @@ public final class ModuleLoader2 {
                 }
             }
         }
+    }
+
+    private Set<CrProfile> loadCritiquesForProfile(Attributes attr, ClassLoader classloader) {
+        Set<CrProfile> ret = new HashSet<CrProfile>();
+        
+        String value = attr.getValue("Java-Critics");        
+        StringTokenizer st = new StringTokenizer(value, ",");
+
+        while(st.hasMoreElements()) {
+            String entry = st.nextToken().trim();
+            
+            try {
+                Class cl = classloader.loadClass(entry);
+                CrProfile critic = (CrProfile) cl.newInstance();
+                ret.add(critic);                    
+            } catch (ClassNotFoundException e) {
+                LOG.error("Error loading class: " + entry, e);
+            } catch (InstantiationException e) {
+                LOG.error("Error instantianting class: " + entry, e);
+            } catch (IllegalAccessException e) {
+                LOG.error("Exception", e);
+            }                
+        }            
+
+        return ret;
     }
 
     /**

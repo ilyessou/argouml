@@ -35,14 +35,16 @@ import java.net.URL;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.Vector;
 
 import javax.swing.ImageIcon;
 
 import org.apache.log4j.Logger;
 import org.argouml.i18n.Translator;
 import org.argouml.model.Model;
-import org.argouml.moduleloader.ModuleLoader2;
+import org.argouml.uml.cognitive.critics.CrProfile;
 
 /**
  * Represents a profile defined by the user
@@ -67,6 +69,7 @@ public class UserDefinedProfile extends Profile {
     private UserDefinedFigNodeStrategy figNodeStrategy 
                                     = new UserDefinedFigNodeStrategy();
 
+    
     private class UserDefinedFigNodeStrategy implements FigNodeStrategy {
 
         private HashMap<String, Image> images = new HashMap<String, Image>();
@@ -166,6 +169,27 @@ public class UserDefinedProfile extends Profile {
 
         finishLoading();
     }
+    
+    /**
+     * A constructor that reads a file from an URL 
+     * associated with some profiles
+     * 
+     * @param url the URL
+     * @param critics the Critics defined by this profile
+     * @throws ProfileException
+     */
+    public UserDefinedProfile(URL url, Set<CrProfile> critics) throws ProfileException {
+        LOG.info("load " + url);
+        
+        ProfileReference reference = null;
+        reference = new UserProfileReference(url.getPath(), url);
+        model = new URLModelLoader().loadModel(reference);
+        fromZargo = false;
+        this.critics = critics;
+        
+        finishLoading();
+    }
+    
 
     /**
      * Reads the informations defined as TaggedValues
@@ -229,6 +253,42 @@ public class UserDefinedProfile extends Profile {
                 }
             }
         }
+        
+        // load critiques
+        Collection allCritiques = getAllCritiques();
+        
+        for (Object critique : allCritiques) {
+            CrProfile c = generateCriticFromModel(critique);
+            if (c!=null) {
+                this.critics.add(c);
+            }
+        }
+    }
+
+    private CrProfile generateCriticFromModel(Object critique) {
+//        String ocl = Model.getDataTypesHelper().getBody(critique);
+                
+        return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Collection getAllCritiques() {
+        Collection ret = new Vector();
+
+        for (Object obj : model) {
+            Collection comments = Model.getModelManagementHelper()
+                    .getAllModelElementsOfKindWithModel(obj,
+                            Model.getMetaTypes().getComment());
+
+            for (Object comment : comments) {
+                if (Model.getExtensionMechanismsHelper().hasStereotype(comment,
+                        "Critic")) {
+                    ret.add(comment);
+                }
+            }
+            
+        }
+        return ret;
     }
 
     private Profile lookForRegisteredProfile(String value) {

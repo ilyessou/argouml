@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.StringTokenizer;
 
 import org.apache.log4j.Logger;
+import org.argouml.cognitive.Agency;
 import org.argouml.configuration.Configuration;
 import org.argouml.configuration.ConfigurationKey;
 import org.argouml.model.Model;
@@ -39,6 +40,7 @@ import org.argouml.profile.Profile;
 import org.argouml.profile.ProfileException;
 import org.argouml.profile.ProfileManager;
 import org.argouml.profile.UserDefinedProfile;
+import org.argouml.uml.cognitive.critics.CrProfile;
 
 /**
  * Default <code>ProfileManager</code> implementation
@@ -180,6 +182,11 @@ public class ProfileManagerImpl implements ProfileManager {
             if (p instanceof UserDefinedProfile
                     || getProfileForClass(p.getClass().getName()) == null) {
                 profiles.add(p);
+                
+                for (CrProfile critic : p.getCritics()) {
+                    Agency.register(critic, critic.getCriticizedMetatype());
+                    critic.setEnabled(false);
+                }
                 
                 // this profile could have not been loaded when 
                 // the default profile configuration 
