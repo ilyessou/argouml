@@ -233,7 +233,7 @@ class UMLClassifierInStateTypeComboBoxModel extends UMLComboBoxModel2 {
      * 
      * @see java.beans.PropertyChangeListener#propertyChange(java.beans.PropertyChangeEvent)
      */
-    public void modelChanged(PropertyChangeEvent evt) {
+    public void propertyChange(PropertyChangeEvent evt) {
         if (evt instanceof AttributeChangeEvent) {
             if (evt.getPropertyName().equals("type")) {
                 if (evt.getSource() == getTarget()

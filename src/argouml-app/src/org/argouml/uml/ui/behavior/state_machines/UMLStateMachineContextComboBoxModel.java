@@ -24,13 +24,13 @@
 
 package org.argouml.uml.ui.behavior.state_machines;
 
+import java.beans.PropertyChangeEvent;
 import java.util.ArrayList;
 import java.util.Collection;
 
 import org.argouml.kernel.Project;
 import org.argouml.kernel.ProjectManager;
 import org.argouml.model.Model;
-import org.argouml.model.UmlChangeEvent;
 import org.argouml.uml.ui.UMLComboBoxModel2;
 
 /**
@@ -83,7 +83,10 @@ public class UMLStateMachineContextComboBoxModel
         return Model.getFacade().getContext(getTarget());
     }
 
-    public void modelChanged(UmlChangeEvent evt) {
+    /*
+     * @see org.argouml.uml.ui.UMLComboBoxModel2#propertyChange(java.beans.PropertyChangeEvent)
+     */
+    public void propertyChange(PropertyChangeEvent evt) {
         /* Do nothing by design. */
     }
 

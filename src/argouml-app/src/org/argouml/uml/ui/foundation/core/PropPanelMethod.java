@@ -25,6 +25,7 @@
 package org.argouml.uml.ui.foundation.core;
 
 import java.awt.event.ActionEvent;
+import java.beans.PropertyChangeEvent;
 
 import javax.swing.Action;
 import javax.swing.JPanel;
@@ -34,7 +35,6 @@ import org.apache.log4j.Logger;
 import org.argouml.i18n.Translator;
 import org.argouml.model.AttributeChangeEvent;
 import org.argouml.model.Model;
-import org.argouml.model.UmlChangeEvent;
 import org.argouml.ui.targetmanager.TargetManager;
 import org.argouml.uml.ui.ActionNavigateOwner;
 import org.argouml.uml.ui.UMLComboBox2;
@@ -161,7 +161,7 @@ public class PropPanelMethod extends PropPanelFeature {
          * @see java.beans.PropertyChangeListener#propertyChange(
          *         java.beans.PropertyChangeEvent)
          */
-        public void modelChanged(UmlChangeEvent evt) {
+        public void propertyChange(PropertyChangeEvent evt) {
             if (evt instanceof AttributeChangeEvent) {
                 if (evt.getPropertyName().equals("specification")) {
                     if (evt.getSource() == getTarget()

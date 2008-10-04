@@ -38,7 +38,6 @@ import javax.swing.JScrollPane;
 
 import org.argouml.i18n.Translator;
 import org.argouml.model.Model;
-import org.argouml.model.UmlChangeEvent;
 import org.argouml.uml.ui.ActionNavigateNamespace;
 import org.argouml.uml.ui.UMLComboBox2;
 import org.argouml.uml.ui.UMLComboBoxModel2;
@@ -183,7 +182,7 @@ class UMLLinkAssociationComboBoxModel extends UMLComboBoxModel2 {
     * @see java.beans.PropertyChangeListener#propertyChange(java.beans.PropertyChangeEvent)
     */
     @Override
-    public void modelChanged(UmlChangeEvent evt) {
+    public void propertyChange(PropertyChangeEvent evt) {
         /*
          * Rebuild the list from scratch to be sure it's correct.
          */

@@ -18,21 +18,21 @@ What tools do I need to use this build file?
   Documentation:
   - The Java 2 SDK.
   - The ArgoUML manual's source files. This are available in the ArgoUML
-    source repository in SVN.
-  - Tool "Ant". This is available in the ArgoUML source repository in SVN.
+    source repository in CVS.
+  - Tool "Ant". This is available in the ArgoUML source repository in CVS.
   - The DocBook system (http://www.docbook.org/). Downloaded from this
     ant script using the target docbook-xsl-get.
 
   If you are going to build pdf versions you also need:
   - Tool "FOP". This is available in the ArgoUML source repository
-    in SVN.
+    in CVS.
   - JIMI (see the fop readme file).
 
  -->
 
 <project name="ArgoDocs" default="defaulthtml" basedir=".">
 
-  <property name="argo.core.version" value="DISCONTINUED-0.26"/>
+  <property name="argo.core.version" value="0.26"/>
 
   <!-- we really need an absolute path for argo.root.dir -->
   <property name="argo.root.dir" value="${basedir}/.."/>

@@ -34,7 +34,6 @@ import java.util.List;
 import javax.swing.AbstractListModel;
 import javax.swing.ComboBoxModel;
 import javax.swing.JComboBox;
-import javax.swing.SwingUtilities;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 
@@ -46,7 +45,6 @@ import org.argouml.model.DeleteInstanceEvent;
 import org.argouml.model.InvalidElementException;
 import org.argouml.model.Model;
 import org.argouml.model.RemoveAssociationEvent;
-import org.argouml.model.UmlChangeEvent;
 import org.argouml.ui.targetmanager.TargetEvent;
 import org.argouml.ui.targetmanager.TargetListener;
 import org.argouml.uml.diagram.ArgoDiagram;
@@ -146,33 +144,6 @@ public abstract class UMLComboBoxModel2 extends AbstractListModel
         propertySetName = name;
     }
 
-    final public void propertyChange(final PropertyChangeEvent pve) {
-        if (pve instanceof UmlChangeEvent) {
-            final UmlChangeEvent event = (UmlChangeEvent) pve;
-
-            Runnable doWorkRunnable = new Runnable() {
-                public void run() {
-                    try {
-                        modelChanged(event);
-                    } catch (InvalidElementException e) {
-                        if (LOG.isDebugEnabled()) {
-                            LOG.debug("event = "
-                                    + event.getClass().getName());
-                            LOG.debug("source = " + event.getSource());
-                            LOG.debug("old = " + event.getOldValue());
-                            LOG.debug("name = " + event.getPropertyName());
-                            LOG.debug("updateLayout method accessed "
-                                    + "deleted element ", e);
-                        }
-                    }
-                }  
-            };
-            SwingUtilities.invokeLater(doWorkRunnable);
-        }
-    }
-    
-    
-    
     /**
      * If the property that this comboboxmodel depicts is changed in the UML
      * model, this method will make sure that the changes will be 
@@ -182,7 +153,7 @@ public abstract class UMLComboBoxModel2 extends AbstractListModel
      * {@inheritDoc}
      * @see java.beans.PropertyChangeListener#propertyChange(java.beans.PropertyChangeEvent)
      */
-    public void modelChanged(UmlChangeEvent evt) {
+    public void propertyChange(PropertyChangeEvent evt) {
         buildingModel = true;
         if (evt instanceof AttributeChangeEvent) {
             if (evt.getPropertyName().equals(propertySetName)) {
@@ -192,12 +163,6 @@ public abstract class UMLComboBoxModel2 extends AbstractListModel
                     if (elem != null && !contains(elem)) {
                         addElement(elem);
                     }
-                    /* MVW: for this case, I had to move the 
-                     * call to setSelectedItem() outside the "buildingModel", 
-                     * otherwise the combo does not update 
-                     * with the new selection. See issue 5418. 
-                     **/
-                    buildingModel = false;
                     setSelectedItem(elem);
                 }
             }
@@ -211,7 +176,6 @@ public abstract class UMLComboBoxModel2 extends AbstractListModel
                 if (evt.getPropertyName().equals(propertySetName) 
                     && (evt.getSource() == getTarget())) {
                     Object elem = evt.getNewValue();
-                    /* TODO: Here too? */
                     setSelectedItem(elem);
                 } else {
                     Object o = getChangedElement(evt);
@@ -222,7 +186,6 @@ public abstract class UMLComboBoxModel2 extends AbstractListModel
             if (evt.getPropertyName().equals(propertySetName) 
                     && (evt.getSource() == getTarget())) {
                 if (evt.getOldValue() == getSelectedItem()) {
-                    /* TODO: Here too? */
                     setSelectedItem(evt.getNewValue());
                 }
             } else {
@@ -236,10 +199,10 @@ public abstract class UMLComboBoxModel2 extends AbstractListModel
                 && evt.getPropertyName().equals(propertySetName)) {
             /* This should not be necessary, but let's be sure: */
             addElement(evt.getNewValue());
-            /* MVW: for this case, I have to move the 
+            /* TODO: MVW: for this case, I have to move the 
              * call to setSelectedItem() outside the "buildingModel", otherwise
              * the combo does not update with the new selection. 
-             * The same does probably apply to the cases above! */
+             * Does the same not apply in the cases above? */
             buildingModel = false;
             setSelectedItem(evt.getNewValue());
         }

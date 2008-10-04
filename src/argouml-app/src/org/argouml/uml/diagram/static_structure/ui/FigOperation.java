@@ -58,7 +58,6 @@ public class FigOperation extends FigFeature {
     /*
      * @see org.argouml.uml.diagram.ui.FigSingleLineText#setOwner(java.lang.Object)
      */
-    @Override
     public void setOwner(Object owner) {
         super.setOwner(owner);
 
@@ -71,7 +70,6 @@ public class FigOperation extends FigFeature {
     /*
      * @see org.argouml.uml.diagram.ui.FigSingleLineText#removeFromDiagram()
      */
-    @Override
     public void removeFromDiagram() {
         Model.getPump().removeModelEventListener(this, getOwner(), 
                 "isAbstract");
@@ -81,7 +79,6 @@ public class FigOperation extends FigFeature {
     /*
      * @see org.argouml.uml.diagram.ui.FigSingleLineText#propertyChange(java.beans.PropertyChangeEvent)
      */
-    @Override
     public void propertyChange(PropertyChangeEvent pce) {
         super.propertyChange(pce);
         if ("isAbstract".equals(pce.getPropertyName())) {

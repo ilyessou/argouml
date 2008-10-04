@@ -67,6 +67,7 @@ import org.argouml.uml.ui.ActionClassDiagram;
 import org.argouml.uml.ui.ActionCollaborationDiagram;
 import org.argouml.uml.ui.ActionDeleteModelElements;
 import org.argouml.uml.ui.ActionDeploymentDiagram;
+import org.argouml.uml.ui.ActionRESequenceDiagram;
 import org.argouml.uml.ui.ActionSequenceDiagram;
 import org.argouml.uml.ui.ActionSetSourcePath;
 import org.argouml.uml.ui.ActionStateDiagram;
@@ -293,6 +294,10 @@ public class ExplorerPopup extends JPopupMenu {
                 if (classifierSelected
                         || packageSelected) {
                     this.add(new ActionSetSourcePath());
+                }
+
+                if (Model.getFacade().isAOperation(selectedItem)) {
+                    this.add(new ActionRESequenceDiagram());
                 }
             }
 

@@ -27,6 +27,7 @@ package org.argouml.uml.diagram.ui;
 import static org.argouml.model.Model.getModelManagementFactory;
 
 import java.awt.event.ActionEvent;
+import java.beans.PropertyChangeEvent;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -163,6 +164,17 @@ class UMLDiagramHomeModelComboBoxModel extends UMLComboBoxModel2 {
         }
         return false;
     }
+
+    /**
+     * @param evt
+     * @see org.argouml.uml.ui.UMLComboBoxModel2#propertyChange(java.beans.PropertyChangeEvent)
+     */
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
+        // TODO: Auto-generated method stub
+        super.propertyChange(evt);
+    }
+    
 }
 
 class ActionSetDiagramHomeModel extends UndoableAction {
