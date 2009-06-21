@@ -94,8 +94,10 @@ class ConfigurationProperties extends ConfigurationHandler {
     /**
      * Returns the default path for user properties (before 0.25.4)
      * @return a generic path string
+     * @deprecated This should be removed on the next version after 0.26
      */
-    private String getOldDefaultPath() {
+    @Deprecated
+    public String getOldDefaultPath() {
         return System.getProperty("user.home") + "/argo.user.properties";
     }
 

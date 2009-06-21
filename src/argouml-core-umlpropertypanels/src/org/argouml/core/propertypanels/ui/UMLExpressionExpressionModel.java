@@ -34,7 +34,7 @@ import org.argouml.ui.targetmanager.TargetManager;
  *
  * @author Michiel, Penyaskito
  */
-class UMLExpressionExpressionModel extends UMLExpressionModel {
+public class UMLExpressionExpressionModel extends UMLExpressionModel {
 
     /**
      * The constructor.

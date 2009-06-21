@@ -25,16 +25,15 @@
 package org.argouml.core.propertypanels.ui;
 
 import org.argouml.model.Model;
+import org.argouml.uml.ui.UMLModelElementListModel2;
 
 /**
  * @author mkl
  */
-class UMLPartitionContentListModel extends  UMLModelElementListModel {
+class UMLPartitionContentListModel extends  UMLModelElementListModel2 {
 
-    public UMLPartitionContentListModel(Object metaType) {
-        super("contents", metaType,
-                new ActionAddPartitionContent(),
-                null, null);
+    public UMLPartitionContentListModel() {
+        super("contents");
     }
 
     protected void buildModelList() {

@@ -36,6 +36,7 @@ import java.awt.event.MouseListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.VetoableChangeListener;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -143,6 +144,9 @@ public abstract class FigEdgeModelElement
     private static int popupAddOffset;
 
     private NotationProvider notationProviderName;
+    
+    @Deprecated
+    private HashMap<String, Object> npArguments;
 
     /**
      * The Fig that displays the name of this model element.
@@ -165,6 +169,22 @@ public abstract class FigEdgeModelElement
     private Set<Object[]> listeners = new HashSet<Object[]>();
 
     private DiagramSettings settings;
+    
+    /**
+     * Construct a default FigEdgeElement.
+     * 
+     * @deprecated for 0.27.2 by tfmorris. The default constructor will become
+     *             private so that it can't be used externally. All concrete
+     *             subclasses must invoke an explicit constructor which passes
+     *             an owner and render s settings
+     *             {@link #FigEdgeModelElement(Object, DiagramSettings)}.
+     */
+    @Deprecated
+    public FigEdgeModelElement() {
+        nameFig = new FigNameWithAbstract(X0, Y0 + 20, 90, 20, false);
+        stereotypeFig = new FigStereotypesGroup(X0, Y0, 90, 15);
+        initFigs();
+    }
     
     /**
      * Construct a new FigEdge. This method creates the name element that holds
@@ -217,18 +237,32 @@ public abstract class FigEdgeModelElement
                         "The owner must be a model element - got a "
                         + element.getClass().getName());
             }
-            super.setOwner(element);  
+            super.setOwner(element);
+            nameFig.setOwner(element); // for setting abstract
             if (edgePort != null) {
                 edgePort.setOwner(getOwner());
             }
-            NotationName nn = Notation.findNotation(
-                    settings.getNotationSettings().getNotationLanguage());
+            stereotypeFig.setOwner(element); // this fixes issue 5414
             notationProviderName =
                 NotationProviderFactory2.getInstance().getNotationProvider(
-                        getNotationProviderType(), element, this, nn);
+                        getNotationProviderType(), element, this);
 
             addElementListener(element, "remove");
         }
+    }
+
+
+    /**
+     * The constructor that hooks the Fig into the UML model element.
+     *
+     * @param edge the UML element
+     * @deprecated for 0.27.2 by tfmorris.  Use 
+     * {@link #FigEdgeModelElement(Object, DiagramSettings)}.
+     */
+    @Deprecated
+    public FigEdgeModelElement(Object edge) {
+        this();
+        setOwner(edge);
     }
 
     /**
@@ -920,6 +954,53 @@ public abstract class FigEdgeModelElement
     }
 
     /**
+     * This method should only be called once for any one Fig instance that
+     * represents a model element (ie not for a FigEdgeNote). It is called
+     * either by the constructor that takes a model element as an argument or
+     * it is called by PGMLStackParser after it has created the Fig by use of
+     * the empty constructor.
+     * <p>
+     * The assigned model element (owner) must not change during the lifetime of
+     * the Fig.
+     * 
+     * @param owner the model element that this Fig represents.
+     * @throws IllegalArgumentException if the owner given is not a model
+     *                 element
+     * @see org.tigris.gef.presentation.Fig#setOwner(java.lang.Object)
+     * @deprecated for 0.27.3 by tfmorris.  Owner must be specified in the
+     * constructor and can't be changed afterwards.
+     */
+    @Deprecated
+    @Override
+    public void setOwner(Object owner) {
+        if (owner == null) {
+            throw new IllegalArgumentException("An owner must be supplied");
+        }
+        if (getOwner() != null) {
+            throw new IllegalStateException(
+                    "The owner cannot be changed once set");
+        }
+        if (!Model.getFacade().isAUMLElement(owner)) {
+            throw new IllegalArgumentException(
+                    "The owner must be a model element - got a "
+                    + owner.getClass().getName());
+        }
+        super.setOwner(owner);
+        nameFig.setOwner(owner); // for setting abstract
+        if (edgePort != null) {
+            edgePort.setOwner(getOwner());
+        }
+        stereotypeFig.setOwner(owner); // this fixes issue 5414
+        initNotationProviders(owner);
+        updateListeners(null, owner);
+        // TODO: The following is redundant.  It's done when setLayer is 
+        // called after initialization complete
+//        renderingChanged();
+    }
+
+
+
+    /**
      * Replace the NotationProvider(s). <p>
      *
      * This method shall not be used for the initial creation of
@@ -1467,6 +1548,31 @@ public abstract class FigEdgeModelElement
     }
 
     /**
+     * @return the current notation arguments or null if none have been set
+     * @deprecated for 0.27.3 by tfmorris.  Use {@link #getNotationSettings()}.
+     */
+    @Deprecated
+    protected HashMap<String, Object> getNotationArguments() {
+        return npArguments;
+    }
+
+    /**
+     * @param key
+     * @param element
+     * @deprecated for 0.27.3 by tfmorris.  Use {@link #getNotationSettings()}.
+     */
+    @Deprecated
+    protected void putNotationArgument(String key, Object element) {
+        if (notationProviderName != null) {
+            // Lazily initialize if not done yet
+            if (npArguments == null) {
+                npArguments = new HashMap<String, Object>();
+            }
+            npArguments.put(key, element);
+        }
+    }
+    
+    /**
      * This optional method is not implemented.  It will throw an
      * {@link UnsupportedOperationException} if used. Figs are 
      * added to a GraphModel which is, in turn, owned by a project.
@@ -1602,26 +1708,4 @@ public abstract class FigEdgeModelElement
         f.setLineColor(getLineColor());
         f.setLineWidth(getLineWidth());
     }
-    
-
-    /**
-     * Setting the owner of the Fig must be done in the constructor and not
-     * changed afterwards for all ArgoUML figs.
-     * 
-     * @param owner owning UML element
-     * @see org.tigris.gef.presentation.Fig#setOwner(java.lang.Object)
-     * @throws UnsupportedOperationException
-     * @deprecated for 0.27.3 by tfmorris. Set owner in constructor. This method
-     *             is implemented in GEF, so we'll leave this implementation
-     *             here to block any attempts to use it within ArgoUML.
-     */
-    @SuppressWarnings("deprecation")
-    @Deprecated
-    public void setOwner(Object owner) {
-        if (owner != getOwner()) {
-            throw new UnsupportedOperationException(
-                    "Owner must be set in constructor and left unchanged");
-        }
-    }
-
 }

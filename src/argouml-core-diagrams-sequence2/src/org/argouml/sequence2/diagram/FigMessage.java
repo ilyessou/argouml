@@ -78,6 +78,20 @@ public class FigMessage extends FigEdgeModelElement {
     private SDNotationSettings notationSettings;
     
     /**
+     * Constructs a new FigMessage and sets the owner of the FigMessage.
+     *
+     * @param owner is the owner.
+     * @deprecated for 0.28.alpha3 by penyaskito. Use
+     *             {@link #FigMessage(Object, DiagramSettings)}
+     */
+    public FigMessage(Object owner) {
+        super();
+        textGroup = new FigTextGroup();
+        initialize();
+        setOwner(owner);
+    }
+
+    /**
      * Construct a fig owned by the given UML element with the provided render
      * settings.
      * @param edge owning UML element
@@ -132,6 +146,18 @@ public class FigMessage extends FigEdgeModelElement {
     protected SDNotationSettings getNotationSettings() {
         return notationSettings;
     }
+
+    /**
+     * @deprecated for 0.28.alpha3 by penyaskito. Owner must be specified in the
+     * constructor and can't be changed afterwards.
+     */
+    @Override
+    @Deprecated
+    public void setOwner(Object owner) {       
+        super.setOwner(owner);
+        action = Model.getFacade().getAction(owner);
+        updateArrow();
+    }
     
     boolean isCallAction() {
     	return Model.getFacade().isACallAction(getAction());
@@ -167,6 +193,15 @@ public class FigMessage extends FigEdgeModelElement {
         }
         getDestArrowHead().setLineColor(getLineColor());
 	getDestArrowHead().setFillColor(getLineColor());
+    }
+
+    /**
+     * Constructor here for saving and loading purposes.
+     * @deprecated for 0.28.alpha3 by penyaskito. Use
+     *             {@link #FigMessage(Object, DiagramSettings)}
+     */
+    public FigMessage() {
+        this(null);
     }
     
     /**

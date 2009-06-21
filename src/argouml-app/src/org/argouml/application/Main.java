@@ -79,6 +79,7 @@ import org.argouml.ui.cmd.PrintManager;
 import org.argouml.uml.diagram.activity.ui.InitActivityDiagram;
 import org.argouml.uml.diagram.collaboration.ui.InitCollaborationDiagram;
 import org.argouml.uml.diagram.deployment.ui.InitDeploymentDiagram;
+import org.argouml.uml.diagram.sequence.ui.InitSequenceDiagram;
 import org.argouml.uml.diagram.state.ui.InitStateDiagram;
 import org.argouml.uml.diagram.static_structure.ui.InitClassDiagram;
 import org.argouml.uml.diagram.ui.InitDiagramAppearanceUI;
@@ -202,7 +203,7 @@ public class Main {
 
             st.mark("open window");
             updateProgress(splash, 95, "statusmsg.bar.open-project-browser");
-            ArgoFrame.getFrame().setVisible(true);
+            ArgoFrame.getInstance().setVisible(true);
 
             st.mark("close splash");
             if (splash != null) {
@@ -235,7 +236,7 @@ public class Main {
             LOG.info("");
 
             st = null;
-            ArgoFrame.getFrame().setCursor(
+            ArgoFrame.getInstance().setCursor(
                     Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
 
             //ToolTipManager.sharedInstance().setInitialDelay(500);
@@ -408,6 +409,7 @@ public class Main {
         SubsystemUtility.initSubsystem(new InitActivityDiagram());
         SubsystemUtility.initSubsystem(new InitCollaborationDiagram());
         SubsystemUtility.initSubsystem(new InitDeploymentDiagram());
+        SubsystemUtility.initSubsystem(new InitSequenceDiagram());
         SubsystemUtility.initSubsystem(new InitStateDiagram());
         SubsystemUtility.initSubsystem(new InitClassDiagram());
         SubsystemUtility.initSubsystem(new InitUseCaseDiagram());

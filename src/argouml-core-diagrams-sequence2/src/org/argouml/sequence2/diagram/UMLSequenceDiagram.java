@@ -34,7 +34,6 @@ import org.apache.log4j.Logger;
 import org.argouml.i18n.Translator;
 import org.argouml.model.Model;
 import org.argouml.uml.diagram.DiagramSettings;
-import org.argouml.uml.diagram.SequenceDiagram;
 import org.argouml.uml.diagram.static_structure.ui.FigComment;
 import org.argouml.uml.diagram.ui.ActionSetMode;
 import org.argouml.uml.diagram.ui.RadioAction;
@@ -55,7 +54,7 @@ import org.tigris.gef.presentation.FigNode;
  *
  * @author penyaskito
  */
-public class UMLSequenceDiagram extends UMLDiagram implements SequenceDiagram {
+public class UMLSequenceDiagram extends UMLDiagram {
     
     private Object[] actions;
 
@@ -104,24 +103,6 @@ public class UMLSequenceDiagram extends UMLDiagram implements SequenceDiagram {
             setCollaboration(collaboration);
         setNamespace(collaboration);
     }
-    
-    
-    /**
-     * Method called by PGML parser during diagram load to initialize a diagram.
-     * We are passed the owner of that diagram which is the collaboration.
-     * @param owner UML model element representing the collaboration
-     * @see org.tigris.gef.base.Diagram#initialize(java.lang.Object)
-     */
-    @Override
-    public void initialize(Object owner) {
-        super.initialize(owner);
-        SequenceDiagramGraphModel gm =
-            (SequenceDiagramGraphModel) getGraphModel();
-        gm.setCollaboration(owner);
-    }
-
-    
-    
     
     /**
      * Get the Uml actions that can be performed in the diagram 
@@ -313,9 +294,5 @@ public class UMLSequenceDiagram extends UMLDiagram implements SequenceDiagram {
     @Override
     public ModePlace getModePlace(GraphFactory gf, String instructions) {
         return new ModePlaceClassifierRole(gf, instructions);
-    }
-
-    public Object getCollaboration() {
-        return ((SequenceDiagramGraphModel) getGraphModel()).getCollaboration();
     }
 }

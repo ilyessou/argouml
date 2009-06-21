@@ -24,6 +24,9 @@
 
 package org.argouml.notation.providers.uml;
 
+import java.util.Map;
+
+import org.argouml.notation.NotationProvider;
 import org.argouml.notation.NotationSettings;
 import org.argouml.notation.SDNotationSettings;
 
@@ -56,6 +59,18 @@ public class SDMessageNotationUml extends AbstractMessageNotationUml {
         } else {
             return toString(modelElement, true);
         }
+    }
+    
+    /*
+     * Generates a textual description for a Message m.
+     *
+     * @see org.argouml.notation.providers.NotationProvider#toString(java.lang.Object, 
+     * java.util.Map)
+     */
+    @SuppressWarnings("deprecation")
+    public String toString(final Object modelElement, final Map args) {
+        return toString(modelElement, 
+                !NotationProvider.isValue("hideSequenceNrs", args));
     }
 
 }

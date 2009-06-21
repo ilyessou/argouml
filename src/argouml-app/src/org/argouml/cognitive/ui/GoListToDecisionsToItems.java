@@ -26,6 +26,7 @@ package org.argouml.cognitive.ui;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Vector;
 
 import javax.swing.event.TreeModelListener;
 import javax.swing.tree.TreePath;
@@ -40,7 +41,7 @@ import org.argouml.cognitive.ToDoList;
  * Rule for sorting the ToDo list: Decision -> Item.
  *
  */
-public class GoListToDecisionsToItems extends AbstractGoList2 {
+public class GoListToDecisionsToItems extends AbstractGoList {
 
     ////////////////////////////////////////////////////////////////
     // TreeModel implementation

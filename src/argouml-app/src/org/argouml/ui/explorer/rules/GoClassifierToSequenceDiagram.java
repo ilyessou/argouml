@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2009 The Regents of the University of California. All
+// Copyright (c) 1996-2006 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -34,7 +34,8 @@ import org.argouml.kernel.Project;
 import org.argouml.kernel.ProjectManager;
 import org.argouml.model.Model;
 import org.argouml.uml.diagram.ArgoDiagram;
-import org.argouml.uml.diagram.SequenceDiagram;
+import org.argouml.uml.diagram.sequence.SequenceDiagramGraphModel;
+import org.argouml.uml.diagram.sequence.ui.UMLSequenceDiagram;
 
 /**
  * Go rule from represented operation to sequence diagram representing it.
@@ -60,9 +61,10 @@ public class GoClassifierToSequenceDiagram extends AbstractPerspectiveRule {
 	    Project p = ProjectManager.getManager().getCurrentProject();
             
             for (ArgoDiagram diagram : p.getDiagramList()) {
-		if (diagram instanceof SequenceDiagram
-		    && col.contains(
-		            ((SequenceDiagram) diagram).getCollaboration())) {
+		if (diagram instanceof UMLSequenceDiagram
+		    && col.contains(((SequenceDiagramGraphModel)
+		            ((UMLSequenceDiagram) diagram).getGraphModel())
+		                            .getCollaboration())) {
 		    ret.add(diagram);
 		}
 	    }

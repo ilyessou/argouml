@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 2007-2009 The Regents of the University of California. All
+// Copyright (c) 2007 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -25,6 +25,7 @@
 package org.argouml.notation.providers.uml;
 
 import java.text.ParseException;
+import java.util.Map;
 
 import org.argouml.application.events.ArgoEventPump;
 import org.argouml.application.events.ArgoEventTypes;
@@ -81,6 +82,14 @@ public class MultiplicityNotationUml extends MultiplicityNotation {
         }
         Model.getCoreHelper().setMultiplicity(multiplicityOwner, multi);
         return multi;
+    }
+    
+    @SuppressWarnings("deprecation")
+    @Deprecated
+    @Override
+    public String toString(Object multiplicityOwner, Map args) {
+        return NotationUtilityUml.generateMultiplicity(
+                multiplicityOwner, args);
     }
 
     @Override

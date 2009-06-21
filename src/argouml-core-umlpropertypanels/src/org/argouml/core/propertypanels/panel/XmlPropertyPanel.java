@@ -84,18 +84,6 @@ public class XmlPropertyPanel extends PropPanel
     }
     
     public void build(Object target) {
-        // if we have anything or multiple elements selected,
-        // we don't do anything
-        // TODO: We need to support multiple selection.
-        // See issue 2552: http://argouml.tigris.org/issues/show_bug.cgi?id=2552        
-        if (target == null){
-            if (currentPanel != null){
-                this.getTitleLabel().setText("");
-                this.remove(currentPanel);
-            }
-            return;
-        }
-        
         LOG.info("[XMLPP] t is type:" + target.getClass());
         
         if (currentPanel != null) {
@@ -153,15 +141,13 @@ public class XmlPropertyPanel extends PropPanel
         }
         // there are other cases that need special treatment, 
         // like concurrent regions
-        if (Model.getFacade().isACompositeState(target)) {
-            if (Model.getFacade().isAConcurrentRegion(target)) {
-                title = Translator.localize("label.concurrent.region");
-            } else if (Model.getFacade().isConcurrent(target)) {
-                title = Translator.localize("label.concurrent.composite.state");
-            } else if (!Model.getFacade().isASubmachineState(target)) {
-                // PropPanelSubmachine is a subclass that handles its own title
-                title = Translator.localize("label.composite-state");
-            }
+        if (Model.getFacade().isAConcurrentRegion(target)) {
+            title = Translator.localize("label.concurrent.region");
+        } else if (Model.getFacade().isConcurrent(target)) {
+            title = Translator.localize("label.concurrent.composite.state");
+        } else if (!Model.getFacade().isASubmachineState(target)) {
+            // PropPanelSubmachine is a subclass that handles its own title
+            title = Translator.localize("label.composite-state");
         }
         else {
             title = Model.getMetaTypes().getName(target); 

@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 2005-2009 The Regents of the University of California. All
+// Copyright (c) 2005-2008 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -23,8 +23,6 @@
 // UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 package org.argouml.model.mdr;
-
-import javax.jmi.reflect.InvalidObjectException;
 
 import org.apache.log4j.Logger;
 import org.argouml.model.ModelManagementFactory;
@@ -93,15 +91,9 @@ final class ModelManagementFactoryMDRImpl extends
         if (umlPackage == null) {
             return null;
         }
-        try {
-            return umlPackage.getModelManagement();
-        } catch (InvalidObjectException e) {
-            return null;
-        }
+        return umlPackage.getModelManagement();
     }
     
-    @SuppressWarnings("deprecation")
-    @Deprecated
     public void setRootModel(Object rootModel) {
         if (rootModel != null && !(rootModel instanceof Model)) {
             throw new IllegalArgumentException(
@@ -112,8 +104,6 @@ final class ModelManagementFactoryMDRImpl extends
     }
 
 
-    @SuppressWarnings("deprecation")
-    @Deprecated
     public Object getRootModel() {
         return theRootModel;
     }

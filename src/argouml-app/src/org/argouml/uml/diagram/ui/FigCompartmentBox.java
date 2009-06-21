@@ -63,6 +63,18 @@ public abstract class FigCompartmentBox extends FigNodeModelElement {
     private static CompartmentFigText highlightedFigText = null;
 
     private Fig borderFig;
+    
+    /**
+     * Constructor.
+     * @deprecated for 0.27.3 by tfmorris.  Use 
+     * {@link #FigCompartmentBox(Object, Rectangle, DiagramSettings)}
+     */
+    @SuppressWarnings("deprecation")
+    @Deprecated
+    public FigCompartmentBox() {
+        super();
+        initialize();
+    }
 
     /**
      * Initialization shared by all constructors.

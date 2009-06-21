@@ -149,7 +149,6 @@ class SequenceDiagramGraphModel extends UMLMutableGraphSupport implements
      */
     public Object getCollaboration() {
         if (collaboration == null) {
-            LOG.debug("The collaboration is null so creating a new collaboration");
             collaboration =
                 Model.getCollaborationsFactory().buildCollaboration(
                         ProjectManager.getManager().getCurrentProject()
@@ -164,7 +163,6 @@ class SequenceDiagramGraphModel extends UMLMutableGraphSupport implements
      * @param c the collaboration
      */
     public void setCollaboration(Object c) {
-        LOG.debug("Setting the collaboration of sequence diagram to " + c);
         collaboration = c;
         Collection interactions = Model.getFacade().getInteractions(c);
         if (!interactions.isEmpty()) {
@@ -190,27 +188,18 @@ class SequenceDiagramGraphModel extends UMLMutableGraphSupport implements
     /*
      * @see org.tigris.gef.graph.MutableGraphModel#canAddNode(java.lang.Object)
      */
-    @Override
     public boolean canAddNode(Object node) {
         if (node == null) {
             return false;
         }
-        if (getNodes().contains(node)) {
-            return false;
-        }
-        if (Model.getFacade().isAComment(node)) {
-            // Comments from anywhere in the model are allowed
-            return true;
-        }
-        return Model.getFacade().isAModelElement(node)
-                // All other types of elements must be in this namespace
+        return !getNodes().contains(node)
+                && Model.getFacade().isAModelElement(node)
                 && Model.getFacade().getNamespace(node) == getCollaboration();
     }
 
     /*
      * @see org.tigris.gef.graph.MutableGraphModel#canAddEdge(java.lang.Object)
      */
-    @Override
     public boolean canAddEdge(Object edge) {
         if (edge == null) {
             return false;
@@ -258,7 +247,6 @@ class SequenceDiagramGraphModel extends UMLMutableGraphSupport implements
     /*
      * @see org.tigris.gef.graph.MutableGraphModel#addNode(java.lang.Object)
      */
-    @Override
     public void addNode(Object node) {
         if (canAddNode(node)) {
             getNodes().add(node);
@@ -296,7 +284,6 @@ class SequenceDiagramGraphModel extends UMLMutableGraphSupport implements
      * @see org.tigris.gef.graph.MutableGraphModel#connect(
      *          Object, Object, Class)
      */
-    @Override
     public Object connect(Object fromPort, Object toPort, Object edgeType) {
         if (!canConnect(fromPort, toPort, edgeType)) {
             return null;
@@ -304,6 +291,8 @@ class SequenceDiagramGraphModel extends UMLMutableGraphSupport implements
         if (edgeType == CommentEdge.class) {
             return super.connect(fromPort, toPort, edgeType);
         }
+        Object edge = null;
+        Object action = null;
         Editor curEditor = Globals.curEditor();
         ModeManager modeManager = curEditor.getModeManager();
         Mode mode = modeManager.top();
@@ -314,7 +303,7 @@ class SequenceDiagramGraphModel extends UMLMutableGraphSupport implements
     
     /**
      * Creates a link based on the given from and toPort. The fromPort
-     * should always point to a MessageCoordinates instance. The toPort
+     * should allways point to a MessageCoordinates instance. The toPort
      * can point to a MessageCoordinates instance or to a Object
      * instance. On a sequence diagram you can only draw Messages. So
      * other edgeClasses then links are not supported.
@@ -322,8 +311,7 @@ class SequenceDiagramGraphModel extends UMLMutableGraphSupport implements
      * @see org.tigris.gef.graph.MutableGraphModel#connect(
      *          Object, Object, Class)
      */
-    public Object connect(Object fromPort, Object toPort, Object edgeType, 
-    		Object actionType) {
+    public Object connect(Object fromPort, Object toPort, Object edgeType, Object actionType) {
         Object edge = null;
         Object action = null;
         if (Model.getMetaTypes().getCallAction().equals(actionType)) {
@@ -386,7 +374,6 @@ class SequenceDiagramGraphModel extends UMLMutableGraphSupport implements
     /*
      * @see org.tigris.gef.graph.MutableGraphModel#addEdge(java.lang.Object)
      */
-    @Override
     public void addEdge(Object edge) {
         if (canAddEdge(edge)) {
             getEdges().add(edge);

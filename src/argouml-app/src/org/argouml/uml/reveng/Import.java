@@ -142,27 +142,21 @@ public class Import extends ImportCommon implements ImportSettings {
         super();
         myFrame = frame;
 
-        // TODO: this needs to be improved
-        // even for nongui calling, the config panel needs to be initialized:
-        getConfigPanel();
-        
-        if (frame != null) {
-            JComponent chooser = getChooser();
-            dialog =
-                new JDialog(frame,
-                        Translator.localize("action.import-sources"), true);
-    
-            dialog.getContentPane().add(chooser, BorderLayout.CENTER);
-            dialog.getContentPane().add(getConfigPanel(), BorderLayout.EAST);
-            dialog.pack();
-            int x = (frame.getSize().width - dialog.getSize().width) / 2;
-            int y = (frame.getSize().height - dialog.getSize().height) / 2;
-            dialog.setLocation(x > 0 ? x : 0, y > 0 ? y : 0);
-    
-            UIUtils.loadCommonKeyMap(dialog);
-    
-            dialog.setVisible(true);
-        }
+        JComponent chooser = getChooser();
+        dialog =
+            new JDialog(frame,
+                    Translator.localize("action.import-sources"), true);
+
+        dialog.getContentPane().add(chooser, BorderLayout.CENTER);
+        dialog.getContentPane().add(getConfigPanel(), BorderLayout.EAST);
+        dialog.pack();
+        int x = (frame.getSize().width - dialog.getSize().width) / 2;
+        int y = (frame.getSize().height - dialog.getSize().height) / 2;
+        dialog.setLocation(x > 0 ? x : 0, y > 0 ? y : 0);
+
+        UIUtils.loadCommonKeyMap(dialog);
+
+        dialog.setVisible(true);
     }
 
     /*
@@ -170,6 +164,22 @@ public class Import extends ImportCommon implements ImportSettings {
      */
     public String getInputSourceEncoding() {
         return (String) sourceEncoding.getSelectedItem();
+    }
+
+    /*
+     * @see org.argouml.uml.reveng.ImportSettings#isAttributeSelected()
+     */
+    @Deprecated
+    public boolean isAttributeSelected() {
+        return false;
+    }
+
+    /*
+     * @see org.argouml.uml.reveng.ImportSettings#isDatatypeSelected()
+     */
+    @Deprecated
+    public boolean isDatatypeSelected() {
+        return false;
     }
 
     /**
@@ -410,8 +420,8 @@ public class Import extends ImportCommon implements ImportSettings {
 
 
     /**
-     * Parse all selected files in a separate thread. It calls the actual
-     * parser methods depending on the type of the file.
+     * Parse all selected files. It calls the actual parser methods depending on
+     * the type of the file.
      */
     public void doFile() {
         iss = new ImportStatusScreen(myFrame, "Importing", "Splash");

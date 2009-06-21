@@ -75,7 +75,7 @@ import javax.swing.UIManager;
  *
  * @author Bob Tarling
  */
-public class LabelledLayout implements LayoutManager, java.io.Serializable {
+class LabelledLayout implements LayoutManager, java.io.Serializable {
 
     private static final long serialVersionUID = -5596655602155151443L;
 

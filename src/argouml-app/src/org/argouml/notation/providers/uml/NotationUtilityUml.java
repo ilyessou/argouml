@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 2005-2009 The Regents of the University of California. All
+// Copyright (c) 2005-2008 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -388,7 +388,10 @@ public final class NotationUtilityUml {
                 throw new ParseException(Translator.localize(msg), 
                         0);
             }
-            if (!Model.getCoreHelper().isValidNamespace(me, nspe)) {
+            Object model =
+                ProjectManager.getManager().getCurrentProject().getRoot();
+            if (!Model.getCoreHelper().getAllPossibleNamespaces(me, model)
+                        .contains(nspe)) {
                 String msg = 
                         "parsing.error.model-element-name.namespace-invalid";
                 throw new ParseException(Translator.localize(msg), 
@@ -398,6 +401,53 @@ public final class NotationUtilityUml {
             Model.getCoreHelper().addOwnedElement(nspe, me);
         }
     }
+
+    /**
+     * Returns a visibility String either for a VisibilityKind (according to
+     * the definition in NotationProvider2), but also for a model element.
+     * 
+     * @param o a modelelement or a visibilitykind
+     * @return a string.  May be the empty string, but guaranteed not to be null
+     * @deprecated for 0.27.2 by tfmorris. Use
+     *             {@link #generateVisibility2(Object)} and only invoke when
+     *             a visibility is actually needed (instead of depending on
+     *             project settings).
+     */
+    public static String generateVisibility(Object o) {
+        if (o == null) {
+            return "";
+        }
+        Project p = ProjectManager.getManager().getCurrentProject();
+        ProjectSettings ps = p.getProjectSettings();
+        if (ps.getShowVisibilityValue()) {
+            return generateVisibility2(o);
+        } else {
+            return "";
+        }
+    }
+    
+    /**
+     * @param modelElement the UML element to generate the visibility for, 
+     *                  or the visibility kind itself
+     * @param args arguments that influence the generation
+     * @return a string representing the visibility
+     * @deprecated for 0.27.3 by tfmorris.  Use 
+     * {@link #generateVisibility2(Object)}.
+     */
+    @Deprecated
+    protected static String generateVisibility(Object modelElement, Map args) {
+        if (isValue("visibilityVisible", args)) {
+            String s = NotationUtilityUml.generateVisibility2(modelElement);
+            /* When nothing is generated: omit the space. */
+            if (s.length() > 0) {
+                s = s + " ";
+            }
+            return s;
+        } else {
+            return "";
+        }
+    }
+
     
     /**
      * Utility function to determine the presence of a key. 
@@ -430,7 +480,7 @@ public final class NotationUtilityUml {
         if (o == null) {
             return "";
         }
-        if (Model.getFacade().isANamedElement(o)) {
+        if (Model.getFacade().isAModelElement(o)) {
             if (Model.getFacade().isPublic(o)) {
                 return "+";
             }
@@ -924,6 +974,91 @@ public final class NotationUtilityUml {
     /**
      * Generate the text for one or more stereotype(s).
      * 
+     * @param st a stereotype UML object
+     *                 or a string
+     *                 or a collection of stereotypes
+     *                 or a modelelement of which the stereotypes are retrieved
+     * @param args arguments that may determine the notation
+     * The value of "useGuillemets" influences the outcome.
+     * @return a string representing the given stereotype(s)
+     * @deprecated for 0.27.3 by tfmorris.  Use 
+     * {@link #generateStereotype(Object, boolean)}.
+     */
+    @Deprecated
+    public static String generateStereotype(Object st, Map args) {
+        if (st == null) {
+            return "";
+        }
+
+        if (st instanceof String) {
+            return formatSingleStereotype((String) st, args);
+        }
+        if (Model.getFacade().isAStereotype(st)) {
+            return formatSingleStereotype(Model.getFacade().getName(st), args);
+        }
+
+        if (Model.getFacade().isAModelElement(st)) {
+            st = Model.getFacade().getStereotypes(st);
+        }
+        if (st instanceof Collection) {
+            Object o;
+            StringBuffer sb = new StringBuffer(10);
+            boolean first = true;
+            Iterator iter = ((Collection) st).iterator();
+            while (iter.hasNext()) {
+                if (!first) {
+                    sb.append(',');
+                }
+                o = iter.next();
+                if (o != null) {
+                    sb.append(Model.getFacade().getName(o));
+                    first = false;
+                }
+            }
+            if (!first) {
+                return formatSingleStereotype(sb.toString(), args);
+            }
+        }
+        return "";
+    }
+
+    /**
+     * Create a string representation of a single stereotype.
+     * This function generates angled brackets or guillemets 
+     * depending in the project's settings.
+     * 
+     * @param name the name of the stereotype
+     * @param args any arguments
+     * @return the string representation
+     * @deprecated for 0.27.3 by tfmorris.  Use 
+     * {@link #formatStereotype(String, boolean)}.
+     */
+    @Deprecated
+    public static String formatSingleStereotype(String name, Map args) {
+        if (name == null || name.length() == 0) {
+            return "";
+        }
+        Boolean useGuillemets = null;
+        if (args != null) {
+            useGuillemets = (Boolean) args.get("useGuillemets");
+            if (useGuillemets == null) {
+                // TODO: Temporary code for backward compatibility
+                String left = (String) args.get("leftGuillemot");
+                if (left != null) {
+                    useGuillemets = left.equals("\u00ab");
+                }
+            }
+        }
+        if (useGuillemets == null) {
+            // Default is false for historical compatibility only
+            useGuillemets = false;
+        }
+        return formatStereotype(name, useGuillemets);
+    }
+
+    /**
+     * Generate the text for one or more stereotype(s).
+     * 
      * @param st One of:
      *            <ul>
      *            <li>a stereotype UML object</li>
@@ -1110,6 +1245,26 @@ public final class NotationUtilityUml {
             }
         }
         return "";
+    }
+    
+    
+    /**
+     * Generate the text of a multiplicity.
+     * The argument singularMultiplicityVisible 
+     * determines if "1" will be returned or ""
+     * in case the multiplicity is 1.
+     * 
+     * @param multiplicityOwner the modelelement (NOT the multiplicity!)
+     * @param args the value singularMultiplicityVisible 
+     * influences the outcome
+     * @return the resulting string
+     * @deprecated for 0.27.3 by tfmorris.  Use 
+     * {@link #generateMultiplicity(Object, boolean)}.
+     */
+    public static String generateMultiplicity(Object multiplicityOwner, 
+            Map args) {
+        return generateMultiplicity(multiplicityOwner, 
+                NotationProvider.isValue("singularMultiplicityVisible", args));
     }
     
     /**

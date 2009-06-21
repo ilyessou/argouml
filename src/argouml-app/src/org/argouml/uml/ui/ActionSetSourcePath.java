@@ -136,7 +136,7 @@ public class ActionSetSourcePath extends UndoableAction {
 	chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 
 	int retval =
-            chooser.showDialog(ArgoFrame.getFrame(),
+            chooser.showDialog(ArgoFrame.getInstance(),
                     Translator.localize("dialog.button.ok"));
 	if (retval == JFileChooser.APPROVE_OPTION) {
 	    return chooser.getSelectedFile();

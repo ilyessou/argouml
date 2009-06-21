@@ -26,6 +26,7 @@ package org.argouml.persistence;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -54,6 +55,7 @@ import org.argouml.profile.ProfileModelLoader;
 import org.argouml.profile.ResourceModelLoader;
 import org.argouml.profile.UserProfileReference;
 import org.argouml.profile.init.InitProfileSubsystem;
+import org.argouml.profile.internal.ProfileJava;
 import org.argouml.profile.internal.ProfileUML;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -118,6 +120,12 @@ public class TestProfileConfigurationFilePersister extends TestCase {
         + "\t\t<plugin>\n"
         + "\t\t\tUML 1.4\n"
         + "\t\t</plugin>\n"
+        
+        // Standard Java profile
+        + "\t\t<plugin>\n"
+        + "\t\t\tJava\n"
+        + "\t\t</plugin>\n"
+
 
         // TODO: User defined profile support untested currently
 //        + "\t\t<userDefined>\n"
@@ -146,10 +154,12 @@ public class TestProfileConfigurationFilePersister extends TestCase {
         ProfileConfigurationParser parser = new ProfileConfigurationParser();
         parser.parse(new InputSource(inStream));
         Collection<Profile> profiles = parser.getProfiles();
-        assertEquals("Wrong number of profiles", 1, profiles.size());
+        assertEquals("Wrong number of profiles", 2, profiles.size());
         Iterator<Profile> profileIter = profiles.iterator();
         assertTrue("Didn't get expected UML profile", 
                 profileIter.next() instanceof ProfileUML);
+        assertTrue("Didn't get expected Java profile", 
+                profileIter.next() instanceof ProfileJava);
     }
     
     /**
@@ -177,8 +187,9 @@ public class TestProfileConfigurationFilePersister extends TestCase {
         outStream.close();
         
         // Read it back in to a new empty project
+        InputStream inStream = new FileInputStream(file);
         project = ProjectManager.getManager().makeEmptyProject();
-        persister.load(project, new InputSource(file.toURL().toExternalForm()));
+        persister.load(project, inStream);
  
         // Make sure we got what we started with
         assertEquals(startingProfiles, 

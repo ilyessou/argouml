@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2009 The Regents of the University of California. All
+// Copyright (c) 1996-2008 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -108,7 +108,9 @@ public class UMLMultiplicityPanel extends JPanel implements ItemListener {
             if (Model.getFacade().isAMultiplicity(item)) {
                 if (!item.equals(multiplicity)) {
                     Model.getCoreHelper().setMultiplicity(target, item);
-                    delete(multiplicity);
+                    if (multiplicity != null) {
+                        Model.getUmlFactory().delete(multiplicity);
+                    }
                 }
             } else if (item instanceof String) {
                 if (!item.equals(Model.getFacade().toString(multiplicity))) {
@@ -116,24 +118,16 @@ public class UMLMultiplicityPanel extends JPanel implements ItemListener {
                             target,
                             Model.getDataTypesFactory().createMultiplicity(
                                     (String) item));
-                    delete(multiplicity);
+                    if (multiplicity != null) {
+                        Model.getUmlFactory().delete(multiplicity);
+                    }
                 }
             } else {
                 if (multiplicity != null) {
                     Model.getCoreHelper().setMultiplicity(target, null);
-                    delete(multiplicity);
+                    Model.getUmlFactory().delete(multiplicity);
                 }
             }
-        }
-    }
-
-    private void delete(Object multiplicity) {
-        if ("1.4".equals(Model.getFacade().getUmlVersion()) 
-                && multiplicity != null) {
-            // For UML 1.4 Multiplicities are value objects, but
-            // for UML 2.x, the bounds are contained by the Property
-            // so they shouldn't be cleaned up
-            Model.getUmlFactory().delete(multiplicity);
         }
     }
     
@@ -178,7 +172,7 @@ public class UMLMultiplicityPanel extends JPanel implements ItemListener {
                     Model.getDataTypesFactory().createMultiplicity(text);
                 if (multi != null) {
                     setSelectedItem(text);
-                    delete(multi);
+                    Model.getUmlFactory().delete(multi);
                     return;
                 }
             } catch (IllegalArgumentException e) {
@@ -316,7 +310,9 @@ public class UMLMultiplicityPanel extends JPanel implements ItemListener {
                     } else {
                         Model.getCoreHelper().setMultiplicity(target, multi);
                     }
-                    delete(oldValue);
+                    if (oldValue != null) {
+                        Model.getUmlFactory().delete(oldValue);
+                    }
                 }
 		multiplicityComboBox.setEnabled(true);
 		multiplicityComboBox.setEditable(true);
@@ -324,7 +320,9 @@ public class UMLMultiplicityPanel extends JPanel implements ItemListener {
 		multiplicityComboBox.setEnabled(false);
 		multiplicityComboBox.setEditable(false);
                 Model.getCoreHelper().setMultiplicity(target, null);
-                delete(oldValue);
+                if (oldValue != null) {
+                    Model.getUmlFactory().delete(oldValue);
+                }
 	    }
 	}
     }

@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2009 The Regents of the University of California. All
+// Copyright (c) 1996-2008 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -138,6 +138,7 @@ import org.omg.uml.foundation.core.TemplateParameter;
 import org.omg.uml.foundation.core.UmlAssociation;
 import org.omg.uml.foundation.core.UmlClass;
 import org.omg.uml.foundation.core.Usage;
+import org.omg.uml.foundation.datatypes.AggregationKind;
 import org.omg.uml.modelmanagement.ElementImport;
 import org.omg.uml.modelmanagement.Subsystem;
 import org.omg.uml.modelmanagement.UmlPackage;
@@ -346,12 +347,6 @@ class UmlFactoryMDRImpl extends AbstractUmlModelFactoryMDR implements
                 UmlClass.class, Reception.class
             });
         
-        // specifies valid elements for a classifier to contain
-        validContainmentMap.put(Classifier.class, 
-            new Class<?>[] { 
-                TemplateParameter.class
-            });
-        
         // specifies valid elements for an Interface to contain
         validContainmentMap.put(Interface.class, 
                 new Class<?>[] { 
@@ -415,13 +410,12 @@ class UmlFactoryMDRImpl extends AbstractUmlModelFactoryMDR implements
         }
 
         Object connection = null;
-        boolean uni = (unidirectional instanceof Boolean) 
-            ? ((Boolean) unidirectional).booleanValue() : false;
+
         if (elementType == metaTypes.getAssociation()) {
             connection =
-                getCore().buildAssociation(fromElement,
-                    fromStyle, toElement,
-                    toStyle, uni);
+                getCore().buildAssociation((Classifier) fromElement,
+                    (AggregationKind) fromStyle, (Classifier) toElement,
+                    (AggregationKind) toStyle, (Boolean) unidirectional);
         } else if (elementType == metaTypes.getAssociationEnd()) {
             if (fromElement instanceof UmlAssociation) {
                 connection =
@@ -437,8 +431,7 @@ class UmlFactoryMDRImpl extends AbstractUmlModelFactoryMDR implements
         } else if (elementType == metaTypes.getAssociationRole()) {
             connection =
                 getCollaborations().buildAssociationRole(fromElement,
-                    fromStyle, toElement, toStyle,
-                    ((Boolean) unidirectional).booleanValue());
+                    fromStyle, toElement, toStyle, (Boolean) unidirectional);
         } else if (elementType == metaTypes.getGeneralization()) {
             connection = getCore().buildGeneralization(fromElement, toElement);
         } else if (elementType == metaTypes.getPackageImport()) {
@@ -588,17 +581,6 @@ class UmlFactoryMDRImpl extends AbstractUmlModelFactoryMDR implements
         } else if (elementType == this.metaTypes.getExtensionPoint()) {
             element = this.modelImpl.getUseCasesFactory().
                 buildExtensionPoint(container);            
-        } else if (elementType == this.metaTypes.getTemplateParameter()) {
-            // TODO: the type of the model element used in a type parameter
-            // (ie the formal) needs to match the actual parameter that it
-            // gets replaced with later.  This code is going to restrict that
-            // to always being a Parameter which doesn't seem right, but I
-            // don't have time to debug it right now. - tfm - 20090608
-            Parameter param = getCore().createParameter();
-            param.setName("T"); // default parameter name
-            element = 
-                modelImpl.getCoreFactory().buildTemplateParameter(container, 
-                        param, null);            
         } else {
             // build all other elements using existing buildNode
             element = buildNode(elementType);

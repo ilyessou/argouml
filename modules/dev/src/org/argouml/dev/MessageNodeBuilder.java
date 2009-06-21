@@ -26,7 +26,9 @@ package org.argouml.dev;
 
 import javax.swing.tree.DefaultMutableTreeNode;
 
-import org.argouml.sequence2.diagram.FigClassifierRole;
+import org.argouml.uml.diagram.sequence.MessageNode;
+import org.argouml.uml.diagram.sequence.ui.FigClassifierRole;
+import org.argouml.uml.diagram.sequence.ui.FigMessagePort;
 
 /**
  * TODO: Add Javadoc
@@ -38,24 +40,21 @@ public class MessageNodeBuilder {
     public static void addNodeTree(
             DefaultMutableTreeNode treeNode,
             FigClassifierRole fcr) {
-        
-        // TODO: Refers to old sequence diagrams - needs to be updated
-        
-//        int nodeCount = fcr.getNodeCount();
-//        for (int i = 0; i < nodeCount; ++i) {
-//            MessageNode mn = fcr.getNode(i);
-//            String descr = 
-//                "MessageNode y=" 
-//                + fcr.getYCoordinate(mn) 
-//                + " "
-//                + mn.getState();
-//            FigMessagePort fmp = mn.getFigMessagePort();
-//            if (fmp != null) {
-//                descr += " FigMessagePort registered";
-//            }
-//            DefaultMutableTreeNode tn = new DefaultMutableTreeNode(descr);
-//            treeNode.add(tn);
-//            CallerListNodeBuilder.addNodeTree(tn, mn);
-//        }
+        int nodeCount = fcr.getNodeCount();
+        for (int i = 0; i < nodeCount; ++i) {
+            MessageNode mn = fcr.getNode(i);
+            String descr = 
+                "MessageNode y=" 
+                + fcr.getYCoordinate(mn) 
+                + " "
+                + mn.getState();
+            FigMessagePort fmp = mn.getFigMessagePort();
+            if (fmp != null) {
+                descr += " FigMessagePort registered";
+            }
+            DefaultMutableTreeNode tn = new DefaultMutableTreeNode(descr);
+            treeNode.add(tn);
+            CallerListNodeBuilder.addNodeTree(tn, mn);
+        }
     }
 }

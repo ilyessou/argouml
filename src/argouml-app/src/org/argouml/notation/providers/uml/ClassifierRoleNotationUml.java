@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 
 import org.argouml.application.events.ArgoEventPump;
@@ -223,7 +224,7 @@ public class ClassifierRoleNotationUml extends ClassifierRoleNotation {
             if (ns != null && Model.getFacade().getNamespace(ns) != null) {
                 ns = Model.getFacade().getNamespace(ns);
             } else {
-                ns = Model.getFacade().getRoot(cls);
+                ns = Model.getFacade().getModel(cls);
             }
 
             while (it.hasNext()) {
@@ -255,6 +256,15 @@ public class ClassifierRoleNotationUml extends ClassifierRoleNotation {
         }
         
         return cls;
+    }
+
+    /*
+     * @see org.argouml.notation.providers.NotationProvider#toString(java.lang.Object, java.util.Map)
+     */
+    @SuppressWarnings("deprecation")
+    @Deprecated
+    public String toString(Object modelElement, Map args) {
+        return toString(modelElement);
     }
 
     private String toString(Object modelElement) {

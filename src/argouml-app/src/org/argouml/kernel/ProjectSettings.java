@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 2006-2009 The Regents of the University of California. All
+// Copyright (c) 2006-2008 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -27,6 +27,7 @@ package org.argouml.kernel;
 import java.awt.Font;
 import java.beans.PropertyChangeEvent;
 
+import org.argouml.application.events.ArgoDiagramAppearanceEvent;
 import org.argouml.application.events.ArgoEventPump;
 import org.argouml.application.events.ArgoEventTypes;
 import org.argouml.application.events.ArgoNotationEvent;
@@ -36,6 +37,7 @@ import org.argouml.notation.Notation;
 import org.argouml.notation.NotationName;
 import org.argouml.notation.NotationProviderFactory2;
 import org.argouml.notation.NotationSettings;
+import org.argouml.uml.diagram.DiagramAppearance;
 import org.argouml.uml.diagram.DiagramSettings;
 import org.tigris.gef.undo.Memento;
 import org.tigris.gef.undo.UndoManager;
@@ -80,8 +82,6 @@ public class ProjectSettings {
         super();
 
         diaDefault = new DiagramSettings();
-        diaDefault.initFromConfiguration();
-
         npSettings = diaDefault.getNotationSettings();
         
         String notationLanguage =
@@ -90,6 +90,9 @@ public class ProjectSettings {
         // work with multiple projects
         NotationProviderFactory2.setCurrentLanguage(notationLanguage);
         npSettings.setNotationLanguage(notationLanguage);
+        
+        diaDefault.setShowBoldNames(Configuration.getBoolean(
+                Notation.KEY_SHOW_BOLD_NAMES));
         
         npSettings.setUseGuillemets(Configuration.getBoolean(
                 Notation.KEY_USE_GUILLEMOTS, false));
@@ -114,6 +117,10 @@ public class ProjectSettings {
         npSettings.setShowTypes(Configuration.getBoolean(
                 Notation.KEY_SHOW_TYPES, true));
         
+        // TODO: Why is this a notation setting?
+        diaDefault.setShowBidirectionalArrows(!Configuration.getBoolean(
+                Notation.KEY_HIDE_BIDIRECTIONAL_ARROWS, true));
+        
         showExplorerStereotypes = Configuration.getBoolean(
                 Notation.KEY_SHOW_STEREOTYPES);
         /*
@@ -124,6 +131,24 @@ public class ProjectSettings {
          */
         npSettings.setShowSingularMultiplicities(Configuration.getBoolean(
                 Notation.KEY_SHOW_SINGULAR_MULTIPLICITIES, true));
+        
+        // TODO: Why is this a notation setting?
+        diaDefault.setDefaultShadowWidth(Configuration.getInteger(
+                Notation.KEY_DEFAULT_SHADOW_WIDTH, 1));
+
+        diaDefault.setDefaultStereotypeView(Configuration.getInteger(
+                ProfileConfiguration.KEY_DEFAULT_STEREOTYPE_VIEW,
+                DiagramAppearance.STEREOTYPE_VIEW_TEXTUAL));
+
+        /*
+         * Diagram appearance settings:
+         */
+        diaDefault.setFontName(
+                DiagramAppearance.getInstance().getConfiguredFontName());
+        diaDefault.setFontSize(
+                Configuration.getInteger(DiagramAppearance.KEY_FONT_SIZE));
+
+
     }
 
     /**
@@ -142,7 +167,17 @@ public class ProjectSettings {
          */
         init(true, Configuration.makeKey("notation", "all"));
 
-        diaDefault.notifyOfChangedSettings();
+        /*
+         * Since this is (hopefully) a temporary solution, and nobody ever looks
+         * at the type of the diagram appearance event, we can simplify from
+         * sending every existing event to one event only. But since there is no
+         * catch-all event defined, we just use one. Rationale: reduce the
+         * number of total refreshes of the drawing.
+         */
+        fireDiagramAppearanceEvent(
+                Configuration.makeKey("diagramappearance", "all"), 
+                0, 0);
+
     }
 
     private void init(boolean value, ConfigurationKey key) {
@@ -268,13 +303,16 @@ public class ProjectSettings {
         }
 
         Memento memento = new Memento() {
+            private final ConfigurationKey key = Notation.KEY_SHOW_BOLD_NAMES;
 
             public void redo() {
                 diaDefault.setShowBoldNames(showem);
+                fireNotationEvent(key, !showem, showem);
             }
 
             public void undo() {
                 diaDefault.setShowBoldNames(!showem);
+                fireNotationEvent(key, showem, !showem);
             }
         };
         doUndoable(memento);
@@ -846,13 +884,17 @@ public class ProjectSettings {
         }
 
         Memento memento = new Memento() {
+            private final ConfigurationKey key =
+                Notation.KEY_HIDE_BIDIRECTIONAL_ARROWS;
 
             public void redo() {
                 diaDefault.setShowBidirectionalArrows(!hideem);
+                fireNotationEvent(key, !hideem, hideem);
             }
 
             public void undo() {
                 diaDefault.setShowBidirectionalArrows(hideem);
+                fireNotationEvent(key, hideem, !hideem);
             }
         };
         doUndoable(memento);
@@ -890,13 +932,17 @@ public class ProjectSettings {
         }
 
         Memento memento = new Memento() {
+            private final ConfigurationKey key =
+                Notation.KEY_DEFAULT_SHADOW_WIDTH;
 
             public void redo() {
                 diaDefault.setDefaultShadowWidth(newWidth);
+                fireNotationEvent(key, oldValue, newWidth);
             }
 
             public void undo() {
                 diaDefault.setDefaultShadowWidth(oldValue);
+                fireNotationEvent(key, newWidth, oldValue);
             }
         };
         doUndoable(memento);
@@ -1036,6 +1082,36 @@ public class ProjectSettings {
     }
 
     /**
+     * Convenience methods to fire diagram appearance
+     * configuration change events.
+     *
+     * @param key the ConfigurationKey that is related to the change
+     * @param oldValue the old value
+     * @param newValue the new value
+     */
+    private void fireDiagramAppearanceEvent(ConfigurationKey key, int oldValue,
+            int newValue) {
+        fireDiagramAppearanceEvent(key, Integer.toString(oldValue), Integer
+                .toString(newValue));
+    }
+
+
+    /**
+     * Convenience methods to fire diagram appearance
+     * configuration change events.
+     *
+     * @param key the ConfigurationKey that is related to the change
+     * @param oldValue the old value
+     * @param newValue the new value
+     */
+    private void fireDiagramAppearanceEvent(ConfigurationKey key,
+            String oldValue, String newValue) {
+        ArgoEventPump.fireEvent(new ArgoDiagramAppearanceEvent(
+                ArgoEventTypes.DIAGRAM_FONT_CHANGED, new PropertyChangeEvent(
+                        this, key.getKey(), oldValue, newValue)));
+    }
+
+    /**
      * Diagram font name. <p>
      *
      * Used by "argo.tee".
@@ -1055,7 +1131,11 @@ public class ProjectSettings {
      */
     @Deprecated
     public void setFontName(String newFontName) {
+        String old = diaDefault.getFontName();
         diaDefault.setFontName(newFontName);
+
+        fireDiagramAppearanceEvent(DiagramAppearance.KEY_FONT_NAME, old,
+                newFontName);
     }
 
     /**
@@ -1078,7 +1158,11 @@ public class ProjectSettings {
      */
     @Deprecated
     public void setFontSize(int newFontSize) {
+        int old = diaDefault.getFontSize();
         diaDefault.setFontSize(newFontSize);
+
+        fireDiagramAppearanceEvent(DiagramAppearance.KEY_FONT_SIZE, old,
+                newFontSize);
     }
 
 

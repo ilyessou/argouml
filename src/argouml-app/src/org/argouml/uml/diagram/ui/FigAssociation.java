@@ -44,6 +44,7 @@ import org.argouml.notation.NotationProviderFactory2;
 import org.argouml.ui.ArgoJMenu;
 import org.argouml.ui.targetmanager.TargetManager;
 import org.argouml.uml.diagram.DiagramSettings;
+import org.tigris.gef.base.Layer;
 import org.tigris.gef.presentation.ArrowHead;
 import org.tigris.gef.presentation.ArrowHeadComposite;
 import org.tigris.gef.presentation.ArrowHeadDiamond;
@@ -79,6 +80,71 @@ public class FigAssociation extends FigEdgeModelElement {
 
     private FigMultiplicity srcMult;
     private FigMultiplicity destMult;
+
+    /**
+     * Don't call this constructor directly. It is public since this
+     * is necessary for loading. Use the FigAssociation(Object, Layer)
+     * constructor instead!
+     * @deprecated for 0.27.3 by tfmorris.  Use 
+     * {@link #FigAssociation(Object, DiagramSettings)}.
+     */
+    @SuppressWarnings("deprecation")
+    @Deprecated
+    public FigAssociation() {
+        super();
+
+        middleGroup = new FigTextGroup();
+        
+        //////////////////////////////////////////////////////////////////
+        // NOTE: If this needs to be updated during the deprecation period
+        // also update the constructor below
+        //////////////////////////////////////////////////////////////////
+        
+        // let's use groups to construct the different text sections at
+        // the association
+        if (getNameFig() != null) {
+            middleGroup.addFig(getNameFig());
+        }
+        
+        middleGroup.addFig(getStereotypeFig());
+        // Placed perpendicular to midpoint of edge
+        addPathItem(middleGroup,
+                new PathItemPlacement(this, middleGroup, 50, 25));
+        ArgoFigUtil.markPosition(this, 50, 0, 90, 25, Color.yellow);
+        
+        srcMult = new FigMultiplicity();
+        // Placed at a 45 degree angle close to the end
+        addPathItem(srcMult, 
+                new PathItemPlacement(this, srcMult, 0, 5, 135, 5));
+        ArgoFigUtil.markPosition(this, 0, 5, 135, 5, Color.green);
+        
+        //////////////////////////////////////////////////////////////////
+        // NOTE: If this needs to be updated during the deprecation period
+        // also update the constructor below
+        //////////////////////////////////////////////////////////////////
+        
+        srcGroup = new FigAssociationEndAnnotation(this);
+        addPathItem(srcGroup, 
+                new PathItemPlacement(this, srcGroup, 0, 5, -135, 5));
+        ArgoFigUtil.markPosition(this, 0, 5, -135, 5, Color.blue);
+
+        destMult = new FigMultiplicity();
+        addPathItem(destMult,
+                new PathItemPlacement(this, destMult, 100, -5, 45, 5));
+        ArgoFigUtil.markPosition(this, 100, -5, 45, 5, Color.red);
+        
+        //////////////////////////////////////////////////////////////////
+        // NOTE: If this needs to be updated during the deprecation period
+        // also update the constructor below
+        //////////////////////////////////////////////////////////////////
+                
+        destGroup = new FigAssociationEndAnnotation(this);
+        addPathItem(destGroup,
+                new PathItemPlacement(this, destGroup, 100, -5, -45, 5));
+        ArgoFigUtil.markPosition(this, 100, -5, -45, 5, Color.orange);
+                
+        setBetweenNearestPoints(true);
+    }
 
     /**
      * Constructor used by PGML parser.
@@ -117,6 +183,22 @@ public class FigAssociation extends FigEdgeModelElement {
         setBetweenNearestPoints(true);
         
         initializeNotationProvidersInternal(owner);
+
+    }
+    
+    /**
+     * Constructor that hooks the Fig to an existing UML element.
+     *
+     * @param edge the UML element
+     * @param lay the layer
+     * @deprecated for 0.27.3 by tfmorris.  Use 
+     * {@link #FigAssociation(Object, DiagramSettings)}.
+     */
+    @Deprecated
+    public FigAssociation(Object edge, Layer lay) {
+        this();
+        setOwner(edge);
+        setLayer(lay);
     }
 
     /**
@@ -141,6 +223,33 @@ public class FigAssociation extends FigEdgeModelElement {
                 new PathItemPlacement(this, middleGroup, 50, 25));
         ArgoFigUtil.markPosition(this, 50, 0, 90, 25, Color.yellow);
     }
+    
+    /**
+     * Set the owner.
+     * 
+     * @param owner ignored
+     * @see org.argouml.uml.diagram.ui.FigEdgeModelElement#setOwner(java.lang.Object)
+     * @deprecated for 0.27.3 by tfmorris.  Set the owner in the constructor.
+     */
+    @SuppressWarnings("deprecation")
+    @Deprecated
+    @Override
+    public void setOwner(Object owner) {
+        super.setOwner(owner);
+        
+        Object[] ends = 
+            Model.getFacade().getConnections(owner).toArray();
+        
+        Object source = ends[0];
+        Object dest = ends[1];
+        
+        srcGroup.setOwner(source);
+        srcMult.setOwner(source);
+        
+        destGroup.setOwner(dest);
+        destMult.setOwner(dest);
+    }
+
 
     @Override
     public void renderingChanged() {
@@ -485,6 +594,14 @@ public class FigAssociation extends FigEdgeModelElement {
  */
 class FigMultiplicity extends FigSingleLineTextWithNotation {
 
+    @SuppressWarnings("deprecation")
+    @Deprecated
+    FigMultiplicity() {
+        super(X0, Y0, 90, 20, false, new String[] {"multiplicity"});
+        setTextFilled(false);
+        setJustification(FigText.JUSTIFY_CENTER);
+    }
+
     FigMultiplicity(Object owner, DiagramSettings settings) {
         super(owner, new Rectangle(X0, Y0, 90, 20), settings, false,
                 "multiplicity");
@@ -511,6 +628,15 @@ class FigMultiplicity extends FigSingleLineTextWithNotation {
 class FigOrdering extends FigSingleLineText {
 
     private static final long serialVersionUID = 5385230942216677015L;
+
+    @SuppressWarnings("deprecation")
+    @Deprecated
+    FigOrdering() {
+        super(X0, Y0, 90, 20, false, "ordering");
+        setTextFilled(false);
+        setJustification(FigText.JUSTIFY_CENTER);
+        setEditable(false);
+    }
     
     FigOrdering(Object owner, DiagramSettings settings) {
         super(owner, new Rectangle(X0, Y0, 90, 20), settings, false, 
@@ -557,12 +683,27 @@ class FigOrdering extends FigSingleLineText {
 
 /**
  * A Fig representing the association end role of some model element.
- * This class is designed as a composite part and should always be 
- * part of a FigGroup.
+ * 
  * @author Bob Tarling
  */
 class FigRole extends FigSingleLineTextWithNotation {
 
+    /**
+     * @deprecated for 0.27.3 by tfmorris.  Use 
+     * {@link FigRole#FigRole(Object, DiagramSettings)}/
+     */
+    @SuppressWarnings("deprecation")
+    @Deprecated
+    FigRole() {
+        super(X0, Y0, 90, 20, false, (String[]) null 
+        // no need to listen to these property changes - the 
+        // notationProvider takes care of registering these.
+                /*, new String[] {"name", "visibility", "stereotype"}*/
+                );
+        setTextFilled(false);
+        setJustification(FigText.JUSTIFY_CENTER);
+    }
+    
     FigRole(Object owner, DiagramSettings settings) {
         super(owner, new Rectangle(X0, Y0, 90, 20), settings, false, 
                 (String[]) null 
@@ -583,14 +724,12 @@ class FigRole extends FigSingleLineTextWithNotation {
      * Property change listener to recalculate bounds of enclosing
      * group whenever any properties of the FigRole get changed.
      * This is only really needed for the name, see issue 5621.
-     * 
      * @param pce The property change event to process.
      * @see org.argouml.uml.diagram.ui.FigSingleLineTextWithNotation#propertyChange(java.beans.PropertyChangeEvent)
      */
     @Override
     public void propertyChange(PropertyChangeEvent pce) {
         super.propertyChange(pce);
-        assert(getGroup() != null);
         this.getGroup().calcBounds();
     }
 
@@ -644,6 +783,18 @@ class FigAssociationEndAnnotation extends FigTextGroup {
     private int arrowType = 0;
     private FigEdgeModelElement figEdge;
 
+    @SuppressWarnings("deprecation")
+    @Deprecated
+    FigAssociationEndAnnotation(FigEdgeModelElement edge) {
+        figEdge = edge;
+        
+        role = new FigRole();
+        addFig(role);
+
+        ordering = new FigOrdering();
+        addFig(ordering);
+    }
+    
     FigAssociationEndAnnotation(FigEdgeModelElement edge, Object owner,
             DiagramSettings settings) {
         super(owner, settings);
@@ -658,6 +809,28 @@ class FigAssociationEndAnnotation extends FigTextGroup {
         determineArrowHead();
         Model.getPump().addModelEventListener(this, owner, 
                 new String[] {"isNavigable", "aggregation", "participant"});
+    }
+    
+    /**
+     * @deprecated by mvw in 0.27.3. Use non-deprecated constructors instead.
+     */
+    @SuppressWarnings("deprecation")
+    @Deprecated
+    @Override
+    public void setOwner(Object owner) {
+        if (owner != null) {
+            if (!Model.getFacade().isAAssociationEnd(owner)) {
+                throw new IllegalArgumentException(
+                        "An AssociationEnd was expected");
+            }
+            super.setOwner(owner);
+            ordering.setOwner(owner);
+            role.setOwner(owner);
+            role.setText();
+            determineArrowHead();
+            Model.getPump().addModelEventListener(this, owner, 
+                    new String[] {"isNavigable", "aggregation", "participant"});
+        }
     }
 
     /*

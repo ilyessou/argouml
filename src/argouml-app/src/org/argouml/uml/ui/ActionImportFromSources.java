@@ -26,21 +26,15 @@
 package org.argouml.uml.ui;
 
 import java.awt.event.ActionEvent;
-import java.io.File;
-import java.util.Collection;
 
 import javax.swing.Action;
-import javax.swing.JFrame;
 
 import org.apache.log4j.Logger;
-import org.argouml.application.api.CommandLineInterface;
 import org.argouml.application.helpers.ResourceLoaderWrapper;
 import org.argouml.i18n.Translator;
 import org.argouml.ui.ExceptionDialog;
 import org.argouml.uml.reveng.Import;
-import org.argouml.uml.reveng.ImportInterface;
 import org.argouml.uml.reveng.ImporterManager;
-import org.argouml.uml.reveng.ui.ImportStatusScreen;
 import org.argouml.util.ArgoFrame;
 import org.tigris.gef.undo.UndoableAction;
 
@@ -48,8 +42,7 @@ import org.tigris.gef.undo.UndoableAction;
 /** Action to trigger importing from sources.
  * @stereotype singleton
  */
-public class ActionImportFromSources extends UndoableAction 
-        implements CommandLineInterface {
+public class ActionImportFromSources extends UndoableAction {
 
     /**
      * Logger.
@@ -66,7 +59,7 @@ public class ActionImportFromSources extends UndoableAction
     /**
      *  The constructor.
      */
-    public ActionImportFromSources() {
+    protected ActionImportFromSources() {
         // this is never downlighted...
         super(Translator.localize("action.import-sources"),
                 ResourceLoaderWrapper.lookupIcon("action.import-sources"));
@@ -81,10 +74,10 @@ public class ActionImportFromSources extends UndoableAction
     public void actionPerformed(ActionEvent event) {
     	super.actionPerformed(event);
     	if (ImporterManager.getInstance().hasImporters()) {
-            new Import(ArgoFrame.getFrame());
+            new Import(ArgoFrame.getInstance());
     	} else {
     	    LOG.info("Import sources dialog not shown: no importers!");
-            ExceptionDialog ed = new ExceptionDialog(ArgoFrame.getFrame(),
+            ExceptionDialog ed = new ExceptionDialog(ArgoFrame.getInstance(),
                 Translator.localize("dialog.title.problem"),
                 Translator.localize("dialog.import.no-importers.intro"),
                 Translator.localize("dialog.import.no-importers.message"));
@@ -98,47 +91,6 @@ public class ActionImportFromSources extends UndoableAction
      */
     public static ActionImportFromSources getInstance() {
         return SINGLETON;
-    }
-
-    /**
-     * Command line command for importing a directory or file.
-     * 
-     * @param argument Formatted string (<importmodule>:<importpath>)
-     * @return true if the command was performed successfully.
-*/
-    public boolean doCommand(String argument) {
-        if (argument == null) {
-            LOG.error("An argument has to be provided.");
-            return false;
-        }
-        int index = argument.indexOf(':');
-        if (index == -1 || argument.length() <= index) {
-            LOG.error("Argument must be <importmodule>:<importpath>");
-            return false;
-        }
-        Import imp = new Import(null);
-        Collection languages = imp.getLanguages();
-        if (languages == null || languages.isEmpty()) {
-            LOG.error("No importers available.");
-            return false;
-        }
-        String importerName = argument.substring(0, index);
-        ImportInterface importer = imp.getImporter(importerName);
-        if (importer == null) {
-            LOG.error("No import support for language " + importerName);
-            return false;
-        }
-        imp.setCurrentModule(importer);
-        File file = new File(argument.substring(index + 1));
-        if (!file.exists()) {
-            LOG.error("The specified file/directory doesn't exist.");
-            return false;
-        }
-        imp.setFiles(new File[]{file});
-        ImportStatusScreen iss =
-            new ImportStatusScreen(new JFrame(), "Importing", "Splash");
-        imp.doImport(iss);
-        return true;
     }
 }
 /* end class ActionImportFromSources */

@@ -25,6 +25,7 @@
 package org.argouml.core.propertypanels.ui;
 
 import org.argouml.model.Model;
+import org.argouml.uml.ui.UMLModelElementListModel2;
 
 /**
  * The model for the partitions of a ActivityGraph.
@@ -32,7 +33,7 @@ import org.argouml.model.Model;
  * @author Michiel
  */
 class UMLActivityGraphPartitionListModel
-    extends UMLModelElementListModel {
+    extends UMLModelElementListModel2 {
 
     /**
      * Constructor for UMLActivityGraphPartiitionListModel.

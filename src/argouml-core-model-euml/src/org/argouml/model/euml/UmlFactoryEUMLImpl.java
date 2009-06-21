@@ -32,14 +32,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.argouml.model.NotImplementedException;
 import org.argouml.model.AbstractModelFactory;
 import org.argouml.model.IllegalModelElementConnectionException;
-import org.argouml.model.InvalidElementException;
 import org.argouml.model.MetaTypes;
 import org.argouml.model.UmlFactory;
 import org.eclipse.emf.ecore.EObject;
-import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.uml2.uml.Abstraction;
 import org.eclipse.uml2.uml.AggregationKind;
@@ -66,9 +64,6 @@ import org.eclipse.uml2.uml.UseCase;
  */
 class UmlFactoryEUMLImpl implements UmlFactory, AbstractModelFactory {
 
-    private static final Logger LOG = 
-        Logger.getLogger(UmlFactoryEUMLImpl.class);
-    
     /**
      * The model implementation.
      */
@@ -226,9 +221,8 @@ class UmlFactoryEUMLImpl implements UmlFactory, AbstractModelFactory {
     }
     
     public Object buildNode(Object elementType, Object container) {
-        Object element = buildNode(elementType);
-        modelImpl.getCoreHelper().addOwnedElement(container, element);
-        return element;
+        
+        throw new NotImplementedException();
     }
 
     public Object buildNode(Object elementType) {
@@ -384,9 +378,8 @@ class UmlFactoryEUMLImpl implements UmlFactory, AbstractModelFactory {
     }
     
     public boolean isContainmentValid(Object metaType, Object container) {
-//      throw new NotImplementedException();
-        // TODO: Can we get this info from UML2 plugin?
-        return true;
+        
+        throw new NotImplementedException();
     }
     
     /**
@@ -460,14 +453,9 @@ class UmlFactoryEUMLImpl implements UmlFactory, AbstractModelFactory {
     }
 
     public void deleteExtent(Object element) {
-        Resource resource = ((EObject) element).eResource();
-        if (resource != null) {
-            modelImpl.unloadResource(resource);
-        } else {
-            LOG.warn("Tried to delete null resource");
-            throw new InvalidElementException(
-                    element != null ? element.toString() : "Null" );
-        }
-    }
+        // TODO: This is adequate because we only support a single editing
+        // domain right now, but it needs to be enhanced for multiple domains.
+        modelImpl.clearEditingDomain();
+   }
 
 }

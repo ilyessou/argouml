@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2009 The Regents of the University of California. All
+// Copyright (c) 1996-2007 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,26 +24,15 @@
 
 package org.argouml.uml.diagram.state.ui;
 
-import java.awt.Rectangle;
-
 import junit.framework.TestCase;
-
-import org.argouml.kernel.ProjectManager;
 import org.argouml.model.InitializeModel;
-import org.argouml.model.Model;
-import org.argouml.notation.InitNotation;
-import org.argouml.notation.providers.uml.InitNotationUml;
 import org.argouml.profile.init.InitProfileSubsystem;
-import org.argouml.uml.diagram.DiagramSettings;
 
 /**
  * Tests whether Figs in state.ui are clonable,
  * apart from FigStateVertex which is abstract.
  */
 public class TestFigClonable extends TestCase {
-    // Arbitrary settings - not used used for testing
-    private DiagramSettings settings = new DiagramSettings();
-    private Rectangle bounds = new Rectangle(10, 10, 20, 20);
 
     /**
      * The constructor.
@@ -62,18 +51,13 @@ public class TestFigClonable extends TestCase {
 	super.setUp();
         InitializeModel.initializeDefault();
         new InitProfileSubsystem().init();
-        ProjectManager.getManager().makeEmptyProject();
-        new InitNotation().init();
-        new InitNotationUml().init();
     }
 
     /**
      * Try to clone {@link FigBranchState}.
      */
     public void testBranchStateClonable() {
-        Object psc = Model.getStateMachinesFactory().createPseudostate();
-        Model.getCoreHelper().setKind(psc, Model.getPseudostateKind().getChoice());
-	FigBranchState fig = new FigBranchState(psc, bounds, settings);
+	FigBranchState fig = new FigBranchState();
 	FigBranchState figClone = (FigBranchState) fig.clone();
         assertNotNull(figClone);
     }
@@ -82,8 +66,7 @@ public class TestFigClonable extends TestCase {
      * Try to clone {@link FigCompositeState}.
      */
     public void testCompositeStateClonable() {
-        Object cs = Model.getStateMachinesFactory().createCompositeState();
-	FigCompositeState fig = new FigCompositeState(cs, bounds, settings);
+	FigCompositeState fig = new FigCompositeState();
 	FigCompositeState figClone = (FigCompositeState) fig.clone();
         assertNotNull(figClone);
     }
@@ -92,9 +75,7 @@ public class TestFigClonable extends TestCase {
      * Try to clone {@link FigDeepHistoryState}.
      */
     public void testDeepHistoryStateClonable() {
-        Object psd = Model.getStateMachinesFactory().createPseudostate();
-        Model.getCoreHelper().setKind(psd, Model.getPseudostateKind().getDeepHistory());
-	FigDeepHistoryState fig = new FigDeepHistoryState(psd, bounds, settings);
+	FigDeepHistoryState fig = new FigDeepHistoryState();
 	FigDeepHistoryState figClone = (FigDeepHistoryState) fig.clone();
         assertNotNull(figClone);
     }
@@ -103,8 +84,7 @@ public class TestFigClonable extends TestCase {
      * Try to clone {@link FigFinalState}.
      */
     public void testFinalStateClonable() {
-        Object fs = Model.getStateMachinesFactory().createFinalState();
-	FigFinalState fig = new FigFinalState(fs, bounds, settings);
+	FigFinalState fig = new FigFinalState();
 	FigFinalState figClone = (FigFinalState) fig.clone();
         assertNotNull(figClone);
     }
@@ -114,9 +94,7 @@ public class TestFigClonable extends TestCase {
      * Try to clone {@link FigForkState}.
      */
     public void testForkStateClonable() {
-        Object psf = Model.getStateMachinesFactory().createPseudostate();
-        Model.getCoreHelper().setKind(psf, Model.getPseudostateKind().getFork());
-	FigForkState fig = new FigForkState(psf, bounds, settings);
+	FigForkState fig = new FigForkState();
 	FigForkState figClone = (FigForkState) fig.clone();
         assertNotNull(figClone);
     }
@@ -125,9 +103,7 @@ public class TestFigClonable extends TestCase {
      * Try to clone {@link FigInitialState}.
      */
     public void testInitialStateClonable() {
-        Object psi = Model.getStateMachinesFactory().createPseudostate();
-        Model.getCoreHelper().setKind(psi, Model.getPseudostateKind().getInitial());
-	FigInitialState fig = new FigInitialState(psi, bounds, settings);
+	FigInitialState fig = new FigInitialState();
 	FigInitialState figClone = (FigInitialState) fig.clone();
         assertNotNull(figClone);
     }
@@ -137,9 +113,7 @@ public class TestFigClonable extends TestCase {
      * Try to clone {@link FigJoinState}.
      */
     public void testJoinStateClonable() {
-        Object psj = Model.getStateMachinesFactory().createPseudostate();
-        Model.getCoreHelper().setKind(psj, Model.getPseudostateKind().getJoin());
-	FigJoinState fig = new FigJoinState(psj, bounds, settings);
+	FigJoinState fig = new FigJoinState();
 	FigJoinState figClone = (FigJoinState) fig.clone();
         assertNotNull(figClone);
     }
@@ -148,9 +122,7 @@ public class TestFigClonable extends TestCase {
      * Try to clone {@link FigShallowHistoryState}.
      */
     public void testShallowHistoryStateClonable() {
-        Object pss = Model.getStateMachinesFactory().createPseudostate();
-        Model.getCoreHelper().setKind(pss, Model.getPseudostateKind().getShallowHistory());
-	FigShallowHistoryState fig = new FigShallowHistoryState(pss, bounds, settings);
+	FigShallowHistoryState fig = new FigShallowHistoryState();
 	FigShallowHistoryState figClone = (FigShallowHistoryState) fig.clone();
         assertNotNull(figClone);
     }
@@ -159,8 +131,7 @@ public class TestFigClonable extends TestCase {
      * Try to clone {@linkFigState}.
      */
     public void testSimpleStateClonable() {
-        Object ss = Model.getStateMachinesFactory().createSimpleState();
-	FigSimpleState fig = new FigSimpleState(ss, bounds, settings);
+	FigSimpleState fig = new FigSimpleState();
 	FigSimpleState figClone = (FigSimpleState) fig.clone();
         assertNotNull(figClone);
     }
@@ -170,8 +141,7 @@ public class TestFigClonable extends TestCase {
      * Try to clone {@link FigTransition}.
      */
     public void testTransitionClonable() {
-        Object t = Model.getStateMachinesFactory().createTransition();
-	FigTransition fig = new FigTransition(t, settings);
+	FigTransition fig = new FigTransition();
 	FigTransition figClone = (FigTransition) fig.clone();
         assertNotNull(figClone);
     }

@@ -46,7 +46,6 @@ import org.argouml.i18n.Translator;
 class SettingsTabPreferences extends JPanel
     implements GUISettingsTabInterface {
 
-    private JPanel topPanel;
     private JCheckBox chkSplash;
     private JCheckBox chkReloadRecent;
     private JCheckBox chkStripDiagrams;
@@ -56,12 +55,9 @@ class SettingsTabPreferences extends JPanel
      *
      */
     SettingsTabPreferences() {
-    }
-
-    private void buildPanel() {
         setLayout(new BorderLayout());
-	topPanel = new JPanel();
-    	topPanel.setLayout(new GridBagLayout());
+	JPanel top = new JPanel();
+    	top.setLayout(new GridBagLayout());
 
 	GridBagConstraints checkConstraints = new GridBagConstraints();
 	checkConstraints.anchor = GridBagConstraints.LINE_START;
@@ -74,23 +70,23 @@ class SettingsTabPreferences extends JPanel
 	checkConstraints.gridy = 2;
 	JCheckBox j = new JCheckBox(Translator.localize("label.splash"));
         chkSplash = j;
-	topPanel.add(chkSplash, checkConstraints);
+	top.add(chkSplash, checkConstraints);
 
 	checkConstraints.gridy++;
         JCheckBox j2 =
             new JCheckBox(Translator.localize("label.reload-recent"));
         chkReloadRecent = j2;
- 	topPanel.add(chkReloadRecent, checkConstraints);
+ 	top.add(chkReloadRecent, checkConstraints);
 
         checkConstraints.gridy++;
         JCheckBox j3 =
             new JCheckBox(Translator.localize("label.strip-diagrams"));
         chkStripDiagrams = j3;
-        topPanel.add(chkStripDiagrams, checkConstraints);
+        top.add(chkStripDiagrams, checkConstraints);
 
         checkConstraints.fill = GridBagConstraints.HORIZONTAL;
 
-	add(topPanel, BorderLayout.NORTH);
+	add(top, BorderLayout.NORTH);
     }
 
     /*
@@ -134,19 +130,12 @@ class SettingsTabPreferences extends JPanel
     /*
      * @see GUISettingsTabInterface#getTabPanel()
      */
-    public JPanel getTabPanel() {
-        if (topPanel == null) {
-            buildPanel();
-        }
-        return this;
-    }
+    public JPanel getTabPanel() { return this; }
 
     /*
      * @see GUISettingsTabInterface#getTabKey()
      */
-    public String getTabKey() {
-        return "tab.preferences";
-    }
+    public String getTabKey() { return "tab.preferences"; }
 
     /**
      * The UID.

@@ -71,7 +71,6 @@ import org.argouml.util.ThreadUtils;
 import org.tigris.gef.ocl.ExpansionException;
 import org.tigris.gef.ocl.OCLExpander;
 import org.tigris.gef.ocl.TemplateReader;
-import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 
@@ -367,18 +366,8 @@ public class UmlFilePersister extends AbstractFilePersister {
                 LOG.info("Loading member with "
                         + persister.getClass().getName());
                 inputStream.reopen(persister.getMainTag());
-                // TODO: Do we need to set the input encoding here?  It was
-                // done for ToDo parsing, but none of the other member types
-//                InputSource inputSource = new InputSource(
-//                        new InputStreamReader(inputStream, Argo
-//                                .getEncoding()));
-                InputSource inputSource = new InputSource(inputStream);
-                // Don't use systemId here or it will get opened in preference 
-                // to inputStream. 
-                inputSource.setPublicId(
-                        originalFile.toURI().toURL().toExternalForm());
                 try {
-                    persister.load(p, inputSource);
+                    persister.load(p, inputStream);
                 } catch (OpenException e) {
                     // UML 2.x files don't have XMI as their outer
                     // tag.  Try again with uml:Model
@@ -386,7 +375,7 @@ public class UmlFilePersister extends AbstractFilePersister {
                             && e.getCause() instanceof UmlException 
                             && e.getCause().getCause() instanceof IOException) {
                         inputStream.reopen("uml:Model");
-                        persister.load(p, inputSource);
+                        persister.load(p, inputStream);
                     } else {
                         throw e;
                     }

@@ -35,6 +35,7 @@ import org.argouml.profile.init.InitProfileSubsystem;
 import org.argouml.uml.diagram.activity.ui.InitActivityDiagram;
 import org.argouml.uml.diagram.collaboration.ui.InitCollaborationDiagram;
 import org.argouml.uml.diagram.deployment.ui.InitDeploymentDiagram;
+import org.argouml.uml.diagram.sequence.ui.InitSequenceDiagram;
 import org.argouml.uml.diagram.state.ui.InitStateDiagram;
 import org.argouml.uml.diagram.static_structure.ui.InitClassDiagram;
 import org.argouml.uml.diagram.static_structure.ui.UMLClassDiagram;
@@ -71,6 +72,7 @@ public class TestActionAddAllClassesFromModel extends TestCase {
         (new InitActivityDiagram()).init();
         (new InitCollaborationDiagram()).init();
         (new InitDeploymentDiagram()).init();
+        (new InitSequenceDiagram()).init();
         (new InitStateDiagram()).init();
         (new InitClassDiagram()).init();
         (new InitUseCaseDiagram()).init();

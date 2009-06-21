@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2009 The Regents of the University of California. All
+// Copyright (c) 1996-2006 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,7 +24,6 @@
 
 package org.argouml.uml.diagram.sequence.ui;
 
-import org.argouml.uml.diagram.DiagramSettings;
 import org.tigris.gef.presentation.ArrowHeadGreater;
 import org.tigris.gef.presentation.Fig;
 
@@ -38,8 +37,8 @@ public class FigReturnActionMessage extends FigMessage {
     /**
      * @param owner The owner of the link.
      */
-    public FigReturnActionMessage(Object owner, DiagramSettings settings) {
-        super(owner, settings);
+    public FigReturnActionMessage(Object owner) {
+        super(owner);
         setDestArrowHead(new ArrowHeadGreater());
         setDashed(true);
     }
@@ -54,4 +53,10 @@ public class FigReturnActionMessage extends FigMessage {
         setDashed(true);
     }
 
+    /**
+     *
+     */
+    public FigReturnActionMessage() {
+        this(null);
+    }
 }

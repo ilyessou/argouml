@@ -1851,22 +1851,18 @@ public interface Facade {
     Collection getSentMessages(Object handle);
 
     /**
-     * Get the innermost containing Model of a ModelElement.
+     * Get the containing Model of a ModelElement.
      * <p>
      * If no containing Model can be found, the outermost containing
      * ModelElement is returned (which could be the original element itself if
      * it has no owner).
      * <p>
-     * This method is intended to return the innermost
-     * containing Model, but there are circumstances where one may
-     * really expect the outermost containing Model or root package to
-     * be returned (e.g. where
+     * TODO: This currently (MDR implementation) returns the innermost
+     * containing Model, but there are circumstances where it is used that
+     * really expect the outermost containing Model or root package (e.g. where
      * it's being used to test if two elements are from disjoint namespace
-     * hierarchies). Hence, there are two separate methods
-     * with different semantics. The method {@link #getRoot(Object)}
-     * returns the outermost containing object. 
-     * <p>
-     * TODO: Note also that some code uses
+     * hierarchies). This probably needs to be split into two separate methods
+     * with different semantics. Note also that some code uses
      * org.argouml.kernel.Project#getRoot() to navigate down from the top
      * instead of up from the bottom. We need to use a consistent algorithm for
      * this. - tfm 20070724
@@ -1874,9 +1870,13 @@ public interface Facade {
      * @param handle
      *                to the model element.
      * @return model for the model element.
+     * @deprecated for 0.25.4 by tfmorris. Use one of {@link #getRoot(Object)}
+     *             or ... (do we need another method which implements the old,
+     *             as-implemented semantics)
      */
-    Object getInnerContainingModel(Object handle);
-
+    @Deprecated
+    Object getModel(Object handle);
+    
     /**
      * Get the top level containing element, i.e. the element which has no
      * owner.  For well-formed models, this will typically be a UML Package,
@@ -2432,14 +2432,6 @@ public interface Facade {
      * @return raised signals
      */
     Collection getRaisedSignals(Object handle);
-    
-    /**
-     *  Return the raised exceptions of an operation (UML 2 only).
-     *  
-     *  @param handle the operation
-     *  @return raised exceptions
-     */
-    Collection getRaisedExceptions(Object handle);
 
     /**
      * Return the receptions of a signal.

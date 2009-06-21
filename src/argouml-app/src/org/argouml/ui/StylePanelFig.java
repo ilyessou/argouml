@@ -43,13 +43,9 @@ import javax.swing.text.Document;
 import org.apache.log4j.Logger;
 import org.argouml.i18n.Translator;
 import org.argouml.swingext.SpacerPanel;
-import org.argouml.ui.targetmanager.TargetManager;
-import org.argouml.uml.diagram.ArgoDiagram;
-import org.argouml.uml.diagram.DiagramUtils;
 import org.argouml.uml.diagram.DiagramSettings.StereotypeStyle;
 import org.argouml.uml.diagram.ui.ArgoFig;
 import org.argouml.uml.diagram.ui.FigEdgeModelElement;
-import org.argouml.uml.diagram.ui.FigNodeModelElement;
 import org.argouml.uml.diagram.ui.StereotypeStyled;
 import org.argouml.util.ArgoFrame;
 import org.tigris.gef.presentation.Fig;
@@ -445,7 +441,7 @@ public class StylePanelFig
     protected void handleCustomColor(JComboBox field, String title,
             Color targetColor) {
         Color newColor =
-            JColorChooser.showDialog(ArgoFrame.getFrame(),
+            JColorChooser.showDialog(ArgoFrame.getInstance(),
                     Translator.localize(title), targetColor);
         if (newColor != null) {
             field.insertItemAt(newColor, field.getItemCount() - 1);
@@ -464,32 +460,11 @@ public class StylePanelFig
         if (target == null || c == null) {
             return;
         }
-        Boolean isColor = (c instanceof Color);
-        if (isColor) {
+        if (c instanceof Color) {
             target.setFillColor((Color) c);
         }
-        target.setFilled(isColor);
+        target.setFilled(c instanceof Color);
         target.endTrans();
-        
-        // TODO: The following handling of multiselection is just a local
-        // solution for the fill color, better find a more general solution:
-        // (I don't know if it's undoable this way - thn)
-        ArgoDiagram activeDiagram = DiagramUtils.getActiveDiagram();
-        for (Object t : TargetManager.getInstance().getTargets()) {
-            Fig fig = null;
-            if (t instanceof FigNodeModelElement) {
-                fig = (Fig) t;
-            } else {
-                fig = activeDiagram.presentationFor(t);
-            }
-            if (fig != null && fig != target) {
-                if (isColor) {
-                    fig.setFillColor((Color) c);
-                }
-                fig.setFilled(isColor);
-                fig.endTrans();
-            }
-        }
     }
 
     /**
@@ -501,32 +476,11 @@ public class StylePanelFig
         if (target == null || c == null) {
             return;
         }
-        Boolean isColor = (c instanceof Color);
-        if (isColor) {
+        if (c instanceof Color) {
             target.setLineColor((Color) c);
         }
-        target.setLineWidth(isColor ? ArgoFig.LINE_WIDTH : 0);
+        target.setLineWidth((c instanceof Color) ? ArgoFig.LINE_WIDTH : 0);
         target.endTrans();
-        
-        // TODO: The following handling of multiselection is just a local
-        // solution for the line color, better find a more general solution:
-        // (I don't know if it's undoable this way - thn)
-        ArgoDiagram activeDiagram = DiagramUtils.getActiveDiagram();
-        for (Object t : TargetManager.getInstance().getTargets()) {
-            Fig fig = null;
-            if (t instanceof FigNodeModelElement) {
-                fig = (Fig) t;
-            } else {
-                fig = activeDiagram.presentationFor(t);
-            }
-            if (fig != null && fig != target) {
-                if (isColor) {
-                    fig.setLineColor((Color) c);
-                }
-                fig.setLineWidth(isColor ? ArgoFig.LINE_WIDTH : 0);
-                fig.endTrans();
-            }
-        }
     }
 
     /*

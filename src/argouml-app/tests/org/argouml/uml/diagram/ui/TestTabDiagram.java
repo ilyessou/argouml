@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2009 The Regents of the University of California. All
+// Copyright (c) 1996-2007 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -24,7 +24,6 @@
 
 package org.argouml.uml.diagram.ui;
 
-import java.awt.Rectangle;
 import java.util.Date;
 
 import junit.framework.TestCase;
@@ -39,10 +38,10 @@ import org.argouml.notation.providers.uml.InitNotationUml;
 import org.argouml.profile.init.InitProfileSubsystem;
 import org.argouml.ui.targetmanager.TargetManager;
 import org.argouml.uml.diagram.ArgoDiagram;
-import org.argouml.uml.diagram.DiagramSettings;
 import org.argouml.uml.diagram.activity.ui.InitActivityDiagram;
 import org.argouml.uml.diagram.collaboration.ui.InitCollaborationDiagram;
 import org.argouml.uml.diagram.deployment.ui.InitDeploymentDiagram;
+import org.argouml.uml.diagram.sequence.ui.InitSequenceDiagram;
 import org.argouml.uml.diagram.state.ui.InitStateDiagram;
 import org.argouml.uml.diagram.static_structure.ui.FigClass;
 import org.argouml.uml.diagram.static_structure.ui.InitClassDiagram;
@@ -84,6 +83,7 @@ public class TestTabDiagram extends TestCase {
         (new InitActivityDiagram()).init();
         (new InitCollaborationDiagram()).init();
         (new InitDeploymentDiagram()).init();
+        (new InitSequenceDiagram()).init();
         (new InitStateDiagram()).init();
         (new InitClassDiagram()).init();
         (new InitUseCaseDiagram()).init();
@@ -153,9 +153,6 @@ public class TestTabDiagram extends TestCase {
     public void testFireModelEventPerformance() {
         // setup
         if (PERFORMANCE_TEST) {
-            // Arbitrary settings - not used used for testing
-            DiagramSettings settings = new DiagramSettings();
-            Rectangle bounds = new Rectangle(10, 10, 20, 20);
             try {
                 ArgoDiagram[] diagrams = new ArgoDiagram[NUMBER_OF_DIAGRAMS];
                 Project project =
@@ -164,7 +161,7 @@ public class TestTabDiagram extends TestCase {
                 for (int i = 0; i < NUMBER_OF_DIAGRAMS; i++) {
                     diagrams[i] = new UMLClassDiagram(project.getRoot());
                     diagrams[i].add(
-                        new FigClass(clazz, bounds, settings));
+                        new FigClass(diagrams[i].getGraphModel(), clazz));
                     TargetManager.getInstance().setTarget(diagrams[i]);
                 }
 

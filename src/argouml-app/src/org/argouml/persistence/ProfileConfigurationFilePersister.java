@@ -72,20 +72,15 @@ public class ProfileConfigurationFilePersister extends MemberFilePersister {
         return "profile";
     }
 
-    public void load(Project project, InputStream inputStream)
-        throws OpenException {
-        load(project, new InputSource(inputStream));
-    }
-    
     /*
      * @see org.argouml.persistence.MemberFilePersister#load(org.argouml.kernel.Project, java.io.InputStream)
      */
-    public void load(Project project, InputSource inputSource)
+    public void load(Project project, InputStream inputStream)
         throws OpenException {
         try {
             ProfileConfigurationParser parser = 
                 new ProfileConfigurationParser();
-            parser.parse(inputSource);
+            parser.parse(new InputSource(inputStream));
             Collection<Profile> profiles = parser.getProfiles();
 
             Collection<String> unresolved = parser.getUnresolvedFilenames();
@@ -264,7 +259,11 @@ public class ProfileConfigurationFilePersister extends MemberFilePersister {
 
     @Override
     public void load(Project project, URL url) throws OpenException {
-        load(project, new InputSource(url.toExternalForm()));
+        try {
+            load(project, url.openStream());
+        } catch (IOException e) {
+            throw new OpenException(e);
+        }
     }
     
 }

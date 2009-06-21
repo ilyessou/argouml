@@ -126,7 +126,7 @@ public abstract class SwingWorker {
     	activateGlassPane();
         pmw = initProgressMonitorWindow();
 
-        ArgoFrame.getFrame().setCursor(
+        ArgoFrame.getInstance().setCursor(
         		Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 
         Object retVal = null;
@@ -138,8 +138,8 @@ public abstract class SwingWorker {
     	try {
     	    retVal = construct(pmw);
     	} catch (Exception exc) {
-	    // TODO: This error needs to be reported!
-    	    LOG.error("Error while loading project: ", exc);
+	        // what should we do here?
+    	    LOG.error("Error while loading project: " + exc);
         } finally {
             pmw.close();
         }
@@ -165,7 +165,7 @@ public abstract class SwingWorker {
      */
     protected void activateGlassPane() {
         // Mount the glasspane on the component window
-        GlassPane aPane = GlassPane.mount(ArgoFrame.getFrame(), true);
+        GlassPane aPane = GlassPane.mount(ArgoFrame.getInstance(), true);
 
         // keep track of the glasspane as an instance variable
         setGlassPane(aPane);
@@ -192,7 +192,7 @@ public abstract class SwingWorker {
      */
     public void finished() {
     	deactivateGlassPane();
-    	ArgoFrame.getFrame().setCursor(Cursor.getPredefinedCursor(
+    	ArgoFrame.getInstance().setCursor(Cursor.getPredefinedCursor(
                 Cursor.DEFAULT_CURSOR));
     }
     

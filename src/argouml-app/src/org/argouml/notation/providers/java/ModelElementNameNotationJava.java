@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 2005-2009 The Regents of the University of California. All
+// Copyright (c) 2005-2007 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -27,12 +27,14 @@ package org.argouml.notation.providers.java;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 
 import org.argouml.application.events.ArgoEventPump;
 import org.argouml.application.events.ArgoEventTypes;
 import org.argouml.application.events.ArgoHelpEvent;
 import org.argouml.i18n.Translator;
+import org.argouml.kernel.ProjectManager;
 import org.argouml.model.Model;
 import org.argouml.notation.NotationSettings;
 import org.argouml.notation.providers.ModelElementNameNotation;
@@ -166,8 +168,8 @@ public class ModelElementNameNotationJava extends ModelElementNameNotation {
         if (path != null) {
             Object nspe =
                 Model.getModelManagementHelper().getElement(
-                    path,
-                    Model.getFacade().getRoot(modelElement));
+                        path,
+                        Model.getFacade().getModel(modelElement));
 
             if (nspe == null || !(Model.getFacade().isANamespace(nspe))) {
                 String msg = 
@@ -175,8 +177,10 @@ public class ModelElementNameNotationJava extends ModelElementNameNotation {
                 throw new ParseException(Translator.localize(msg), 
                         0);
             }
-            if (!Model.getCoreHelper().isValidNamespace(
-                    modelElement, nspe)) {
+            Object model =
+                ProjectManager.getManager().getCurrentProject().getRoot();
+            if (!Model.getCoreHelper().getAllPossibleNamespaces(
+                    modelElement, model).contains(nspe)) {
                 String msg = 
                         "parsing.error.model-element-name.namespace-invalid";
                 throw new ParseException(Translator.localize(msg), 
@@ -221,6 +225,24 @@ public class ModelElementNameNotationJava extends ModelElementNameNotation {
      */
     public String getParsingHelp() {
         return "parsing.help.java.fig-nodemodelelement";
+    }
+
+    /*
+     * @see org.argouml.notation.providers.NotationProvider#toString(java.lang.Object, java.util.Map)
+     */
+    @SuppressWarnings("deprecation")
+    @Deprecated
+    public String toString(Object modelElement, Map args) {
+        String name;
+        name = Model.getFacade().getName(modelElement);
+        if (name == null) {
+            return "";
+        }
+        return NotationUtilityJava.generateLeaf(modelElement, args)
+            + NotationUtilityJava.generateAbstract(modelElement, args)
+            + NotationUtilityJava.generateVisibility(modelElement, args) 
+            + NotationUtilityJava.generatePath(modelElement, args) 
+            + name;
     }
 
     public String toString(Object modelElement, NotationSettings settings) {

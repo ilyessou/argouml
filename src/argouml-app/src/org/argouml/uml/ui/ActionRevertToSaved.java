@@ -80,7 +80,7 @@ public class ActionRevertToSaved extends AbstractAction {
 
         int response =
             JOptionPane.showConfirmDialog(
-                  ArgoFrame.getFrame(),
+                  ArgoFrame.getInstance(),
                   message,
                   Translator.localize(
                       "optionpane.revert-to-saved-confirm-title"),

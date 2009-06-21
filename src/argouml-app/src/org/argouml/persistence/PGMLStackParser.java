@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 2005-2009 The Regents of the University of California. All
+// Copyright (c) 2005-2008 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -56,7 +56,6 @@ import org.tigris.gef.presentation.FigEdge;
 import org.tigris.gef.presentation.FigGroup;
 import org.tigris.gef.presentation.FigNode;
 import org.xml.sax.Attributes;
-import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
@@ -78,6 +77,19 @@ class PGMLStackParser
         new LinkedHashMap<FigEdge, Object>(50);
 
     private DiagramSettings diagramSettings;
+    
+    /**
+     * Constructor.
+     * @param modelElementsByUuid a map of model elements indexed
+     *                            by a unique string identifier.
+     * @deprecated for 0.27.2 by tfmorris.  Use 
+     * {@link #PGMLStackParser(Map, DiagramSettings)}/
+     */
+    @Deprecated
+    public PGMLStackParser(Map modelElementsByUuid) {
+        super(modelElementsByUuid);
+        addTranslations();
+    }
 
     // TODO: Use stylesheet to convert or wait till we use Fig
     // factories in diagram subsystem.
@@ -315,20 +327,6 @@ class PGMLStackParser
         }
     }
 
-    /**
-     * Read and parse the input stream to create a new diagram and return it.
-     * 
-     * @param is the input stream
-     * @param closeStream true to close the stream when parsing is complete
-     * @return the diagram created as a result of the parse
-     * @throws SAXException
-     */
-    public ArgoDiagram readArgoDiagram(InputSource is, boolean closeStream)
-        throws SAXException {
-
-        return (ArgoDiagram) readDiagram(is.getByteStream(), closeStream);
-    }
-    
     /**
      * Read and parse the input stream to create a new diagram and return it.
      * 

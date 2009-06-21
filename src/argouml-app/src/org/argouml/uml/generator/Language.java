@@ -31,7 +31,7 @@ import javax.swing.Icon;
  * 
  * @author Daniele Tamino
  */
-public class Language implements Comparable<Language> {
+public class Language {
 
     private String name;
     private String title;
@@ -81,16 +81,6 @@ public class Language implements Comparable<Language> {
      */
     public Language(String theName) {
         this(theName, theName, null);
-    }
-    
-    /**
-     * Compares the current object with another object.
-     * 
-     * @param o The object one compares to
-     * @return int
-     */
-    public int compareTo(Language o) {
-        return (this.getName().compareToIgnoreCase(o.getName()));
     }
 
     /**

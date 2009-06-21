@@ -35,7 +35,7 @@ import org.argouml.uml.ui.AbstractActionAddModelElement2;
 /**
  * @author mkl
  */
-class ActionAddOFSState extends AbstractActionAddModelElement2 {
+public class ActionAddOFSState extends AbstractActionAddModelElement2 {
     private Object choiceClass = Model.getMetaTypes().getState();
 
 

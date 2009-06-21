@@ -32,20 +32,18 @@ import org.argouml.uml.ui.UMLModelElementListModel2;
  * 
  * @author Michiel
  */
-class UMLSignalReceptionListModel extends UMLModelElementListModel {
+class UMLSignalReceptionListModel extends UMLModelElementListModel2 {
 
     /**
      * Construct a list model showing the receptions of a signal.
      */
-    public UMLSignalReceptionListModel(Object metaType) {
+    public UMLSignalReceptionListModel() {
         /*
          * The event to listen to is "reception", so that model updates
          * get shown in the list. Reproduce this by adding a new reception,
          * and see the result displayed in the list.
          */
-        super("reception", metaType,
-            new ActionAddReceptionSignal(), null, 
-            new ActionRemoveReceptionSignal());
+        super("reception");
     }
 
     /*

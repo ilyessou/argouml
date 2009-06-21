@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 2007-2009 The Regents of the University of California. All
+// Copyright (c) 2007-2008 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -69,42 +69,42 @@ import org.argouml.uml.diagram.DiagramAppearance;
 public class SettingsTabProfile extends JPanel implements
         GUISettingsTabInterface, ActionListener {
 
-    private JButton loadFromFile;
+    private JButton loadFromFile = new JButton(Translator
+            .localize("tab.profiles.userdefined.load"));
 
-    private JButton addButton;
+    private JButton addButton = new JButton(">>");
 
-    private JButton removeButton;
+    private JButton removeButton = new JButton("<<");
 
-    private JList availableList;
+    private JList availableList = new JList();
 
-    private JList defaultList;
+    private JList defaultList = new JList();
 
     // //////
 
-    private JList directoryList;
+    private JList directoryList = new JList();
 
-    private JButton addDirectory;
+    private JButton addDirectory = new JButton(Translator
+            .localize("tab.profiles.directories.add"));
 
-    private JButton removeDirectory;
+    private JButton removeDirectory = new JButton(Translator
+            .localize("tab.profiles.directories.remove"));
 
     private JButton refreshProfiles = new JButton(Translator
             .localize("tab.profiles.directories.refresh"));
 
     // /////
 
-    private JLabel stereoLabel;
+    private JLabel stereoLabel = new JLabel(Translator
+            .localize("menu.popup.stereotype-view")
+            + ": ");
 
-    private JComboBox stereoField;
-
-    private boolean initialized = false;
+    private JComboBox stereoField = new JComboBox();
 
     /**
-     * Construct the Profile settings tab
+     * The default constructor for this class.
      */
     public SettingsTabProfile() {
-    }
-
-    private void buildPanel() {
         setLayout(new BorderLayout());
 
         JPanel warning = new JPanel();
@@ -128,29 +128,25 @@ public class SettingsTabProfile extends JPanel implements
 
         profileSettings.add(initDefaultStereotypeViewSelector());
 
+        directoryList
+                .setPrototypeCellValue("123456789012345678901234567890123456789012345678901234567890");
+        directoryList.setMinimumSize(new Dimension(50, 50));
+
         JPanel sdirPanel = new JPanel();
         sdirPanel.setLayout(new BoxLayout(sdirPanel, BoxLayout.Y_AXIS));
 
+        JPanel dlist = new JPanel();
+        dlist.setLayout(new BorderLayout());
 
         JPanel lcb = new JPanel();
         lcb.setLayout(new BoxLayout(lcb, BoxLayout.Y_AXIS));
 
-        addDirectory = new JButton(Translator
-                .localize("tab.profiles.directories.add"));
-        removeDirectory = new JButton(Translator
-                .localize("tab.profiles.directories.remove"));
-        
         lcb.add(addDirectory);
         lcb.add(removeDirectory);
 
         addDirectory.addActionListener(this);
         removeDirectory.addActionListener(this);
 
-        directoryList = new JList();
-        directoryList.setMinimumSize(new Dimension(50, 50));
-
-        JPanel dlist = new JPanel();
-        dlist.setLayout(new BorderLayout());        
         dlist.add(new JScrollPane(directoryList), BorderLayout.CENTER);
         dlist.add(lcb, BorderLayout.EAST);
 
@@ -163,8 +159,11 @@ public class SettingsTabProfile extends JPanel implements
         JPanel configPanel = new JPanel();
         configPanel.setLayout(new BoxLayout(configPanel, BoxLayout.X_AXIS));
 
-        availableList = createProfileList();
-        defaultList = createProfileList();
+        availableList.setPrototypeCellValue("12345678901234567890");
+        defaultList.setPrototypeCellValue("12345678901234567890");
+
+        availableList.setMinimumSize(new Dimension(50, 50));
+        defaultList.setMinimumSize(new Dimension(50, 50));
 
         refreshLists();
 
@@ -178,8 +177,6 @@ public class SettingsTabProfile extends JPanel implements
 
         JPanel centerButtons = new JPanel();
         centerButtons.setLayout(new BoxLayout(centerButtons, BoxLayout.Y_AXIS));
-        addButton = new JButton(">>");
-        removeButton = new JButton("<<");
         centerButtons.add(addButton);
         centerButtons.add(removeButton);
         configPanel.add(centerButtons);
@@ -200,8 +197,6 @@ public class SettingsTabProfile extends JPanel implements
 
         JPanel lffPanel = new JPanel();
         lffPanel.setLayout(new FlowLayout());
-        loadFromFile = new JButton(Translator
-                .localize("tab.profiles.userdefined.load"));
         lffPanel.add(loadFromFile);
         lffPanel.add(refreshProfiles);
 
@@ -211,32 +206,12 @@ public class SettingsTabProfile extends JPanel implements
         profileSettings.add(lffPanel);
 
         add(profileSettings, BorderLayout.CENTER);
-
-        initialized = true;
-    }
-
-    
-    @Override
-    public void setVisible(boolean flag) {
-        if (flag && !initialized) {
-            buildPanel();
-        }
-        super.setVisible(flag);
-    }
-    
-    private JList createProfileList() {
-        JList list = new JList();
-        list.setMinimumSize(new Dimension(50, 50));
-        return list;
     }
 
     private JPanel initDefaultStereotypeViewSelector() {
         JPanel setDefStereoV = new JPanel();
         setDefStereoV.setLayout(new FlowLayout());
-        stereoField = new JComboBox();
-        stereoLabel = new JLabel(Translator
-                .localize("menu.popup.stereotype-view")
-                + ": ");
+
         stereoLabel.setLabelFor(stereoField);
         setDefStereoV.add(stereoLabel);
         setDefStereoV.add(stereoField);
@@ -258,8 +233,8 @@ public class SettingsTabProfile extends JPanel implements
 
                 if (src == stereoField) {
                     Object item = e.getItem();
-                    DefaultComboBoxModel model = 
-                        (DefaultComboBoxModel) stereoField.getModel();
+                    DefaultComboBoxModel model = (DefaultComboBoxModel) stereoField
+                            .getModel();
                     int idx = model.getIndexOf(item);
 
                     switch (idx) {
@@ -434,13 +409,7 @@ public class SettingsTabProfile extends JPanel implements
         return this;
     }
 
-
-
-
     public void handleResetToDefault() {
-        if (!initialized) {
-            buildPanel();
-        }
         refreshLists();
     }
 
@@ -449,9 +418,6 @@ public class SettingsTabProfile extends JPanel implements
     }
 
     public void handleSettingsTabRefresh() {
-        if (!initialized) {
-            buildPanel();
-        }
         refreshLists();
 
         switch (Configuration.getInteger(
@@ -482,8 +448,7 @@ public class SettingsTabProfile extends JPanel implements
             usedItens.add((Profile) modelUsd.getElementAt(i));
         }
 
-        for (Profile profile 
-                : ProfileFacade.getManager().getDefaultProfiles()) {
+        for (Profile profile : ProfileFacade.getManager().getDefaultProfiles()) {
             if (!usedItens.contains(profile)) {
                 toRemove.add(profile);
             }
@@ -526,5 +491,4 @@ public class SettingsTabProfile extends JPanel implements
         }
 
     }
-
 }

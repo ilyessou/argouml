@@ -34,7 +34,7 @@ import org.argouml.ui.targetmanager.TargetManager;
  * @author mkl
  *
  */
-class UMLTimeExpressionModel extends UMLExpressionModel {
+public class UMLTimeExpressionModel extends UMLExpressionModel {
 
     private static final Logger LOG =
         Logger.getLogger(UMLTimeExpressionModel.class);

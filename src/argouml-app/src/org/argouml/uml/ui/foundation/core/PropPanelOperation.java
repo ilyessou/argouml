@@ -86,16 +86,9 @@ public class PropPanelOperation extends PropPanelFeature {
 
         addSeparator();
 
-        if (Model.getFacade().getUmlVersion().charAt(0) == '1') {
-            addField(Translator.localize("label.raisedsignals"),
-                    new JScrollPane(new UMLLinkedList(
-                            new UMLOperationRaisedSignalsListModel())));
-        } else {
-            // UML2
-            addField(Translator.localize("label.raisedexceptions"),
-                    new JScrollPane(new UMLLinkedList(
-                            new UMLOperationRaisedExceptionsListModel())));
-        }
+        addField(Translator.localize("label.raisedsignals"),
+               new JScrollPane(new UMLLinkedList(
+                       new UMLOperationRaisedSignalsListModel())));
 
         addField(Translator.localize("label.methods"),
                new JScrollPane(new UMLLinkedList(
@@ -128,12 +121,7 @@ public class PropPanelOperation extends PropPanelFeature {
         });
         addAction(new ActionAddOperation());
         addAction(new ActionNewParameter());
-        if (Model.getFacade().getUmlVersion().charAt(0) == '1') {
-            addAction(new ActionNewRaisedSignal());
-        } else {
-            // UML2
-            addAction(new ActionNewRaisedException());
-        }
+        addAction(new ActionNewRaisedSignal());
         addAction(new ActionNewMethod());
         addAction(new ActionAddDataType());
         addAction(new ActionAddEnumeration());
@@ -141,13 +129,11 @@ public class PropPanelOperation extends PropPanelFeature {
         addAction(getDeleteAction());
     }
 
+
     /**
      * Add a new RaisedSignal to the current target.
      */
     public void addRaisedSignal() {
-        if (Model.getFacade().getUmlVersion().charAt(0) != '1') {
-            return;
-        }
         Object target = getTarget();
         if (Model.getFacade().isAOperation(target)) {
             Object oper = target;
@@ -160,28 +146,6 @@ public class PropPanelOperation extends PropPanelFeature {
                     newSignal);
             Model.getCoreHelper().addRaisedSignal(oper, newSignal);
             TargetManager.getInstance().setTarget(newSignal);
-        }
-    }
-
-    /**
-     * Add a new RaisedException to the current target.
-     */
-    public void addRaisedException() {
-        if (Model.getFacade().getUmlVersion().charAt(0) != '2') {
-            return;
-        }
-        Object target = getTarget();
-        if (Model.getFacade().isAOperation(target)) {
-            Object oper = target;
-            Object newException = Model.getCommonBehaviorFactory()
-                    .createException();
-
-            Model.getCoreHelper().addOwnedElement(
-                    Model.getFacade().getNamespace(
-                            Model.getFacade().getOwner(oper)),
-                    newException);
-            Model.getCoreHelper().addRaisedException(oper, newException);
-            TargetManager.getInstance().setTarget(newException);
         }
     }
 
@@ -209,7 +173,7 @@ public class PropPanelOperation extends PropPanelFeature {
         private static final long serialVersionUID = -2380798799656866520L;
 
         /**
-         * Construct an action to create a new RaisedException.
+         * Construct an action to create a new RaisedSignal.
          */
         public ActionNewRaisedSignal() {
             super("button.new-raised-signal");
@@ -227,32 +191,6 @@ public class PropPanelOperation extends PropPanelFeature {
             Object target = TargetManager.getInstance().getModelTarget();
             if (Model.getFacade().isAOperation(target)) {
                 addRaisedSignal();
-                super.actionPerformed(e);
-            }
-        }
-    }
-
-    private class ActionNewRaisedException extends AbstractActionNewModelElement {
-
-        /**
-         * Construct an action to create a new RaisedException.
-         */
-        public ActionNewRaisedException() {
-            super("button.new-raised-exception");
-            putValue(Action.NAME,
-                    Translator.localize("button.new-raised-exception"));
-            Icon icon = ResourceLoaderWrapper.lookupIcon("SignalSending");
-            putValue(Action.SMALL_ICON, icon);
-        }
-
-        /*
-         * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-         */
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            Object target = TargetManager.getInstance().getModelTarget();
-            if (Model.getFacade().isAOperation(target)) {
-                addRaisedException();
                 super.actionPerformed(e);
             }
         }

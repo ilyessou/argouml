@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2009 The Regents of the University of California. All
+// Copyright (c) 1996-2008 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -38,17 +38,18 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 import org.argouml.application.api.Argo;
+import org.argouml.application.api.GUISettingsTabInterface;
 import org.argouml.configuration.Configuration;
 import org.argouml.configuration.ConfigurationKey;
 import org.argouml.i18n.Translator;
 import org.argouml.kernel.Project;
+import org.argouml.kernel.ProjectManager;
 import org.argouml.kernel.ProjectSettings;
 import org.argouml.notation.Notation;
 import org.argouml.notation.NotationName;
-import org.argouml.notation.NotationSettings;
 import org.argouml.swingext.JLinkButton;
 import org.argouml.ui.ActionProjectSettings;
-import org.argouml.ui.GUIProjectSettingsTabInterface;
+import org.argouml.ui.ShadowComboBox;
 
 /**
  * Settings tab panel for handling Notation settings. <p>
@@ -65,10 +66,10 @@ import org.argouml.ui.GUIProjectSettingsTabInterface;
  */
 public class SettingsTabNotation
     extends JPanel
-    implements GUIProjectSettingsTabInterface {
+    implements GUISettingsTabInterface {
 
-    private JPanel topPanel;
     private JComboBox notationLanguage;
+    private JCheckBox showBoldNames;
     private JCheckBox useGuillemots;
     private JCheckBox showAssociationNames;
     private JCheckBox showVisibility;
@@ -78,9 +79,10 @@ public class SettingsTabNotation
     private JCheckBox showTypes;
     private JCheckBox showStereotypes;
     private JCheckBox showSingularMultiplicities;
+    private JCheckBox hideBidirectionalArrows;
+    private ShadowComboBox defaultShadowWidth;
 
     private int scope;
-    private Project p;
 
     /**
      * The constructor.
@@ -92,15 +94,12 @@ public class SettingsTabNotation
     public SettingsTabNotation(int settingsScope) {
         super();
         scope = settingsScope;
-    }
-
-    private void buildPanel() {
         setLayout(new BorderLayout());
 
-        topPanel = new JPanel();
-        topPanel.setLayout(new BorderLayout());
+        JPanel top = new JPanel();
+        top.setLayout(new BorderLayout());
 
-        if (scope == Argo.SCOPE_APPLICATION) {
+        if (settingsScope == Argo.SCOPE_APPLICATION) {
             JPanel warning = new JPanel();
             warning.setLayout(new BoxLayout(warning, BoxLayout.PAGE_AXIS));
             JLabel warningLabel = new JLabel(Translator
@@ -116,7 +115,7 @@ public class SettingsTabNotation
             projectSettings.setAlignmentX(Component.RIGHT_ALIGNMENT);
             warning.add(projectSettings);
 
-            topPanel.add(warning, BorderLayout.NORTH);
+            top.add(warning, BorderLayout.NORTH);
         }
 
         JPanel settings = new JPanel();
@@ -143,6 +142,9 @@ public class SettingsTabNotation
         notationLanguagePanel.add(notationLanguageLabel);
         notationLanguagePanel.add(notationLanguage);
         settings.add(notationLanguagePanel, constraints);
+
+        showBoldNames = createCheckBox("label.show-bold-names");
+        settings.add(showBoldNames, constraints);
 
         useGuillemots = createCheckBox("label.use-guillemots");
         settings.add(useGuillemots, constraints);
@@ -175,10 +177,25 @@ public class SettingsTabNotation
         showSingularMultiplicities = 
             createCheckBox("label.show-singular-multiplicities");
         settings.add(showSingularMultiplicities, constraints);
+        
+        hideBidirectionalArrows = 
+            createCheckBox("label.hide-bidirectional-arrows");
+        settings.add(hideBidirectionalArrows, constraints);        
 
-        topPanel.add(settings, BorderLayout.CENTER);
+        constraints.insets = new Insets(5, 30, 0, 4);
+        JPanel defaultShadowWidthPanel = new JPanel(new FlowLayout(
+            FlowLayout.LEFT, 5, 0));
+        JLabel defaultShadowWidthLabel = createLabel(
+            "label.default-shadow-width");
+        defaultShadowWidth = new ShadowComboBox();
+        defaultShadowWidthLabel.setLabelFor(defaultShadowWidth);
+        defaultShadowWidthPanel.add(defaultShadowWidthLabel);
+        defaultShadowWidthPanel.add(defaultShadowWidth);
+        settings.add(defaultShadowWidthPanel, constraints);
 
-        add(topPanel, BorderLayout.NORTH);
+        top.add(settings, BorderLayout.CENTER);
+
+        add(top, BorderLayout.NORTH);
     }
 
     /*
@@ -186,6 +203,8 @@ public class SettingsTabNotation
      */
     public void handleSettingsTabRefresh() {
         if (scope == Argo.SCOPE_APPLICATION) {
+            showBoldNames.setSelected(getBoolean(
+                    Notation.KEY_SHOW_BOLD_NAMES));
             useGuillemots.setSelected(getBoolean(
                     Notation.KEY_USE_GUILLEMOTS));
             notationLanguage.setSelectedItem(Notation.getConfiguredNotation());
@@ -215,24 +234,38 @@ public class SettingsTabNotation
              */
             showSingularMultiplicities.setSelected(Configuration.getBoolean(
                     Notation.KEY_SHOW_SINGULAR_MULTIPLICITIES, true));
+            /*
+             * The next one defaults to TRUE, despite that this is
+             * NOT compatible with older ArgoUML versions
+             * (before 0.28?) that did
+             * not have this setting - see issue 535
+             */
+            hideBidirectionalArrows.setSelected(Configuration.getBoolean(
+                    Notation.KEY_HIDE_BIDIRECTIONAL_ARROWS, true));
+            defaultShadowWidth.setSelectedIndex(Configuration.getInteger(
+                    Notation.KEY_DEFAULT_SHADOW_WIDTH, 1));
         }
         if (scope == Argo.SCOPE_PROJECT) {
-            assert p != null;
+            Project p = ProjectManager.getManager().getCurrentProject();
             ProjectSettings ps = p.getProjectSettings();
-            NotationSettings ns = ps.getNotationSettings();
 
             notationLanguage.setSelectedItem(Notation.findNotation(
                     ps.getNotationLanguage()));
+            showBoldNames.setSelected(ps.getShowBoldNamesValue());
             useGuillemots.setSelected(ps.getUseGuillemotsValue());
-            showAssociationNames.setSelected(ns.isShowAssociationNames());
-            showVisibility.setSelected(ns.isShowVisibilities());
-            showMultiplicity.setSelected(ns.isShowMultiplicities());
-            showInitialValue.setSelected(ns.isShowInitialValues());
-            showProperties.setSelected(ns.isShowProperties());
-            showTypes.setSelected(ns.isShowTypes());
+            showAssociationNames.setSelected(ps.getShowAssociationNamesValue());
+            showVisibility.setSelected(ps.getShowVisibilityValue());
+            showMultiplicity.setSelected(ps.getShowMultiplicityValue());
+            showInitialValue.setSelected(ps.getShowInitialValueValue());
+            showProperties.setSelected(ps.getShowPropertiesValue());
+            showTypes.setSelected(ps.getShowTypesValue());
             showStereotypes.setSelected(ps.getShowStereotypesValue());
             showSingularMultiplicities.setSelected(
-                    ns.isShowSingularMultiplicities());
+                    ps.getShowSingularMultiplicitiesValue());
+            hideBidirectionalArrows.setSelected(
+                    ps.getHideBidirectionalArrowsValue());
+            defaultShadowWidth.setSelectedIndex(
+                    ps.getDefaultShadowWidthValue());
         }
     }
 
@@ -253,6 +286,8 @@ public class SettingsTabNotation
         if (scope == Argo.SCOPE_APPLICATION) {
             Notation.setDefaultNotation(
                     (NotationName) notationLanguage.getSelectedItem());
+            Configuration.setBoolean(Notation.KEY_SHOW_BOLD_NAMES,
+                    showBoldNames.isSelected());
             Configuration.setBoolean(Notation.KEY_USE_GUILLEMOTS,
                     useGuillemots.isSelected());
             Configuration.setBoolean(Notation.KEY_SHOW_ASSOCIATION_NAMES,
@@ -271,25 +306,29 @@ public class SettingsTabNotation
                     showStereotypes.isSelected());
             Configuration.setBoolean(Notation.KEY_SHOW_SINGULAR_MULTIPLICITIES,
                     showSingularMultiplicities.isSelected());
+            Configuration.setBoolean(Notation.KEY_HIDE_BIDIRECTIONAL_ARROWS,
+                    hideBidirectionalArrows.isSelected());            
+            Configuration.setInteger(Notation.KEY_DEFAULT_SHADOW_WIDTH,
+                    defaultShadowWidth.getSelectedIndex());
         }
         if (scope == Argo.SCOPE_PROJECT) {
-            assert p != null;
+            Project p = ProjectManager.getManager().getCurrentProject();
             ProjectSettings ps = p.getProjectSettings();
-            NotationSettings ns = ps.getNotationSettings();
             NotationName nn = (NotationName) notationLanguage.getSelectedItem();
-            if (nn != null) {
-                ps.setNotationLanguage(nn.getConfigurationValue());
-            }
+            if (nn != null) ps.setNotationLanguage(nn.getConfigurationValue());
+            ps.setShowBoldNames(showBoldNames.isSelected());
             ps.setUseGuillemots(useGuillemots.isSelected());
-            ns.setShowAssociationNames(showAssociationNames.isSelected());
-            ns.setShowVisibilities(showVisibility.isSelected());
-            ns.setShowMultiplicities(showMultiplicity.isSelected());
-            ns.setShowInitialValues(showInitialValue.isSelected());
-            ns.setShowProperties(showProperties.isSelected());
-            ns.setShowTypes(showTypes.isSelected());
+            ps.setShowAssociationNames(showAssociationNames.isSelected());
+            ps.setShowVisibility(showVisibility.isSelected());
+            ps.setShowMultiplicity(showMultiplicity.isSelected());
+            ps.setShowInitialValue(showInitialValue.isSelected());
+            ps.setShowProperties(showProperties.isSelected());
+            ps.setShowTypes(showTypes.isSelected());
             ps.setShowStereotypes(showStereotypes.isSelected());
-            ns.setShowSingularMultiplicities(
+            ps.setShowSingularMultiplicities(
                     showSingularMultiplicities.isSelected());
+            ps.setDefaultShadowWidth(defaultShadowWidth.getSelectedIndex());
+            ps.setHideBidirectionalArrows(hideBidirectionalArrows.isSelected());
         }
     }
 
@@ -306,6 +345,8 @@ public class SettingsTabNotation
     public void handleResetToDefault() {
         if (scope == Argo.SCOPE_PROJECT) {
             notationLanguage.setSelectedItem(Notation.getConfiguredNotation());
+            showBoldNames.setSelected(getBoolean(
+                    Notation.KEY_SHOW_BOLD_NAMES));
             useGuillemots.setSelected(getBoolean(
                     Notation.KEY_USE_GUILLEMOTS));
             showAssociationNames.setSelected(Configuration.getBoolean(
@@ -324,25 +365,22 @@ public class SettingsTabNotation
                     Notation.KEY_SHOW_STEREOTYPES));
             showSingularMultiplicities.setSelected(Configuration.getBoolean(
                     Notation.KEY_SHOW_SINGULAR_MULTIPLICITIES));
+            hideBidirectionalArrows.setSelected(Configuration.getBoolean(
+                    Notation.KEY_HIDE_BIDIRECTIONAL_ARROWS, true));
+            defaultShadowWidth.setSelectedIndex(Configuration.getInteger(
+                    Notation.KEY_DEFAULT_SHADOW_WIDTH, 1));
         }
     }
 
     /*
      * @see org.argouml.ui.GUISettingsTabInterface#getTabKey()
      */
-    public String getTabKey() {
-        return "tab.notation";
-    }
+    public String getTabKey() { return "tab.notation"; }
 
     /*
      * @see org.argouml.ui.GUISettingsTabInterface#getTabPanel()
      */
-    public JPanel getTabPanel() {
-        if (topPanel == null) {
-            buildPanel();
-        }
-        return this;
-    }
+    public JPanel getTabPanel() { return this; }
 
     /**
      * Create a localized JCheckBox.
@@ -373,10 +411,5 @@ public class SettingsTabNotation
         if (visible) {
             handleSettingsTabRefresh();
         }
-    }
-
-    public void setProject(Project project) {
-        assert project != null;
-        p = project;
     }
 }

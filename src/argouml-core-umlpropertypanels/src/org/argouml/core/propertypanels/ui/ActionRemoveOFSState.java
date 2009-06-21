@@ -35,7 +35,7 @@ import org.argouml.uml.ui.AbstractActionRemoveElement;
 /**
  * @author mkl
  */
-class ActionRemoveOFSState extends AbstractActionRemoveElement {
+public class ActionRemoveOFSState extends AbstractActionRemoveElement {
 
     /**
      * Constructor.

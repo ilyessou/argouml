@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 2005-2009 The Regents of the University of California. All
+// Copyright (c) 2005-2007 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -27,6 +27,7 @@ package org.argouml.notation.providers.uml;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Map;
 import java.util.StringTokenizer;
 
 import org.argouml.application.events.ArgoEventPump;
@@ -83,9 +84,22 @@ public class StateBodyNotationUml extends StateBodyNotation {
         return "parsing.help.fig-statebody";
     }
 
+
     @Override
     public String toString(Object modelElement, NotationSettings settings) {
+        return toString(modelElement);
+    }
+    
+    /*
+     * @see org.argouml.uml.notation.NotationProvider#toString(java.lang.Object, java.util.Map)
+     */
+    @SuppressWarnings("deprecation")
+    @Deprecated
+    public String toString(Object modelElement, Map args) {
+        return toString(modelElement);
+    }
 
+    private String toString(Object modelElement) {
         StringBuffer s = new StringBuffer();
 
         Object entryAction = Model.getFacade().getEntry(modelElement);
@@ -121,7 +135,7 @@ public class StateBodyNotationUml extends StateBodyNotation {
                 }
                 /* TODO: Is this a good way of handling nested notation? */
                 s.append((new TransitionNotationUml(trans)).toString(trans,
-                        settings));
+                        NotationSettings.getDefaultSettings()));
             }
         }
         return s.toString();

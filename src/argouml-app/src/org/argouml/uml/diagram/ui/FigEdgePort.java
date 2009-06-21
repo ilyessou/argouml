@@ -49,6 +49,19 @@ import org.tigris.gef.presentation.FigEdge;
 public class FigEdgePort extends FigNodeModelElement {
     private FigCircle bigPort;
 
+    /**
+     * Constructor.
+     * 
+     * @deprecated for 0.28 by tfmorris. Use
+     *             {@link #FigEdgePort(Object, Rectangle, DiagramSettings)}.
+     */
+    @SuppressWarnings("deprecation")
+    @Deprecated
+    public FigEdgePort() {
+        super();
+        initialize();
+    }
+
     private void initialize() {
         invisibleAllowed = true;
         bigPort = new FigCircle(0, 0, 1, 1, LINE_COLOR, FILL_COLOR);
@@ -64,7 +77,6 @@ public class FigEdgePort extends FigNodeModelElement {
             DiagramSettings settings) {
         super(owner, bounds, settings);
         initialize();
-        bigPort.setOwner(owner);
     }
     
     /*
@@ -73,6 +85,16 @@ public class FigEdgePort extends FigNodeModelElement {
     @Override
     public boolean hit(Rectangle r) {
         return false;
+    }
+
+    /*
+     * @see org.tigris.gef.presentation.Fig#setOwner(java.lang.Object)
+     */
+    @Override
+    @Deprecated
+    public void setOwner(Object own) {
+        bigPort.setOwner(own);
+        super.setOwner(own);
     }
     
     @Override

@@ -37,6 +37,7 @@ import org.argouml.notation.NotationName;
 import org.argouml.notation.NotationProvider;
 import org.argouml.notation.NotationProviderFactory2;
 import org.argouml.uml.diagram.DiagramSettings;
+import org.tigris.gef.graph.GraphModel;
 import org.tigris.gef.presentation.FigRRect;
 import org.tigris.gef.presentation.FigText;
 
@@ -66,6 +67,34 @@ public abstract class FigState extends FigStateVertex {
      * The text inside the state.
      */
     private FigText internal;
+
+    /**
+     * Constructor for FigState.
+     * 
+     * @deprecated for 0.27.3 by mvw.  Use 
+     * {@link #FigState(Object, Rectangle, DiagramSettings)}.
+     */
+    @SuppressWarnings("deprecation")
+    @Deprecated
+    public FigState() {
+        super();
+        initializeState();
+    }
+
+    /**
+     * Constructor for FigState, used when an UML elm already exists.
+     *
+     * @param gm ignored
+     * @param node the UML element
+     * 
+     * @deprecated for 0.27.3 by mvw.  Use 
+     * {@link #FigState(Object, Rectangle, DiagramSettings)}.
+     */
+    @Deprecated
+    public FigState(@SuppressWarnings("unused") GraphModel gm, Object node) {
+        this();
+        setOwner(node);
+    }
 
     /**
      * Constructor used by PGML parser.
@@ -112,6 +141,17 @@ public abstract class FigState extends FigStateVertex {
         internal.setExpandOnly(true);
         internal.setReturnAction(FigText.INSERT);
         internal.setJustification(FigText.JUSTIFY_LEFT);
+    }
+
+    /*
+     * @see org.tigris.gef.presentation.Fig#setOwner(java.lang.Object)
+     */
+    @SuppressWarnings("deprecation")
+    @Deprecated
+    @Override
+    public void setOwner(Object newOwner) {
+        super.setOwner(newOwner);
+        renderingChanged();
     }
 
     /*

@@ -29,6 +29,8 @@ import java.awt.event.ActionEvent;
 import javax.swing.Action;
 
 import org.argouml.i18n.Translator;
+import org.argouml.uml.diagram.ArgoDiagram;
+import org.argouml.uml.diagram.DiagramUtils;
 import org.tigris.gef.undo.UndoableAction;
 
 /**
@@ -59,7 +61,7 @@ public class ActionGenerationSettings extends UndoableAction {
     }
 
     /**
-     * @return always returns true
+     * @return true if the action is enabled and the active diagram is a diagram
      * @see org.tigris.gef.undo.UndoableAction#isEnabled()
      */
     @Override

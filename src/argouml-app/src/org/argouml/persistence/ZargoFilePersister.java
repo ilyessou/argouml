@@ -50,10 +50,10 @@ import org.apache.log4j.Logger;
 import org.argouml.application.api.Argo;
 import org.argouml.application.helpers.ApplicationVersion;
 import org.argouml.i18n.Translator;
-import org.argouml.kernel.ProfileConfiguration;
 import org.argouml.kernel.Project;
 import org.argouml.kernel.ProjectFactory;
 import org.argouml.kernel.ProjectMember;
+import org.argouml.kernel.ProfileConfiguration;
 import org.argouml.util.FileConstants;
 import org.argouml.util.ThreadUtils;
 import org.xml.sax.InputSource;
@@ -273,8 +273,7 @@ class ZargoFilePersister extends UmlFilePersister {
             // removed from here also.
             String xmiEntry = getEntryNames(file, ".xmi").iterator().next();
             MemberFilePersister persister = getMemberFilePersister("xmi");
-            URL url = makeZipEntryUrl(toURL(file), xmiEntry);
-            persister.load(p, new InputSource(url.toExternalForm()));
+            persister.load(p, makeZipEntryUrl(toURL(file), xmiEntry));
             
             // Load the rest
             List<String> entries = getEntryNames(file, null);
@@ -284,8 +283,7 @@ class ZargoFilePersister extends UmlFilePersister {
                     persister = getMemberFilePersister(ext);
                     LOG.info("Loading member with "
                             + persister.getClass().getName());
-                    url = makeZipEntryUrl(toURL(file), name);
-                    persister.load(p, new InputSource(url.toExternalForm()));
+                    persister.load(p, openZipEntry(toURL(file), name));
                 }
             }
 

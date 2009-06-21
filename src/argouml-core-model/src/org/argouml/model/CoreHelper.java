@@ -743,20 +743,12 @@ public interface CoreHelper {
     void addQualifier(Object handle, int position, Object qualifier);
 
     /**
-     * Add a raised Signal to a Message.
+     * Add a raised Signal to a Message or Operation.
      *
      * @param handle the Message or Operation
      * @param sig the Signal that is raised
      */
     void addRaisedSignal(Object handle, Object sig);
-    
-    /**
-     * Add a raised exception to a Operation.
-     *
-     * @param handle the Operation
-     * @param exception the raised exception.
-     */
-    void addRaisedException(Object handle, Object exception);
 
     /**
      * Add a source flow to a ModelElement.

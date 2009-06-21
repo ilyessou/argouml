@@ -27,24 +27,22 @@ package org.argouml.core.propertypanels.ui;
 import java.util.Collection;
 
 import org.argouml.model.Model;
+import org.argouml.uml.ui.UMLModelElementListModel2;
 
 /**
  * @author mkl
  */
-class UMLOFSStateListModel extends UMLModelElementListModel {
+class UMLOFSStateListModel extends UMLModelElementListModel2 {
 
     /**
      * Constructor for UMLOFSStateListModel.
      */
-    public UMLOFSStateListModel(Object metaType) {
+    public UMLOFSStateListModel() {
         /* TODO: This needs work...
          * We also need to listen to addition/removal
          * of states to/from a ClassifierInState.
          */
-        super("type", metaType,
-            new ActionAddOFSState(),
-            null,
-            new ActionRemoveOFSState());
+        super("type");
     }
 
     /*

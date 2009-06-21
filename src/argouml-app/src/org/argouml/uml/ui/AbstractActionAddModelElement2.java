@@ -1,4 +1,4 @@
-// $Id$
+// $Id: eclipse-argo-codetemplates.xml 11347 2006-10-26 22:37:44Z linus $
 // Copyright (c) 2007 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
@@ -27,6 +27,7 @@ package org.argouml.uml.ui;
 import java.awt.event.ActionEvent;
 import java.util.Collection;
 import java.util.List;
+import java.util.Vector;
 
 import javax.swing.Action;
 import javax.swing.Icon;
@@ -90,7 +91,7 @@ public abstract class AbstractActionAddModelElement2 extends UndoableAction {
             new UMLAddDialog(getChoices(), getSelected(), getDialogTitle(),
                              isMultiSelect(),
                              isExclusive());
-        int result = dialog.showDialog(ArgoFrame.getFrame());
+        int result = dialog.showDialog(ArgoFrame.getInstance());
         if (result == JOptionPane.OK_OPTION) {
             doIt(dialog.getSelected());
         }

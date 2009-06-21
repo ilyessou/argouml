@@ -32,6 +32,7 @@ import java.beans.PropertyChangeEvent;
 import org.argouml.model.AttributeChangeEvent;
 import org.argouml.model.Model;
 import org.argouml.uml.diagram.DiagramSettings;
+import org.tigris.gef.base.Layer;
 import org.tigris.gef.presentation.ArrowHeadTriangle;
 import org.tigris.gef.presentation.Fig;
 import org.tigris.gef.presentation.FigText;
@@ -52,13 +53,6 @@ public class FigGeneralization extends FigEdgeModelElement {
      */
     private static final long serialVersionUID = 3983170503390943894L;
 
-
-    /**
-     * Group for the FigTexts concerning the name and stereotype of the
-     * association itself.
-     */
-    private FigTextGroup middleGroup;
-    
     /**
      * Text box for discriminator.
      */
@@ -66,19 +60,28 @@ public class FigGeneralization extends FigEdgeModelElement {
 
     private ArrowHeadTriangle endArrow;
 
+    /**
+     * The constructor.
+     * @deprecated for 0.27.3 by tfmorris.  Use 
+     * {@link #FigGeneralization(Object, DiagramSettings)}.
+     */
+    @SuppressWarnings("deprecation")
+    @Deprecated
+    public FigGeneralization() {
+        discriminator = new ArgoFigText(null, new Rectangle(X0, Y0,
+                DISCRIMINATOR_WIDTH, TEXT_HEIGHT), getSettings(), false);
+        initialize();
+    }
+
     private void initialize() {
-        // UML spec for Generalizations doesn't call for name
+        // UML spec for Generalizations doesn't call for name or stereotype
 
 	discriminator.setFilled(false);
 	discriminator.setLineWidth(0);
 	discriminator.setReturnAction(FigText.END_EDITING);
 	discriminator.setTabAction(FigText.END_EDITING);
-	
-        middleGroup.addFig(discriminator);
-        middleGroup.addFig(getStereotypeFig());        
-	
-	addPathItem(middleGroup, 
-	        new PathItemPlacement(this, middleGroup, 50, -10));
+	addPathItem(discriminator, 
+	        new PathItemPlacement(this, discriminator, 50, -10));
 
         endArrow = new ArrowHeadTriangle();
 	endArrow.setFillColor(FILL_COLOR);
@@ -87,6 +90,21 @@ public class FigGeneralization extends FigEdgeModelElement {
 	setBetweenNearestPoints(true);
     }
 
+    /**
+     * The constructor that hooks the Fig into the UML element.
+     *
+     * @param edge the UML element
+     * @param lay the layer
+     * @deprecated for 0.27.3 by tfmorris.  Use 
+     * {@link #FigGeneralization(Object, DiagramSettings)}.
+     */
+    @Deprecated
+    public FigGeneralization(Object edge, Layer lay) {
+	this();
+	setLayer(lay);
+	setOwner(edge);
+    }
+    
     /**
      * Construct a new generalization edge with the given model element as the
      * owner.
@@ -98,9 +116,6 @@ public class FigGeneralization extends FigEdgeModelElement {
         super(owner, settings);
         discriminator = new ArgoFigText(owner, new Rectangle(X0, Y0,
                 DISCRIMINATOR_WIDTH, TEXT_HEIGHT), settings, false);
-        middleGroup = new FigTextGroup(owner, settings);
-        
-        
         initialize();
         fixup(owner);
         addListener(owner);
@@ -170,6 +185,16 @@ public class FigGeneralization extends FigEdgeModelElement {
     public void paint(Graphics g) {
         endArrow.setLineColor(getLineColor());
         super.paint(g);
+    }
+
+    /*
+     * @see org.tigris.gef.presentation.Fig#setOwner(Object)
+     */
+    @SuppressWarnings("deprecation")
+    @Override
+    public void setOwner(Object own) {
+        super.setOwner(own);
+        fixup(own);
     }
 
     /**

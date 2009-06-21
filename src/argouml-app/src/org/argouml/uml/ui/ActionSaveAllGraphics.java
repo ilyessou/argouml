@@ -37,7 +37,6 @@ import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 
 import org.apache.log4j.Logger;
-import org.argouml.application.api.CommandLineInterface;
 import org.argouml.application.events.ArgoEventPump;
 import org.argouml.application.events.ArgoEventTypes;
 import org.argouml.application.events.ArgoStatusEvent;
@@ -64,9 +63,7 @@ import org.tigris.gef.util.Util;
  * @author Leonardo Souza Mario Bueno (lsbueno@tigris.org)
  */
 
-public class ActionSaveAllGraphics extends AbstractAction
-    implements CommandLineInterface {
-
+public class ActionSaveAllGraphics extends AbstractAction {
     private static final Logger LOG =
         Logger.getLogger(ActionSaveAllGraphics.class);
     
@@ -182,7 +179,7 @@ public class ActionSaveAllGraphics extends AbstractAction
             chooser.setSelectedFile(new File(fn));
         }
 
-        int retval = chooser.showSaveDialog(ArgoFrame.getFrame());
+        int retval = chooser.showSaveDialog(ArgoFrame.getInstance());
 
         if ( retval == JFileChooser.APPROVE_OPTION ) {
             File theFile = chooser.getSelectedFile();
@@ -221,7 +218,7 @@ public class ActionSaveAllGraphics extends AbstractAction
                     "optionpane.confirm-overwrite.cancel")}; // 3
 
             int response = 
-		JOptionPane.showOptionDialog(ArgoFrame.getFrame(),
+		JOptionPane.showOptionDialog(ArgoFrame.getInstance(),
                     message,
                     title,
                     JOptionPane.YES_NO_CANCEL_OPTION,
@@ -283,31 +280,5 @@ public class ActionSaveAllGraphics extends AbstractAction
     private void showStatus(String text) {
         ArgoEventPump.fireEvent(new ArgoStatusEvent(
                 ArgoEventTypes.STATUS_TEXT, this, text));
-    }
-
-    /**
-     * Execute this action from the command line.
-     *
-     * @see org.argouml.application.api.CommandLineInterface#doCommand(String)
-     * @param argument is the directory name that we save to.
-     * @return true if it is OK.
-     */
-    public boolean doCommand(String argument) {
-        File dir = new File(argument);
-        if (!dir.exists() || !dir.isDirectory()) {
-            LOG.error("The argument must be a path to an existing directory.");
-            return false;
-        }
-        boolean result = true;
-        for (Project p : ProjectManager.getManager().getOpenProjects()) {
-            TargetManager tm = TargetManager.getInstance();
-            for (ArgoDiagram d : p.getDiagramList()) {
-                tm.setTarget(d);
-                if (!trySaveDiagram(d, dir)) {
-                    result = false;
-                }
-            }
-        }
-        return result;
     }
 }

@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 2007-2009 The Regents of the University of California. All
+// Copyright (c) 2007 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -26,35 +26,27 @@ package org.argouml.uml.diagram.ui;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 import org.argouml.application.api.Argo;
+import org.argouml.application.api.GUISettingsTabInterface;
 import org.argouml.configuration.Configuration;
 import org.argouml.configuration.ConfigurationKey;
 import org.argouml.i18n.Translator;
 import org.argouml.kernel.Project;
+import org.argouml.kernel.ProjectManager;
 import org.argouml.kernel.ProjectSettings;
 import org.argouml.swingext.JLinkButton;
 import org.argouml.ui.ActionProjectSettings;
 import org.argouml.ui.ArgoJFontChooser;
-import org.argouml.ui.GUIProjectSettingsTabInterface;
-import org.argouml.ui.ShadowComboBox;
 import org.argouml.uml.diagram.DiagramAppearance;
-import org.argouml.uml.diagram.DiagramSettings;
-import org.argouml.uml.diagram.DiagramUndoManager;
 import org.argouml.util.ArgoFrame;
-import org.tigris.gef.undo.Memento;
 
 /**
  * Settings tab panel for handling diagram appearance settings.
@@ -68,14 +60,9 @@ import org.tigris.gef.undo.Memento;
  * @author Aleksandar
  */
 public class SettingsTabDiagramAppearance extends JPanel implements
-        GUIProjectSettingsTabInterface {
+        GUISettingsTabInterface {
 
-    private Project p;
-    
     private JButton jbtnDiagramFont;
-    private JCheckBox showBoldNames;
-    private JCheckBox hideBidirectionalArrows;
-    private ShadowComboBox defaultShadowWidth;
 
     private String selectedDiagramFontName;
 
@@ -126,49 +113,11 @@ public class SettingsTabDiagramAppearance extends JPanel implements
         }
         
         JPanel settings = new JPanel();
-        settings.setLayout(new GridBagLayout());
-
-        GridBagConstraints constraints = new GridBagConstraints();
-        constraints.anchor = GridBagConstraints.WEST;
-        constraints.fill = GridBagConstraints.HORIZONTAL;
-        constraints.gridy = 0;
-        constraints.gridx = 0;
-        constraints.gridwidth = 1;
-        constraints.gridheight = 1;
-        constraints.weightx = 1.0;
-        constraints.insets = new Insets(0, 30, 0, 4);
-
-        constraints.gridy = GridBagConstraints.RELATIVE;
-
-        showBoldNames = createCheckBox("label.show-bold-names");
-        settings.add(showBoldNames, constraints);
-
-        hideBidirectionalArrows = 
-            createCheckBox("label.hide-bidirectional-arrows");
-        settings.add(hideBidirectionalArrows, constraints);        
-
-        constraints.insets = new Insets(5, 30, 0, 4);
-        JPanel defaultShadowWidthPanel = new JPanel(new FlowLayout(
-            FlowLayout.LEFT, 5, 0));
-        JLabel defaultShadowWidthLabel = createLabel(
-            "label.default-shadow-width");
-        defaultShadowWidth = new ShadowComboBox();
-        defaultShadowWidthLabel.setLabelFor(defaultShadowWidth);
-        defaultShadowWidthPanel.add(defaultShadowWidthLabel);
-        defaultShadowWidthPanel.add(defaultShadowWidth);
-        settings.add(defaultShadowWidthPanel, constraints);
-
         jlblDiagramFont = new JLabel();
         jlblDiagramFont.setText(Translator
                 .localize("label.diagramappearance.diagramfont"));       
-        JPanel fontButtonPanel = new JPanel(new FlowLayout(
-                FlowLayout.LEFT, 5, 0));
-        JButton fontButton = getJbtnDiagramFont();
-        jlblDiagramFont.setLabelFor(fontButton);
-        fontButtonPanel.add(jlblDiagramFont);
-        fontButtonPanel.add(fontButton);
-        settings.add(fontButtonPanel, constraints);
-
+        settings.add(getJbtnDiagramFont());
+        settings.add(jlblDiagramFont);
         top.add(settings, BorderLayout.CENTER);
         
         this.add(top, BorderLayout.NORTH);
@@ -184,7 +133,7 @@ public class SettingsTabDiagramAppearance extends JPanel implements
             jbtnDiagramFont.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     ArgoJFontChooser jFontChooser = new ArgoJFontChooser(
-                            ArgoFrame.getFrame(), jbtnDiagramFont,
+                            ArgoFrame.getInstance(), jbtnDiagramFont,
                             selectedDiagramFontName, selectedDiagramFontSize);
                     jFontChooser.setVisible(true);
 
@@ -204,35 +153,17 @@ public class SettingsTabDiagramAppearance extends JPanel implements
      */
     public void handleSettingsTabRefresh() {
         if (scope == Argo.SCOPE_APPLICATION) {
-            showBoldNames.setSelected(getBoolean(
-                    DiagramAppearance.KEY_SHOW_BOLD_NAMES));
             selectedDiagramFontName = DiagramAppearance.getInstance()
                     .getConfiguredFontName();
             selectedDiagramFontSize = Configuration
                     .getInteger(DiagramAppearance.KEY_FONT_SIZE);
-            /*
-             * The next one defaults to TRUE, despite that this is
-             * NOT compatible with older ArgoUML versions
-             * (before 0.28?) that did
-             * not have this setting - see issue 535
-             */
-            hideBidirectionalArrows.setSelected(Configuration.getBoolean(
-                    DiagramAppearance.KEY_HIDE_BIDIRECTIONAL_ARROWS, true));
-            defaultShadowWidth.setSelectedIndex(Configuration.getInteger(
-                    DiagramAppearance.KEY_DEFAULT_SHADOW_WIDTH, 1));
         }
         if (scope == Argo.SCOPE_PROJECT) {
-            assert p != null;
+            Project p = ProjectManager.getManager().getCurrentProject();
             ProjectSettings ps = p.getProjectSettings();
-            DiagramSettings ds = ps.getDefaultDiagramSettings();
 
-            showBoldNames.setSelected(ds.isShowBoldNames());
-            selectedDiagramFontName = ds.getFontName();
-            selectedDiagramFontSize = ds.getFontSize();
-            hideBidirectionalArrows.setSelected(!
-                    ds.isShowBidirectionalArrows());
-            defaultShadowWidth.setSelectedIndex(
-                    ds.getDefaultShadowWidth());
+            selectedDiagramFontName = ps.getFontName();
+            selectedDiagramFontSize = ps.getFontSize();
         }
     }
 
@@ -251,44 +182,17 @@ public class SettingsTabDiagramAppearance extends JPanel implements
      */
     public void handleSettingsTabSave() {
         if (scope == Argo.SCOPE_APPLICATION) {
-            Configuration.setBoolean(DiagramAppearance.KEY_SHOW_BOLD_NAMES,
-                    showBoldNames.isSelected());
             Configuration.setString(DiagramAppearance.KEY_FONT_NAME,
                     selectedDiagramFontName);
             Configuration.setInteger(DiagramAppearance.KEY_FONT_SIZE,
                     selectedDiagramFontSize);
-            Configuration.setBoolean(DiagramAppearance.KEY_HIDE_BIDIRECTIONAL_ARROWS,
-                    hideBidirectionalArrows.isSelected());            
-            Configuration.setInteger(DiagramAppearance.KEY_DEFAULT_SHADOW_WIDTH,
-                    defaultShadowWidth.getSelectedIndex());
         }
         if (scope == Argo.SCOPE_PROJECT) {
-            assert p != null;
+            Project p = ProjectManager.getManager().getCurrentProject();
             ProjectSettings ps = p.getProjectSettings();
-            final DiagramSettings ds = ps.getDefaultDiagramSettings();
 
-            ds.setShowBoldNames(showBoldNames.isSelected());
-            ds.setFontName(selectedDiagramFontName);
-            ds.setFontSize(selectedDiagramFontSize);
-            ds.setDefaultShadowWidth(defaultShadowWidth.getSelectedIndex());
-            ds.setShowBidirectionalArrows(!hideBidirectionalArrows.isSelected());
-
-            /* Update the diagram, and other users of these settings: */
-            Memento memento = new Memento() {
-                public void redo() {
-                    ds.notifyOfChangedSettings();
-                }
-
-                public void undo() {
-                    ds.notifyOfChangedSettings();
-                }
-            };
-            // TODO: Undo should be managed externally or we should be given 
-            // an Undo manager to use (the project's) rather than using a global one
-//            if (DiagramUndoManager.getInstance().isGenerateMementos()) {
-//                DiagramUndoManager.getInstance().addMemento(memento);
-//            }
-           memento.redo();
+            ps.setFontName(selectedDiagramFontName);
+            ps.setFontSize(selectedDiagramFontSize);
         }
     }
 
@@ -304,16 +208,10 @@ public class SettingsTabDiagramAppearance extends JPanel implements
      */
     public void handleResetToDefault() {
         if (scope == Argo.SCOPE_PROJECT) {
-            showBoldNames.setSelected(getBoolean(
-                    DiagramAppearance.KEY_SHOW_BOLD_NAMES));
             selectedDiagramFontName = DiagramAppearance.getInstance()
                     .getConfiguredFontName();
             selectedDiagramFontSize = Configuration
                     .getInteger(DiagramAppearance.KEY_FONT_SIZE);
-            hideBidirectionalArrows.setSelected(Configuration.getBoolean(
-                    DiagramAppearance.KEY_HIDE_BIDIRECTIONAL_ARROWS, true));
-            defaultShadowWidth.setSelectedIndex(Configuration.getInteger(
-                    DiagramAppearance.KEY_DEFAULT_SHADOW_WIDTH, 1)); 
         }
     }
 
@@ -332,13 +230,13 @@ public class SettingsTabDiagramAppearance extends JPanel implements
     }
 
     /**
-     * Create a localized JCheckBox.
+     * Create a localized JButton.
      *
      * @param key the key for the string to be localized
      * @return a new checkbox with localized text
      */
-    protected JCheckBox createCheckBox(String key) {
-        JCheckBox j = new JCheckBox(Translator.localize(key));
+    protected JButton createCheckBox(String key) {
+        JButton j = new JButton(Translator.localize(key));
         return j;
     }
 
@@ -368,10 +266,5 @@ public class SettingsTabDiagramAppearance extends JPanel implements
     public void setVisible(boolean arg0) {
         super.setVisible(arg0);
         if (arg0) handleSettingsTabRefresh();
-    }
-
-    public void setProject(Project project) {
-        assert project != null;
-        p = project;
     }
 } // @jve:decl-index=0:visual-constraint="10,10"

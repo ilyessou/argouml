@@ -83,11 +83,9 @@ import org.argouml.uml.cognitive.critics.CrOppEndVsAttr;
  */
 public class ProfileUML extends Profile {
     
-    private static final String PROFILE_UML14_FILE = "default-uml14.xmi";
-    private static final String PROFILE_UML22_FILE = "default-uml22.xmi";
+    private static final String PROFILE_FILE = "default-uml14.xmi";
 
-    static final String NAME_UML14 = "UML 1.4";
-    static final String NAME_UML22 = "UML 2.2";
+    static final String NAME = "UML 1.4";
     
     private FormatingStrategy formatingStrategy;
     private ProfileModelLoader profileModelLoader;
@@ -103,15 +101,7 @@ public class ProfileUML extends Profile {
         profileModelLoader = new ResourceModelLoader();
         ProfileReference profileReference = null;
         try {
-            if (Model.getFacade().getUmlVersion().charAt(0) == '1') {
-                profileReference =
-                    new CoreProfileReference(PROFILE_UML14_FILE);
-            } else {
-                //TODO: reference should be handled better
-                CoreProfileReference.setProfileDirectory("uml22");
-                profileReference =
-                    new CoreProfileReference(PROFILE_UML22_FILE);
-            }
+            profileReference = new CoreProfileReference(PROFILE_FILE);
         } catch (MalformedURLException e) {
             throw new ProfileException(
                 "Exception while creating profile reference.", e);
@@ -296,10 +286,7 @@ public class ProfileUML extends Profile {
 
     @Override
     public String getDisplayName() {
-        if (Model.getFacade().getUmlVersion().charAt(0) == '1') {
-            return NAME_UML14;
-        }
-        return NAME_UML22;
+        return NAME;
     }
 
 

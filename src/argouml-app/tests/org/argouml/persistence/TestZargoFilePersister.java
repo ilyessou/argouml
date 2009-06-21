@@ -43,6 +43,7 @@ import org.argouml.profile.init.InitProfileSubsystem;
 import org.argouml.uml.diagram.activity.ui.InitActivityDiagram;
 import org.argouml.uml.diagram.collaboration.ui.InitCollaborationDiagram;
 import org.argouml.uml.diagram.deployment.ui.InitDeploymentDiagram;
+import org.argouml.uml.diagram.sequence.ui.InitSequenceDiagram;
 import org.argouml.uml.diagram.state.ui.InitStateDiagram;
 import org.argouml.uml.diagram.static_structure.ui.InitClassDiagram;
 import org.argouml.uml.diagram.ui.InitDiagramAppearanceUI;
@@ -63,6 +64,7 @@ public class TestZargoFilePersister extends TestCase {
         (new InitActivityDiagram()).init();
         (new InitCollaborationDiagram()).init();
         (new InitDeploymentDiagram()).init();
+        (new InitSequenceDiagram()).init();
         (new InitStateDiagram()).init();
         (new InitClassDiagram()).init();
         (new InitUseCaseDiagram()).init();
@@ -150,11 +152,8 @@ public class TestZargoFilePersister extends TestCase {
     public void testDoLoadUml14() throws Exception {
         Project p = doLoad("/testmodels/uml14/Alittlebitofeverything.zargo");
         p.remove();
-        // TODO: The test environment isn't set up to do the sequence->sequence2
-        // upgrade, so this test won't work.  Although the test has been passing
-        // it has been testing the old sequence diagram implementation
-//        p = doLoad("/testmodels/uml14/SequenceDiagram.zargo");
-//        p.remove();
+        p = doLoad("/testmodels/uml14/SequenceDiagram.zargo");
+        p.remove();
     }
 
     /**

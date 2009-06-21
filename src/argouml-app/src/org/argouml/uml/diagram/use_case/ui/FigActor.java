@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2009 The Regents of the University of California. All
+// Copyright (c) 1996-2008 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -39,6 +39,7 @@ import org.argouml.model.Model;
 import org.argouml.uml.diagram.DiagramSettings;
 import org.argouml.uml.diagram.ui.FigNodeModelElement;
 import org.tigris.gef.base.Selection;
+import org.tigris.gef.graph.GraphModel;
 import org.tigris.gef.presentation.Fig;
 import org.tigris.gef.presentation.FigCircle;
 import org.tigris.gef.presentation.FigLine;
@@ -69,6 +70,18 @@ public class FigActor extends FigNodeModelElement {
     private static final int ARMS_POSN = 4;
     private static final int LEFT_LEG_POSN = 5;
     private static final int RIGHT_LEG_POSN = 6;
+
+    /**
+     * Main Constructor for the creation of a new Actor.
+     * 
+     * @deprecated for 0.27.3 by tfmorris. Use
+     *             {@link #FigActor(Object, Rectangle, DiagramSettings)}.
+     */
+    @SuppressWarnings("deprecation")
+    @Deprecated
+    public FigActor() {
+        constructFigs();
+    }
 
     private void constructFigs() {
         Color fg = getLineColor();
@@ -108,6 +121,22 @@ public class FigActor extends FigNodeModelElement {
         addFig(getStereotypeFig());
         setBigPort(bigPort);
         setSuppressCalcBounds(false);
+    }
+
+    /**
+     * Constructor for use if this figure is created for an existing actor
+     * node in the metamodel.<p>
+     *
+     * @param gm ignored!
+     * @param node The UML object being placed.
+     * @deprecated for 0.27.3 by tfmorris.  Use 
+     * {@link #FigActor(Object, Rectangle, DiagramSettings)}.
+     */
+    @SuppressWarnings("deprecation")
+    @Deprecated
+    public FigActor(@SuppressWarnings("unused") GraphModel gm, Object node) {
+        this();
+        setOwner(node);
     }
     
     /**

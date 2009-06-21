@@ -40,6 +40,7 @@ import java.beans.PropertyVetoException;
 import java.beans.VetoableChangeListener;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -169,6 +170,9 @@ public abstract class FigNodeModelElement
     private DiElement diElement;
 
     private NotationProvider notationProviderName;
+    
+    // TODO: Deprecated
+    private HashMap<String, Object> npArguments;
     
     /**
      * True if an instance is allowed to be
@@ -312,6 +316,23 @@ public abstract class FigNodeModelElement
      * from DiagramSettings because it is more likely to change.
      */
     private NotationSettings notationSettings;
+
+    /**
+     * The default constructor. <p>
+     * @deprecated for 0.27.2 by tfmorris.  Use 
+     * {@link #FigNodeModelElement(Object, Rectangle, DiagramSettings)}.
+     */
+    @Deprecated
+    protected FigNodeModelElement() {
+        notationSettings = new NotationSettings();
+        // this rectangle marks the whole modelelement figure; everything
+        // is inside it:
+        bigPort = new FigRect(X0, Y0, 0, 0, DEBUG_COLOR, DEBUG_COLOR);
+        
+        nameFig = new FigNameWithAbstractAndBold(X0, Y0, WIDTH, NAME_FIG_HEIGHT, true);
+        stereotypeFig = new FigStereotypesGroup(X0, Y0, WIDTH, STEREOHEIGHT);
+        constructFigs();
+    }
     
     /**
      * Construct an unplaced Fig with no owner using the given 
@@ -332,6 +353,24 @@ public abstract class FigNodeModelElement
          * from the project properties? */
         
         stereotypeStyle = getSettings().getDefaultStereotypeView();
+    }
+
+    /**
+     * Construct a figure at a specific position for a given model element. <p>
+     * 
+     * @param element ModelElement associated with figure
+     * @param x horizontal location
+     * @param y vertical location
+     * @deprecated for 0.27.2 by tfmorris.  Use 
+     * {@link #FigNodeModelElement(Object, Rectangle, DiagramSettings)}.
+     */
+    @Deprecated
+    protected FigNodeModelElement(Object element, int x, int y) {
+        this();
+        setOwner(element);
+        nameFig.setText(placeString());
+        readyToEdit = false;
+        setLocation(x, y);
     }
 
     /**
@@ -393,10 +432,9 @@ public abstract class FigNodeModelElement
         nameFig.setText(placeString());
         
         if (element != null) {
-            NotationName nn = Notation.findNotation(notationSettings.getNotationLanguage());
             notationProviderName =
                 NotationProviderFactory2.getInstance().getNotationProvider(
-                        getNotationProviderType(), element, this, nn);
+                        getNotationProviderType(), element, this);
 
             /* This next line presumes that the 1st fig with this owner 
              * is the previous port - and consequently nullifies the owner 
@@ -1096,11 +1134,7 @@ public abstract class FigNodeModelElement
      * @return The model element is read only.
      */
     private boolean isReadOnly() {
-        try {
-            return Model.getModelManagementHelper().isReadOnly(getOwner());
-        } catch (InvalidElementException e) {
-            return true;
-        }
+        return Model.getModelManagementHelper().isReadOnly(getOwner());
     }
 
     /**
@@ -1442,6 +1476,54 @@ public abstract class FigNodeModelElement
     }
 
     /**
+     * This method should only be called once for any one Fig instance that
+     * represents a model element (ie not for a FigEdgeNote).
+     * It is called either by the constructor that takes an model element as an
+     * argument or it is called by PGMLStackParser after it has created the Fig
+     * by use of the empty constructor.
+     * The assigned model element (owner) must not change during the lifetime
+     * of the Fig.
+     * <p>
+     * TODO: It is planned to refactor so that there is only one Fig
+     * constructor. When this is achieved this method can refactored out.
+     * 
+     * @param owner the model element that this Fig represents.
+     * @throws IllegalArgumentException if the owner given is not a model
+     * element
+     * @see org.tigris.gef.presentation.Fig#setOwner(java.lang.Object)
+     * @deprecated for 0.27.3 by tfmorris.  Owner must be provided in 
+     * constructor and may not be changed afterwards.
+     */
+    public void setOwner(Object owner) {
+        if (owner == null) {
+            throw new IllegalArgumentException("An owner must be supplied");
+        }
+        if (getOwner() != null) {
+            throw new IllegalStateException(
+                    "The owner cannot be changed once set");
+        }
+        if (!Model.getFacade().isAUMLElement(owner)) {
+            throw new IllegalArgumentException(
+                    "The owner must be a model element - got a "
+                    + owner.getClass().getName());
+        }
+        super.setOwner(owner);
+        nameFig.setOwner(owner); // for setting abstract
+        if (getStereotypeFig() != null) {
+            getStereotypeFig().setOwner(owner);
+        }
+        initNotationProviders(owner);
+        readyToEdit = true;
+        renderingChanged();
+//        updateBounds(); // included in the previous line.
+        /* This next line presumes that the 1st fig with this owner 
+         * is the previous port - and consequently nullifies the owner 
+         * of this 1st fig. */
+        bindPort(owner, bigPort);
+        updateListeners(null, owner);
+    }
+
+    /**
      * Replace the NotationProvider(s). <p>
      *
      * This method shall not be used for the initial creation of
@@ -1504,8 +1586,6 @@ public abstract class FigNodeModelElement
 
     /**
      * Updates the text of the name FigText.
-     * This includes text changes, 
-     * but also changes in rendering like bold.
      */
     protected void updateNameText() {
         if (readyToEdit) {
@@ -1515,6 +1595,7 @@ public abstract class FigNodeModelElement
             if (notationProviderName != null) {
                 nameFig.setText(notationProviderName.toString(
                         getOwner(), getNotationSettings()));
+                // TODO: Why does the font need updating? - tfm
                 updateFont();
                 updateBounds();
             }
@@ -2170,6 +2251,31 @@ public abstract class FigNodeModelElement
         adds.removeAll(listeners);
         addElementListeners(adds);
     }
+    
+    /**
+     * @return the current notation arguments or null if none are set
+     * @deprecated for 0.27.3 by tfmorris.  Use {@link #getNotationSettings()}.
+     */
+    @Deprecated
+    protected HashMap<String, Object> getNotationArguments() {
+        return npArguments;
+    }
+
+    /**
+     * @param key
+     * @param value
+     * @deprecated for 0.27.3 by tfmorris.  Use {@link #getNotationSettings()}.
+     */
+    @Deprecated
+    protected void putNotationArgument(String key, Object value) {
+        if (notationProviderName != null) {
+            // Lazily initialize if not done yet
+            if (npArguments == null) {
+                npArguments = new HashMap<String, Object>();
+            }
+            npArguments.put(key, value);
+        }
+    }
 
     /**
      * This optional method is not implemented.  It will throw an
@@ -2476,36 +2582,6 @@ public abstract class FigNodeModelElement
         protected boolean isReverseEdge(int index) {
             return false;
         }
-    }
-    
 
-    /**
-     * Setting the owner of the Fig must be done in the constructor and not
-     * changed afterwards for all ArgoUML figs.
-     * 
-     * @param owner owning UML element
-     * @see org.tigris.gef.presentation.Fig#setOwner(java.lang.Object)
-     * @throws UnsupportedOperationException
-     * @deprecated for 0.27.3 by tfmorris. Set owner in constructor. This method
-     *             is implemented in GEF, so we'll leave this implementation
-     *             here to block any attempts to use it within ArgoUML.
-     */
-    @SuppressWarnings("deprecation")
-    @Deprecated
-    public void setOwner(Object owner) {
-        if (owner != getOwner()) {
-            throw new UnsupportedOperationException(
-                    "Owner must be set in constructor and left unchanged");
-        }
-    }
-    
-    /*
-     * Override FigNode implementation to keep setOwner from getting called.
-     */
-    @Override
-    public void bindPort(Object port, Fig f) {
-        if (f.getOwner() != port) {
-            f.setOwner(port);
-        }
     }
 }

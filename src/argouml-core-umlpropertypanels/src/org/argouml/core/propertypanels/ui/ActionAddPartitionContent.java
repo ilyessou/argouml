@@ -35,7 +35,7 @@ import org.argouml.uml.ui.AbstractActionAddModelElement2;
 /**
  * @author mkl
  */
-class ActionAddPartitionContent extends AbstractActionAddModelElement2 {
+public class ActionAddPartitionContent extends AbstractActionAddModelElement2 {
 
     public ActionAddPartitionContent() {
         super();

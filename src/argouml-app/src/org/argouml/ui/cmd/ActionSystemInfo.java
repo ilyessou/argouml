@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 2004-2009 The Regents of the University of California. All
+// Copyright (c) 2004-2007 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -25,11 +25,11 @@
 package org.argouml.ui.cmd;
 
 import java.awt.Dimension;
-import java.awt.Frame;
 import java.awt.event.ActionEvent;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
+import javax.swing.JFrame;
 
 import org.argouml.application.helpers.ResourceLoaderWrapper;
 import org.argouml.i18n.Translator;
@@ -56,10 +56,10 @@ public class ActionSystemInfo extends AbstractAction {
      * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
      */
     public void actionPerformed(ActionEvent ae) {
-	Frame frame = ArgoFrame.getFrame();
+	JFrame jFrame = ArgoFrame.getInstance();
 	SystemInfoDialog sysInfoDialog = new SystemInfoDialog(true);
 	Dimension siDim = sysInfoDialog.getSize();
-	Dimension pbDim = frame.getSize();
+	Dimension pbDim = jFrame.getSize();
 
 	if (siDim.width > pbDim.width / 2) {
 	    sysInfoDialog.setSize(pbDim.width / 2, siDim.height + 45);
@@ -67,8 +67,9 @@ public class ActionSystemInfo extends AbstractAction {
 	    sysInfoDialog.setSize(siDim.width, siDim.height + 45);
 	}
 
-	sysInfoDialog.setLocationRelativeTo(frame);
+	sysInfoDialog.setLocationRelativeTo(jFrame);
 	sysInfoDialog.setVisible(true);
     }
 
-} 
+} /* end class ActionSystemInfo */
+

@@ -2,8 +2,8 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: %pluginName
 Bundle-Vendor: %pluginProvider
-Bundle-SymbolicName: org.argouml.core.model.mdr;singleton:=true
-Bundle-Version: 0.28.0.qualifier
+Bundle-SymbolicName: org.argouml.core.model.mdr
+Bundle-Version: 0.25.5
 Bundle-Localization: plugin
 Export-Package: javax.jmi.corbaidltypes,
  javax.jmi.model,
@@ -57,7 +57,7 @@ Export-Package: javax.jmi.corbaidltypes,
  testmodels
 Require-Bundle: org.argouml.core.model,
  org.argouml.core.infra
-Bundle-ClassPath: .,
+Bundle-ClassPath: org.argouml.core.model.mdr.jar,
  lib/jmi.jar,
  lib/jmiutils.jar,
  lib/mdrapi.jar,
@@ -66,4 +66,3 @@ Bundle-ClassPath: .,
  lib/openide-util.jar
 Eclipse-RegisterBuddy: org.argouml.core.infra, org.argouml.core.model
 Bundle-RequiredExecutionEnvironment: J2SE-1.5
-Bundle-ActivationPolicy: lazy

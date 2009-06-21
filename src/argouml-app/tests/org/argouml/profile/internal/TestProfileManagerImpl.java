@@ -36,7 +36,6 @@ import org.argouml.model.InitializeModel;
 import org.argouml.profile.Profile;
 import org.argouml.profile.ProfileException;
 import org.argouml.profile.ProfileManager;
-import org.argouml.uml.cognitive.critics.ProfileGoodPractices;
 
 /**
  * Tests for the ProfileManagerImpl class.
@@ -59,26 +58,27 @@ public class TestProfileManagerImpl extends TestCase {
      */
     public void testProfileManagerImpl() {
         List<Profile> registeredProfiles = manager.getRegisteredProfiles();
-        assertTrue(1 <= registeredProfiles.size());
+        assertTrue(2 <= registeredProfiles.size());
         Set<String> internalProfileNameSet = new HashSet<String>();
         for (Profile profile : registeredProfiles) {
-            if (profile.getDisplayName().equals(ProfileUML.NAME_UML14)) {
+            if (profile.getDisplayName().equals(ProfileUML.NAME)
+                    || profile.getDisplayName().equals(ProfileJava.NAME)) {
                 internalProfileNameSet.add(profile.getDisplayName());
             }
         }
-        assertEquals(1, internalProfileNameSet.size());
+        assertEquals(2, internalProfileNameSet.size());
     }
 
     /**
      * test remove profile
      */
     public void testRemoveProfileThatIsntDefault() {
-        Profile gpProfile = manager.getProfileForClass(ProfileGoodPractices.class
+        Profile javaProfile = manager.getProfileForClass(ProfileJava.class
                 .getName());
-        assertNotNull(gpProfile);
-        assertTrue(manager.getRegisteredProfiles().contains(gpProfile));
-        manager.removeProfile(gpProfile);
-        assertFalse(manager.getRegisteredProfiles().contains(gpProfile));
+        assertNotNull(javaProfile);
+        assertTrue(manager.getRegisteredProfiles().contains(javaProfile));
+        manager.removeProfile(javaProfile);
+        assertFalse(manager.getRegisteredProfiles().contains(javaProfile));
     }
 
     /**

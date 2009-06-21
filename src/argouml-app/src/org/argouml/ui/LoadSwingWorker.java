@@ -82,7 +82,7 @@ public class LoadSwingWorker extends SwingWorker {
         UIManager.put("ProgressMonitor.progressText", 
                 Translator.localize("filechooser.open-project"));
         Object[] msgArgs = new Object[] {this.file.getPath()};
-        return new ProgressMonitorWindow(ArgoFrame.getFrame(),
+        return new ProgressMonitorWindow(ArgoFrame.getInstance(),
                 Translator.messageFormat("dialog.openproject.title", msgArgs));
     }
     

@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 2008, 2009 The Regents of the University of California. All
+// Copyright (c) 2008 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -83,6 +83,7 @@ import org.argouml.uml.ui.foundation.core.PropPanelAssociationClass;
 import org.argouml.uml.ui.foundation.core.PropPanelAssociationEnd;
 import org.argouml.uml.ui.foundation.core.PropPanelAttribute;
 import org.argouml.uml.ui.foundation.core.PropPanelClass;
+import org.argouml.uml.ui.foundation.core.PropPanelClassifier;
 import org.argouml.uml.ui.foundation.core.PropPanelComment;
 import org.argouml.uml.ui.foundation.core.PropPanelComponent;
 import org.argouml.uml.ui.foundation.core.PropPanelConstraint;
@@ -99,7 +100,6 @@ import org.argouml.uml.ui.foundation.core.PropPanelOperation;
 import org.argouml.uml.ui.foundation.core.PropPanelParameter;
 import org.argouml.uml.ui.foundation.core.PropPanelPermission;
 import org.argouml.uml.ui.foundation.core.PropPanelRelationship;
-import org.argouml.uml.ui.foundation.core.PropPanelTemplateParameter;
 import org.argouml.uml.ui.foundation.core.PropPanelUsage;
 import org.argouml.uml.ui.foundation.extension_mechanisms.PropPanelStereotype;
 import org.argouml.uml.ui.foundation.extension_mechanisms.PropPanelTagDefinition;
@@ -202,8 +202,6 @@ class ElementPropPanelFactory implements PropPanelFactory {
                 return new PropPanelStimulus();
             } else if (Model.getFacade().isATaggedValue(element)) {
                 return new PropPanelTaggedValue();
-            } else if (Model.getFacade().isATemplateParameter(element)) {
-                return new PropPanelTemplateParameter();
             } else if (Model.getFacade().isATagDefinition(element)) {
                 return new PropPanelTagDefinition();
             } else if (Model.getFacade().isATransition(element)) {
@@ -225,7 +223,7 @@ class ElementPropPanelFactory implements PropPanelFactory {
     }
 
 
-    private PropPanel getClassifierPropPanel(Object element) {
+    private PropPanelClassifier getClassifierPropPanel(Object element) {
         if (Model.getFacade().isAActor(element)) {
             return new PropPanelActor();
         } else if (Model.getFacade().isAAssociationClass(element)) {
@@ -256,9 +254,7 @@ class ElementPropPanelFactory implements PropPanelFactory {
             }
         } else if (Model.getFacade().isAUseCase(element)) {
             return new PropPanelUseCase();
-        } else if (Model.getFacade().isARelationship(element)) {
-            return getRelationshipPropPanel(element);
-        }
+        } 
         
         // TODO: A Subsystem is a Classifier, but its PropPanel is derived from
         // PropPanelPackage

@@ -34,13 +34,13 @@ import org.argouml.uml.ui.UMLModelElementListModel2;
  * @since Oct 11, 2005
  */
 class UMLStereotypeTagDefinitionListModel
-    extends UMLModelElementListModel {
+    extends UMLModelElementListModel2 {
 
     /**
      * Constructor for UMLStereotypeTagDefinitionListModel.
      */
     public UMLStereotypeTagDefinitionListModel() {
-        super("definedTag", true, false);
+        super("definedTag");
         // TODO: Add referenceValue for tagged values 
         // which have a non-primitive type
     }

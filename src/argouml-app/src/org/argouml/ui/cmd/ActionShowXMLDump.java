@@ -67,7 +67,7 @@ public class ActionShowXMLDump extends AbstractAction {
 	String data =
 	    PersistenceManager.getInstance().getQuickViewDump(project);
 
-	JDialog pw = new JDialog(ArgoFrame.getFrame(), 
+	JDialog pw = new JDialog(ArgoFrame.getInstance(), 
                 Translator.localize("action.show-saved"), 
                 false);
 
@@ -82,7 +82,7 @@ public class ActionShowXMLDump extends AbstractAction {
 
 	pw.setSize(400, 500);
 
-	pw.setLocationRelativeTo(ArgoFrame.getFrame());
+	pw.setLocationRelativeTo(ArgoFrame.getInstance());
         
         init(pw);
         

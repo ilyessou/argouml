@@ -389,12 +389,7 @@ class CoreFactoryMDRImpl extends AbstractUmlModelFactoryMDR implements
     
 
     public TemplateArgument createTemplateArgument() {
-        return createTemplateArgument(modelImpl.getUmlPackage());
-    }
-    
-      private  TemplateArgument createTemplateArgument(
-              org.omg.uml.UmlPackage extent) {
-        TemplateArgument obj = extent.getCore().getTemplateArgument()
+        TemplateArgument obj = getCorePackage().getTemplateArgument()
                 .createTemplateArgument();
         super.initialize(obj);
         return obj;
@@ -402,12 +397,7 @@ class CoreFactoryMDRImpl extends AbstractUmlModelFactoryMDR implements
         
 
     public TemplateParameter createTemplateParameter() {
-        return createTemplateParameter(modelImpl.getUmlPackage());
-    }
-
-    private TemplateParameter createTemplateParameter(
-            org.omg.uml.UmlPackage extent) {
-        TemplateParameter myTemplateParameter = extent.getCore()
+        TemplateParameter myTemplateParameter = getCorePackage()
                 .getTemplateParameter().createTemplateParameter();
         super.initialize(myTemplateParameter);
         return myTemplateParameter;
@@ -1130,47 +1120,6 @@ class CoreFactoryMDRImpl extends AbstractUmlModelFactoryMDR implements
         TemplateArgument ta = createTemplateArgument();
         ta.setModelElement((ModelElement) element);
         return ta;
-    }
-
-    public TemplateArgument buildTemplateArgument(Object binding, 
-            Object element) {
-        if (!(binding instanceof Binding && element instanceof ModelElement)) {
-            throw new IllegalArgumentException();
-        }
-        TemplateArgument ta = createTemplateArgument(getExtent(binding));
-        ta.setModelElement((ModelElement) element);
-        ta.setBinding((Binding) binding);
-        return ta;
-    }
-    
-    public Object buildTemplateParameter(Object template, Object parameter,
-            Object defaultElement) {
-        if (!(template instanceof ModelElement)) {
-            throw new IllegalArgumentException(
-                    "Template must be a model element");
-        }
-        if (!(parameter instanceof ModelElement)) {
-            if (parameter == null) {
-                parameter = createClass(getExtent(template));
-            } else {
-            throw new IllegalArgumentException(
-                    "Parameter must be a model element");
-            }
-        }
-        if (defaultElement != null 
-                && !(defaultElement instanceof ModelElement)) {
-            throw new IllegalArgumentException(
-                    "Default element must be a model element");
-        }
-
-        TemplateParameter templateParam = 
-            createTemplateParameter(getExtent(template));
-        templateParam.setParameter((ModelElement) parameter);
-        if (defaultElement != null) {
-            templateParam.setDefaultElement((ModelElement) defaultElement);
-        }
-        templateParam.setTemplate((ModelElement) template);
-        return templateParam;
     }
     
 
@@ -2154,6 +2103,8 @@ class CoreFactoryMDRImpl extends AbstractUmlModelFactoryMDR implements
             // Note that if we're copying this element then we
             // must also be allowed to copy other necessary
             // objects.
+            Model targetModel = (Model) org.argouml.model.Model.getFacade()
+                    .getModel(targetME);
             for (Stereotype s : sourceME.getStereotype()) {
                 targetME.getStereotype().add(s);
             }

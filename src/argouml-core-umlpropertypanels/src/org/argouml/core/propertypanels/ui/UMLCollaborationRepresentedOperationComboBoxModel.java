@@ -51,7 +51,7 @@ class UMLCollaborationRepresentedOperationComboBoxModel
     }
     
     /*
-     * @see org.argouml.uml.ui.UMLModelElementListModel#buildModelList()
+     * @see org.argouml.uml.ui.UMLModelElementListModel2#buildModelList()
      */
     protected void buildModelList() {
         Collection operations = new ArrayList();

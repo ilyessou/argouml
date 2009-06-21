@@ -1,4 +1,5 @@
-// Copyright (c) 2007,2009 Tom Morris and other contributors
+// $Id$
+// Copyright (c) 2007, The ArgoUML Project
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -8,14 +9,14 @@
 //     * Redistributions in binary form must reproduce the above copyright
 //       notice, this list of conditions and the following disclaimer in the
 //       documentation and/or other materials provided with the distribution.
-//     * Neither the name of the project or its contributors may be used 
-//       to endorse or promote products derived from this software without
-//       specific prior written permission.
+//     * Neither the name of the ArgoUML Project nor the
+//       names of its contributors may be used to endorse or promote products
+//       derived from this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY THE CONTRIBUTORS ``AS IS'' AND ANY
+// THIS SOFTWARE IS PROVIDED BY THE ArgoUML PROJECT ``AS IS'' AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 // WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-// DISCLAIMED. IN NO EVENT SHALL THE CONTRIBUTORS BE LIABLE FOR ANY
+// DISCLAIMED. IN NO EVENT SHALL THE ArgoUML PROJECT BE LIABLE FOR ANY
 // DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 // (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 // LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
@@ -154,30 +155,39 @@ class CoreFactoryEUMLImpl implements CoreFactory, AbstractModelFactory {
         RunnableClass run = new RunnableClass() {
             public void run() {
                 Association association = createAssociation();
-                Property property1 = buildAssociationEndInternal(association,
-                        null, (Type) type1, null, null, navigability1, null,
-                        (AggregationKind) aggregationKind1, null, null, null);
-                Property property2 = buildAssociationEndInternal(association,
-                        null, (Type) type2, null, null, navigability2, null,
-                        (AggregationKind) aggregationKind2, null, null, null);
+                Property property1 = createAssociationEnd();
+                Property property2 = createAssociationEnd();
+                property1.setType((Type) type2);
+                property2.setType((Type) type1);
+                property1.setAssociation(association);
+                property2.setAssociation(association);
+                if (aggregationKind1 != null) {
+                    property1.setAggregation(
+                            (AggregationKind) aggregationKind1);
+                }
+                if (aggregationKind2 != null) {
+                    property2.setAggregation(
+                            (AggregationKind) aggregationKind2);
+                }
                 if (associationName != null) {
                     association.setName(associationName);
                 }
-                association.getOwnedEnds().add(property1);
-                association.getOwnedEnds().add(property2);
-                // The code below will make navigable ends owned by the classifier
-                // at the opposite end, but let's just make them owned by the association
-                // for simplicity (don't assume everything will be like this though!)
-//                if (UMLUtil.getOwnedAttributes((Type) type2) == null) {
-//                    association.getOwnedEnds().add(property1);
-//                } else {
-//                    UMLUtil.getOwnedAttributes((Type) type2).add(property1);
-//                }
-//                if (UMLUtil.getOwnedAttributes((Type) type1) == null) {
-//                    association.getOwnedEnds().add(property2);
-//                } else {
-//                    UMLUtil.getOwnedAttributes((Type) type1).add(property2);
-//                }
+                if (UMLUtil.getOwnedAttributes((Type) type1) == null) {
+                    association.getOwnedEnds().add(property1);
+                } else {
+                    UMLUtil.getOwnedAttributes((Type) type1).add(property1);
+                }
+                if (UMLUtil.getOwnedAttributes((Type) type2) == null) {
+                    association.getOwnedEnds().add(property2);
+                } else {
+                    UMLUtil.getOwnedAttributes((Type) type2).add(property2);
+                }
+                if (navigability1 != null) {
+                    property1.setIsNavigable(navigability1);
+                }
+                if (navigability2 != null) {
+                    property2.setIsNavigable(navigability2);
+                }
                 ((Type) type1).getNearestPackage().getPackagedElements().add(
                         association);
                 getParams().add(association);
@@ -314,13 +324,48 @@ class CoreFactoryEUMLImpl implements CoreFactory, AbstractModelFactory {
         }
         RunnableClass run = new RunnableClass() {
             public void run() {
-                Property property = buildAssociationEndInternal(
-                        (Association) assoc, name, (Type) type,
-                        (MultiplicityElement) multi, (Stereotype) stereo,
-                        navigable, (Boolean) order,
-                        (AggregationKind) aggregation, (Boolean) scope,
-                        (Boolean) changeable, (VisibilityKind) visibility);
-                 getParams().add(property);
+                Property property = createAssociationEnd();
+                property.setType((Type) type);
+                property.setAssociation((Association) assoc);
+                if (name != null) {
+                    property.setName(name);
+                }
+                if (navigable != null) {
+                    property.setIsNavigable(navigable);
+                    if (!(Boolean) navigable) {
+                        ((Association) assoc).getOwnedEnds().add(property);
+                    }
+                }
+                if (aggregation != null) {
+                    property.setAggregation((AggregationKind) aggregation);
+                }
+                if (visibility != null) {
+                    property.setVisibility((VisibilityKind) visibility);
+                }
+                if (multi != null) {
+                    if (((MultiplicityElement) multi).getLowerValue() != null) {
+                        property.setLowerValue(
+                                ((MultiplicityElement) multi).getLowerValue());
+                    }
+                    if (((MultiplicityElement) multi).getUpperValue() != null) {
+                        property.setLowerValue(
+                                ((MultiplicityElement) multi).getUpperValue());
+                    }
+                }
+                if (order != null) {
+                    property.setIsOrdered((Boolean) order);
+                }
+                if (changeable != null) {
+                    property.setIsReadOnly((Boolean) changeable);
+                }
+                if (stereo != null) {
+                    if (property.isStereotypeApplicable((Stereotype) stereo)) {
+                        property.applyStereotype((Stereotype) stereo);
+                    } else {
+                        return;
+                    }
+                }
+                getParams().add(property);
             }
         };
         modelImpl.getModelEventPump().getRootContainer().setHoldEvents(true);
@@ -344,57 +389,6 @@ class CoreFactoryEUMLImpl implements CoreFactory, AbstractModelFactory {
         return (Property) run.getParams().get(0);
     }
 
-    private Property buildAssociationEndInternal(final Association assoc,
-            final String name, final Type type,
-            final MultiplicityElement multi, final Stereotype stereo,
-            final Boolean navigable, final Boolean order,
-            final AggregationKind aggregation, final Object scope,
-            final Object changeable, final VisibilityKind visibility) {
-        // The attribute 'targetScope' of an AssociationEnd in UML1.x is no
-        // longer supported in UML2.x
-
-        Property property = createAssociationEnd();
-        property.setType((Type) type);
-        property.setAssociation((Association) assoc);
-        if (name != null) {
-            property.setName(name);
-        }
-        if (navigable != null) {
-            property.setIsNavigable(navigable);
-            if (!(Boolean) navigable) {
-                ((Association) assoc).getOwnedEnds().add(property);
-            }
-        }
-        if (aggregation != null) {
-            property.setAggregation((AggregationKind) aggregation);
-        }
-        if (visibility != null) {
-            property.setVisibility((VisibilityKind) visibility);
-        }
-        if (multi != null) {
-            if (((MultiplicityElement) multi).getLowerValue() != null) {
-                property.setLowerValue(
-                        ((MultiplicityElement) multi).getLowerValue());
-            }
-            if (((MultiplicityElement) multi).getUpperValue() != null) {
-                property.setLowerValue(
-                        ((MultiplicityElement) multi).getUpperValue());
-            }
-        }
-        if (order != null) {
-            property.setIsOrdered((Boolean) order);
-        }
-        if (changeable != null) {
-            property.setIsReadOnly((Boolean) changeable);
-        }
-        if (stereo != null) {
-            if (property.isStereotypeApplicable((Stereotype) stereo)) {
-                property.applyStereotype((Stereotype) stereo);
-            } 
-        }
-        return property;
-    }
-    
     public Property buildAssociationEnd(Object assoc, String name, Object type,
             Object multi, Object stereo, boolean navigable, Object order,
             Object aggregation, Object scope, Object changeable,
@@ -864,11 +858,9 @@ class CoreFactoryEUMLImpl implements CoreFactory, AbstractModelFactory {
             public void run() {
                 Operation operation = createOperation();
                 UMLUtil.getOwnedOperations((Type) cls).add(operation);
-                operation.createReturnResult("return", (Type) returnType);
+                operation.createReturnResult(null, (Type) returnType);
                 if (name != null) {
                     operation.setName(name);
-                } else {
-                    operation.setName("newOperation");
                 }
                 getParams().add(operation);
             }
@@ -898,8 +890,6 @@ class CoreFactoryEUMLImpl implements CoreFactory, AbstractModelFactory {
             public void run() {
                 Parameter param = createParameter();
                 param.setType((Type) type);
-                param.setName("arg" +
-                    ((BehavioralFeature) o).getOwnedParameters().size());
                 ((BehavioralFeature) o).getOwnedParameters().add(param);
                 getParams().add(param);
             }
@@ -1176,31 +1166,6 @@ class CoreFactoryEUMLImpl implements CoreFactory, AbstractModelFactory {
 
     public Usage createUsage() {
         return UMLFactory.eINSTANCE.createUsage();
-    }
-
-    public Object buildTemplateArgument(Object binding, Object argument) {
-        // TODO: Auto-generated method stub
-        throw new NotYetImplementedException();
-        
-    }
-
-    public Object buildTemplateParameter(Object template, Object parameter,
-            Object defaultElement) {
-        // TODO: Auto-generated method stub
-        throw new NotYetImplementedException();
-        
-    }
-
-    public Object createTemplateArgument(Object extent) {
-        // TODO: Auto-generated method stub
-        throw new NotYetImplementedException();
-        
-    }
-
-    public Object createTemplateParameter(Object extent) {
-        // TODO: Auto-generated method stub
-        throw new NotYetImplementedException();
-        
     }
 
 }

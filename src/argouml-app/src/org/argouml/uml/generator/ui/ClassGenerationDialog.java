@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2009 The Regents of the University of California. All
+// Copyright (c) 1996-2008 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -66,36 +66,35 @@ import org.tigris.swidgets.Dialog;
 /**
  * The dialog that starts the generation of classes.
  */
-public class ClassGenerationDialog extends ArgoDialog 
-        implements ActionListener {
+public class ClassGenerationDialog
+    extends ArgoDialog
+    implements ActionListener {
 
     private static final String SOURCE_LANGUAGE_TAG = "src_lang";
-
+    
     /**
      * Logger.
      */
-    private static final Logger LOG = Logger
-            .getLogger(ClassGenerationDialog.class);
+    private static final Logger LOG =
+        Logger.getLogger(ClassGenerationDialog.class);
 
     private TableModelClassChecks classTableModel;
-
     private boolean isPathInModel;
-
     private List<Language> languages;
 
     private JTable classTable;
-
     private JComboBox outputDirectoryComboBox;
 
     /**
-     * Used to select the next language column in case the "Select All" button
-     * is pressed.
+     * Used to select the next language column in case
+     * the "Select All" button is pressed.
      */
     private int languageHistory;
 
+
     /**
      * Constructor.
-     * 
+     *
      * @param nodes The UML elements, typically classifiers, to generate.
      */
     public ClassGenerationDialog(List<Object> nodes) {
@@ -104,15 +103,16 @@ public class ClassGenerationDialog extends ArgoDialog
 
     /**
      * Constructor.
-     * <p>
-     * TODO: Correct?
-     * 
+     *
      * @param nodes The UML elements, typically classifiers, to generate.
      * @param inModel <code>true</code> if the path is in the model.
+     *        TODO: Correct?
      */
     public ClassGenerationDialog(List<Object> nodes, boolean inModel) {
-        super(Translator.localize("dialog.title.generate-classes"),
-                Dialog.OK_CANCEL_OPTION, true);
+        super(
+            Translator.localize("dialog.title.generate-classes"),
+            Dialog.OK_CANCEL_OPTION,
+            true);
         isPathInModel = inModel;
 
         buildLanguages();
@@ -126,6 +126,9 @@ public class ClassGenerationDialog extends ArgoDialog
         classTable = new JTable(classTableModel);
         classTable.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
         classTable.setShowVerticalLines(false);
+        if (languages.size() <= 1) {
+            classTable.setTableHeader(null);
+        }
         setClassTableColumnWidths();
         classTable.setPreferredScrollableViewportSize(new Dimension(300, 300));
 
@@ -135,9 +138,7 @@ public class ClassGenerationDialog extends ArgoDialog
         nameButton(selectAllButton, "button.select-all");
         selectAllButton.addActionListener(new ActionListener() {
             /*
-             * @see
-             * java.awt.event.ActionListener#actionPerformed(java.awt.event.
-             * ActionEvent)
+             * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
              */
             public void actionPerformed(ActionEvent e) {
                 classTableModel.setAllChecks(true);
@@ -148,9 +149,7 @@ public class ClassGenerationDialog extends ArgoDialog
         nameButton(selectNoneButton, "button.select-none");
         selectNoneButton.addActionListener(new ActionListener() {
             /*
-             * @see
-             * java.awt.event.ActionListener#actionPerformed(java.awt.event.
-             * ActionEvent)
+             * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
              */
             public void actionPerformed(ActionEvent e) {
                 classTableModel.setAllChecks(false);
@@ -166,24 +165,22 @@ public class ClassGenerationDialog extends ArgoDialog
         selectPanel.add(selectButtons);
 
         JPanel centerPanel = new JPanel(new BorderLayout(0, 2));
-        centerPanel.add(new JLabel(Translator
-                .localize("label.available-classes")), BorderLayout.NORTH);
+        centerPanel.add(new JLabel(Translator.localize(
+            "label.available-classes")), BorderLayout.NORTH);
         centerPanel.add(new JScrollPane(classTable), BorderLayout.CENTER);
         centerPanel.add(selectPanel, BorderLayout.SOUTH);
         contentPanel.add(centerPanel, BorderLayout.CENTER);
 
         // Output Directory
-        outputDirectoryComboBox = 
-            new JComboBox(getClasspathEntries().toArray());
+        outputDirectoryComboBox =
+                new JComboBox(getClasspathEntries().toArray());
 
         JButton browseButton = new JButton();
         nameButton(browseButton, "button.browse");
         browseButton.setText(browseButton.getText() + "...");
         browseButton.addActionListener(new ActionListener() {
             /*
-             * @see
-             * java.awt.event.ActionListener#actionPerformed(java.awt.event.
-             * ActionEvent)
+             * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
              */
             public void actionPerformed(ActionEvent e) {
                 doBrowse();
@@ -195,10 +192,11 @@ public class ClassGenerationDialog extends ArgoDialog
         if (!inModel) {
             outputDirectoryComboBox.setEditable(true);
             JPanel outputPanel = new JPanel(new BorderLayout(5, 0));
-            outputPanel.setBorder(BorderFactory.createCompoundBorder(
-                    BorderFactory.createTitledBorder(Translator
-                            .localize("label.output-directory")), BorderFactory
-                            .createEmptyBorder(2, 5, 5, 5)));
+            outputPanel.setBorder(
+                BorderFactory.createCompoundBorder(
+                    BorderFactory.createTitledBorder(
+			Translator.localize("label.output-directory")),
+                    BorderFactory.createEmptyBorder(2, 5, 5, 5)));
             outputPanel.add(outputDirectoryComboBox, BorderLayout.CENTER);
             outputPanel.add(browseButton, BorderLayout.EAST);
             southPanel.add(outputPanel, BorderLayout.NORTH);
@@ -206,18 +204,18 @@ public class ClassGenerationDialog extends ArgoDialog
 
         // Compile Checkbox
 
-        // _compileCheckBox = new JCheckBox();
-        // nameButton(_compileCheckBox, "checkbox.compile-generated-source");
+        //_compileCheckBox = new JCheckBox();
+        //nameButton(_compileCheckBox, "checkbox.compile-generated-source");
         // TODO: Implement the compile feature. For now, disable the checkbox.
-        // _compileCheckBox.setEnabled(false);
-        // southPanel.add(_compileCheckBox, BorderLayout.SOUTH);
+        //_compileCheckBox.setEnabled(false);
+        //southPanel.add(_compileCheckBox, BorderLayout.SOUTH);
 
         contentPanel.add(southPanel, BorderLayout.SOUTH);
 
         setContent(contentPanel);
 
         // TODO: Get saved default directory
-        // outputDirectoryComboBox.getModel().setSelectedItem(savedDir);
+//        outputDirectoryComboBox.getModel().setSelectedItem(savedDir);
     }
 
     /*
@@ -240,9 +238,14 @@ public class ClassGenerationDialog extends ArgoDialog
 
             JTableHeader header = classTable.getTableHeader();
             if (header != null) {
-                c = header.getDefaultRenderer()
-                        .getTableCellRendererComponent(classTable,
-                                column.getHeaderValue(), false, false, 0, 0);
+                c =
+		    header.getDefaultRenderer().getTableCellRendererComponent(
+			    classTable,
+			    column.getHeaderValue(),
+			    false,
+			    false,
+			    0,
+			    0);
                 width = Math.max(c.getPreferredSize().width + 8, width);
             }
 
@@ -254,10 +257,8 @@ public class ClassGenerationDialog extends ArgoDialog
     }
 
     private void buildLanguages() {
-        languages = new ArrayList<Language>(GeneratorManager
-                .getInstance().getLanguages());
-
-        Collections.sort(languages);
+        languages = new ArrayList<Language>(
+                GeneratorManager.getInstance().getLanguages());
     }
 
     private static Collection<String> getClasspathEntries() {
@@ -265,15 +266,15 @@ public class ClassGenerationDialog extends ArgoDialog
         Collection<String> entries = new TreeSet<String>();
 
         // TODO: What does the output directory have to do with the class path?
-        // Project p = ProjectManager.getManager().getCurrentProject();
-        // entries.add(p.getProjectSettings().getGenerationOutputDir());
+//        Project p = ProjectManager.getManager().getCurrentProject();
+//        entries.add(p.getProjectSettings().getGenerationOutputDir());
 
         final String pathSep = System.getProperty("path.separator");
         StringTokenizer allEntries = new StringTokenizer(classpath, pathSep);
         while (allEntries.hasMoreElements()) {
             String entry = allEntries.nextToken();
             if (!entry.toLowerCase().endsWith(".jar")
-                    && !entry.toLowerCase().endsWith(".zip")) {
+                && !entry.toLowerCase().endsWith(".zip")) {
                 entries.add(entry);
             }
         }
@@ -281,8 +282,7 @@ public class ClassGenerationDialog extends ArgoDialog
     }
 
     /*
-     * @see
-     * java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
+     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
      */
     @Override
     public void actionPerformed(ActionEvent e) {
@@ -303,44 +303,47 @@ public class ClassGenerationDialog extends ArgoDialog
                 Set nodes = classTableModel.getChecked(language);
 
                 if (!isPathInModel) {
-                    path = ((String) outputDirectoryComboBox.getModel()
-                            .getSelectedItem());
+                    path =
+                        ((String) outputDirectoryComboBox.getModel()
+                                .getSelectedItem());
                     if (path != null) {
                         path = path.trim();
                         if (path.length() > 0) {
-                            Collection<String> files = generator.generateFiles(
-                                    nodes, path, false);
+                            Collection<String> files =
+                                generator.generateFiles(nodes, path, false);
                             for (String filename : files) {
-                                fileNames[i].add(path
-                                        + CodeGenerator.FILE_SEPARATOR
+                                fileNames[i].add(
+                                    path + CodeGenerator.FILE_SEPARATOR
                                         + filename);
                             }
                         }
                     }
                 } else {
                     // classify nodes by base path
-                    Map<String, Set<Object>> nodesPerPath = 
-                        new HashMap<String, Set<Object>>();
+                    Map<String, Set<Object>> nodesPerPath =
+                            new HashMap<String, Set<Object>>();
                     for (Object node : nodes) {
                         if (!Model.getFacade().isAClassifier(node)) {
                             continue;
                         }
                         path = GeneratorManager.getCodePath(node);
                         if (path == null) {
-                            Object parent = Model.getFacade()
-                                    .getNamespace(node);
+                            Object parent =
+                                Model.getFacade().getNamespace(node);
                             while (parent != null) {
                                 path = GeneratorManager.getCodePath(parent);
                                 if (path != null) {
                                     break;
                                 }
-                                parent = Model.getFacade().getNamespace(parent);
+                                parent =
+                                    Model.getFacade().getNamespace(parent);
                             }
                         }
                         if (path != null) {
                             final String fileSep = CodeGenerator.FILE_SEPARATOR;
                             if (path.endsWith(fileSep)) { // remove trailing /
-                                path = path.substring(0, path.length()
+                                path =
+                                    path.substring(0, path.length()
                                         - fileSep.length());
                             }
                             Set<Object> np = nodesPerPath.get(path);
@@ -359,11 +362,12 @@ public class ClassGenerationDialog extends ArgoDialog
                         Set nodeColl = (Set) entry.getValue();
                         // TODO: the last argument (recursive flag) should be a
                         // selectable option
-                        Collection<String> files = generator.generateFiles(
-                                nodeColl, basepath, false);
+                        Collection<String> files =
+                            generator.generateFiles(nodeColl, basepath, false);
                         for (String filename : files) {
                             fileNames[i].add(basepath
-                                    + CodeGenerator.FILE_SEPARATOR + filename);
+                                    + CodeGenerator.FILE_SEPARATOR
+                                    + filename);
                         }
                     }
                 } // end if (!isPathInModel) .. else
@@ -375,26 +379,27 @@ public class ClassGenerationDialog extends ArgoDialog
 
     /**
      * Save the source language in the model.
-     * <p>
-     * TODO: Support multiple languages now that we have UML 1.4 tagged values.
      * 
+     * TODO: Support multiple languages now that we have UML 1.4
+     * tagged values.
      * @param node
      * @param language
      */
     private void saveLanguage(Object node, Language language) {
-        Object taggedValue = Model.getFacade().getTaggedValue(node,
-                SOURCE_LANGUAGE_TAG);
+        Object taggedValue =
+                Model.getFacade().getTaggedValue(node, SOURCE_LANGUAGE_TAG);
         if (taggedValue != null) {
             String savedLang = Model.getFacade().getValueOfTag(taggedValue);
             if (!language.getName().equals(savedLang)) {
-                Model.getExtensionMechanismsHelper().setValueOfTag(taggedValue,
-                        language.getName());
+                Model.getExtensionMechanismsHelper().setValueOfTag(
+                        taggedValue, language.getName());
             }
         } else {
-            taggedValue = Model.getExtensionMechanismsFactory()
-                    .buildTaggedValue(SOURCE_LANGUAGE_TAG, language.getName());
-            Model.getExtensionMechanismsHelper().addTaggedValue(node,
-                    taggedValue);
+            taggedValue =
+                    Model.getExtensionMechanismsFactory().buildTaggedValue(
+                            SOURCE_LANGUAGE_TAG, language.getName());
+            Model.getExtensionMechanismsHelper().addTaggedValue(
+                    node, taggedValue);
 
         }
     }
@@ -402,9 +407,11 @@ public class ClassGenerationDialog extends ArgoDialog
     private void doBrowse() {
         try {
             // Show Filechooser to select OutputDirectory
-            JFileChooser chooser = new JFileChooser(
-                    (String) outputDirectoryComboBox.getModel()
-                            .getSelectedItem());
+            JFileChooser chooser =
+                new JFileChooser(
+                    (String) outputDirectoryComboBox
+                        .getModel()
+                        .getSelectedItem());
 
             if (chooser == null) {
                 chooser = new JFileChooser();
@@ -413,10 +420,10 @@ public class ClassGenerationDialog extends ArgoDialog
             chooser.setFileHidingEnabled(true);
             chooser.setMultiSelectionEnabled(false);
             chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-            chooser.setDialogTitle(Translator
-                    .localize("dialog.generation.chooser.choose-output-dir"));
-            chooser.showDialog(this, Translator
-                    .localize("dialog.generation.chooser.approve-button-text"));
+            chooser.setDialogTitle(Translator.localize(
+                    "dialog.generation.chooser.choose-output-dir"));
+            chooser.showDialog(this, Translator.localize(
+                    "dialog.generation.chooser.approve-button-text"));
 
             if (!"".equals(chooser.getSelectedFile().getPath())) {
                 String path = chooser.getSelectedFile().getPath();
@@ -439,9 +446,9 @@ public class ClassGenerationDialog extends ArgoDialog
         private List<Object> classes;
 
         /**
-         * Array of sets of UML elements that the user has selected. One set per
-         * language. The Object typed objects are actually UML Elements, but we
-         * don't have a visible type for that.
+         * Array of sets of UML elements that the user has selected.  One set
+         * per language.  The Object typed objects are actually UML Elements,
+         * but we don't have a visible type for that.
          */
         private Set<Object>[] checked;
 
@@ -450,6 +457,7 @@ public class ClassGenerationDialog extends ArgoDialog
          */
         public TableModelClassChecks() {
         }
+
 
         /**
          * Set the target.
@@ -466,7 +474,8 @@ public class ClassGenerationDialog extends ArgoDialog
 
             for (Object cls : classes) {
                 for (int j = 0; j < getLanguagesCount(); j++) {
-                    if (isSupposedToBeGeneratedAsLanguage(languages.get(j), cls)) {
+                    if (isSupposedToBeGeneratedAsLanguage(
+                            languages.get(j), cls)) {
                         checked[j].add(cls);
                     } else if ((languages.get(j)).getName().equals(
                             Notation.getConfiguredNotation()
@@ -477,18 +486,19 @@ public class ClassGenerationDialog extends ArgoDialog
             }
             fireTableStructureChanged();
 
-            getOkButton().setEnabled(
-                    classes.size() > 0 && getChecked().size() > 0);
+            getOkButton().setEnabled(classes.size() > 0
+				     && getChecked().size() > 0);
         }
 
-        private boolean isSupposedToBeGeneratedAsLanguage(Language lang,
-                Object cls) {
+        private boolean isSupposedToBeGeneratedAsLanguage(
+            Language lang,
+            Object cls) {
             if (lang == null || cls == null) {
                 return false;
             }
 
-            Object taggedValue = Model.getFacade().getTaggedValue(cls,
-                    SOURCE_LANGUAGE_TAG);
+            Object taggedValue =
+                Model.getFacade().getTaggedValue(cls, SOURCE_LANGUAGE_TAG);
             if (taggedValue == null) {
                 return false;
             }
@@ -505,7 +515,6 @@ public class ClassGenerationDialog extends ArgoDialog
 
         /**
          * Return the set of elements which are selected for the given language.
-         * 
          * @param lang the language
          * @return a set of UML elements
          */
@@ -519,7 +528,7 @@ public class ClassGenerationDialog extends ArgoDialog
 
         /**
          * All checked classes.
-         * 
+         *
          * @return The union of all languages as a {@link Set}.
          */
         public Set<Object> getChecked() {
@@ -530,9 +539,9 @@ public class ClassGenerationDialog extends ArgoDialog
             return union;
         }
 
-        // //////////////
+        ////////////////
         // TableModel implementation
-
+        
         /*
          * @see javax.swing.table.TableModel#getColumnCount()
          */
@@ -615,20 +624,20 @@ public class ClassGenerationDialog extends ArgoDialog
         }
 
         /*
-         * @see javax.swing.table.TableModel#setValueAt( java.lang.Object, int,
-         * int)
+         * @see javax.swing.table.TableModel#setValueAt(
+         *          java.lang.Object, int, int)
          */
         @Override
         public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
             if (columnIndex == getLanguagesCount()) {
                 return;
-            }
+	    }
             if (columnIndex >= getColumnCount()) {
                 return;
-            }
+	    }
             if (!(aValue instanceof Boolean)) {
                 return;
-            }
+	    }
             boolean val = ((Boolean) aValue).booleanValue();
             Object cls = classes.get(rowIndex);
 
@@ -643,18 +652,19 @@ public class ClassGenerationDialog extends ArgoDialog
             if (val && !getOkButton().isEnabled()) {
                 getOkButton().setEnabled(true);
             } else if (!val && getOkButton().isEnabled()
-                    && getChecked().size() == 0) {
+                && getChecked().size() == 0) {
                 getOkButton().setEnabled(false);
             }
         }
 
         /**
-         * Sets or clears all checkmarks for the (next) language for all
-         * classes.
-         * 
+         * Sets or clears all checkmarks for the (next) language for
+         * all classes.
+         *
          * @param value If false then all checkmarks are cleared for all
-         *            languages. If true then all are cleared, except for one
-         *            language column, these are all set.
+         * languages.
+         * If true then all are cleared, except for one language column,
+         * these are all set.
          */
         public void setAllChecks(boolean value) {
             int rows = getRowCount();
@@ -676,10 +686,10 @@ public class ClassGenerationDialog extends ArgoDialog
                 }
             }
             if (value) {
-                if (++languageHistory >= checks) {
-                    languageHistory = 0;
-                }
-            }
+		if (++languageHistory >= checks) {
+		    languageHistory = 0;
+		}
+	    }
             getOkButton().setEnabled(value);
         }
 
@@ -694,3 +704,4 @@ public class ClassGenerationDialog extends ArgoDialog
      */
     private static final long serialVersionUID = -8897965616334156746L;
 } /* end class ClassGenerationDialog */
+

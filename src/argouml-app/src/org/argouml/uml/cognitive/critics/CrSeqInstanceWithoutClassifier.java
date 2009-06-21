@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2009 The Regents of the University of California. All
+// Copyright (c) 1996-2006 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -32,8 +32,7 @@ import org.argouml.cognitive.ToDoItem;
 import org.argouml.model.Model;
 import org.argouml.uml.cognitive.UMLDecision;
 import org.argouml.uml.cognitive.UMLToDoItem;
-import org.argouml.uml.diagram.ArgoDiagram;
-import org.argouml.uml.diagram.SequenceDiagram;
+import org.argouml.uml.diagram.sequence.ui.UMLSequenceDiagram;
 import org.argouml.uml.diagram.ui.FigNodeModelElement;
 
 /**
@@ -58,13 +57,12 @@ public class CrSeqInstanceWithoutClassifier extends CrUML {
      */
     @Override
     public boolean predicate2(Object dm, Designer dsgr) {
-	if (!(dm instanceof SequenceDiagram)) {
+	if (!(dm instanceof UMLSequenceDiagram)) {
             return NO_PROBLEM;
         }
-	ListSet offs = computeOffenders((SequenceDiagram) dm);
-	if (offs == null) {
-	    return NO_PROBLEM;
-	}
+	UMLSequenceDiagram sd = (UMLSequenceDiagram) dm;
+	ListSet offs = computeOffenders(sd);
+	if (offs == null) return NO_PROBLEM;
 	return PROBLEM_FOUND;
     }
 
@@ -74,7 +72,7 @@ public class CrSeqInstanceWithoutClassifier extends CrUML {
      */
     @Override
     public ToDoItem toDoItem(Object dm, Designer dsgr) {
-	SequenceDiagram sd = (SequenceDiagram) dm;
+	UMLSequenceDiagram sd = (UMLSequenceDiagram) dm;
 	ListSet offs = computeOffenders(sd);
 	return new UMLToDoItem(this, offs, dsgr);
     }
@@ -89,7 +87,7 @@ public class CrSeqInstanceWithoutClassifier extends CrUML {
             return false;
         }
 	ListSet offs = i.getOffenders();
-	SequenceDiagram sd = (SequenceDiagram) offs.get(0);
+	UMLSequenceDiagram sd = (UMLSequenceDiagram) offs.get(0);
 	//if (!predicate(dm, dsgr)) return false;
 	ListSet newOffs = computeOffenders(sd);
 	boolean res = offs.equals(newOffs);
@@ -105,7 +103,7 @@ public class CrSeqInstanceWithoutClassifier extends CrUML {
      * @param sd the diagram to check
      * @return the set of offenders
      */
-    public ListSet computeOffenders(ArgoDiagram sd) {
+    public ListSet computeOffenders(UMLSequenceDiagram sd) {
 	Collection figs = sd.getLayer().getContents();
 	ListSet offs = null;
         for (Object obj : figs) {

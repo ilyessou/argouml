@@ -24,6 +24,8 @@
 
 package org.argouml.sequence2;
 
+import org.argouml.sequence2.SequenceDiagramModule;
+
 import junit.framework.TestCase;
 
 
@@ -38,7 +40,6 @@ public class TestSequenceDiagramModule extends TestCase {
     protected void setUp() throws Exception {
         super.setUp();
         theModule = new SequenceDiagramModule();
-        theModule.enable();
     }
     
     /**

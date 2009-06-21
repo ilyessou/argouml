@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 2007-2009 The Regents of the University of California. All
+// Copyright (c) 2007-2008 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -40,10 +40,12 @@ import org.argouml.model.AssociationChangeEvent;
 import org.argouml.model.AttributeChangeEvent;
 import org.argouml.model.Model;
 import org.argouml.uml.diagram.DiagramSettings;
+import org.argouml.uml.diagram.ui.ArgoFig;
 import org.argouml.uml.diagram.ui.FigEdgeModelElement;
 import org.argouml.uml.diagram.ui.FigNodeModelElement;
 import org.tigris.gef.base.Geometry;
 import org.tigris.gef.base.Selection;
+import org.tigris.gef.graph.GraphModel;
 import org.tigris.gef.presentation.Fig;
 import org.tigris.gef.presentation.FigCube;
 import org.tigris.gef.presentation.FigRect;
@@ -71,6 +73,18 @@ public abstract class AbstractFigNode extends FigNodeModelElement {
     private static final int DEFAULT_WIDTH = 200;
     private static final int DEFAULT_HEIGHT = 180;
 
+    /**
+     * Constructor.
+     * @deprecated by for 0.27.4 by tfmorris. Use
+     *             {@link #AbstractFigNode(Object, Rectangle, DiagramSettings)}.
+     */
+    @SuppressWarnings("deprecation")
+    @Deprecated
+    public AbstractFigNode() {
+        super();
+        initFigs();
+    }
+
     private void initFigs() {
         setBigPort(new CubePortFigRect(DEFAULT_X, DEFAULT_Y - DEPTH, 
                 DEFAULT_WIDTH + DEPTH, 
@@ -88,6 +102,44 @@ public abstract class AbstractFigNode extends FigNodeModelElement {
         addFig(cover);
         addFig(getStereotypeFig());
         addFig(getNameFig());
+    }
+    
+    /**
+     * Constructor.
+     * 
+     * @param gm the graphmodel
+     * @param node the UML element
+     * @deprecated by for 0.27.4 by tfmorris. Use
+     *             {@link #AbstractFigNode(Object, Rectangle, DiagramSettings)}.
+     */
+    @SuppressWarnings("deprecation")
+    @Deprecated
+    public AbstractFigNode(@SuppressWarnings("unused") GraphModel gm, 
+            Object node) {
+        this();
+        setOwner(node);
+        if (Model.getFacade().isAClassifier(node)
+                && (Model.getFacade().getName(node) != null)) {
+            getNameFig().setText(Model.getFacade().getName(node));
+        }
+    }
+
+    /**
+     * Construct a figure at a specific position for a given model element. <p>
+     * 
+     * The Layer (which has a 1..1 relation to the Diagram)
+     * is not yet set in this stage of the creation of the Fig.
+     * 
+     * @param element ModelElement associated with figure
+     * @param x horizontal location
+     * @param y vertical location
+     * @deprecated by for 0.27.4 by tfmorris. Use
+     *             {@link #AbstractFigNode(Object, Rectangle, DiagramSettings)}.
+     */
+    @SuppressWarnings("deprecation")
+    @Deprecated
+    public AbstractFigNode(Object element, int x, int y) {
+        super(element, x, y);
     }
 
     /**
@@ -175,6 +227,11 @@ public abstract class AbstractFigNode extends FigNodeModelElement {
         _h = h;
         firePropChange("bounds", oldBounds, getBounds());
         updateEdges();
+    }
+
+    @Override
+    protected void updateStereotypeText() {
+        getStereotypeFig().setOwner(getOwner());
     }
 
     @Override

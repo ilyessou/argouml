@@ -139,7 +139,7 @@ public class ActionExportProfileXMI extends AbstractAction {
             chooser.setSelectedFile(new File(fn));
         }
 
-        int result = chooser.showSaveDialog(ArgoFrame.getFrame());
+        int result = chooser.showSaveDialog(ArgoFrame.getInstance());
         if (result == JFileChooser.APPROVE_OPTION) {
             File theFile = chooser.getSelectedFile();
             if (theFile != null) {

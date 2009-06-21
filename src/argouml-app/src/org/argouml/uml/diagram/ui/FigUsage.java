@@ -1,5 +1,5 @@
 // $Id$
-// Copyright (c) 1996-2009 The Regents of the University of California. All
+// Copyright (c) 1996-2008 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
@@ -25,6 +25,7 @@
 package org.argouml.uml.diagram.ui;
 
 import org.argouml.uml.diagram.DiagramSettings;
+import org.tigris.gef.base.Layer;
 
 /**
  * This class represents a Fig for a Usage.
@@ -32,6 +33,44 @@ import org.argouml.uml.diagram.DiagramSettings;
  * @author Markus Klink
  */
 public class FigUsage extends FigDependency {
+
+    /**
+     * The constructor.
+     * @deprecated for 0.27.3 by tfmorris. Use
+     *             {@link #FigUsage(Object, DiagramSettings)}.
+     */
+    @SuppressWarnings("deprecation")
+    @Deprecated
+    public FigUsage() {
+        super();
+    }
+
+    /**
+     * The constructor.
+     *
+     * @param edge the owning UML element
+     * @deprecated for 0.27.3 by tfmorris. Use
+     *             {@link #FigUsage(Object, DiagramSettings)}.
+     */
+    @SuppressWarnings("deprecation")
+    @Deprecated
+    public FigUsage(Object edge) {
+        super(edge);
+    }
+
+    /**
+     * The constructor.
+     * 
+     * @param edge the owning UML element
+     * @param lay the layer
+     * @deprecated for 0.27.3 by tfmorris. Use
+     *             {@link #FigUsage(Object, DiagramSettings)}.
+     */
+    @SuppressWarnings("deprecation")
+    @Deprecated
+    public FigUsage(Object edge, Layer lay) {
+        super(edge, lay);
+    }
 
     /**
      * Construct a Fig.
@@ -43,5 +82,9 @@ public class FigUsage extends FigDependency {
         super(owner, settings);
     }
     
+    /**
+     * The UID.
+     */
+    private static final long serialVersionUID = -1805275467987372774L;
 } 
 
