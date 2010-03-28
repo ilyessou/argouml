@@ -7,24 +7,24 @@
  * http://www.eclipse.org/legal/epl-v10.html
  *
  * Contributors:
- *    mvw
+ *    bobtarling
  *****************************************************************************
  *
  * Some portions of this file was previously release using the BSD License:
  */
 
-// Copyright (c) 2008-2009 The Regents of the University of California. All
+// Copyright (c) 2002-2006 The Regents of the University of California. All
 // Rights Reserved. Permission to use, copy, modify, and distribute this
 // software and its documentation without fee, and without a written
 // agreement is hereby granted, provided that the above copyright notice
-// and this paragraph appear in all copies. This software program and
+// and this paragraph appear in all copies.  This software program and
 // documentation are copyrighted by The Regents of the University of
 // California. The software program and documentation are supplied "AS
 // IS", without any accompanying services from The Regents. The Regents
 // does not warrant that the operation of the program will be
 // uninterrupted or error-free. The end-user understands that the program
 // was developed for research purposes and is advised not to rely
-// exclusively on the program for any reason. IN NO EVENT SHALL THE
+// exclusively on the program for any reason.  IN NO EVENT SHALL THE
 // UNIVERSITY OF CALIFORNIA BE LIABLE TO ANY PARTY FOR DIRECT, INDIRECT,
 // SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, INCLUDING LOST PROFITS,
 // ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN IF
@@ -38,52 +38,44 @@
 
 package org.argouml.core.propertypanels.ui;
 
+import java.util.Iterator;
+
 import org.argouml.model.Model;
+import org.argouml.uml.ui.UMLModelElementListModel2;
 
 /**
- * @author jrobbins
- * @author jaap.branderhorst
- * @author penyaskito
+ * List model for messages on the interaction proppanel.
+ *
+ * @author jaap.branderhorst@xs4all.nl
  */
-class UMLInitialValueExpressionModel
-    extends UMLExpressionModel {
-
-
-
-    public UMLInitialValueExpressionModel(Object target) {
-        super(target, "initialValue");
-    }
+class UMLInteractionMessagesListModel extends UMLModelElementListModel {
 
     /**
-     * @return
-     * @see org.argouml.uml.ui.UMLExpressionModel2#getExpression()
+     * Constructor for UMLInteractionMessagesListModel.
      */
-    @Override
-    public Object getExpression() {
-        Object target = getTarget();
-        if (target == null) {
-            return null;
+    public UMLInteractionMessagesListModel(
+            final Object modelElement) {
+        super("message");
+        setTarget(modelElement);
+    }
+
+    /*
+     * @see org.argouml.uml.ui.UMLModelElementListModel2#buildModelList()
+     */
+    protected void buildModelList() {
+        removeAllElements();
+        Iterator it = Model.getFacade().getMessages(getTarget()).iterator();
+        while (it.hasNext()) {
+            addElement(it.next());
         }
-        assert Model.getFacade().isAAttribute(target);
-        return Model.getFacade().getInitialValue(target);
     }
 
-    @Override
-    public Object newExpression(String lang, String body) {
-        return Model.getDataTypesFactory().createExpression(lang, body);
-    }
-
-    /**
-     * @param expr
-     * @see org.argouml.uml.ui.UMLExpressionModel2#setExpression(java.lang.Object)
+    /*
+     * @see org.argouml.uml.ui.UMLModelElementListModel2#isValidElement(Object)
      */
-    @Override
-    public void setExpression(Object expression) {
-        Object target = getTarget();
-        assert Model.getFacade().isAAttribute(target);
-        assert (expression == null) || Model.getFacade().isAExpression(expression);
-        /* If we do not set it to null first, then we get a MDR DebugException: */
-        Model.getCoreHelper().setInitialValue(target, null);
-        Model.getCoreHelper().setInitialValue(target, expression);
+    protected boolean isValidElement(Object elem) {
+        return Model.getFacade().isAMessage(elem)
+            && Model.getFacade().getInteraction(elem) == getTarget();
     }
+
 }

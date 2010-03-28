@@ -56,7 +56,7 @@ import org.argouml.core.propertypanels.meta.PropertyMeta;
 import org.argouml.core.propertypanels.model.GetterSetterManager;
 import org.argouml.i18n.Translator;
 import org.argouml.model.Model;
-import org.argouml.uml.ui.ActionDeleteModelElements;
+import org.argouml.uml.ui.UMLComboBoxNavigator;
 import org.argouml.uml.ui.foundation.extension_mechanisms.ActionNewStereotype;
 import org.tigris.swidgets.GridLayout2;
 import org.tigris.toolbar.ToolBarFactory;
@@ -118,17 +118,6 @@ class SwingUIFactory {
         JToolBar tb = tbf.createToolBar();
         tb.add(new JLabel(metaTypeName, ResourceLoaderWrapper.lookupIconResource(metaTypeName), JLabel.LEFT));
         if (!Model.getModelManagementHelper().isReadOnly(target)) {
-            tb.add(new NavigateUpAction(target));
-            
-            if (Model.getFacade().isAAttribute(target)
-                || Model.getFacade().isAOperation(target)
-                || Model.getFacade().isAReception(target)
-                || Model.getFacade().isAParameter(target)) {
-                tb.add(new NavigatePreviousAction(target));
-                tb.add(new NavigateNextAction(target));
-            }
-            
-            tb.add(new ActionDeleteModelElements());
             // We only have this here until we have stereotypes
             // list on property panel
             tb.add(new ActionNewStereotype());
@@ -342,7 +331,7 @@ class SwingUIFactory {
         if ("namespace".equals(prop.getName())) {
             final UMLComboBoxModel model =
                 new UMLModelElementNamespaceComboBoxModel(propertyName, target);
-            final UMLComboBox combo = new UMLSearchableComboBox(
+            final JComboBox combo = new UMLSearchableComboBox(
                     model,
                     model.getAction(), true);            
             comp = new UMLComboBoxNavigator(
@@ -365,7 +354,7 @@ class SwingUIFactory {
             if (Model.getFacade().isAAssociationRole(target)) {
                 final UMLComboBoxModel model = 
                     new UMLAssociationRoleBaseComboBoxModel(propertyName, target);
-                final UMLComboBox combo = new UMLSearchableComboBox(
+                final JComboBox combo = new UMLSearchableComboBox(
                         model,
                         model.getAction(), true);
                 comp = new UMLComboBoxNavigator(Translator.localize(
@@ -377,7 +366,7 @@ class SwingUIFactory {
         } else if ("powertype".equals(prop.getName())) {
             final UMLComboBoxModel model = 
                 new UMLGeneralizationPowertypeComboBoxModel(propertyName, target);
-            final UMLComboBox combo = new UMLComboBox(
+            final JComboBox combo = new UMLComboBox(
                     model);
             comp = combo;
         } else if ("multiplicity".equals(prop.getName())) {            
@@ -393,7 +382,7 @@ class SwingUIFactory {
             if (Model.getFacade().isACallEvent(target)) {
                 UMLComboBoxModel model = 
                     new UMLCallEventOperationComboBoxModel(propertyName, target);
-                UMLComboBox combo = new UMLCallEventOperationComboBox(model);
+                JComboBox combo = new UMLCallEventOperationComboBox(model);
                 comp = new UMLComboBoxNavigator(Translator.localize(
                         "label.operation.navigate.tooltip"),
                         combo);
@@ -444,19 +433,19 @@ class SwingUIFactory {
         } else if ("submachine".equals(prop.getName())) {
             final UMLComboBoxModel model =
                 new UMLSubmachineStateComboBoxModel(propertyName, target);
-            final UMLComboBox submachineBox = new UMLComboBox(model);
+            final JComboBox submachineBox = new UMLComboBox(model);
             comp = new UMLComboBoxNavigator(Translator.localize(
                             "tooltip.nav-submachine"), submachineBox);
         } else if ("referenceState".equals(prop.getName())) {
             final UMLComboBoxModel model = 
                 new UMLStubStateComboBoxModel(propertyName, target);
-            final UMLComboBox referencestateBox =
+            final JComboBox referencestateBox =
                 new UMLComboBox(model);
             comp = new UMLComboBoxNavigator(Translator.localize(
                     "tooltip.nav-stubstate"), referencestateBox);            
         } else if ("tagType".equals(prop.getName())) {
             UMLComboBoxModel model = new UMLMetaClassComboBoxModel(propertyName, target);
-            final UMLComboBox typeComboBox = new UMLComboBox(model);
+            final JComboBox typeComboBox = new UMLComboBox(model);
             comp = new UMLComboBoxNavigator(
                    Translator.localize("label.type.navigate.tooltip"),
                    typeComboBox);
@@ -465,35 +454,21 @@ class SwingUIFactory {
         } else if ("parameter".equals(prop.getName())) {
             final UMLComboBoxModel model =
                 new UMLTemplateParameterParameterComboBoxModel(target);
-            final UMLComboBox combo = new UMLComboBox(model);
+            final JComboBox combo = new UMLComboBox(model);
             comp = new UMLComboBoxNavigator(
                     Translator.localize("label.type.navigate.tooltip"),
                     combo);
         } else if ("defaultElement".equals(prop.getName())) {
             final UMLComboBoxModel model =
                 new UMLTemplateParameterDefaultElementComboBoxModel(propertyName, target);
-            final UMLComboBox combo = new UMLComboBox(model);
-            comp = new UMLComboBoxNavigator(
-                    Translator.localize("label.type.navigate.tooltip"),
-                    combo);
-        } else if ("signal".equals(prop.getName())) {
-            final UMLComboBoxModel model =
-                new UMLReceptionSignalComboBoxModel(propertyName, target);
-            final UMLComboBox combo = new UMLComboBox(model);
-            comp = new UMLComboBoxNavigator(
-                    Translator.localize("label.type.navigate.tooltip"),
-                    combo);
-        } else if ("trigger".equals(prop.getName())) {
-            final UMLComboBoxModel model =
-                new UMLTransitionTriggerComboBoxModel(propertyName, target);
-            final UMLComboBox combo = new UMLComboBox(model);
+            final JComboBox combo = new UMLComboBox(model);
             comp = new UMLComboBoxNavigator(
                     Translator.localize("label.type.navigate.tooltip"),
                     combo);
         } else if ("specification".equals(prop.getName())) {
             final UMLComboBoxModel model =
                 new UMLMethodSpecificationComboBoxModel(propertyName, target);
-            final UMLComboBox combo = new UMLComboBox(model);
+            final JComboBox combo = new UMLComboBox(model);
             comp = new UMLComboBoxNavigator(
                     Translator.localize("label.type.navigate.tooltip"),
                     combo);

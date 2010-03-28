@@ -1153,16 +1153,16 @@ public class GenericArgoMenuBar extends JMenuBar implements
                 // we wish to use as delegates for various
                 // com.apple.eawt.ApplicationListener methods
                 LOG.info("Registering Quit handler for Mac");
-                OSXAdapter.setQuitHandler(this, getClass().getMethod(
+                OSXAdapter.setQuitHandler(this, getClass().getDeclaredMethod(
                         "macQuit", (Class[]) null));
                 LOG.info("Registering About handler for Mac");
-                OSXAdapter.setAboutHandler(this, getClass().getMethod(
+                OSXAdapter.setAboutHandler(this, getClass().getDeclaredMethod(
                         "macAbout", (Class[]) null));
                 LOG.info("Registering Preferences handler for Mac");
                 OSXAdapter.setPreferencesHandler(this, getClass()
-                        .getMethod("macPreferences", (Class[]) null));
+                        .getDeclaredMethod("macPreferences", (Class[]) null));
                 LOG.info("Registering File handler for Mac");
-                OSXAdapter.setFileHandler(this, getClass().getMethod(
+                OSXAdapter.setFileHandler(this, getClass().getDeclaredMethod(
                         "macOpenFile", new Class[] {String.class}));
                 LOG.info("All Mac handlers set");
             } catch (Exception e) {

@@ -2492,8 +2492,6 @@ public interface Facade {
      *
      * @param handle the operation
      * @return raised signals
-     * @deprecated by Bob Tarling in 0.30.1 use the UML2 replacement
-     * of getRaisedExceptions
      */
     Collection getRaisedSignals(Object handle);
     

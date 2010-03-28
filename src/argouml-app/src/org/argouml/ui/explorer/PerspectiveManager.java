@@ -47,7 +47,6 @@ import java.util.StringTokenizer;
 import org.apache.log4j.Logger;
 import org.argouml.application.api.Argo;
 import org.argouml.configuration.Configuration;
-import org.argouml.model.Model;
 import org.argouml.ui.explorer.rules.GoAssocRoleToMessages;
 import org.argouml.ui.explorer.rules.GoBehavioralFeatureToStateDiagram;
 import org.argouml.ui.explorer.rules.GoBehavioralFeatureToStateMachine;
@@ -388,9 +387,7 @@ public final class PerspectiveManager {
         packagePerspective.addRule(new GoLinkToStimuli());
         packagePerspective.addRule(new GoStimulusToAction());
         packagePerspective.addRule(new GoClassifierToCollaboration());
-        // TODO: We need a factory pattern for GoXXX classes that can determine if they are required
         packagePerspective.addRule(new GoOperationToCollaboration());
-        packagePerspective.addRule(new GoOperationToSequenceDiagram());
         packagePerspective.addRule(new GoModelElementToComment());
         packagePerspective.addRule(new GoCollaborationToDiagram());
         packagePerspective.addRule(new GoModelElementToTemplateParameter());
@@ -409,6 +406,7 @@ public final class PerspectiveManager {
         packagePerspective.addRule(new GoStateToEntry());
         packagePerspective.addRule(new GoStateToExit());
         packagePerspective.addRule(new GoClassifierToSequenceDiagram());
+        packagePerspective.addRule(new GoOperationToSequenceDiagram());
         packagePerspective.addRule(new GoClassifierToInstance());
         packagePerspective.addRule(new GoStateToIncomingTrans());
         packagePerspective.addRule(new GoStateToOutgoingTrans());
@@ -561,10 +559,9 @@ public final class PerspectiveManager {
             new GoModelToNode(), new GoNamespaceToClassifierAndPackage(),
             new GoNamespaceToDiagram(), new GoNamespaceToOwnedElements(),
             new GoNodeToResidentComponent(),
-            new GoOperationToCollaboration(),
             new GoOperationToCollaborationDiagram(),
-            new GoOperationToSequenceDiagram(),
-            new GoPackageToClass(),
+            new GoOperationToCollaboration(),
+            new GoOperationToSequenceDiagram(), new GoPackageToClass(),
             new GoPackageToElementImport(),
             new GoProjectToCollaboration(), new GoProjectToDiagram(),
             new GoProjectToModel(), new GoProjectToStateMachine(), 
@@ -591,24 +588,8 @@ public final class PerspectiveManager {
             new GoUseCaseToExtensionPoint(),
             new GoSubmachineStateToStateMachine(),
         };
-        
-        // TODO: We need a factory pattern for GoXXX classes that can determine if they are required
-        PerspectiveRule[] ruleNamesArray14 = {
-            // Enter here go rules only relevant for UML 1.4
-            // empty for now
-        };
-
-        PerspectiveRule[] ruleNamesArray2 = {
-            // Enter here go rules only relevant for UML 2
-            // empty for now
-        };
 
         rules = Arrays.asList(ruleNamesArray);
-        if (Model.getFacade().getUmlVersion().charAt(0) == '1') {
-            rules.addAll(Arrays.asList(ruleNamesArray14));
-        } else {
-            rules.addAll(Arrays.asList(ruleNamesArray2));
-        }
     }
 
     /**

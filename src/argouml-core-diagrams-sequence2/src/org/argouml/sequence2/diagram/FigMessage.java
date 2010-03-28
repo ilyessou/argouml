@@ -414,11 +414,8 @@ public class FigMessage extends FigEdgeModelElement {
     protected void updateListeners(Object oldOwner, Object newOwner ) {
         action = Model.getFacade().getAction(newOwner);
         Set<Object[]> listeners = new HashSet<Object[]>();
-        Object action = getAction();
         listeners.add(new Object[] {getOwner(), "remove"});
-        if (action != null) {
-            listeners.add(new Object[] {action, "isAsynchronous"});
-        }
+        listeners.add(new Object[] {getAction(), "isAsynchronous"});
         try {
             updateElementListeners(listeners);
         } catch (Exception e) {

@@ -42,7 +42,6 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.argouml.model.Model;
 import org.xml.sax.InputSource;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLReaderFactory;
@@ -67,20 +66,14 @@ public class PanelMetaCache {
     }
     
     private void parseXML() throws Exception {
-        final String file;        
-        if (Model.getFacade().getUmlVersion().charAt(0) == '2') {
-            file = "org/argouml/core/propertypanels/meta/panels2.xml";
-        } else {
-            file = "org/argouml/core/propertypanels/meta/panels.xml";        
-        }
-        final XMLReader parser = XMLReaderFactory.createXMLReader();
+        String file = "org/argouml/core/propertypanels/meta/panels.xml";        
+        XMLReader parser = XMLReaderFactory.createXMLReader();
         parser.setContentHandler(new XmlSinglePanelHandler(cache));
-        final InputStream stream =
-            this.getClass().getClassLoader().getResourceAsStream(file);
+        InputStream stream = this.getClass().getClassLoader().
+        getResourceAsStream(file);
         if (stream != null) {
-            final InputSource source = new InputSource(stream);
-            parser.parse(source);
-            stream.close();
+            InputSource source = new InputSource(stream);
+            parser.parse(source);        
         } else {
             throw new IllegalStateException("Failed to find the panel XML");
         }
