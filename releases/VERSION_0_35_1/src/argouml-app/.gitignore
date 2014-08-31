@@ -1,0 +1,9 @@
+/build
+/build-eclipse
+/build-eclipse-tests
+/Alittlebitofeverything2.zargo
+/test.xmi
+/test.xmi~
+/testSaveProfileModel.xmi
+/target
+/argouml.log
